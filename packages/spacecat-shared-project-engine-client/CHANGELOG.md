@@ -1,3 +1,45 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.9.0...@adobe/spacecat-shared-project-engine-client-v1.10.0) (2026-07-10)
+
+### Features
+
+* **project-engine-client:** model dimension-root tags in the mock ([#1799](https://github.com/adobe/spacecat-shared/issues/1799)) ([5d482a1](https://github.com/adobe/spacecat-shared/commit/5d482a1dd2262d7c1341925ab7f29cb2ab5cb381))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.8.0...@adobe/spacecat-shared-project-engine-client-v1.9.0) (2026-07-06)
+
+### Features
+
+* **project-engine-client:** re-vendor Semrush swagger; retire CR9/CR10, slim CR16 ([#1772](https://github.com/adobe/spacecat-shared/issues/1772)) ([8e63f1a](https://github.com/adobe/spacecat-shared/commit/8e63f1af63339a9b8b6cb5c7fd65481098956326))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.1...@adobe/spacecat-shared-project-engine-client-v1.8.0) (2026-07-03)
+
+### Features
+
+* **project-engine-client:** add GET /v1/url/resolve to the vendored client + mock ([#1771](https://github.com/adobe/spacecat-shared/issues/1771)) ([e8f22b7](https://github.com/adobe/spacecat-shared/commit/e8f22b75db738a6c10f48796a521d55a8b79f2e3)), closes [#737](https://github.com/adobe/spacecat-shared/issues/737) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.7.0...@adobe/spacecat-shared-project-engine-client-v1.7.1) (2026-07-02)
+
+### Bug Fixes
+
+* **project-engine-client:** retype aio-create-prompt-v2's 200 response (CR14) ([#1765](https://github.com/adobe/spacecat-shared/issues/1765)) ([33315e1](https://github.com/adobe/spacecat-shared/commit/33315e1bcd3d7d789aaec9e1a72c12e69bfa7799)), closes [#1764](https://github.com/adobe/spacecat-shared/issues/1764) [#1764](https://github.com/adobe/spacecat-shared/issues/1764)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.6.0...@adobe/spacecat-shared-project-engine-client-v1.7.0) (2026-07-02)
+
+### Features
+
+* **project-engine-client:** URL-safe tag ids + id-based prompt-write mock routes ([#1764](https://github.com/adobe/spacecat-shared/issues/1764)) ([97b9079](https://github.com/adobe/spacecat-shared/commit/97b907986c6236e0bd0a752763ab4c03757ae3fa)), closes [#1760](https://github.com/adobe/spacecat-shared/issues/1760) [#1760](https://github.com/adobe/spacecat-shared/issues/1760)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.5.0...@adobe/spacecat-shared-project-engine-client-v1.6.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** model 1-level nested AIO tags in the mock ([#1758](https://github.com/adobe/spacecat-shared/issues/1758)) ([a040b45](https://github.com/adobe/spacecat-shared/commit/a040b459b50b0e7fa02d098034f75b2936fb0497)), closes [serenity-docs#21](https://github.com/adobe/serenity-docs/issues/21)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.1...@adobe/spacecat-shared-project-engine-client-v1.5.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** fold serenity sub-workspace fixtures into the baked mock seed ([#1759](https://github.com/adobe/spacecat-shared/issues/1759)) ([1522237](https://github.com/adobe/spacecat-shared/commit/1522237a0f883ae1c0740adcf2774375ab7f22cb))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.4.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.4.0...@adobe/spacecat-shared-project-engine-client-v1.4.1) (2026-06-30)
 
 ### Bug Fixes

@@ -27,9 +27,18 @@
  * is a no-op for an unknown project id (the quota cases publish under never-created ids), so the
  * 202 ack is unaffected — child writes do not assert the parent project exists (see
  * docs/mock-statefulness.md).
+ *
+ * Also publishes the project's DRAFT PROMPTS (live-verified 2026-07-02, serenity-docs#24 §3.1
+ * gate 2 + gate 6): both prompt-create endpoints stamp a fresh prompt `is_new: true`, and
+ * `aio/prompts/by_tags.js`'s default (non-draft) read excludes them. A successful publish flips
+ * every still-draft prompt in this project to `is_new: false`, moving it into that default view —
+ * mirroring the real consumer's existing `createTaggedPrompts` → `publishAffected` →
+ * `publishProject` sequence (`src/support/serenity/handlers/prompts.js` in spacecat-api-service).
+ * Tags have an analogous live draft/publish split (serenity-docs#24 discovery doc) that this mock
+ * does NOT yet model — out of scope here, flagged separately.
  */
 
-/** POST — publish the draft → 202 (empty body); 405 when the workspace has 0 prompt units. */
+/** POST — publish the draft (project + draft prompts) → 202; 405 on an empty-units workspace. */
 export function POST($) {
   const { path, context } = $;
   if (!context.quota.canPublish(path.id)) {
@@ -44,6 +53,11 @@ export function POST($) {
     publish_status: 'live',
     published_at: new Date().toISOString(),
   });
+  // Move every still-draft prompt into the published view (see the header note above).
+  const promptScope = { workspaceId: path.id, projectId: path.project_id };
+  for (const prompt of context.ops.prompts.list(promptScope, (p) => p.is_new === true)) {
+    context.ops.prompts.update(promptScope, prompt.id, { is_new: false });
+  }
   // Empty body (content-length 0) like live. The explicit content type (via emptyAck) bypasses
   // Counterfact's response negotiation, which would otherwise 406 under `Accept: application/json`.
   return context.emptyAck(202);

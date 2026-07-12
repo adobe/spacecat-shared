@@ -133,6 +133,7 @@ describe('Index Exports', () => {
     'toBoolean',
     'filterBySiteScope',
     'isWithinSiteScope',
+    'isPathPatternWithinSiteScope',
     'toggleWWWHostname',
     'toPathname',
     'hasSamePathname',

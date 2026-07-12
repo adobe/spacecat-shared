@@ -33,8 +33,16 @@ import { createWorkspaceMock } from './factories.js';
 // Real-shaped fixtures: the User Manager API types every workspace id as a UUID-like string, so the
 // seeds use fixed UUIDs (not `ws-1`) to mirror production data. Fixed, not generated, so SEED_IDS
 // stays stable for assertions.
-const PARENT_WORKSPACE_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'; // org parent workspace (path {id})
-const CHILD_WORKSPACE_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'; // a brand sub-workspace under it
+// Hierarchy 1 parent/child — the same UUIDs as the Project Engine mock's first hierarchy
+// (PE seeds.js), so PE projects and UM workspaces line up across the two packages. The parent
+// is the URL path `{id}`; the child is a brand sub-workspace under it.
+const PARENT_WORKSPACE_ID = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d'; // == PE parent
+const CHILD_WORKSPACE_ID = 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'; // == PE child
+
+// A second, fully independent hierarchy (present only in `two-hierarchies`). Ids match the Project
+// Engine mock's second hierarchy so PE projects and UM workspaces line up across the two packages.
+const PARENT_WORKSPACE_ID_2 = 'a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d';
+const CHILD_WORKSPACE_ID_2 = 'b3c4d5e6-f7a8-4b9c-8d0e-2f3a4b5c6d7e';
 
 /**
  * @typedef {import('./store.js').Snapshot} Snapshot
@@ -66,6 +74,31 @@ export const PARENT_WITH_CHILD = Object.freeze({
 });
 
 /**
+ * Two coexisting, independent parent→child hierarchies — the User Manager side of the Project
+ * Engine mock's `two-hierarchies` seed (matching workspace ids). For the dual-org case where two
+ * mock-wired orgs each need their own parent workspace + brand sub-workspace (the DB enforces a
+ * unique `semrush_workspace_id`). A strict superset of `parent-with-child`.
+ */
+export const TWO_HIERARCHIES = Object.freeze({
+  [WORKSPACES]: [
+    createWorkspaceMock({ id: PARENT_WORKSPACE_ID, title: 'Parent Org Workspace', parent_id: '' }),
+    createWorkspaceMock({
+      id: CHILD_WORKSPACE_ID,
+      title: 'Seeded Child [b2c3d4e5]',
+      parent_id: PARENT_WORKSPACE_ID,
+      status: 'created',
+    }),
+    createWorkspaceMock({ id: PARENT_WORKSPACE_ID_2, title: 'Second Org Workspace', parent_id: '' }),
+    createWorkspaceMock({
+      id: CHILD_WORKSPACE_ID_2,
+      title: 'Seeded Child [b3c4d5e6]',
+      parent_id: PARENT_WORKSPACE_ID_2,
+      status: 'created',
+    }),
+  ],
+});
+
+/**
  * All seed sets by name, for the runner to select via env/flag. Typed as a string map so a runtime
  * `MOCK_SEED` (an arbitrary string) can index it with a fallback (see {@link Context}).
  * @type {Record<string, import('./store.js').Snapshot>}
@@ -73,6 +106,7 @@ export const PARENT_WITH_CHILD = Object.freeze({
 export const SEEDS = Object.freeze({
   'empty-parent': EMPTY_PARENT,
   'parent-with-child': PARENT_WITH_CHILD,
+  'two-hierarchies': TWO_HIERARCHIES,
 });
 
 /** Default seed loaded when none is specified. */
@@ -82,6 +116,9 @@ export const DEFAULT_SEED = 'parent-with-child';
 export const SEED_IDS = Object.freeze({
   parentWorkspaceId: PARENT_WORKSPACE_ID,
   childWorkspaceId: CHILD_WORKSPACE_ID,
+  // Hierarchy 2 (present only in `two-hierarchies`).
+  secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
+  secondChildWorkspaceId: CHILD_WORKSPACE_ID_2,
 });
 
 /**

@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -86,7 +86,7 @@ method that calls it.
 | `GET /v1/workspaces/{id}/projects/{project_id}` | `getProject` | get (`404` when missing) |
 | `PATCH /v1/workspaces/{id}/projects/{project_id}` | — | partial update |
 | `DELETE /v1/workspaces/{id}/projects/{project_id}` | `deleteProject` | remove → `204` |
-| `POST /v1/workspaces/{id}/projects/{project_id}/publish` | `publishProject` | publish → `202`; **metered** (405 for an empty-units workspace) |
+| `POST /v1/workspaces/{id}/projects/{project_id}/publish` | `publishProject` | publish → `202`; **metered** (405 for an empty-units workspace); also flips every DRAFT prompt in the project (`is_new: true`) to published — see the prompt draft/publish note below |
 
 ### AI models
 
@@ -113,18 +113,29 @@ method that calls it.
 
 | Method + path | Consumer | Behaviour |
 | --- | --- | --- |
-| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | `createTaggedPrompts` | create; body `{ prompts: { [promptText]: [tagName, …] } }` → `201 { ids, existing_count }`; **metered** (all-or-nothing 405 on the prompts allocation) |
-| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | `listPromptsByTags` | list → `{ items, page, total, unassigned }` (empty `tag_ids` lists all; else OR-filter) |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | `createTaggedPrompts` | create; body `{ prompts: { [promptText]: [tagName, …] } }` → `201 { ids, existing_count }`; **metered** (all-or-nothing 405 on the prompts allocation); writes DRAFT (`is_new: true`) — see below; a tag name absent from the root level mints a ROOT tag (the endpoint is name-keyed and cannot address a nested tag) |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | `listPromptsByTags` | list → `{ items, page, total, unassigned }` (empty `tag_ids` lists all; else OR-filter); **draft-gated** (see below). Each `items[].tags[]` entry is the SAME object `GET /aio/tags` returns for that id — a descendant carries `parent_id` + a root-first `path[]`, a root carries neither — derived at read time, so a re-parent or rename never leaves a stale breadcrumb on a prompt |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | `createPromptsByIds` | create by id-based tag refs; body `{ items: [text…], tag_ids: [id…] }` → `201 { page, total, items: [{ id, name }…], existing_count }`; every `tag_id` must resolve or the whole call `500`s and creates nothing (atomic); text-dedupes into `existing_count`; **metered** (all-or-nothing 405); writes DRAFT (`is_new: true`) — see below |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | `deletePromptsByIds` | batch-delete (body `{ ids }`) → `204` |
-| `POST /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `createProjectTags` | create tags (body `{ names }`) → `201` top-level array of `TreeNodeResponse`; **persists** each tag (idempotent on the deterministic `tag-<name>` id) into the per-project `tags` collection |
-| `GET /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `getProjectTags` | list the project's stored tags → `200 { items, page, total }` (`AIOTagsListResponse`); `parent_id` + `search` are `required` query params (omitting either → `400`), a non-empty `search` filters by case-insensitive name substring, `parent_id` is accepted but not used to filter (the mock's tags are a flat collection) |
-| `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `deleteProjectTags` | remove standalone tags by id (body `{ ids }`) → `204`; prompts carrying a removed tag are a separate collection and stay intact (the `prompt_id` query param is `required` by the spec but not load-bearing in the mock) |
+| `PUT /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags` | `updatePromptTags` | batch-update a prompt's tag refs; body `{ items: [{ id, references: [tagId…], replace }…] }` → `204`; `replace:false` MERGES refs onto the existing set, `replace:true` REPLACES it; an unknown prompt `id` is skipped SILENTLY (still `204`) |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `createProjectTags` | create tags (body `{ names, parent_id? }`) → `201` top-level array of `TreeNodeResponse`; **persists** each tag (deterministic opaque `tag-<sha256(parent, name) prefix>` id, see tag-id.js) into the per-project `tags` collection. One `parent_id` applies to the whole batch; absent/empty ⇒ roots. Does NOT dedupe: a name that already exists at the same parent level `500`s (gate 7), or that appears twice within the same batch (intra-batch duplicate) — resolve-before-create is mandatory |
+| `GET /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `getProjectTags` | list the project's stored tags → `200 { items, page, total }` (`AIOTagsListResponse`); `parent_id` + `search` are `required` query params (omitting either → `400`). `parent_id=''` returns the ROOTS, a non-empty `parent_id` returns that tag's direct children. A non-empty `search` filters by case-insensitive name substring **within that one level only, never descending** — so a nested tag is unfindable from the root level, matching live. Each item carries a derived `children_count` and a root-first `path[]` ancestry breadcrumb excluding itself; a ROOT omits `parent_id` and `path` entirely (they are absent keys, not `null`) |
+| `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `deleteProjectTags` | remove standalone tags by id (body `{ ids }`) → `204`; each removed id is also **detached from every prompt carrying it** (gate 4), so a prompt whose only tag was deleted becomes fully unassigned and stops matching `by_tags` on that id. Prompts are never deleted. Deleting a parent does NOT cascade to its children, which are left orphaned (the `prompt_id` query param is `required` by the spec but not load-bearing in the mock) |
+
+> **Prompt draft/publish gating** (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6).
+> Both prompt-create endpoints write `is_new: true`. `by_tags`'s default read (no `?draft=true`)
+> excludes `is_new: true` prompts; `?draft=true` includes everything. `POST .../publish` flips
+> every draft prompt in the project to `is_new: false`, moving it into the default view — mirroring
+> the real consumer's existing create → publish sequence. **Tags have an analogous live draft/publish
+> split that this mock does NOT model** (`GET /aio/tags`'s default read is not gated) — a known,
+> separately-tracked gap, not addressed by this prompt-only fix.
 
 ### Catalogs, CI competitors, init status
 
 | Method + path | Consumer | Behaviour |
 | --- | --- | --- |
 | `GET /v1/languages` | `listLanguages` | language catalog → `{ page, total, items }` |
+| `GET /v1/url/resolve` | brand-URL write path (api-service `resolveUrl`, migration CLI — serenity-docs#25) | canonicalize a raw URL → `{ domain, primary_url, is_valid }` (overlay CR16). `primary_url` strips scheme + `www.` (subdomain + path preserved), `domain` is the registrable apex; garbage input → empty strings + `is_valid:false` at HTTP `200` (never an error). `primary_url` is `required` — a MISSING param `400`s; an EMPTY value falls through to `200 is_valid:false` (Counterfact enforces presence, not the spec's `minLength`). Mock apex = last-two-labels (a multi-part suffix like `example.co.uk` → `co.uk` is a documented simplification vs live's PSL) |
 | `GET /v1/workspaces/{id}/brand-topics` | `getBrandTopics` | top-level array `[{ topic, volume, prompts }]`; `domain` + `country` are `required` query params — omitting either → `400` (enforced by request validation, matching live) |
 | `PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors` | `updateCiCompetitors` | full replace → `{ ci_competitors }` |
 | `GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status` | `getInitStatus` | `{ initialized }`. **Live route is `/v2`** — the vendored swagger's `/v1` path 404s (overlay CR8, verified live across 4 projects). The api-service consumer still calls `/v1` today (a pre-existing bug — it degrades to `initialized: null`). |
@@ -137,18 +148,30 @@ method that calls it.
 > with `live_id`/`draft_id` mirrored and `is_draft: true`/`publish_status: 'draft'` — NOT a flat
 > echo of the request body. `addAiModel` resolves the catalog model's `name` and `icon` onto the
 > response (with an empty `key`), matching the live add path; an unmodelled `model_id` keeps the
-> factory default (GPT-4o).
+> catalog-valid factory default (`search-gpt` / ChatGPT).
 
 ---
 
 ## 4. Seeds
 
-Two named seeds ship in `mock/seeds.js`:
+Three named seeds ship in `mock/seeds.js`:
 
-- **`empty-workspace`** — the seed workspace with no projects.
-- **`workspace-with-data`** (default) — one project under the seed workspace, with an AI model, a
-  prompt, an own-brand benchmark, and a brand URL. Canonical ids are exported as `SEED_IDS`
-  (`workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`, `brandUrlId`).
+- **`empty-workspace`** — the (child) seed workspace with no projects.
+- **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
+  sub-workspace (`SEED_IDS.workspaceId`, the id a correctly-anchored brand resolves to — NOT the org
+  parent), with a catalog-valid AI model (`search-gpt`), the four bare dimension roots (`category`,
+  `intent`, `source`, `type`) carrying the closed vocabularies as children plus a depth-2 category
+  with two depth-3 sub-categories, a prompt dual-tagged with its category and sub-category plus one
+  closed value per dimension, an own-brand benchmark, and a brand URL. The sub-category `human` and
+  the `source` value `human` deliberately share a name and differ only by parent, so the
+  cross-dimension collision case stays exercised. Canonical ids are exported as `SEED_IDS`
+  (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`,
+  `brandUrlId`, the four `*RootTagId`s, `categoryTagId`, `childTagId`, `childCollidingTagId`,
+  `sourceHumanTagId`, `intentCommercialTagId`, `typeBrandedTagId`).
+- **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
+  independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
+  `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct
+  `semrush_workspace_id`.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:
@@ -156,7 +179,7 @@ with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>
 ```jsonc
 {
   "projects:<ws>":            [ { "id": "<pid>", "name": "Acme" } ],
-  "ai_models:<ws>:<pid>":     [ { "id": "<id>", "model": { "id": "<mid>", "key": "gpt-4o", "name": "GPT-4o" }, "prompts_count": 0 } ],
+  "ai_models:<ws>:<pid>":     [ { "id": "<id>", "model": { "id": "eab23d14-df70-463f-8779-3f6a4ba770bc", "key": "search-gpt", "name": "ChatGPT", "icon": "openai" }, "prompts_count": 0 } ],
   "prompts:<ws>:<pid>":       [ { "id": "<id>", "name": "What is Acme?", "is_new": false, "tags": [] } ],
   "benchmarks:<ws>:<pid>":    [ { "id": "<bid>", "main_brand": true, "brand_name": "Acme", "domain": "acme.com", "brand_aliases": [], "rejected_brand_aliases": [], "color": "", "favorite": false, "products_count": 0 } ],
   "brand_urls:<ws>:<pid>:<bid>": [ { "id": "<id>", "url": "https://acme.com/about", "type": "own" } ],
@@ -245,7 +268,7 @@ const snapshot = buildSeed({
   projects: [{
     id: projectId,
     name: 'Acme',
-    aiModels: [createProjectAiModelMock({ model: createAiModelMock({ name: 'GPT-4o' }) })],
+    aiModels: [createProjectAiModelMock({ model: createAiModelMock() })], // default = catalog search-gpt
     prompts: [createPromptMock({ name: 'What is Acme?' })],
   }],
   quota: { projects: 3, prompts: 1500 }, // omit for unlimited

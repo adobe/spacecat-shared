@@ -17,3 +17,10 @@ export {
   FixEntity,
   FixEntityCollection,
 };
+
+// Canonical FixEntity status transition table + predicate (SITES-47091).
+export {
+  FIX_ENTITY_TRANSITIONS,
+  FIX_ENTITY_CREATE,
+  isAllowedFixTransition,
+} from './fix-entity.transitions.js';

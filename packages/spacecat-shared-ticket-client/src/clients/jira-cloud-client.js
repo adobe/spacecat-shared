@@ -275,17 +275,25 @@ export default class JiraCloudClient extends BaseTicketClient {
   }
 
   /**
-   * Returns all non-subtask issue types for a given project.
+   * Returns the creatable non-subtask issue types for a given project.
    *
-   * Uses GET /project/{projectId}/hierarchy (REST v3) which is scoped to the
-   * project and works with read:jira-work scope. Hierarchy levels:
-   *   level -1 → Subtask (excluded)
-   *   level  0 → standard types (Story, Bug, Task, …)
-   *   level  1 → Epic
-   * All level >= 0 types are returned; the caller may further filter by level
-   * if Epic exclusion is needed.
+   * Uses GET /issue/createmeta/{projectIdOrKey}/issuetypes (REST v3). Unlike the
+   * /project/{id}/hierarchy endpoint (which Atlassian documents only for
+   * team-managed / next-gen projects), createmeta carries no project-style
+   * restriction, so it works uniformly across team-managed and company-managed
+   * projects. It is permission-filtered: it returns the issue types the calling
+   * user has the "Create issues" project permission for, so per-user differences
+   * are handled by Jira rather than by this client.
+   * (OAuth scope: read:jira-work.)
    *
-   * @param {string} projectId - Jira project numeric ID, e.g. "10000"
+   * The response is paginated ({ issueTypes, startAt, maxResults, total }) with
+   * no isLast flag, so we page until an empty batch or startAt >= total.
+   *
+   * Each issue type carries a documented `subtask` boolean. Subtask types
+   * (subtask: true) are excluded; all other types (standard + Epic) are
+   * returned as { id, name }.
+   *
+   * @param {string} projectId - Jira project numeric ID (e.g. "10000") or key (e.g. "ASO")
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
   async listIssueTypes(projectId) {
@@ -293,21 +301,43 @@ export default class JiraCloudClient extends BaseTicketClient {
       throw new Error('projectId is required to list issue types');
     }
 
-    const response = await this.#withAuthRetry(
-      (authHeaders) => this.httpClient.fetch(
-        `${this.baseUrl}/project/${encodeURIComponent(projectId)}/hierarchy`,
-        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
-      ),
-    );
-    await this.#requireOk(response, 'listIssueTypes');
-    const data = await response.json();
+    const pageSize = 50;
+    const maxPages = 100;
+    const issueTypes = [];
+    let startAt = 0;
 
-    return (data.hierarchy ?? [])
-      .filter((level) => level.level >= 0)
-      .flatMap((level) => (level.issueTypes ?? []).map(({ id, name }) => ({
-        id: String(id),
-        name,
-      })));
+    for (let page = 0; page < maxPages; page += 1) {
+      const url = `${this.baseUrl}/issue/createmeta/${encodeURIComponent(projectId)}/issuetypes`
+        + `?startAt=${startAt}&maxResults=${pageSize}`;
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.#withAuthRetry(
+        (authHeaders) => this.httpClient.fetch(
+          url,
+          { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
+        ),
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#requireOk(response, 'listIssueTypes');
+      // eslint-disable-next-line no-await-in-loop
+      const data = await response.json();
+
+      const batch = data.issueTypes ?? [];
+      for (const { id, name, subtask } of batch) {
+        // `subtask` (boolean) is the documented field on createmeta issue types;
+        // hierarchyLevel is not part of this response schema. Keep everything
+        // that is not a subtask (standard types + Epic).
+        if (!subtask) {
+          issueTypes.push({ id: String(id), name });
+        }
+      }
+
+      startAt += batch.length;
+      if (batch.length === 0 || startAt >= (data.total ?? 0)) {
+        break;
+      }
+    }
+
+    return issueTypes;
   }
 
   /**

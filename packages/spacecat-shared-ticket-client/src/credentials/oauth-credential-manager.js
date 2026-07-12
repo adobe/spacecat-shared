@@ -35,7 +35,7 @@ const CONCURRENT_REFRESH_WAIT_MS = 200;
  * each call returns a valid access token + a NEW refresh token. After the
  * 10-minute window, the original refresh token is invalidated and only the
  * latest refresh token remains valid (for 90 days of inactivity).
- * (Ref: https://developer.atlassian.com/cloud/jira/software/oauth-2-3lo-apps/#faq-rrt-config)
+ * (Ref: https://developer.atlassian.com/cloud/jira/platform/oauth-2-3lo-apps/)
  *
  * Verified empirically: the same refresh token was exchanged 5 times within
  * 10 minutes — all calls returned 200. After 10 minutes, re-using the ORIGINAL
@@ -52,8 +52,11 @@ const CONCURRENT_REFRESH_WAIT_MS = 200;
  *   Lambda B: refresh(RT) → 200 → { AT_B, RT_B } → writes RT_B to SM (overwrites RT_A)
  *
  * Both succeed (10-minute reuse). Last writer wins in SM — RT_A is lost but
- * this is harmless: AT_A is in Lambda A's memory (valid 1 hour), and RT_B in
- * SM is valid for 90 days. No token is "consumed and lost" — both calls succeed.
+ * this is harmless: AT_A is usable in Lambda A's memory for the remainder of the
+ * 10-minute leeway window (Atlassian may revoke the companion access token earlier
+ * than its exp once RT_A is superseded outside that window), and RT_B in SM is
+ * valid for 90 days. No token is "consumed and lost" — both calls succeed, and a
+ * real 401 from Jira is handled reactively via forceRefreshAuthHeaders.
  *
  * ## Grant failure scenarios
  *

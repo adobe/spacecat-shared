@@ -1309,16 +1309,22 @@ describe('JiraCloudClient', () => {
   });
 
   describe('listIssueTypes', () => {
-    const hierarchyResponse = {
-      hierarchy: [
-        { level: 0, issueTypes: [{ id: 10001, name: 'Story' }, { id: 10002, name: 'Bug' }] },
-        { level: 1, issueTypes: [{ id: 10003, name: 'Epic' }] },
-        { level: -1, issueTypes: [{ id: 10004, name: 'Subtask' }] },
+    // createmeta/issuetypes response shape: flat, paginated, subtask boolean per type.
+    // Works uniformly for team-managed and company-managed projects (no style gate).
+    const createMetaResponse = {
+      startAt: 0,
+      maxResults: 50,
+      total: 4,
+      issueTypes: [
+        { id: 10001, name: 'Story', subtask: false },
+        { id: 10002, name: 'Bug', subtask: false },
+        { id: 10003, name: 'Epic', subtask: false },
+        { id: 10004, name: 'Subtask', subtask: true },
       ],
     };
 
-    it('returns non-subtask issue types from hierarchy (level >= 0)', async () => {
-      const httpClient = makeHttpClient(hierarchyResponse);
+    it('returns non-subtask issue types (subtask: false)', async () => {
+      const httpClient = makeHttpClient(createMetaResponse);
       const client = new JiraCloudClient(
         VALID_CONFIG,
         makeCredentialManager(),
@@ -1331,9 +1337,23 @@ describe('JiraCloudClient', () => {
         { id: '10002', name: 'Bug' },
         { id: '10003', name: 'Epic' },
       ]);
+      // Hits the createmeta endpoint (not the team-managed-only hierarchy endpoint)
+      expect(httpClient.fetch.firstCall.args[0]).to.include('/issue/createmeta/10000/issuetypes');
     });
 
-    it('returns empty array when hierarchy is absent', async () => {
+    it('accepts a project key (not just numeric id)', async () => {
+      const httpClient = makeHttpClient(createMetaResponse);
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        httpClient,
+        makeLog(),
+      );
+      await client.listIssueTypes('ASO');
+      expect(httpClient.fetch.firstCall.args[0]).to.include('/issue/createmeta/ASO/issuetypes');
+    });
+
+    it('returns empty array when issueTypes is absent', async () => {
       const httpClient = makeHttpClient({});
       const client = new JiraCloudClient(
         VALID_CONFIG,
@@ -1345,8 +1365,53 @@ describe('JiraCloudClient', () => {
       expect(issueTypes).to.deep.equal([]);
     });
 
-    it('handles hierarchy level with missing issueTypes array', async () => {
-      const httpClient = makeHttpClient({ hierarchy: [{ level: 0 }] });
+    it('paginates until startAt >= total', async () => {
+      const fetchStub = sinon.stub();
+      fetchStub.onFirstCall().resolves({
+        ok: true,
+        status: 200,
+        json: sinon.stub().resolves({
+          startAt: 0,
+          maxResults: 2,
+          total: 3,
+          issueTypes: [
+            { id: 1, name: 'Story', subtask: false },
+            { id: 2, name: 'Bug', subtask: false },
+          ],
+        }),
+      });
+      fetchStub.onSecondCall().resolves({
+        ok: true,
+        status: 200,
+        json: sinon.stub().resolves({
+          startAt: 2,
+          maxResults: 2,
+          total: 3,
+          issueTypes: [{ id: 3, name: 'Epic', subtask: false }],
+        }),
+      });
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        { fetch: fetchStub },
+        makeLog(),
+      );
+      const issueTypes = await client.listIssueTypes('10000');
+      expect(issueTypes).to.deep.equal([
+        { id: '1', name: 'Story' },
+        { id: '2', name: 'Bug' },
+        { id: '3', name: 'Epic' },
+      ]);
+      expect(fetchStub.callCount).to.equal(2);
+      expect(fetchStub.firstCall.args[0]).to.include('startAt=0');
+      expect(fetchStub.secondCall.args[0]).to.include('startAt=2');
+    });
+
+    it('stops when a page returns an empty batch (guards against total drift)', async () => {
+      // total claims more items than are actually returned — must not loop forever.
+      const httpClient = makeHttpClient({
+        startAt: 0, maxResults: 50, total: 10, issueTypes: [],
+      });
       const client = new JiraCloudClient(
         VALID_CONFIG,
         makeCredentialManager(),
@@ -1355,6 +1420,7 @@ describe('JiraCloudClient', () => {
       );
       const issueTypes = await client.listIssueTypes('10000');
       expect(issueTypes).to.deep.equal([]);
+      expect(httpClient.fetch.callCount).to.equal(1);
     });
 
     it('throws when projectId is missing', async () => {
@@ -1679,7 +1745,7 @@ describe('JiraCloudClient', () => {
         ok: true,
         status: 200,
         json: sinon.stub().resolves({
-          hierarchy: [{ level: 0, issueTypes: [{ id: 10, name: 'Bug' }] }],
+          issueTypes: [{ id: 10, name: 'Bug', subtask: false }],
         }),
       });
       const credMgr = makeRetryCredentialManager();
@@ -1772,7 +1838,7 @@ describe('JiraCloudClient', () => {
         ok: true,
         status: 200,
         json: sinon.stub().resolves({
-          hierarchy: [{ level: 0, issueTypes: [{ id: 10, name: 'Bug' }] }],
+          issueTypes: [{ id: 10, name: 'Bug', subtask: false }],
         }),
       });
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());

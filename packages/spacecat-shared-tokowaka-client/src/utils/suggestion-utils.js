@@ -96,9 +96,17 @@ export function filterEligibleSuggestions(suggestions, mapper) {
 export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
 
 /**
- * Batch-saves suggestions: saveMany when <= 1700, otherwise Promise.allSettled unless
- * queueContext is given, in which case it enqueues a SUGGESTION_BULK_UPDATE_TYPE job
- * instead (the worker fetches by id and applies queueContext.set/unset itself).
+ * Batch-saves suggestions using the optimal strategy based on count.
+ *
+ * - <= 1700: sequential chunked upsert via saveMany (chunkSize 25).
+ *   ~4s for 1700 suggestions from the DB layer, but ~11s observed end-to-end
+ *   from the API due to serialization, network, and Lambda overhead.
+ * - > 1700 with no queueContext: parallel individual .save() via Promise.allSettled to
+ *   avoid sequential chunk bottleneck at scale.
+ * - > 1700 with queueContext: enqueues a SUGGESTION_BULK_UPDATE_TYPE job to the import
+ *   worker instead of saving here (the worker fetches by id and applies
+ *   queueContext.set/unset itself).
+ *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
  * @param {Object} [queueContext] - sqs, queueUrl, siteId, opportunityId, set/unset,
@@ -172,7 +180,10 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
 }
 
 /**
- * Clears coverage/deployment markers from covered suggestions and saves them.
+ * Clears coverage and deployment markers from suggestions that were covered by a pattern.
+ * Only strips the fields relevant to the rollback type so independent coverage layers
+ * are preserved. For example, rolling back domain-wide should only clear
+ * coveredByDomainWide — not coveredByPattern (which belongs to a separate path deploy).
  * @param {Object} dataAccess - Data access layer
  * @param {Array} covered - Covered suggestion entities
  * @param {string} actorFallback - Fallback updatedBy string

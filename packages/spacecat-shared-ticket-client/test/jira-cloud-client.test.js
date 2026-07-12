@@ -79,16 +79,13 @@ describe('JiraCloudClient', () => {
       )).to.not.throw();
     });
 
-    it('throws if siteUrl is not https://*.atlassian.net', () => {
+    it('throws if siteUrl is not a valid https URL', () => {
       const invalidUrls = [
-        'http://example.atlassian.net',
-        'https://example.atlassian.com',
-        'https://example.com',
+        'http://example.atlassian.net', // non-https scheme
+        // eslint-disable-next-line no-script-url
+        'javascript:alert(1)', // unsafe scheme
         'not-a-url',
         undefined,
-        // hostname spoofing attempts that pass naive string checks
-        'https://evil.com/https://foo.atlassian.net',
-        'https://foo.atlassian.net.evil.com',
       ];
       for (const siteUrl of invalidUrls) {
         expect(() => new JiraCloudClient(
@@ -97,6 +94,25 @@ describe('JiraCloudClient', () => {
           makeHttpClient({}),
           makeLog(),
         )).to.throw('Invalid siteUrl');
+      }
+    });
+
+    it('accepts custom (non-atlassian.net) https domains for enterprise sites', () => {
+      // Premium/Enterprise sites may use a custom domain (e.g. go.jira.acme.com).
+      // siteUrl is display-only (browse link); API traffic routes through the
+      // fixed api.atlassian.com gateway, so the hostname is not restricted.
+      const validUrls = [
+        'https://example.atlassian.net',
+        'https://go.jira.acme.com',
+        'https://example.com',
+      ];
+      for (const siteUrl of validUrls) {
+        expect(() => new JiraCloudClient(
+          { cloudId: VALID_CLOUD_ID, siteUrl },
+          makeCredentialManager(),
+          makeHttpClient({}),
+          makeLog(),
+        )).to.not.throw();
       }
     });
 
@@ -130,7 +146,7 @@ describe('JiraCloudClient', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      await expect(client.createTicket({ projectKey: 'ASO' }))
+      await expect(client.createTicket({ projectKey: 'ASO', issueType: 'Task' }))
         .to.be.rejectedWith('summary is required');
     });
 
@@ -141,8 +157,30 @@ describe('JiraCloudClient', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      await expect(client.createTicket({ projectKey: 'ASO', summary: '   ' }))
+      await expect(client.createTicket({ projectKey: 'ASO', issueType: 'Task', summary: '   ' }))
         .to.be.rejectedWith('summary is required');
+    });
+
+    it('throws when issueType is missing', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeHttpClient({}),
+        makeLog(),
+      );
+      await expect(client.createTicket({ projectKey: 'ASO', summary: 'x' }))
+        .to.be.rejectedWith('issueType is required');
+    });
+
+    it('throws when issueType is blank', async () => {
+      const client = new JiraCloudClient(
+        VALID_CONFIG,
+        makeCredentialManager(),
+        makeHttpClient({}),
+        makeLog(),
+      );
+      await expect(client.createTicket({ projectKey: 'ASO', issueType: '   ', summary: 'x' }))
+        .to.be.rejectedWith('issueType is required');
     });
 
     it('throws when a label contains whitespace', async () => {
@@ -154,6 +192,7 @@ describe('JiraCloudClient', () => {
       );
       await expect(client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'test',
         labels: ['valid-label', 'has space'],
       })).to.be.rejectedWith("Label must not contain whitespace, got: 'has space'");
@@ -173,6 +212,7 @@ describe('JiraCloudClient', () => {
 
       const result = await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'Test ticket',
         description: 'First paragraph\n\nSecond paragraph',
         labels: ['AEM-Sites-Optimizer'],
@@ -201,7 +241,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      const result = await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      const result = await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       expect(result.ticketStatus).to.be.null;
     });
 
@@ -219,7 +261,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      const result = await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      const result = await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       // Status fetch failure must not throw — ticket was already created
       expect(result.ticketStatus).to.be.null;
       expect(result.ticketKey).to.equal('ASO-1');
@@ -236,7 +280,9 @@ describe('JiraCloudClient', () => {
       );
 
       const longSummary = 'A'.repeat(300);
-      await client.createTicket({ projectKey: 'ASO', summary: longSummary, description: '' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: longSummary, description: '',
+      });
 
       const callBody = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       expect(callBody.fields.summary).to.have.length(255);
@@ -254,7 +300,9 @@ describe('JiraCloudClient', () => {
       // 254 'A' chars + 1 emoji = 255 code points but 256 UTF-16 chars.
       // slice(0,255) on the raw string would cut the emoji's surrogate pair.
       const emojiSummary = `${'A'.repeat(254)}𝌆rest`;
-      await client.createTicket({ projectKey: 'ASO', summary: emojiSummary, description: '' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: emojiSummary, description: '',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       // Must be exactly 255 code points and end with the emoji (not a broken surrogate)
       const codePoints = [...body.fields.summary];
@@ -272,7 +320,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
 
-      await client.createTicket({ projectKey: 'ASO', summary: 'test', description: '' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'test', description: '',
+      });
 
       const calledUrl = httpClient.fetch.firstCall.args[0];
       expect(calledUrl).to.include(`https://api.atlassian.com/ex/jira/${VALID_CLOUD_ID}`);
@@ -289,7 +339,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
 
-      await expect(client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' }))
+      await expect(client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      }))
         .to.be.rejectedWith('Unexpected ticketKey format returned from Jira');
     });
 
@@ -301,7 +353,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      const result = await client.createTicket({ projectKey: 'ASO', summary: 'test', description: null });
+      const result = await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'test', description: null,
+      });
       expect(result.ticketKey).to.equal('ASO-1');
     });
 
@@ -313,7 +367,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       expect(body.fields).to.not.have.property('description');
     });
@@ -328,6 +384,7 @@ describe('JiraCloudClient', () => {
       );
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '',
         priority: 'High',
@@ -346,6 +403,7 @@ describe('JiraCloudClient', () => {
       );
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '',
         dueDate: '2026-12-31',
@@ -364,6 +422,7 @@ describe('JiraCloudClient', () => {
       );
       await expect(client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '',
         dueDate: '31-12-2026',
@@ -380,6 +439,7 @@ describe('JiraCloudClient', () => {
       );
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '',
         components: ['Frontend', 'API'],
@@ -398,6 +458,7 @@ describe('JiraCloudClient', () => {
       );
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '',
         parent: 'ASO-42',
@@ -415,6 +476,7 @@ describe('JiraCloudClient', () => {
       );
       await expect(client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         parent: 'not-a-valid-key',
       })).to.be.rejectedWith('Invalid parent format');
@@ -429,6 +491,7 @@ describe('JiraCloudClient', () => {
       );
       await expect(client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         dueDate: '2026-02-31',
       })).to.be.rejectedWith('Invalid dueDate: not a real calendar date');
@@ -442,7 +505,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       expect(body.fields).to.not.have.property('priority');
       expect(body.fields).to.not.have.property('duedate');
@@ -463,7 +528,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      const result = await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      const result = await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       expect(result.ticketStatus).to.be.null;
       expect(result.ticketKey).to.equal('ASO-1');
     });
@@ -477,7 +544,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Markdown hard break: two trailing spaces + newline
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'line1  \nline2' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'line1  \nline2',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       expect(nodes.find((n) => n.type === 'hardBreak')).to.exist;
@@ -495,6 +564,7 @@ describe('JiraCloudClient', () => {
       const url = 'https://www.adobe.com/learn/firefly';
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: `URL: ${url}`,
       });
@@ -517,7 +587,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
 
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'No links here' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'No links here',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
 
@@ -536,7 +608,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       const description = '```html\n<div class="foo">bar</div>\n```';
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('codeBlock');
@@ -553,7 +627,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       const description = '```\nsome code\n```';
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('codeBlock');
@@ -570,7 +646,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       const description = '- item one\n- item two\n- item three';
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('bulletList');
@@ -589,7 +667,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '## Accessibility Issues' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '## Accessibility Issues',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('heading');
@@ -605,7 +685,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '1. First\n2. Second\n3. Third' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '1. First\n2. Second\n3. Third',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('orderedList');
@@ -623,7 +705,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '> Important note here' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '> Important note here',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('blockquote');
@@ -639,7 +723,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'Before\n\n---\n\nAfter' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'Before\n\n---\n\nAfter',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content;
       expect(nodes[1].type).to.equal('rule');
@@ -654,7 +740,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       const description = '| Col A | Col B |\n|-------|-------|\n| data1 | data2 |';
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const table = body.fields.description.content[0];
       expect(table.type).to.equal('table');
@@ -673,7 +761,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'This is **bold** text' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'This is **bold** text',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const boldNode = nodes.find((n) => n.marks?.some((m) => m.type === 'strong'));
@@ -689,7 +779,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'This is *italic* text' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'This is *italic* text',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const emNode = nodes.find((n) => n.marks?.some((m) => m.type === 'em'));
@@ -705,7 +797,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'Use `aria-label` attribute' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'Use `aria-label` attribute',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const codeNode = nodes.find((n) => n.marks?.some((m) => m.type === 'code'));
@@ -721,7 +815,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'Visit [Adobe](https://adobe.com)' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'Visit [Adobe](https://adobe.com)',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const linkNode = nodes.find((n) => n.marks?.some((m) => m.type === 'link'));
@@ -738,7 +834,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[no href]()' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '[no href]()',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
@@ -750,7 +848,9 @@ describe('JiraCloudClient', () => {
       // eslint-disable-next-line max-len
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // NOSONAR
       // eslint-disable-next-line no-script-url
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[click me](javascript:alert(1))' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '[click me](javascript:alert(1))',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
@@ -761,7 +861,9 @@ describe('JiraCloudClient', () => {
       const httpClient = makeHttpClient({ id: '1', key: 'ASO-1' });
       // eslint-disable-next-line max-len
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // NOSONAR
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[click me](data:text/html,xss)' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '[click me](data:text/html,xss)',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
@@ -773,7 +875,9 @@ describe('JiraCloudClient', () => {
       // eslint-disable-next-line max-len
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // NOSONAR
       // eslint-disable-next-line no-script-url
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[click me](JaVaScRiPt:alert(1))' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '[click me](JaVaScRiPt:alert(1))',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       expect(nodes.some((n) => n.marks?.some((m) => m.type === 'link'))).to.be.false;
@@ -788,7 +892,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'This is ~~removed~~ text' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'This is ~~removed~~ text',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const strikeNode = nodes.find((n) => n.marks?.some((m) => m.type === 'strike'));
@@ -804,7 +910,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '***bold italic***' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '***bold italic***',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const markedNode = nodes.find((n) => n.marks?.length >= 2);
@@ -822,7 +930,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '[`code`](https://example.com)' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '[`code`](https://example.com)',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const codeLink = nodes.find((n) => n.marks?.some((m) => m.type === 'code') && n.marks?.some((m) => m.type === 'link'));
@@ -838,7 +948,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Raw HTML produces an 'html' token type which hits the default branch in tokensToAdf
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '<div>custom html</div>' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '<div>custom html</div>',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content;
       // HTML token hits default branch — should produce a paragraph with raw text
@@ -854,7 +966,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // List items produce text tokens with nested .tokens containing inline marks
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '- foo **bar** baz' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '- foo **bar** baz',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const listItem = body.fields.description.content[0].content[0];
       const paragraph = listItem.content[0];
@@ -872,7 +986,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Image token hits the default branch in inlineToAdf
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'text with ![alt text](img.png) inside' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'text with ![alt text](img.png) inside',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       // Image token has text="alt text" which is rendered as plain text via default branch
@@ -888,7 +1004,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: 'Not \\*bold\\*' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: 'Not \\*bold\\*',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       const boldNode = nodes.find((n) => n.marks?.some((m) => m.type === 'strong'));
@@ -903,7 +1021,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '**bold \\* star**' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '**bold \\* star**',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       // Escape token inside bold should have strong mark
@@ -919,7 +1039,9 @@ describe('JiraCloudClient', () => {
         httpClient,
         makeLog(),
       );
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '**text ![alt](img.png) more**' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '**text ![alt](img.png) more**',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const nodes = body.fields.description.content[0].content;
       // Image alt text inside bold should get strong mark via default branch
@@ -936,7 +1058,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Whitespace-only is trimmed to empty, returns null (omits field)
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '   ' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '   ',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       expect(body.fields).to.not.have.property('description');
     });
@@ -950,7 +1074,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Single word list items may produce text tokens without .tokens
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '- alpha\n- beta' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '- alpha\n- beta',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const list = body.fields.description.content[0];
       expect(list.type).to.equal('bulletList');
@@ -967,7 +1093,9 @@ describe('JiraCloudClient', () => {
       );
       // Markdown table with an empty cell
       const description = '| A | B |\n|---|---|\n| data |  |';
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const dataRow = body.fields.description.content[0].content[1];
       const emptyCell = dataRow.content[1];
@@ -998,7 +1126,9 @@ describe('JiraCloudClient', () => {
         '<img src="hero.jpg">',
         '```',
       ].join('\n');
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description,
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const types = body.fields.description.content.map((n) => n.type);
       expect(types).to.include('heading');
@@ -1014,7 +1144,9 @@ describe('JiraCloudClient', () => {
 
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, log);
 
-      await expect(client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' }))
+      await expect(client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      }))
         .to.be.rejectedWith('Jira API error: 404');
 
       // Must not log response body (may contain PII/tokens)
@@ -1027,7 +1159,9 @@ describe('JiraCloudClient', () => {
       // 3000 nested blockquotes — would blow the call stack without depth limit
       const deepQuote = `${'> '.repeat(3000)}deep`;
       await expect(
-        client.createTicket({ projectKey: 'ASO', summary: 'x', description: deepQuote }),
+        client.createTicket({
+          projectKey: 'ASO', issueType: 'Task', summary: 'x', description: deepQuote,
+        }),
       ).to.not.be.rejected;
       // Must produce valid ADF (not null, has content)
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
@@ -1040,7 +1174,9 @@ describe('JiraCloudClient', () => {
       const client = new JiraCloudClient(VALID_CONFIG, makeCredentialManager(), httpClient, makeLog()); // eslint-disable-line max-len
       const massive = 'word '.repeat(240000); // ~1.2 MB
       await expect(
-        client.createTicket({ projectKey: 'ASO', summary: 'x', description: massive }),
+        client.createTicket({
+          projectKey: 'ASO', issueType: 'Task', summary: 'x', description: massive,
+        }),
       ).to.not.be.rejected;
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       expect(body.fields.description).to.exist;
@@ -1055,7 +1191,9 @@ describe('JiraCloudClient', () => {
         makeLog(),
       );
       // Empty fenced code block — token.text would be ''
-      await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '```\n```' });
+      await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '```\n```',
+      });
       const body = JSON.parse(httpClient.fetch.firstCall.args[1].body);
       const node = body.fields.description.content[0];
       expect(node.type).to.equal('codeBlock');
@@ -1073,6 +1211,7 @@ describe('JiraCloudClient', () => {
       );
       await client.createTicket({
         projectKey: 'ASO',
+        issueType: 'Task',
         summary: 'x',
         description: '<script>alert("xss")</script>',
       });
@@ -1594,7 +1733,9 @@ describe('JiraCloudClient', () => {
       const credMgr = makeRetryCredentialManager();
       const client = new JiraCloudClient(VALID_CONFIG, credMgr, { fetch: fetchStub }, makeLog());
 
-      const result = await client.createTicket({ projectKey: 'ASO', summary: 'x', description: '' });
+      const result = await client.createTicket({
+        projectKey: 'ASO', issueType: 'Task', summary: 'x', description: '',
+      });
       expect(result.ticketKey).to.equal('ASO-1');
       // 3 getAuthHeaders calls: (1) before POST, (2) re-read SM after 401, (3) #fetchTicketStatus
       expect(credMgr.getAuthHeaders.callCount).to.equal(3);
@@ -1692,7 +1833,7 @@ describe('JiraCloudClient', () => {
       const err = await client.listIssueTypes('10000').catch((e) => e);
       expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
       expect(err.status).to.equal(401);
-      expect(err.message).to.include('no refreshed token is available in SM');
+      expect(err.message).to.include('Jira rejected the access token');
       expect(credMgr.getAuthHeaders.callCount).to.equal(2);
       expect(fetchStub.callCount).to.equal(1);
     });

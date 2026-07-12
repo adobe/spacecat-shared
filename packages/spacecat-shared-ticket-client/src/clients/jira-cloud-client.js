@@ -127,7 +127,10 @@ function sanitizeFilename(filename) {
  *
  * SSRF protection: all API calls route through the fixed Atlassian gateway
  * https://api.atlassian.com/ex/jira/{cloudId}/... — cloudId is validated as UUID.
- * instance_url / siteUrl are display-only and never used as request targets.
+ * instance_url / siteUrl are display-only (used to build the browse link) and never
+ * used as request targets. siteUrl is validated as a parseable https URL but its
+ * hostname is intentionally unrestricted: Premium/Enterprise sites may use a custom
+ * domain (e.g. go.jira.acme.com) rather than *.atlassian.net.
  *
  * Content sanitization: suggestion-derived text is placed as plain-text leaf nodes only.
  * Summary is truncated to 255 chars (Jira hard limit).
@@ -140,14 +143,19 @@ export default class JiraCloudClient extends BaseTicketClient {
       throw new Error(`Invalid cloudId format: ${config.cloudId}`);
     }
 
+    // siteUrl is display-only — used to build the browse link (never an API target;
+    // API calls route through the fixed api.atlassian.com gateway). Enterprise/Premium
+    // sites may use a custom domain (e.g. go.jira.acme.com) instead of *.atlassian.net,
+    // so the hostname is not restricted here. Still require a parseable https URL to keep
+    // http:/javascript: and other unsafe schemes out of the returned ticketUrl.
     let siteUrlParsed;
     try {
       siteUrlParsed = new URL(config.siteUrl);
     } catch {
-      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+      throw new Error(`Invalid siteUrl: must be a valid https URL, got: ${config.siteUrl}`);
     }
-    if (siteUrlParsed.protocol !== 'https:' || !siteUrlParsed.hostname.endsWith('.atlassian.net')) {
-      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+    if (siteUrlParsed.protocol !== 'https:') {
+      throw new Error(`Invalid siteUrl: must be a valid https URL, got: ${config.siteUrl}`);
     }
 
     this.httpClient = httpClient;
@@ -159,7 +167,9 @@ export default class JiraCloudClient extends BaseTicketClient {
    *
    * @param {object} ticketData
    * @param {string} ticketData.projectKey - Jira project key (e.g. "ASO")
-   * @param {string} [ticketData.issueType='Task'] - Jira issue type name
+   * @param {string} ticketData.issueType - Jira issue type name (e.g. "Task", "Bug").
+   *   Required — Jira has no server-side default and not every project defines "Task".
+   *   Resolve a valid type for the project via listIssueTypes() before calling.
    * @param {string} ticketData.summary - Issue summary (truncated to 255 chars)
    * @param {string} [ticketData.description] - Plain-text description (no ADF markup).
    *   Converted to ADF internally as plain-text leaf nodes only — callers MUST NOT
@@ -386,7 +396,7 @@ export default class JiraCloudClient extends BaseTicketClient {
         // SM still holds the same revoked token — caller must trigger a refresh
         // via ensure-tokens (auth-service).
         throw Object.assign(
-          new Error('Jira rejected the access token and no refreshed token is available in SM'),
+          new Error('Jira rejected the access token'),
           { code: 'TOKEN_REFRESH_REQUIRED', status: 401 },
         );
       }
@@ -446,10 +456,18 @@ export default class JiraCloudClient extends BaseTicketClient {
    */
   // eslint-disable-next-line class-methods-use-this
   #validateTicketInput({
-    projectKey, summary, labels = [], dueDate, parent,
+    projectKey, issueType, summary, labels = [], dueDate, parent,
   }) {
     if (!projectKey || typeof projectKey !== 'string') {
       throw new Error('projectKey is required to create a ticket');
+    }
+
+    // issueType is required — Jira create needs fields.issuetype and there is no
+    // server-side default. Not every project has a "Task" type (team-managed / custom
+    // schemes), so the caller must resolve a valid type via listIssueTypes() first
+    // rather than relying on a hard-coded fallback that could 400 at create time.
+    if (!issueType || typeof issueType !== 'string' || !issueType.trim()) {
+      throw new Error('issueType is required to create a ticket');
     }
 
     if (!summary || !String(summary).trim()) {
@@ -495,7 +513,7 @@ export default class JiraCloudClient extends BaseTicketClient {
   // eslint-disable-next-line class-methods-use-this
   #buildTicketBody({
     projectKey,
-    issueType = 'Task',
+    issueType,
     summary,
     description,
     labels = [],

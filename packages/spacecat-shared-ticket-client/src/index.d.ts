@@ -19,7 +19,7 @@ export interface TicketResult {
 
 export interface TicketData {
   projectKey: string;
-  issueType?: string;
+  issueType: string;
   summary: string;
   description?: string;
   labels?: string[];

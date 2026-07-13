@@ -363,8 +363,13 @@ describe('PlgOnboarding Schema', () => {
         'entitlementFailed',
         'orgResolutionFailed',
         'preOnboarded',
+        'nonProdCheckBypassed',
       ];
       expect(keys).to.have.members(expected);
+    });
+
+    it('should define nonProdCheckBypassed as a boolean step', () => {
+      expect(stepsAttr.properties.nonProdCheckBypassed).to.deep.equal({ type: 'boolean' });
     });
 
     it('should not contain the removed siteOrgReassignmentFailed key', () => {

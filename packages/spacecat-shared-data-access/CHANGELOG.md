@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-data-access-v4.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.6.0...@adobe/spacecat-shared-data-access-v4.7.0) (2026-07-13)
+
+### Features
+
+* **data-access:** add TicketSuggestion bulk accessors allBySuggestionIds and allByTicketIds (SITES-44690) ([#1804](https://github.com/adobe/spacecat-shared/issues/1804)) ([99387f6](https://github.com/adobe/spacecat-shared/commit/99387f64423c822c0f377014d245549bed68cd40))
+
+## [@adobe/spacecat-shared-data-access-v4.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.5.0...@adobe/spacecat-shared-data-access-v4.6.0) (2026-07-12)
+
+### Features
+
+* added non prod domain in plg onboarding steps ([#1750](https://github.com/adobe/spacecat-shared/issues/1750)) ([3f56508](https://github.com/adobe/spacecat-shared/commit/3f56508a47ffd4b92584c424fcb7876bddd48838))
+
+## [@adobe/spacecat-shared-data-access-v4.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.4.0...@adobe/spacecat-shared-data-access-v4.5.0) (2026-07-10)
+
+### Features
+
+* **data-access:** generalize deriveSuggestionStatus bubble-up + classifyStatus (SITES-47285) ([#1797](https://github.com/adobe/spacecat-shared/issues/1797)) ([732f647](https://github.com/adobe/spacecat-shared/commit/732f647724d1922f70d32b42fedd46824b0c1bde))
+
+## [@adobe/spacecat-shared-data-access-v4.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.1...@adobe/spacecat-shared-data-access-v4.4.0) (2026-07-09)
+
+### Features
+
+* **fix-entity:** add allByOpportunityIds for site-wide fix queries ([#1792](https://github.com/adobe/spacecat-shared/issues/1792)) ([25309bf](https://github.com/adobe/spacecat-shared/commit/25309bff4be7d90c0f7cdbf854c48a20adfd3e57))
+
+## [@adobe/spacecat-shared-data-access-v4.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.0...@adobe/spacecat-shared-data-access-v4.3.1) (2026-07-09)
+
+### Bug Fixes
+
+* **ticket-suggestion:** use createdAt as belongs_to sort key instead of updatedAt ([#1798](https://github.com/adobe/spacecat-shared/issues/1798)) ([711eecd](https://github.com/adobe/spacecat-shared/commit/711eecdc187ec9a21a79dedca808e6622bd18933)), closes [#2661](https://github.com/adobe/spacecat-shared/issues/2661)
+
 ## [@adobe/spacecat-shared-data-access-v4.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.2.0...@adobe/spacecat-shared-data-access-v4.3.0) (2026-07-09)
 
 ### Features

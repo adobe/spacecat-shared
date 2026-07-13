@@ -47,7 +47,9 @@ import { LANGUAGE_CATALOG } from './language-catalog.js';
 import { AI_MODEL_CATALOG } from './ai-model-catalog.js';
 import { tagId } from './tag-id.js';
 import { parentIdField } from './parent-id.js';
+import { buildTagView } from './tag-view.js';
 import { resolveUrl } from './url-resolve.js';
+import { brandUrlHttpsTag } from './brand-url-validation.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -105,11 +107,21 @@ export class Context {
     // `PATCH /aio/tags/{tag_id}` — share one coerce-then-spread definition and can't drift, the
     // same `$.context` lib-helper convention as `tagId` above.
     this.parentIdField = parentIdField;
+    // The single tag serializer (mock/tag-view.js). Exposed so EVERY route that returns a tag —
+    // the tree read and the two prompt routes that embed tags — produces the identical object live
+    // produces, derived from the stored collection at read time. Live has exactly one serializer
+    // (a tag embedded on a prompt compares equal to the same tag from `GET /aio/tags`); giving the
+    // mock two would let a consumer read parentage locally and `undefined` in production.
+    this.buildTagView = buildTagView;
     // The URL canonicalizer (mock/url-resolve.js). Exposed so the `GET /v1/url/resolve` route
     // computes the normalized `{ domain, primary_url, is_valid }` through one pure, unit-tested
     // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
     // convention as `tagId`. The consumer resolves a raw brand URL through this before writing it.
     this.resolveUrl = resolveUrl;
+    // The brand-URL `https://` validator (mock/brand-url-validation.js). Exposed so the
+    // `POST .../brand_urls` route rejects a non-https value with the live gateway's 400 through one
+    // pure, unit-tested function — same `$.context` lib-helper convention as `tagId`.
+    this.brandUrlHttpsTag = brandUrlHttpsTag;
   }
 
   /**

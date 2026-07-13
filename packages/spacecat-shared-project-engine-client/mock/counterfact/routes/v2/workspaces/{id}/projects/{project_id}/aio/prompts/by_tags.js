@@ -36,14 +36,33 @@ export function POST($) {
   const {
     path, query, body, context,
   } = $;
+  const scope = { workspaceId: path.id, projectId: path.project_id };
   const draft = String(query?.draft ?? '') === 'true';
-  const all = context.ops.prompts
-    .list({ workspaceId: path.id, projectId: path.project_id })
-    .filter((p) => draft || !p.is_new);
+  const all = context.ops.prompts.list(scope).filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];
-  const items = tagIds.length === 0
+  const matched = tagIds.length === 0
     ? all
     : all.filter((p) => (p.tags ?? []).some((t) => tagIds.includes(t.id)));
+
+  // A prompt REFERENCES its tags; the tag object is a view, derived here from the project's tag
+  // collection through the one shared serializer. Live embeds the full tag — a descendant carries
+  // its own `parent_id` + root-first `path`, a root carries neither — and the embedded object is
+  // identical to the same tag read from `GET /aio/tags`. Deriving at read (rather than returning
+  // whatever was embedded at write time) is also what keeps a re-parent or a rename from leaving a
+  // stale breadcrumb behind on a prompt.
+  //
+  // Every id a prompt references resolves: the two create paths both register their tags — the
+  // id-based `aio/prompts.js` rejects an unresolvable id outright, and `tagged.js` mints a root for
+  // an unknown name — and `DELETE /aio/tags` detaches a removed tag from its prompts. The `?? t`
+  // guard is what a store hand-seeded with a prompt referencing an unregistered tag would fall back
+  // to: the raw `{ id, name }` stub, missing `children_count`, `prompts_count` and `path`. That
+  // degraded shape is not what live returns, so seed prompts only with tags the seed registers too.
+  const { byId } = context.buildTagView(context.ops.tags.list(scope), context.factories);
+  const items = matched.map((p) => ({
+    ...p,
+    tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t),
+  }));
+
   return $.response[200].json({
     items, page: body?.page ?? 1, total: items.length, unassigned: 0,
   });

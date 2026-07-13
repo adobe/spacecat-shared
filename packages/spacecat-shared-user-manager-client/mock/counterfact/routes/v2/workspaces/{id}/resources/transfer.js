@@ -34,7 +34,13 @@ export function POST($) {
   }
   const ai = body?.resources?.ai ?? {};
   const parentId = workspace.parent_id;
-  if (!context.quota.canAllocate(parentId, ai)) {
+  // A transfer sets the child's `total` ABSOLUTELY and moves the delta to/from the parent — a raise
+  // carves from the parent (`422` when its free units can't cover it), a lower returns units, a
+  // same-value transfer is a no-op (idempotent). Verified live 2026-07-02 (see plan Gate 0). Only
+  // meters when the child or its parent is metered; unmetered stays unlimited (legacy).
+  const metered = context.quota.resources(path.id) !== null
+    || context.quota.resources(parentId) !== null;
+  if (metered && !context.quota.applyTransfer(parentId, path.id, ai).ok) {
     return {
       status: 422,
       body: context.factories.createBasicResponseMock({
@@ -43,7 +49,6 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  context.quota.draw(parentId, ai);
   // Live returns the updated child workspaceResponse (CR4), not a WorkspaceResourcesV2 envelope.
   return $.response[200].json(workspace);
 }

@@ -45,6 +45,10 @@ export declare function isAllowedSuggestionTransition(
   to: string,
 ): boolean;
 export declare function deriveSuggestionStatus(
-  fixes: Array<FixEntity | { status?: string } | string>,
+  outcomes: Array<FixEntity | { status?: string } | string>,
   issues?: Array<object>,
+  currentStatus?: string | null,
 ): string | null;
+export declare function classifyStatus(
+  token: string | null | undefined,
+): 'ERROR' | 'IN_PROGRESS' | 'FIXED' | 'SKIPPED' | 'NEUTRAL' | null;

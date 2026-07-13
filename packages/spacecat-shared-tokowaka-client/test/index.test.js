@@ -147,6 +147,69 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('markPatternCoveredSuggestions', () => {
+    const mkPattern = (isDomainWide) => ({
+      getId: () => (isDomainWide ? 'dw-1' : 'path-1'),
+      getData: () => (isDomainWide
+        ? { isDomainWide: true, allowedRegexPatterns: ['/*'] }
+        : { allowedRegexPatterns: ['/foo/*'] }),
+    });
+    const mkCovered = (id, url = `https://example.com/foo/${id}`) => ({
+      getId: () => id,
+      getStatus: () => 'NEW',
+      getData: () => ({ url }),
+      setData: sinon.stub(),
+      setUpdatedBy: sinon.stub(),
+    });
+
+    it('marks all matching suggestions in the opportunity with coveredByDomainWide', async () => {
+      const covered = [mkCovered('a'), mkCovered('b')];
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(true),
+        covered,
+        'tester',
+      );
+
+      expect(result).to.deep.equal(covered);
+      covered.forEach((s) => {
+        expect(s.setData.calledWithMatch({ coveredByDomainWide: 'dw-1' })).to.be.true;
+        expect(s.setUpdatedBy.calledOnceWith('tester')).to.be.true;
+      });
+      expect(client.dataAccess.Suggestion.saveMany.calledOnceWith(covered)).to.be.true;
+    });
+
+    it('marks only URLs matching the segment/path pattern with coveredByPattern', async () => {
+      const matching = mkCovered('a', 'https://example.com/foo/a');
+      const nonMatching = mkCovered('b', 'https://example.com/bar/b');
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(false),
+        [matching, nonMatching],
+      );
+
+      expect(result).to.deep.equal([matching]);
+      expect(matching.setData.calledWithMatch({ coveredByPattern: 'path-1' })).to.be.true;
+      expect(matching.setUpdatedBy.calledOnceWith('edge-deploy')).to.be.true;
+      expect(nonMatching.setData.called).to.be.false;
+    });
+
+    it('is a no-op when the pattern suggestion has no allowedRegexPatterns', async () => {
+      const noPattern = { getId: () => 'dw-1', getData: () => ({ isDomainWide: true }) };
+
+      expect(await client.markPatternCoveredSuggestions(noPattern, [mkCovered('a')]))
+        .to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('is a no-op when nothing in allSuggestions matches', async () => {
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), []);
+
+      expect(result).to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+  });
+
   describe('createFrom', () => {
     it('should create client from context', () => {
       const context = {

@@ -241,3 +241,60 @@ export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestio
 
   return { remaining, skippedInBatch };
 }
+
+/**
+ * Finds the suggestions in `allSuggestions` that are covered by a pattern suggestion's
+ * allowedRegexPatterns — shared by real edge-deploy (`#deployPatternSuggestion`) and by
+ * launch-time cover-marking (`markPatternCoveredSuggestions`), so both agree on what "covered"
+ * means for a domain-wide / segment pattern.
+ *
+ * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
+ * @param {Array<string>} allowedRegexPatterns
+ * @param {Array} allSuggestions - Full opportunity suggestion list to search
+ * @param {Set<string>} [excludeIds] - Suggestion IDs to skip (e.g. already handled in-batch)
+ * @param {Object} log - Logger instance
+ * @returns {Array} Suggestions covered by the pattern
+ */
+export function findCoveredSuggestions(
+  patternSuggestion,
+  allowedRegexPatterns,
+  allSuggestions,
+  excludeIds,
+  log,
+) {
+  const isDomainWide = patternSuggestion.getData()?.isDomainWide === true;
+  const matchers = allowedRegexPatterns.flatMap((p) => {
+    const m = buildUrlMatcher(p);
+    if (!m) {
+      // eslint-disable-next-line max-len
+      log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${patternSuggestion.getId()} is invalid, skipping`);
+    }
+    return m ? [m] : [];
+  });
+
+  if (matchers.length === 0) {
+    return [];
+  }
+
+  return allSuggestions.filter((s) => {
+    if (s.getId() === patternSuggestion.getId()) {
+      return false;
+    }
+    if (excludeIds?.has(s.getId())) {
+      return false;
+    }
+    if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+      return false;
+    }
+    if (s.getData()?.edgeDeployed) {
+      return false;
+    }
+    // Path-level pattern suggestions (not domain-wide) are fully covered by a
+    // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
+    if (isPatternSuggestion(s)) {
+      return isDomainWide && !s.getData()?.isDomainWide;
+    }
+    const url = s.getData()?.url;
+    return url && matchers.some((match) => match(url));
+  });
+}

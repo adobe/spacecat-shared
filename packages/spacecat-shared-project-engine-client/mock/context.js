@@ -49,6 +49,7 @@ import { tagId } from './tag-id.js';
 import { parentIdField } from './parent-id.js';
 import { buildTagView } from './tag-view.js';
 import { resolveUrl } from './url-resolve.js';
+import { brandUrlHttpsTag } from './brand-url-validation.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
 /**
@@ -117,6 +118,10 @@ export class Context {
     // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
     // convention as `tagId`. The consumer resolves a raw brand URL through this before writing it.
     this.resolveUrl = resolveUrl;
+    // The brand-URL `https://` validator (mock/brand-url-validation.js). Exposed so the
+    // `POST .../brand_urls` route rejects a non-https value with the live gateway's 400 through one
+    // pure, unit-tested function — same `$.context` lib-helper convention as `tagId`.
+    this.brandUrlHttpsTag = brandUrlHttpsTag;
   }
 
   /**

@@ -11,7 +11,10 @@
  */
 
 import { DataAccessError } from '../../errors/index.js';
+import { guardArray } from '../../util/guards.js';
 import BaseCollection from '../base/base.collection.js';
+
+const IN_FILTER_CHUNK_SIZE = 50;
 
 /**
  * TicketSuggestionCollection — manages TicketSuggestion bridge records.
@@ -34,15 +37,27 @@ class TicketSuggestionCollection extends BaseCollection {
    * @returns {Promise<import('./ticket-suggestion.model.js').default[]>}
    */
   async allBySuggestionIds(suggestionIds) {
-    if (!Array.isArray(suggestionIds) || suggestionIds.length === 0) {
+    guardArray('suggestionIds', suggestionIds, 'TicketSuggestionCollection', 'string');
+
+    if (suggestionIds.length === 0) {
       return [];
     }
 
     try {
-      return await this.all(
-        {},
-        { where: (attrs, op) => op.in(attrs.suggestionId, suggestionIds) },
+      const uniqueIds = [...new Set(suggestionIds)];
+      const chunks = [];
+      for (let i = 0; i < uniqueIds.length; i += IN_FILTER_CHUNK_SIZE) {
+        chunks.push(uniqueIds.slice(i, i + IN_FILTER_CHUNK_SIZE));
+      }
+
+      const results = await Promise.all(
+        chunks.map((chunk) => this.all(
+          {},
+          { where: (attrs, op) => op.in(attrs.suggestionId, chunk) },
+        )),
       );
+
+      return results.flat();
     } catch (error) {
       if (error instanceof DataAccessError) {
         throw error;
@@ -59,15 +74,27 @@ class TicketSuggestionCollection extends BaseCollection {
    * @returns {Promise<import('./ticket-suggestion.model.js').default[]>}
    */
   async allByTicketIds(ticketIds) {
-    if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
+    guardArray('ticketIds', ticketIds, 'TicketSuggestionCollection', 'string');
+
+    if (ticketIds.length === 0) {
       return [];
     }
 
     try {
-      return await this.all(
-        {},
-        { where: (attrs, op) => op.in(attrs.ticketId, ticketIds) },
+      const uniqueIds = [...new Set(ticketIds)];
+      const chunks = [];
+      for (let i = 0; i < uniqueIds.length; i += IN_FILTER_CHUNK_SIZE) {
+        chunks.push(uniqueIds.slice(i, i + IN_FILTER_CHUNK_SIZE));
+      }
+
+      const results = await Promise.all(
+        chunks.map((chunk) => this.all(
+          {},
+          { where: (attrs, op) => op.in(attrs.ticketId, chunk) },
+        )),
       );
+
+      return results.flat();
     } catch (error) {
       if (error instanceof DataAccessError) {
         throw error;

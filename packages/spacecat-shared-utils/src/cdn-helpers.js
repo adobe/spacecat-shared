@@ -49,7 +49,7 @@ const transformCredentialFields = (payload) => {
  * a single source of truth for the field list, e.g. `output_options.field_names` on
  * `POST /zones/{zoneId}/logpush/jobs`. Keep in sync with any future field additions (LLMO-5811).
  */
-export const CLOUDFLARE_LOGPUSH_FIELDS = [
+export const CLOUDFLARE_LOGPUSH_FIELDS = Object.freeze([
   'EdgeStartTimestamp',
   'ClientRequestHost',
   'ClientRequestURI',
@@ -59,7 +59,7 @@ export const CLOUDFLARE_LOGPUSH_FIELDS = [
   'ClientRequestReferer',
   'EdgeResponseContentType',
   'EdgeTimeToFirstByteMs',
-];
+]);
 
 /**
  * CDN-specific transformations for log forwarding configuration preparation

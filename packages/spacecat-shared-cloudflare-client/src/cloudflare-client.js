@@ -223,6 +223,21 @@ export default class CloudflareClient {
   }
 
   /**
+   * Fetches a single zone by ID — most notably its `name` (domain), so callers can verify a
+   * caller-supplied zoneId actually belongs to the domain they claim it does before acting on it
+   * (e.g. before creating a Logpush job or worker route for that zone).
+   * @param {string} zoneId
+   * @returns {Promise<{id: string, name: string, status: string}>}
+   */
+  async getZone(zoneId) {
+    if (!hasText(zoneId)) {
+      throw new Error('zoneId is required');
+    }
+    this.log.info(`Fetching Cloudflare zone ${zoneId}`);
+    return this.#cfFetch(`/zones/${zoneId}`);
+  }
+
+  /**
    * Lists all Worker routes for a zone.
    * @param {string} zoneId
    * @returns {Promise<Array<{id: string, pattern: string, script: string}>>}

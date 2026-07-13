@@ -496,6 +496,33 @@ describe('CloudflareClient', () => {
     });
   });
 
+  // ─── getZone ─────────────────────────────────────────────────────────────
+
+  describe('getZone', () => {
+    it('returns the zone for a valid zoneId', async () => {
+      const result = { id: ZONE_ID, name: 'example.com', status: 'active' };
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}`)
+        .reply(200, { success: true, result });
+
+      const zone = await client.getZone(ZONE_ID);
+      expect(zone).to.deep.equal(result);
+      expect(log.info).to.have.been.calledWith(`Fetching Cloudflare zone ${ZONE_ID}`);
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.getZone('')).to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when the API returns an error', async () => {
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}`)
+        .reply(200, { success: false, errors: [{ message: 'Zone not found' }] });
+
+      await expect(client.getZone(ZONE_ID)).to.be.rejectedWith('Zone not found');
+    });
+  });
+
   // ─── listRoutes ──────────────────────────────────────────────────────────
 
   describe('listRoutes', () => {

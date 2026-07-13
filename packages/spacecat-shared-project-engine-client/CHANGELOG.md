@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.10.0...@adobe/spacecat-shared-project-engine-client-v1.10.1) (2026-07-13)
+
+### Bug Fixes
+
+* **project-engine-client:** enforce https:// on the brand_urls mock ([#1778](https://github.com/adobe/spacecat-shared/issues/1778)) ([46c4860](https://github.com/adobe/spacecat-shared/commit/46c48604834162415046af8a2aaca4fa12b60940)), closes [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [#2748](https://github.com/adobe/spacecat-shared/issues/2748) [#737](https://github.com/adobe/spacecat-shared/issues/737) [#2748](https://github.com/adobe/spacecat-shared/issues/2748) [#737](https://github.com/adobe/spacecat-shared/issues/737) [#2748](https://github.com/adobe/spacecat-shared/issues/2748)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.9.0...@adobe/spacecat-shared-project-engine-client-v1.10.0) (2026-07-10)
 
 ### Features

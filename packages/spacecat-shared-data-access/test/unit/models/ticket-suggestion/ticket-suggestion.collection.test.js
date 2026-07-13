@@ -13,8 +13,9 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
-import sinon from 'sinon';
+import { stub } from 'sinon';
 
+import { DataAccessError } from '../../../../src/errors/index.js';
 import { createElectroMocks } from '../../util.js';
 import TicketSuggestion from '../../../../src/models/ticket-suggestion/ticket-suggestion.model.js';
 
@@ -33,15 +34,6 @@ const MOCK_RECORD = {
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
-const DB_ROW = {
-  id: MOCK_RECORD.ticketSuggestionId,
-  ticket_id: MOCK_RECORD.ticketId,
-  suggestion_id: MOCK_RECORD.suggestionId,
-  opportunity_id: MOCK_RECORD.opportunityId,
-  created_by: MOCK_RECORD.createdBy,
-  created_at: MOCK_RECORD.createdAt,
-};
-
 describe('TicketSuggestionCollection', () => {
   let instance;
 
@@ -50,104 +42,116 @@ describe('TicketSuggestionCollection', () => {
   });
 
   describe('allBySuggestionIds()', () => {
-    function setupInChain(result) {
-      const inStub = sinon.stub().resolves(result);
-      const selectStub = sinon.stub().returns({ in: inStub });
-      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
-      return { selectStub, inStub };
-    }
+    it('returns empty array for empty input without querying', async () => {
+      instance.all = stub();
 
-    it('returns empty array for empty input', async () => {
       const result = await instance.allBySuggestionIds([]);
+
       expect(result).to.deep.equal([]);
+      expect(instance.all).to.not.have.been.called;
     });
 
-    it('returns empty array for non-array input', async () => {
+    it('returns empty array for non-array input without querying', async () => {
+      instance.all = stub();
+
       const result = await instance.allBySuggestionIds(null);
+
       expect(result).to.deep.equal([]);
+      expect(instance.all).to.not.have.been.called;
     });
 
-    it('returns mapped instances when rows found', async () => {
-      setupInChain({ data: [DB_ROW], error: null });
+    it('delegates to this.all() with correct where clause', async () => {
+      const mockResults = [{ getSuggestionId: () => SUGGESTION_ID }];
+      instance.all = stub().resolves(mockResults);
 
       const result = await instance.allBySuggestionIds([SUGGESTION_ID]);
 
-      expect(result).to.have.length(1);
-      expect(result[0].getSuggestionId()).to.equal(SUGGESTION_ID);
+      expect(result).to.deep.equal(mockResults);
+      expect(instance.all).to.have.been.calledOnce;
+
+      const [sortKeys, options] = instance.all.firstCall.args;
+      expect(sortKeys).to.deep.equal({});
+
+      const opStub = { in: stub().returns('IN_EXPR') };
+      const expression = options.where({ suggestionId: 'suggestionId' }, opStub);
+      expect(opStub.in).to.have.been.calledOnceWith('suggestionId', [SUGGESTION_ID]);
+      expect(expression).to.equal('IN_EXPR');
     });
 
-    it('returns empty array when data is null', async () => {
-      setupInChain({ data: null, error: null });
-
-      const result = await instance.allBySuggestionIds([SUGGESTION_ID]);
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('queries with correct column and values', async () => {
-      const { inStub } = setupInChain({ data: [], error: null });
-
-      await instance.allBySuggestionIds([SUGGESTION_ID]);
-
-      expect(inStub).to.have.been.calledWith('suggestion_id', [SUGGESTION_ID]);
-    });
-
-    it('throws DataAccessError when PostgREST returns an error', async () => {
-      setupInChain({ data: null, error: { code: 'PGRST205', message: 'DB error' } });
+    it('throws DataAccessError when this.all() rejects', async () => {
+      instance.all = stub().rejects(new Error('DB error'));
 
       await expect(instance.allBySuggestionIds([SUGGESTION_ID]))
-        .to.be.rejectedWith('Failed to load ticket suggestions by suggestion IDs');
+        .to.be.rejectedWith(DataAccessError, 'Failed to load ticket suggestions by suggestion IDs');
+    });
+
+    it('re-throws DataAccessError without wrapping', async () => {
+      const inner = new DataAccessError('inner failure');
+      instance.all = stub().rejects(inner);
+
+      try {
+        await instance.allBySuggestionIds([SUGGESTION_ID]);
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err).to.equal(inner);
+      }
     });
   });
 
   describe('allByTicketIds()', () => {
-    function setupInChain(result) {
-      const inStub = sinon.stub().resolves(result);
-      const selectStub = sinon.stub().returns({ in: inStub });
-      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
-      return { selectStub, inStub };
-    }
+    it('returns empty array for empty input without querying', async () => {
+      instance.all = stub();
 
-    it('returns empty array for empty input', async () => {
       const result = await instance.allByTicketIds([]);
+
       expect(result).to.deep.equal([]);
+      expect(instance.all).to.not.have.been.called;
     });
 
-    it('returns empty array for non-array input', async () => {
+    it('returns empty array for non-array input without querying', async () => {
+      instance.all = stub();
+
       const result = await instance.allByTicketIds(null);
+
       expect(result).to.deep.equal([]);
+      expect(instance.all).to.not.have.been.called;
     });
 
-    it('returns mapped instances when rows found', async () => {
-      setupInChain({ data: [DB_ROW], error: null });
+    it('delegates to this.all() with correct where clause', async () => {
+      const mockResults = [{ getTicketId: () => TICKET_ID }];
+      instance.all = stub().resolves(mockResults);
 
       const result = await instance.allByTicketIds([TICKET_ID]);
 
-      expect(result).to.have.length(1);
-      expect(result[0].getTicketId()).to.equal(TICKET_ID);
+      expect(result).to.deep.equal(mockResults);
+      expect(instance.all).to.have.been.calledOnce;
+
+      const [sortKeys, options] = instance.all.firstCall.args;
+      expect(sortKeys).to.deep.equal({});
+
+      const opStub = { in: stub().returns('IN_EXPR') };
+      const expression = options.where({ ticketId: 'ticketId' }, opStub);
+      expect(opStub.in).to.have.been.calledOnceWith('ticketId', [TICKET_ID]);
+      expect(expression).to.equal('IN_EXPR');
     });
 
-    it('returns empty array when data is null', async () => {
-      setupInChain({ data: null, error: null });
-
-      const result = await instance.allByTicketIds([TICKET_ID]);
-
-      expect(result).to.deep.equal([]);
-    });
-
-    it('queries with correct column and values', async () => {
-      const { inStub } = setupInChain({ data: [], error: null });
-
-      await instance.allByTicketIds([TICKET_ID]);
-
-      expect(inStub).to.have.been.calledWith('ticket_id', [TICKET_ID]);
-    });
-
-    it('throws DataAccessError when PostgREST returns an error', async () => {
-      setupInChain({ data: null, error: { code: 'PGRST205', message: 'DB error' } });
+    it('throws DataAccessError when this.all() rejects', async () => {
+      instance.all = stub().rejects(new Error('DB error'));
 
       await expect(instance.allByTicketIds([TICKET_ID]))
-        .to.be.rejectedWith('Failed to load ticket suggestions by ticket IDs');
+        .to.be.rejectedWith(DataAccessError, 'Failed to load ticket suggestions by ticket IDs');
+    });
+
+    it('re-throws DataAccessError without wrapping', async () => {
+      const inner = new DataAccessError('inner failure');
+      instance.all = stub().rejects(inner);
+
+      try {
+        await instance.allByTicketIds([TICKET_ID]);
+        expect.fail('should have thrown');
+      } catch (err) {
+        expect(err).to.equal(inner);
+      }
     });
   });
 });

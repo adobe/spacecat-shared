@@ -38,16 +38,17 @@ class TicketSuggestionCollection extends BaseCollection {
       return [];
     }
 
-    const { data, error } = await this.postgrestService
-      .from(this.tableName)
-      .select()
-      .in('suggestion_id', suggestionIds);
-
-    if (error) {
-      throw new DataAccessError('Failed to load ticket suggestions by suggestion IDs', { entityName: 'TicketSuggestion' }, error);
+    try {
+      return await this.all(
+        {},
+        { where: (attrs, op) => op.in(attrs.suggestionId, suggestionIds) },
+      );
+    } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
+      throw new DataAccessError('Failed to load ticket suggestions by suggestion IDs', this, error);
     }
-
-    return (data ?? []).map((row) => this.createInstanceFromRow(row));
   }
 
   /**
@@ -62,16 +63,17 @@ class TicketSuggestionCollection extends BaseCollection {
       return [];
     }
 
-    const { data, error } = await this.postgrestService
-      .from(this.tableName)
-      .select()
-      .in('ticket_id', ticketIds);
-
-    if (error) {
-      throw new DataAccessError('Failed to load ticket suggestions by ticket IDs', { entityName: 'TicketSuggestion' }, error);
+    try {
+      return await this.all(
+        {},
+        { where: (attrs, op) => op.in(attrs.ticketId, ticketIds) },
+      );
+    } catch (error) {
+      if (error instanceof DataAccessError) {
+        throw error;
+      }
+      throw new DataAccessError('Failed to load ticket suggestions by ticket IDs', this, error);
     }
-
-    return (data ?? []).map((row) => this.createInstanceFromRow(row));
   }
 }
 

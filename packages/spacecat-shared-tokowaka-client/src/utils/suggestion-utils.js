@@ -105,7 +105,9 @@ export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
  *   avoid sequential chunk bottleneck at scale.
  * - > 1700 with queueContext: enqueues a SUGGESTION_BULK_UPDATE_TYPE job to the import
  *   worker instead of saving here (the worker fetches by id and applies
- *   queueContext.set/unset itself).
+ *   queueContext.set/unset itself). Falls back to the Promise.allSettled path above
+ *   if sqs/queueUrl aren't configured or sendMessage fails, so a queue outage
+ *   degrades rather than silently drops the save.
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
@@ -125,30 +127,31 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
         sqs, queueUrl, siteId, set, unset, updatedBy, log,
       } = queueContext;
 
-      if (!queueUrl) {
+      if (queueUrl && sqs) {
+        try {
+          await sqs.sendMessage(queueUrl, {
+            type: SUGGESTION_BULK_UPDATE_TYPE,
+            siteId,
+            suggestionIds: suggestions.map((s) => s.getId()),
+            ...(set && { set }),
+            ...(unset && { unset }),
+            updatedBy,
+          });
+          log.info(
+            `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} suggestion(s)`,
+          );
+          return;
+        } catch (error) {
+          log.error(
+            `[suggestion-bulk-update] Failed to queue bulk update, falling back to direct save: ${error.message}`,
+          );
+        }
+      } else {
         log.warn(
-          '[suggestion-bulk-update] IMPORT_WORKER_QUEUE_URL not configured; '
-          + `skipping bulk update enqueue for ${suggestions.length} suggestion(s)`,
+          '[suggestion-bulk-update] SQS/IMPORT_WORKER_QUEUE_URL not configured; '
+          + `falling back to direct save for ${suggestions.length} suggestion(s)`,
         );
-        return;
       }
-
-      try {
-        await sqs.sendMessage(queueUrl, {
-          type: SUGGESTION_BULK_UPDATE_TYPE,
-          siteId,
-          suggestionIds: suggestions.map((s) => s.getId()),
-          ...(set && { set }),
-          ...(unset && { unset }),
-          updatedBy,
-        });
-        log.info(
-          `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} suggestion(s)`,
-        );
-      } catch (error) {
-        log.warn(`[suggestion-bulk-update] Failed to queue bulk update: ${error.message}`);
-      }
-      return;
     }
 
     const results = await Promise.allSettled(suggestions.map((s) => s.save()));

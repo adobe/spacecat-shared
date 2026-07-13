@@ -183,6 +183,20 @@ describe('edge-optimize support', () => {
       expect(error).to.be.an('error');
       expect(error.message).to.include('no credentials');
     });
+
+    it('uses the operator email as the RoleSessionName when provided (>= 2 valid chars)', async () => {
+      stsSendStub.resolves({
+        Credentials: { AccessKeyId: 'A', SecretAccessKey: 'S', SessionToken: 'T' },
+      });
+
+      await edgeOptimize.assumeConnectorRole({
+        accountId: '120569600543',
+        externalId: 'ext',
+        operator: 'jane@adobe.com',
+      });
+
+      expect(stsSendStub.firstCall.args[0].input.RoleSessionName).to.equal('jane@adobe.com');
+    });
   });
 
   describe('listDistributions', () => {
@@ -886,6 +900,53 @@ describe('edge-optimize support', () => {
       expect(cfSendStub.calledOnce).to.equal(true); // never reached UpdateFunction
     });
 
+    it('tags a new function with createdBy=unknown when the operator sanitizes to empty', async () => {
+      cfSendStub.onFirstCall().rejects(Object.assign(new Error('nf'), { name: 'NoSuchFunctionExists' })); // DescribeFunction
+      cfSendStub.onSecondCall().resolves({ ETag: 'fn-etag', FunctionSummary: { FunctionMetadata: { FunctionARN: 'arn:cf-fn' } } }); // CreateFunction
+      cfSendStub.onThirdCall().resolves({}); // PublishFunction
+      cfSendStub.onCall(3).resolves({}); // TagResource
+
+      // '™©' is entirely stripped by the tag sanitizer -> falls back to 'unknown'.
+      await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE', null, undefined, '™©');
+
+      const tagCall = cfSendStub.getCalls().find((c) => c.args[0].commandName === 'TagResource');
+      expect(tagCall.args[0].input.Tags.Items).to.deep.include({ Key: 'createdBy', Value: 'unknown' });
+    });
+
+    it('refuses to reuse an existing function when DescribeFunction returns no FunctionSummary', async () => {
+      cfSendStub.onFirstCall().resolves({ ETag: 'dev-etag' }); // DescribeFunction: ETag but no FunctionSummary
+
+      let error;
+      try {
+        await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE');
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(cfSendStub.calledOnce).to.equal(true); // never reached UpdateFunction
+    });
+
+    it('reuses our function and adopts the FunctionARN from the update response', async () => {
+      cfSendStub.onFirstCall().resolves({
+        ETag: 'dev-etag',
+        FunctionSummary: {
+          FunctionMetadata: { FunctionARN: 'arn:old-fn' },
+          FunctionConfig: { Comment: 'EdgeOptimize agentic bot routing — managed by LLM Optimizer' },
+        },
+      }); // DescribeFunction: ours, with an existing ARN
+      cfSendStub.onSecondCall().resolves({
+        ETag: 'updated-etag',
+        FunctionSummary: { FunctionMetadata: { FunctionARN: 'arn:new-fn' } },
+      }); // UpdateFunction returns a FunctionARN
+      cfSendStub.onThirdCall().resolves({}); // PublishFunction
+
+      const result = await edgeOptimize.createCloudFrontFunction({}, 'origin-aem', 'E2EXAMPLE');
+
+      expect(result.created).to.equal(false);
+      expect(cfSendStub.secondCall.args[0].commandName).to.equal('UpdateFunction');
+    });
+
     it('throws when defaultOriginId is missing', async () => {
       let error;
       try {
@@ -1193,6 +1254,30 @@ describe('edge-optimize support', () => {
       expect(result.policyId).to.equal('existing-eo');
       expect(result.reused).to.equal(true);
       expect(lastCommand('CreateCachePolicy')).to.equal(undefined); // reused, not created
+    });
+
+    it('refuses to reuse a custom policy matching our clone name that has no Comment (not ours)', async () => {
+      wireCloudFront({
+        GetDistributionConfig: {
+          DistributionConfig: { DefaultCacheBehavior: { CachePolicyId: 'managed-1' } },
+          ETag: 'dist-etag',
+        },
+        ListCachePolicies: (cmd) => (cmd.input.Type === 'managed'
+          ? { CachePolicyList: { Items: [{ CachePolicy: { Id: 'managed-1' } }] } }
+          : { CachePolicyList: { Items: [{ CachePolicy: { Id: 'existing-eo', CachePolicyConfig: { Name: 'X-adobe-E2EXAMPLE' } } }] } }), // matches our clone name, but no Comment
+        GetCachePolicy: {
+          CachePolicy: { CachePolicyConfig: { Name: 'Managed-X', ParametersInCacheKeyAndForwardedToOrigin: {} } },
+        },
+      });
+
+      let error;
+      try {
+        await edgeOptimize.updateCacheSettings({}, 'E2EXAMPLE', 'default');
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
     });
 
     it('refuses to reuse a custom policy matching our clone name but lacking our marker (not ours)', async () => {
@@ -1612,6 +1697,25 @@ describe('edge-optimize support', () => {
       expect(result.alreadyExisted).to.equal(true);
       expect(result.versionArn).to.equal('arn:fn:3');
       expect(lastLambda('PublishVersion')).to.equal(undefined); // reused, not re-published
+    });
+
+    it('refuses to reuse an existing Active function whose config carries no Role (not ours)', async () => {
+      wireIam({ GetRole: { Role: { Arn: 'arn:role', Tags: [{ Key: 'ManagedBy', Value: 'adobe-llmo' }] } }, UpdateAssumeRolePolicy: {}, PutRolePolicy: {} });
+      wireLambda({
+        GetFunctionConfiguration: {
+          FunctionArn: 'arn:fn', State: 'Active', LastUpdateStatus: 'Successful', // no Role
+        },
+      });
+
+      let error;
+      try {
+        await edgeOptimize.createLambdaAtEdge(creds, '120569600543', { distributionId: 'E2EXAMPLE' });
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error.message).to.include('was not created by LLM Optimizer');
+      expect(lastLambda('PublishVersion')).to.equal(undefined);
     });
 
     it('refuses to reuse an existing Active function whose exec-role is not ours (by role)', async () => {

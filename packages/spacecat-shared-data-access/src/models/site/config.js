@@ -449,9 +449,6 @@ export const configSchema = Joi.object({
       )
       .optional(),
     opted: Joi.number().optional(),
-    // Cross-account connector external ID, persisted at the Organization level (the shared Config
-    // backs Site + Organization) so an org's domains/accounts reuse one connector role.
-    externalId: Joi.string().uuid().optional(),
     stagingDomains: Joi.array().items(
       Joi.object({
         domain: Joi.string().required(),

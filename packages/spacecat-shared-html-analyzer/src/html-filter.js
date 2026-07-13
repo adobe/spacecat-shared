@@ -209,7 +209,7 @@ function removeAccessibilityElementsCheerio($) {
 
 /**
  * Returns true if the text is entirely composed of font-detection noise:
- * either the font-metrics test string (substring match to cover &N variants)
+ * either the font-metrics test string (startsWith to cover &N suffix variants)
  * or exclusively repeated "word" tokens (≥ MIN_REPS).
  * @param {string} text - trimmed textContent of the element
  * @returns {boolean}
@@ -218,7 +218,7 @@ export function isFontDetectionLeaf(text) {
   if (!text) {
     return false;
   }
-  if (text.includes(FONT_DETECTION_TEST_STRING)) {
+  if (text.startsWith(FONT_DETECTION_TEST_STRING)) {
     return true;
   }
   const tokens = text.trim().split(/\s+/);

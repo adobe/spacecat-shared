@@ -380,6 +380,15 @@ describe('HTML Visibility Analyzer', () => {
       expect(isFontDetectionLeaf('mmMwWLliI0fiflO')).to.equal(true);
     });
 
+    it('should return true for mmMwWLliI0fiflO with &N suffix variants', () => {
+      expect(isFontDetectionLeaf('mmMwWLliI0fiflO&1')).to.equal(true);
+      expect(isFontDetectionLeaf('mmMwWLliI0fiflO&2')).to.equal(true);
+    });
+
+    it('should return false when mmMwWLliI0fiflO appears mid-text, not at start', () => {
+      expect(isFontDetectionLeaf('some text mmMwWLliI0fiflO')).to.equal(false);
+    });
+
     it('should return true for 10+ space-separated "word" tokens', () => {
       expect(isFontDetectionLeaf(Array(20).fill('word').join(' '))).to.equal(true);
     });

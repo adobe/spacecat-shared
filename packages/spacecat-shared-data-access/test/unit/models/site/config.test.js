@@ -3102,13 +3102,36 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
-            magentoEndpoint: 'https://magento.example.com/graphql',
-            magentoAPIKey: 'api-key-123',
           },
         },
       };
       const config = Config(data);
       expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('strips legacy magento fields from existing records', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      });
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({
+        store1: {
+          environmentId: 'env-123',
+          websiteCode: 'base',
+          storeCode: 'main_store',
+          storeViewCode: 'default',
+          hostName: 'example.com',
+        },
+      });
     });
 
     it('has undefined commerceLlmoConfig in default config', () => {
@@ -3159,7 +3182,7 @@ describe('Config Tests', () => {
         commerceLlmoConfig: {
           store1: {
             environmentId: 'env-123',
-            magentoEndpoint: 'https://magento.example.com/graphql',
+            hostName: 'example.com',
           },
         },
       });

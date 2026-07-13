@@ -37,7 +37,7 @@
  * @typedef {import('./store.js').Entity} Entity
  */
 
-import { POOL_COLLECTION } from './quota.js';
+import { RESOURCES_COLLECTION } from './quota.js';
 
 /** The store collection holding the workspace tree (global, keyed by workspace id). */
 export const WORKSPACES = 'workspaces';
@@ -155,7 +155,7 @@ export function createStatefulOps(store) {
       for (const wid of ids) {
         store.delete(WORKSPACES, wid);
         store.delete(STATUS_CONTROL, wid);
-        store.delete(POOL_COLLECTION, wid);
+        store.delete(RESOURCES_COLLECTION, wid);
       }
       return ids;
     },

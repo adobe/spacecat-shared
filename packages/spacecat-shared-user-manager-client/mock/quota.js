@@ -13,136 +13,217 @@
 // @ts-check
 
 /**
- * Parent-pool allocation for the User Manager mock — the metering the live Semrush API enforces
- * when units are carved off a parent workspace's pool.
+ * Per-workspace AI resource accounting for the User Manager mock — the `{ used, drafted, total }`
+ * model the live Semrush gateway exposes at `GET /v1/workspaces/{id}/resources` and enforces on a
+ * resource transfer.
  *
- * Real behaviour (spacecat-api-service `serenity/workspace-lifecycle.js`, "workspace doc §5"): a
- * child sub-workspace is carved a metered `{ ai: { projects, prompts } }` allocation drawn from its
- * PARENT's pool, at create (`createSubworkspace`) and on re-grant (`transferWorkspaceResources`).
- * A parent without enough free units rejects the draw with a **422** "insufficient available units"
- * (the status, not the body, is the contract; the consumer keys off it). The dev parent runs with
- * limits DISABLED (unlimited), so the mock's default — no pool record for a workspace — is
- * unlimited, and existing flows are unaffected until a pool is set.
+ * Model (live-verified 2026-07-02 against `adobe-hackathon.semrush.com`; see the
+ * dynamic-allocation plan "Gate 0"):
+ * - Every metered workspace holds per-product `{ used, drafted, total }` for `ai`'s `projects` and
+ *   `prompts` (plus `weekly_prompts`, always `0` — provisioning is daily-only). `total` is the
+ *   allocation limit; `used` is PUBLISHED consumption; `drafted` is staged and free.
+ *   `free = total − used`.
+ * - A **carve** — a child create, or a transfer that RAISES a child's `total` — moves units from
+ *   the MASTER: `master.total` decreases by the delta and `child.total` is set ABSOLUTELY. A
+ *   **release** — a transfer that LOWERS a child's `total` — returns the delta to `master.total`.
+ *   (Verified: carving a `(3,300)` child moved the master 100→97 / 19920→19620.)
+ * - A transfer is **absolute** (sets `child.total` to the value sent) and therefore **idempotent**:
+ *   re-sending the same `total` moves nothing further. Carving a master beyond its free units is
+ *   rejected `422 "insufficient available units in subscription"` (the status+message are the live
+ *   contract).
+ * - A workspace with **no resources record is unmetered (unlimited)** — so existing flows/seeds are
+ *   unaffected until a seed or `POST /__quota` gives a workspace finite resources.
  *
- * This module is pure metering over the {@link InMemoryStore}: the available pool lives in a
- * `workspace_pool` collection (so it rides along in seed / `__reset` / `__dump`). A draw deducts
- * from it; a release (a transfer of `{ projects: 0, … }` back) is a no-op against the pool (the
- * exact release accounting is a live-replay pin). The pool owner is chosen by the handler: the
- * parent path id for a create, the child's `parent_id` for a transfer. The 422 condition + body are
- * pinned by the live replay.
+ * This module owns `total` + the master-pool movement only. A child's own `used` is NOT changed
+ * here: metered writes happen on the separate Project Engine gateway/process (the UM/PE split — the
+ * two mocks do not share state; full round-trip fidelity is the live-gateway canary's job).
+ *
+ * SCOPE DECISION (serenity-docs#22, Rainer 2026-07-08 — explicit, NOT a missing feature): this
+ * mock deliberately does NOT implement a true cross-mock closed loop — a Project-Engine-mock
+ * publish does NOT decrement this User-Manager-mock's `used`. The two mock containers are separate
+ * processes with no shared state, and wiring them together was evaluated and rejected as
+ * unnecessary. Instead a test sets up exactly the `{ used, drafted, total }` state it needs
+ * directly, via the `set` hook (exposed over `POST /__quota`), and exercises the allocator logic in
+ * isolation. The "does a live publish actually consume quota" question is answered by the
+ * live-gateway canary, not by this mock.
  */
 
-/** The store collection holding per-workspace available pools: `{ id, projects, prompts }`. */
-export const POOL_COLLECTION = 'workspace_pool';
+/** The store collection holding per-workspace AI resources: `{ id, ai: AiResources }`. */
+export const RESOURCES_COLLECTION = 'workspace_resources';
+
+/** The AI resource dimensions this mock meters and moves between master and child. */
+export const AI_DIMS = /** @type {const} */ (['projects', 'prompts']);
 
 /**
  * @typedef {import('./store.js').InMemoryStore} InMemoryStore
- * @typedef {{ projects: number | null, prompts: number | null }} Pool a `null` dimension is
- *   unlimited (not metered)
- * @typedef {{ projects?: number, prompts?: number }} Allocation a requested AI allocation
+ * @typedef {{ used: number, drafted: number, total: number }} UsedLimit a per-dimension triple
+ * @typedef {{ projects: UsedLimit, prompts: UsedLimit, weekly_prompts: UsedLimit }} AiResources
+ * @typedef {{ projects?: number, prompts?: number }} Allocation a per-dimension total (units)
+ * @typedef {Partial<Record<'projects' | 'prompts', number | Partial<UsedLimit>>>} ResourceInput
  */
 
+/** @returns {UsedLimit} a zeroed dimension. */
+const zeroDim = () => ({ used: 0, drafted: 0, total: 0 });
+
+/** @returns {AiResources} a zeroed, daily-only AI resource set. */
+const zeroAi = () => ({ projects: zeroDim(), prompts: zeroDim(), weekly_prompts: zeroDim() });
+
 /**
- * Builds the quota API over a store. `null`/omitted pool dimensions mean "unlimited".
+ * Normalizes a per-dimension input (a bare `total` number, or a partial `{used,drafted,total}`)
+ * onto a base dimension.
+ * @param {UsedLimit} base
+ * @param {number | Partial<UsedLimit> | undefined} input
+ * @returns {UsedLimit}
+ */
+function applyDim(base, input) {
+  if (input == null) {
+    return { ...base };
+  }
+  if (typeof input === 'number') {
+    return { ...base, total: input };
+  }
+  return {
+    used: typeof input.used === 'number' ? input.used : base.used,
+    drafted: typeof input.drafted === 'number' ? input.drafted : base.drafted,
+    total: typeof input.total === 'number' ? input.total : base.total,
+  };
+}
+
+/**
+ * Builds the resource-accounting API over a store. A workspace with no record is unmetered.
  * @param {InMemoryStore} store
  */
 export function createQuota(store) {
-  /** @param {unknown} v @returns {number | null} */
-  const asLimit = (v) => (typeof v === 'number' ? v : null);
-
   const api = {
     /**
-     * Sets (grants/replaces) a workspace's available pool. Absolute, not additive. An omitted
-     * dimension is unlimited. Mirrors a parent workspace provisioned with a finite pool.
+     * The workspace's full AI resources, or `null` when unmetered (no record).
      * @param {string} workspaceId
-     * @param {{ projects?: number | null, prompts?: number | null }} [pool]
-     * @returns {{ id: string, projects: number | null, prompts: number | null }}
+     * @returns {AiResources | null}
      */
-    set(workspaceId, pool = {}) {
-      // Read-then-write is safe: the mock store is single-writer (one Node process), so there is no
-      // TOCTOU between the get below and the update/create.
-      const record = {
-        id: workspaceId,
-        projects: asLimit(pool.projects),
-        prompts: asLimit(pool.prompts),
+    resources(workspaceId) {
+      const record = store.get(RESOURCES_COLLECTION, workspaceId);
+      return record ? /** @type {AiResources} */ (record.ai) : null;
+    },
+
+    /**
+     * Sets (creates/replaces) a workspace's AI resources. Absolute per provided dimension; a bare
+     * number sets `total` (used/drafted default 0). Makes the workspace metered. Mirrors a
+     * workspace provisioned with a finite allocation.
+     * @param {string} workspaceId
+     * @param {ResourceInput} [input]
+     * @returns {AiResources}
+     */
+    set(workspaceId, input = {}) {
+      // Single-writer store (one Node process): the get-then-write below has no TOCTOU.
+      const current = api.resources(workspaceId) ?? zeroAi();
+      /** @type {AiResources} */
+      const ai = {
+        projects: applyDim(current.projects, input.projects),
+        prompts: applyDim(current.prompts, input.prompts),
+        weekly_prompts: { ...current.weekly_prompts },
       };
-      if (store.get(POOL_COLLECTION, workspaceId)) {
-        store.update(POOL_COLLECTION, workspaceId, {
-          projects: record.projects, prompts: record.prompts,
-        });
+      if (store.get(RESOURCES_COLLECTION, workspaceId)) {
+        store.update(RESOURCES_COLLECTION, workspaceId, { ai });
       } else {
-        store.create(POOL_COLLECTION, record);
+        store.create(RESOURCES_COLLECTION, { id: workspaceId, ai });
       }
-      return record;
+      return ai;
     },
 
     /**
-     * The workspace's available pool, or `null` when none is set (unlimited).
-     * @param {string} workspaceId
-     * @returns {Pool | null}
-     */
-    pool(workspaceId) {
-      const p = store.get(POOL_COLLECTION, workspaceId);
-      if (!p) {
-        return null;
-      }
-      return { projects: asLimit(p.projects), prompts: asLimit(p.prompts) };
-    },
-
-    /**
-     * Whether `workspaceId`'s pool covers an `{ projects, prompts }` draw (all-or-nothing, as the
-     * live 422 is). Unlimited (no pool, or a `null` dimension) always covers that dimension; an
-     * unset pool owner (e.g. a transfer whose target has no parent) is unlimited too.
-     * @param {string | undefined | null} workspaceId
-     * @param {Allocation} [allocation]
+     * Whether `masterId` has enough FREE units (`total − used`) to carve `need` per dimension.
+     * Unmetered masters (no record) always can. All-or-nothing, as the live `422` is.
+     * @param {string | undefined | null} masterId
+     * @param {Allocation} [need]
      * @returns {boolean}
      */
-    canAllocate(workspaceId, allocation = {}) {
-      if (!workspaceId) {
+    canCarve(masterId, need = {}) {
+      if (!masterId) {
         return true;
       }
-      const pool = api.pool(workspaceId);
-      if (!pool) {
+      const master = api.resources(masterId);
+      if (!master) {
         return true;
       }
-      const needProjects = Number(allocation.projects) || 0;
-      const needPrompts = Number(allocation.prompts) || 0;
-      const okProjects = pool.projects == null || pool.projects >= needProjects;
-      const okPrompts = pool.prompts == null || pool.prompts >= needPrompts;
-      return okProjects && okPrompts;
+      return AI_DIMS.every((dim) => {
+        const want = Number(need[dim]) || 0;
+        return (master[dim].total - master[dim].used) >= want;
+      });
     },
 
     /**
-     * Deducts a draw from `workspaceId`'s pool (no-op when unlimited or the
-     * owner is unset). Caller must have checked {@link canAllocate} first. Returns the remaining
-     * pool, or null when unmetered.
-     * @param {string | undefined | null} workspaceId
-     * @param {Allocation} [allocation]
-     * @returns {Pool | null}
+     * Moves `delta` units per dimension out of (`delta > 0`) or back into (`delta < 0`) the
+     * master's `total`. No-op for an unmetered master. Callers must have checked {@link canCarve}
+     * for the positive part first.
+     * @param {string | undefined | null} masterId
+     * @param {Allocation} [delta]
+     * @returns {AiResources | null} the master's resources after the move, or null when unmetered
      */
-    draw(workspaceId, allocation = {}) {
-      if (!workspaceId) {
+    moveFromMaster(masterId, delta = {}) {
+      if (!masterId) {
         return null;
       }
-      const pool = api.pool(workspaceId);
-      if (!pool) {
+      const master = api.resources(masterId);
+      if (!master) {
         return null;
       }
-      const next = {
-        projects: pool.projects == null ? null : pool.projects - (Number(allocation.projects) || 0),
-        prompts: pool.prompts == null ? null : pool.prompts - (Number(allocation.prompts) || 0),
-      };
-      store.update(POOL_COLLECTION, workspaceId, next);
-      return next;
+      /** @type {ResourceInput} */
+      const next = {};
+      for (const dim of AI_DIMS) {
+        const d = Number(delta[dim]) || 0;
+        next[dim] = { total: master[dim].total - d };
+      }
+      return api.set(masterId, next);
     },
 
     /**
-     * The workspace's pool, for `__quota` introspection.
+     * Applies an ABSOLUTE transfer of `alloc` to a child: for every provided dimension, sets the
+     * child's `total` to the value sent and moves the delta to/from the master. Idempotent (a
+     * same-value transfer moves nothing). Returns `{ ok: false }` when a positive delta can't be
+     * covered by the master's free units (the caller maps that to the `422`). Note: this always
+     * writes a child resources record for the provided dims — so transferring onto a previously
+     * unmetered child makes it metered (mirrors the live gateway, where a child always has an
+     * allocation record once resources have been moved to it).
+     * @param {string | undefined | null} masterId the child's parent (units source/sink)
+     * @param {string} childId
+     * @param {Allocation} [alloc] the absolute per-dimension totals to set on the child
+     * @returns {{ ok: boolean }}
+     */
+    applyTransfer(masterId, childId, alloc = {}) {
+      const child = api.resources(childId) ?? zeroAi();
+      /** @type {Allocation} */
+      const positiveDelta = {};
+      /** @type {Allocation} */
+      const delta = {};
+      /** @type {ResourceInput} */
+      const childNext = {};
+      for (const dim of AI_DIMS) {
+        // Only dimensions present in the transfer move; omitted ones are left untouched.
+        if (alloc[dim] != null) {
+          const target = Number(alloc[dim]) || 0;
+          const d = target - child[dim].total;
+          delta[dim] = d;
+          if (d > 0) {
+            positiveDelta[dim] = d;
+          }
+          childNext[dim] = { total: target };
+        }
+      }
+      if (!api.canCarve(masterId, positiveDelta)) {
+        return { ok: false };
+      }
+      api.moveFromMaster(masterId, delta);
+      api.set(childId, childNext);
+      return { ok: true };
+    },
+
+    /**
+     * The workspace's resources, for `POST/GET /__quota` introspection.
      * @param {string} workspaceId
-     * @returns {{ workspaceId: string, pool: Pool | null }}
+     * @returns {{ workspaceId: string, resources: AiResources | null }}
      */
     usage(workspaceId) {
-      return { workspaceId, pool: api.pool(workspaceId) };
+      return { workspaceId, resources: api.resources(workspaceId) };
     },
   };
 

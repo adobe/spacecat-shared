@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.9.0...@adobe/spacecat-shared-project-engine-client-v1.10.0) (2026-07-10)
+
+### Features
+
+* **project-engine-client:** model dimension-root tags in the mock ([#1799](https://github.com/adobe/spacecat-shared/issues/1799)) ([5d482a1](https://github.com/adobe/spacecat-shared/commit/5d482a1dd2262d7c1341925ab7f29cb2ab5cb381))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.8.0...@adobe/spacecat-shared-project-engine-client-v1.9.0) (2026-07-06)
 
 ### Features

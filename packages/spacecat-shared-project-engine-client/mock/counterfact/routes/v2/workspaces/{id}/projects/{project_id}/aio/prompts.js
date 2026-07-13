@@ -59,7 +59,9 @@ export function POST($) {
       context.factories.createBasicResponseMock({ message: `unknown tag id: ${unknownTagId}` }),
     );
   }
-  // Embed the full { id, name } pair (as prompts/tagged.js does) so by_tags correlates on the id.
+  // A prompt STORES a reference to each tag, not a copy of it. `by_tags` re-derives the full tag
+  // object at read time through the one shared serializer (mock/tag-view.js), so a later re-parent
+  // or rename can never leave a stale breadcrumb embedded here.
   const tags = tagIds.map((id) => {
     const t = tagsById.get(id);
     return { id: t.id, name: t.name };

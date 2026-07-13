@@ -1899,11 +1899,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const GOOD = 'https://atomicity-probe.example.net';
 
     // Live is atomic: a good entry alongside a bad one is NOT created (verified by write-probe).
-    const { response } = await client.POST(BRAND_URLS, {
+    const { response, error } = await client.POST(BRAND_URLS, {
       params: { path },
       body: [{ url: GOOD, type: 'website' }, { url: 'lovesac.com', type: 'website' }],
     });
     expect(response.status).to.equal(400);
+    // The 400 came from the validation gate, not from some other source.
+    expect(error.message).to.match(/failed on the 'url' tag/);
 
     const { data } = await client.GET(BRAND_URLS, { params: { path } });
     expect(data.brand_urls.map((u) => u.url)).to.not.include(GOOD);

@@ -95,6 +95,14 @@ describe('brand-url-validation', () => {
     expect(brandUrlHttpsTag('https://love sac.com')).to.equal('url');
   });
 
+  it('rejects a control byte on the `url` tag (go refuses to parse one at all)', () => {
+    // Probed live: NUL, U+0001 and U+007F all 400 on `url`, wherever they sit in the value.
+    expect(brandUrlHttpsTag(`https://x${String.fromCharCode(0x01)}.com`)).to.equal('url');
+    expect(brandUrlHttpsTag(`https://x${String.fromCharCode(0x7f)}.com`)).to.equal('url');
+    expect(brandUrlHttpsTag(`https://x.com${String.fromCharCode(0x01)}`)).to.equal('url');
+    expect(brandUrlHttpsTag(`https://x${String.fromCharCode(0x00)}.com`)).to.equal('url');
+  });
+
   it('reports a missing / null / empty url on the `required` tag', () => {
     // All three are go's empty string, so `required` fires before `url` is ever evaluated.
     expect(brandUrlHttpsTag('')).to.equal('required');

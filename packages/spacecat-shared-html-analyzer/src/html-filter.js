@@ -209,9 +209,8 @@ function removeAccessibilityElementsCheerio($) {
 
 /**
  * Returns true if the text is entirely composed of font-detection noise:
- * either the font-metrics test string or exclusively repeated "word" tokens.
- * Used on both leaf elements and (in a second pass) on container text to catch
- * split-span cases where each child holds fewer than MIN_REPS occurrences.
+ * either the font-metrics test string (substring match to cover &N variants)
+ * or exclusively repeated "word" tokens (≥ MIN_REPS).
  * @param {string} text - trimmed textContent of the element
  * @returns {boolean}
  */
@@ -228,11 +227,6 @@ export function isFontDetectionLeaf(text) {
 
 /**
  * Remove FontFaceObserver / Next.js font-detection test elements (browser environment).
- * Two-pass strategy:
- *   1. Leaf pass — removes single-element noise nodes.
- *   2. Container pass — removes wrappers whose combined text is entirely noise,
- *      catching split-span cases (<div><span>word</span><span>word</span>…</div>)
- *      where each child individually falls below the repetition threshold.
  * Exported for direct unit testing without a full browser environment.
  * @param {Element} element - DOM element to filter
  */
@@ -245,19 +239,10 @@ export function removeFontDetectionElements(element) {
       el.remove();
     }
   });
-  element.querySelectorAll('*').forEach((el) => {
-    if (el.children.length === 0) {
-      return; // already handled in pass 1
-    }
-    if (isFontDetectionLeaf((el.textContent || '').trim())) {
-      el.remove();
-    }
-  });
 }
 
 /**
  * Remove FontFaceObserver / Next.js font-detection test elements (Node.js / cheerio).
- * Two-pass strategy mirrors the browser version — see removeFontDetectionElements.
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeFontDetectionElementsCheerio($) {
@@ -265,15 +250,6 @@ function removeFontDetectionElementsCheerio($) {
     const $el = $(el);
     if ($el.children().length > 0) {
       return;
-    }
-    if (isFontDetectionLeaf($el.text().trim())) {
-      $el.remove();
-    }
-  });
-  $('*').each((i, el) => {
-    const $el = $(el);
-    if ($el.children().length === 0) {
-      return; // already handled in pass 1
     }
     if (isFontDetectionLeaf($el.text().trim())) {
       $el.remove();

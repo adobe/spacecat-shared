@@ -162,7 +162,14 @@ export function internalServerError(message = 'internal server error', headers =
 }
 
 export { authWrapper } from './auth/auth-wrapper.js';
+export { facsWrapper } from './auth/facs-wrapper.js';
 export { readOnlyAdminWrapper } from './auth/read-only-admin-wrapper.js';
+
+// FACS state-layer helpers — used by api-service controllers / support code
+// that read or write `facs_access_mappings`. `normalizeImsOrgId` canonicalises
+// the bare ident returned by `authInfo.getTenantIds()` into the
+// `<ident>@<authSrc>` form the table stores.
+export { normalizeImsOrgId, findFacsResourceBinding } from './auth/facs-state-layer.js';
 export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { compressResponse } from './compression-wrapper.js';

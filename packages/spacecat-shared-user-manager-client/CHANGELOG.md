@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-user-manager-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.4.0...@adobe/spacecat-shared-user-manager-client-v1.5.0) (2026-07-13)
+
+### Features
+
+* **user-manager-client:** per-workspace AI resource accounting + /resources reads (LLMO-5616) ([#1767](https://github.com/adobe/spacecat-shared/issues/1767)) ([436efa8](https://github.com/adobe/spacecat-shared/commit/436efa87b319b40a033681cb0a29a8c26b282a74)), closes [serenity-docs#22](https://github.com/adobe/serenity-docs/issues/22)
+
+## [@adobe/spacecat-shared-user-manager-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.3.1...@adobe/spacecat-shared-user-manager-client-v1.4.0) (2026-07-01)
+
+### Features
+
+* **project-engine-client:** fold serenity sub-workspace fixtures into the baked mock seed ([#1759](https://github.com/adobe/spacecat-shared/issues/1759)) ([1522237](https://github.com/adobe/spacecat-shared/commit/1522237a0f883ae1c0740adcf2774375ab7f22cb))
+
 ## [@adobe/spacecat-shared-user-manager-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-user-manager-client-v1.3.0...@adobe/spacecat-shared-user-manager-client-v1.3.1) (2026-06-29)
 
 ### Bug Fixes

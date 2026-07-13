@@ -35,14 +35,29 @@
 /** @typedef {Schemas['model.BrandURL']} BrandUrl */
 /** @typedef {Schemas['model.LanguageResponse']} Language */
 /** @typedef {Schemas['model.TreeNodeResponse']} TreeNode */
+/** @typedef {Schemas['model.AIOTag']} AIOTag */
+/** @typedef {Schemas['model.AIOTagLeaf']} AIOTagLeaf */
 /** @typedef {Schemas['aiseo.BrandTopicWithPrompts']} BrandTopic */
 /** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
 /** @typedef {Schemas['model.AIOProjectInitializedResponse']} InitStatus */
 /** @typedef {Schemas['model.CICompetitor']} CiCompetitor */
+/** @typedef {Schemas['model.ResolveURLResponse']} UrlResolve */
 
 import { isoForLanguageId } from './language-catalog.js';
+import { findCatalogEntryByKey } from './ai-model-catalog.js';
 
 const uuid = () => globalThis.crypto.randomUUID();
+
+/**
+ * The canonical default assigned model — the live catalog's "search" ChatGPT entry
+ * (`key: 'search-gpt'`). Catalog-valid by construction (id/key/name/icon come straight from the
+ * shared catalog the mock also serves at `GET /v1/ai_models`), so a seeded assignment or an
+ * add-path fallback never surfaces a model the catalog can't resolve. The prior `gpt-4o` default
+ * was NOT in the catalog, which rendered an unresolvable model chip on a seeded market
+ * (adobe/spacecat-shared#1754 gap 4). {@link findCatalogEntryByKey} throws if `search-gpt` ever
+ * leaves the catalog, so this can't silently go stale.
+ */
+const DEFAULT_AI_MODEL = findCatalogEntryByKey('search-gpt');
 
 // Built once: the locale + options are constant, so a per-call constructor would be wasteful.
 const REGION_NAMES = new Intl.DisplayNames(['en'], { type: 'region' });
@@ -82,18 +97,17 @@ const countryName = (code) => {
 };
 
 /**
- * A catalog AI model (`AIModelResponse`). Only `id` is required by the spec; `name`/`key` are
- * realistic defaults. `icon` is included because the live add path (`POST .../ai_models`) resolves
- * and returns the catalog model's `name` + `icon` (only `key` comes back empty there) — verified
- * live 2026-06-25 — so the complete shape carries `icon` and an `addAiModel` response matches live.
+ * A catalog AI model (`AIModelResponse`). Only `id` is required by the spec; the default
+ * `id`/`key`/`name`/`icon` come from the canonical catalog entry ({@link DEFAULT_AI_MODEL},
+ * `search-gpt` / ChatGPT), so the default is catalog-valid (adobe/spacecat-shared#1754 gap 4).
+ * `icon` matters because the live add path (`POST .../ai_models`) resolves and returns the catalog
+ * model's `name` + `icon` (only `key` comes back empty there) — verified live 2026-06-25 — so the
+ * complete shape carries `icon` and an `addAiModel` response matches live.
  * @param {Partial<AIModel>} [overrides]
  * @returns {AIModel}
  */
 export const createAiModelMock = (overrides = {}) => ({
-  id: uuid(),
-  key: 'gpt-4o',
-  name: 'GPT-4o',
-  icon: 'openai',
+  ...DEFAULT_AI_MODEL,
   ...overrides,
 });
 
@@ -135,6 +149,35 @@ export const createProjectMock = (overrides = {}) => ({
 });
 
 /**
+ * Builds the `settings.ai` read-view sub-object the live project GET echoes — nested
+ * brand / language / country / location plus zeroed counters. Extracted so
+ * {@link createProjectResponseFromRequest} (the draft create-response) and
+ * {@link createLiveProjectMock} (a seeded live market) build the SAME shape and can't drift.
+ *
+ * `language.name` is the ISO code resolved from the catalog id (e.g. "en"), NOT the English display
+ * name; `langOf` (api-service) reads it directly as the slice code, so resolving id → ISO is the
+ * load-bearing round-trip fix (#1745). `country.name` is the informal Intl region name, populated
+ * for fidelity. Live echoes `null` (not `[]`/`''`) for an omitted `brand_names` / `location.name`
+ * on the read-view (verified 2026-06-29); the {@link NULLABLE} casts satisfy the schema
+ * (`string[]`/`string`, no explicit null variant).
+ * @param {Partial<ProjectRequest>} [request] the create-request body
+ * @returns {NonNullable<Project['settings']>['ai']}
+ */
+const buildAiSettings = (request = {}) => ({
+  models_stats: { models: [], models_count: 0 },
+  prompts_count: 0,
+  brand_names: request.brand_names ?? NULLABLE,
+  brand_name_display: request.brand_name_display ?? '',
+  language: { id: request.language_id ?? '', name: isoForLanguageId(request.language_id) },
+  country: { code: request.country_code ?? '', name: countryName(request.country_code) },
+  location: { id: request.location_id ?? 0, name: request.location_name ?? NULLABLE },
+  primary_url: request.domain ?? '',
+  segments_count: 0,
+  benchmarks_count: 0,
+  products_count: 0,
+});
+
+/**
  * Builds the {@link Project} the live API returns from a *create request* (the
  * `POST /v1/.../projects` body, `model.ProjectRequest`). The live API does NOT echo the flat
  * request fields back: it nests `brand_*` / `language_id` / `country_code` / `location_*` under
@@ -158,29 +201,41 @@ export const createProjectResponseFromRequest = (request = {}) => {
     is_draft: true,
     publish_status: 'draft',
     shared_with: 0,
-    settings: {
-      ai: {
-        models_stats: { models: [], models_count: 0 },
-        prompts_count: 0,
-        // Live echoes `null` (not `[]`/`''`) for an omitted brand_names / location_name on the
-        // read-view (verified 2026-06-29). The consumer always sends these, so it is fidelity-only;
-        // the casts satisfy the schema (string[]/string), which has no explicit null variant.
-        brand_names: request.brand_names ?? NULLABLE,
-        brand_name_display: request.brand_name_display ?? '',
-        // Live read-view: `language.name` is the ISO code (e.g. "en"), NOT the English display
-        // name, and `language.id` is the catalog UUID sent on create. `langOf` reads
-        // `language.name` directly as the slice code, so resolving the id → ISO is the load-bearing
-        // round-trip fix (#1745). `country.name` is the informal country name; not consumed,
-        // populated for fidelity.
-        language: { id: request.language_id ?? '', name: isoForLanguageId(request.language_id) },
-        country: { code: request.country_code ?? '', name: countryName(request.country_code) },
-        location: { id: request.location_id ?? 0, name: request.location_name ?? NULLABLE },
-        primary_url: request.domain ?? '',
-        segments_count: 0,
-        benchmarks_count: 0,
-        products_count: 0,
-      },
-    },
+    settings: { ai: buildAiSettings(request) },
+  });
+};
+
+/**
+ * A seeded LIVE project (`ProjectResponse`) — a published market whose `settings.ai` carries a
+ * resolvable geo + language so api-service's `listMarkets` surfaces it. That read DROPS any project
+ * with no geo/lang (`subworkspace-projects.js` drops `geoTargetId`/`languageCode` nulls), so a
+ * bare `createProjectMock({ id, name })` seeds an *invisible* market. This is the seed/default side
+ * of adobe/spacecat-shared#1754 gap 3 (live status): it mirrors the live read-view (nested
+ * `settings.ai`, like {@link createProjectResponseFromRequest}) but marks the project live
+ * (`publish_status:'live'`, `published_at`) with a caller-fixed id. Pass
+ * `location_id` (a positive Google geoTargetId, e.g. `2840` = US, `2276` = Germany) so the market
+ * resolves without depending on api-service's ISO→geo table; `language_id` is a catalog id (→ ISO
+ * via {@link isoForLanguageId}). The live create/publish path still starts drafts — only seeds use
+ * this. `is_draft` stays `true` even when live: the publish route flips only `publish_status` /
+ * `published_at` (verified live 2026-06-25), so a seeded live market byte-matches a create→publish
+ * one.
+ * @param {Partial<ProjectRequest> & { id?: string, published_at?: string }} [overrides]
+ * @returns {Project}
+ */
+export const createLiveProjectMock = (overrides = {}) => {
+  const { id = uuid(), published_at: publishedAt = '2026-01-01T00:00:00Z', ...request } = overrides;
+  return createProjectMock({
+    id,
+    live_id: id,
+    draft_id: id,
+    type: request.type ?? 'ai',
+    name: request.name ?? 'Seeded Project',
+    domain: request.domain ?? '',
+    is_draft: true,
+    publish_status: 'live',
+    published_at: publishedAt,
+    shared_with: 0,
+    settings: { ai: buildAiSettings(request) },
   });
 };
 
@@ -279,9 +334,57 @@ export const createLanguageMock = (overrides = {}) => ({
  */
 export const createTagNodeMock = (overrides = {}) => ({
   id: uuid(),
-  name: 'type:branded',
+  name: 'branded',
   children_count: 0,
   keyword_count: 0,
+  ...overrides,
+});
+
+/**
+ * A stored/listed project tag (`AIOTag`) — the `GET /aio/tags` (`AIOTagsListResponse`) item and
+ * the shape the mock persists in the per-project `tags` collection.
+ *
+ * The tag taxonomy is a dimension-root tree (see the dimension-root tag model): each **dimension**
+ * — `category`, `intent`, `source`, `type` — is a bare-named ROOT with no `parent_id`, and every
+ * **value** is a bare-named descendant carrying its parent's id. No name ever contains a `:`. A
+ * category sits at depth 2 and a sub-category at depth 3; the API caps no depth. Because roots
+ * legitimately have no parent, `parent_id` is left OUT of the defaults (optional, supplied via
+ * override on a descendant) — a plain `createAIOTagMock()` is a root. `children_count` and `path`
+ * are DERIVED at read time by the `GET /aio/tags` handler from the stored collection (count of
+ * children; the root-first ancestor breadcrumb), never stored — so they stay consistent as children
+ * are added; the `children_count: 0` default is only the empty baseline a childless root carries in
+ * the store.
+ *
+ * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
+ * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely
+ * different live shapes.
+ * @param {Partial<AIOTag>} [overrides]
+ * @returns {AIOTag}
+ */
+export const createAIOTagMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'category',
+  children_count: 0,
+  prompts_count: 0,
+  ...overrides,
+});
+
+/**
+ * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one level of an {@link AIOTag}'s `path[]`, which
+ * lists every ancestor ROOT-FIRST and excludes the tag itself. A depth-2 tag's `path` is one leaf
+ * (its dimension root); a depth-3 tag's is two (the dimension root, then its category).
+ *
+ * A leaf echoes `parent_id` only when it HAS a parent: the root leaf carries none, and each deeper
+ * leaf carries the id of the leaf before it (verified 2026-07-09 against prod, where a depth-3
+ * node's second breadcrumb leaf carries `parent_id`). `parent_id` is therefore omitted from the
+ * defaults and supplied by the caller per leaf. Built through this factory (not an inline literal)
+ * so the derived breadcrumb stays tsc-checked.
+ * @param {Partial<AIOTagLeaf>} [overrides]
+ * @returns {AIOTagLeaf}
+ */
+export const createAIOTagLeafMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'category',
   ...overrides,
 });
 
@@ -330,5 +433,20 @@ export const createCiCompetitorMock = (overrides = {}) => ({
   id: uuid(),
   domain: 'competitor.example',
   color: '',
+  ...overrides,
+});
+
+/**
+ * A URL-resolve result (`ResolveURLResponse`) — the `GET /v1/url/resolve` body. The DEFAULT is the
+ * live invalid/unresolvable shape (`{ domain: '', primary_url: '', is_valid: false }`, HTTP 200),
+ * so the route handler passes the {@link resolveUrl} overrides for a valid input and nothing (→
+ * this empty default) for an invalid one. All three fields are required by the schema (CR16).
+ * @param {Partial<UrlResolve>} [overrides]
+ * @returns {UrlResolve}
+ */
+export const createUrlResolveMock = (overrides = {}) => ({
+  domain: '',
+  primary_url: '',
+  is_valid: false,
   ...overrides,
 });

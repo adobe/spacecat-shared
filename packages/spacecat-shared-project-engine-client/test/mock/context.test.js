@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Context } from '../../mock/context.js';
 import { SEED_IDS, buildSeed } from '../../mock/seeds.js';
+import { tagId } from '../../mock/tag-id.js';
 
 describe('mock Context', () => {
   const { workspaceId, projectId } = SEED_IDS;
@@ -33,6 +34,36 @@ describe('mock Context', () => {
     expect(ctx.languageCatalog).to.be.an('array').with.length(38);
     expect(ctx.languageCatalog).to.deep.include({
       id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', iso: 'en',
+    });
+  });
+
+  it('exposes the shared tagId helper for the tag-minting routes', () => {
+    const ctx = new Context();
+    // The helper mints an opaque, URL-safe, deterministic id (#1760); Context just re-exposes it.
+    expect(ctx.tagId('Running Shoes')).to.equal(tagId('Running Shoes'));
+    expect(ctx.tagId('Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
+  });
+
+  it('exposes the shared parentIdField helper for the tag routes', () => {
+    const ctx = new Context();
+    expect(ctx.parentIdField('tag-root')).to.deep.equal({ parent_id: 'tag-root' });
+    expect(ctx.parentIdField('')).to.deep.equal({});
+  });
+
+  it('exposes the shared resolveUrl helper for the GET /v1/url/resolve route', () => {
+    const ctx = new Context();
+    // Context just re-exposes the pure canonicalizer; a valid URL yields the resolve overrides…
+    expect(ctx.resolveUrl('https://www.lovesac.com'))
+      .to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+    // …and an invalid one yields {} (→ the empty/invalid factory default).
+    expect(ctx.resolveUrl('not a url')).to.deep.equal({});
+  });
+
+  it('exposes the ai-model catalog for the catalog route + add-path resolution', () => {
+    const ctx = new Context();
+    expect(ctx.aiModelCatalog).to.be.an('array').with.length.greaterThan(0);
+    expect(ctx.aiModelCatalog).to.deep.include({
+      id: '4e0afe27-c9cc-4730-9dd1-f307309bafe3', name: 'Perplexity', key: 'perplexity', icon: 'perplexity',
     });
   });
 

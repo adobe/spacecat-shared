@@ -26,6 +26,9 @@ import {
   createPromptMock,
   createBenchmarkMock,
   createBrandUrlMock,
+  createAIOTagMock,
+  createAIOTagLeafMock,
+  createUrlResolveMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -35,6 +38,8 @@ type Prompt = components['schemas']['model.AIOPromptWithStatus'];
 type AIModel = components['schemas']['model.AIModelResponse'];
 type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
 type BrandUrl = components['schemas']['model.BrandURL'];
+type AIOTag = components['schemas']['model.AIOTag'];
+type UrlResolve = components['schemas']['model.ResolveURLResponse'];
 
 // 1. Each factory returns exactly its spec type (assignable in both directions).
 const project: Project = createProjectMock();
@@ -60,6 +65,26 @@ void updatedProject;
 // 1d. the benchmark + brand-url factories (the overlay drift-guarded list shapes).
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
+// 1e. the AIO tag factory (the GET /aio/tags list item + persisted shape).
+const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'Running Shoes' });
+void aioTag.prompts_count;
+void aioTag;
+// @ts-expect-error — keyword_count is a TreeNodeResponse field, not on AIOTag.
+createAIOTagMock({ keyword_count: 0 });
+// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors, root-first.
+type AIOTagLeaf = components['schemas']['model.AIOTagLeaf'];
+const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category' });
+const childTag: AIOTag = createAIOTagMock({
+  id: 'tag-child', name: 'Trail', parent_id: 'tag-root', path: [tagLeaf],
+});
+void childTag.parent_id;
+void childTag.path;
+// CR13: live returns null (not omitted/[]) for a flat root's parent_id + path — the overlay makes
+// both nullable, so these only compile while CR13 is in the schema.
+const rootTag: AIOTag = createAIOTagMock({ parent_id: null, path: null });
+void rootTag;
+// @ts-expect-error — a path leaf is an AIOTagLeaf, not a bare string.
+createAIOTagMock({ path: ['tag-root'] });
 // CR10: primary_url + root_domain are added to AIOBenchmarkWithCounters by the overlay (live
 // returns them). These reads only compile while CR10 is in the schema — drop CR10 and they error.
 void benchmark.primary_url;
@@ -67,6 +92,17 @@ void benchmark.root_domain;
 void benchmark.project_id;
 void benchmark;
 void brandUrl;
+
+// 1f. the url-resolve factory (overlay CR16). All three fields are required by the schema, so the
+// default must supply them — this only compiles while CR16 is in the schema.
+const urlResolve: UrlResolve = createUrlResolveMock();
+const resolveFields: [string, string, boolean] = [
+  urlResolve.domain, urlResolve.primary_url, urlResolve.is_valid,
+];
+void resolveFields;
+createUrlResolveMock({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
+// @ts-expect-error — is_valid is a boolean, not a string.
+createUrlResolveMock({ is_valid: 'yes' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

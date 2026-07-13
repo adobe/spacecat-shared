@@ -48,7 +48,7 @@ Path params are literal dir names (`{id}`); the filesystem mirrors the URL.
 | `createSubworkspace` | `POST /v2/workspaces/{id}/child` | `200` workspace; child linked to parent `{id}`, drawn from its pool |
 | `getWorkspaceStatus` | `GET /v1/workspaces/{id}/status` | `200 { status }` (object, **not** an array — overlay CR2); `403` if unknown/deleted |
 | `listWorkspaceFamily` | `GET /v1/workspaces/{id}/family` | `200` **top-level array** of the workspace + its descendants |
-| `transferWorkspaceResources` | `POST /v2/workspaces/{id}/resources/transfer` | `200` the updated `workspaceResponse` (overlay CR4 — **not** the spec's `WorkspaceResourcesV2`); `403` if unknown; `422` if the parent pool can't cover it |
+| `transferWorkspaceResources` | `POST /v2/workspaces/{id}/resources/transfer` | `200` the updated `workspaceResponse` (overlay CR4 — **not** the spec's `WorkspaceResourcesV2`); `403` if unknown; `422` if the parent's free units can't cover the raise |
 | `deleteWorkspace` | `DELETE /v1/workspaces/{id}` | `200 { id }`, cascades over descendants; `403` if unknown/deleted |
 
 `GET`/`PUT` on `/v1/workspaces/{id}` exist in the spec but the consumer never calls them, so only
@@ -62,11 +62,14 @@ State boots from a named seed (`MOCK_SEED`), or a JSON snapshot file (`MOCK_SEED
 | --- | --- |
 | `parent-with-child` (default) | the org parent + one provisioned child (`SEED_IDS.parentWorkspaceId` / `.childWorkspaceId`) |
 | `empty-parent` | the org parent only — the "create a sub-workspace from scratch" flow |
+| `two-hierarchies` | a superset of `parent-with-child` plus a second, independent parent→child family (`SEED_IDS.secondParentWorkspaceId` / `.secondChildWorkspaceId`) for the dual-org case; pairs with the Project Engine mock's `two-hierarchies` |
 
-`buildSeed({ workspaces, pools })` authors a snapshot from a DB-shaped description (use the
+`buildSeed({ workspaces, resources })` authors a snapshot from a DB-shaped description (use the
 `semrush_workspace_id` UUIDs from your fixtures so the mock and Postgres line up). Each workspace is
 built through the typed `createWorkspaceMock` factory; `pendingStatusReads` seeds a deterministic
-`not ready` budget, and `pools` seed finite parent allocations.
+`not ready` budget, and `resources` seed finite per-workspace `{ used, drafted, total }` AI
+allocations (a bare number is a `total`). The `parent-with-child-metered` seed is a ready-made
+metered variant (parent `11/700`, child `2/100`).
 
 ## 5. Control routes (test harness, auth-exempt)
 
@@ -74,15 +77,18 @@ built through the typed `createWorkspaceMock` factory; `pendingStatusReads` seed
 | --- | --- |
 | `POST /__reset` | restore the boot seed |
 | `POST /__seed` | load an arbitrary collection-keyed snapshot (new reset baseline) |
-| `GET /__dump` | inspect the live store (`workspaces`, `workspace_pool`, `workspace_status`) |
-| `POST /__quota` `{ workspaceId, projects?, prompts? }` | set a parent's available pool (omit a dim = unlimited) |
+| `GET /__dump` | inspect the live store (`workspaces`, `workspace_resources`, `workspace_status`) |
+| `POST /__quota` `{ workspaceId, projects?, prompts? }` | set a workspace's finite AI resources — each dim a bare `total` or `{ used, drafted, total }` (makes it metered; there is no path back to unmetered — use `__reset`/`__seed`) |
 | `POST /__status` `{ workspaceId, pending }` | next `pending` status reads return `not ready`, then settle |
 
-## 6. Parent-pool metering (the 422)
+## 6. AI resource accounting (the 422)
 
-A child create / resource transfer draws `{ ai: { projects, prompts } }` from the **parent's** pool.
-Default — no pool record — is **unlimited** (the dev parent runs limits-disabled). Set a finite pool
-to model exhaustion:
+Every metered workspace holds per-product `{ used, drafted, total }` for `ai.{projects,prompts}`;
+`free = total − used`. A child create — or a transfer that RAISES a child's `total` — **carves** units
+off the parent's `total`; a transfer that LOWERS it **releases** them back. Transfers are absolute and
+idempotent. A workspace with **no resources record is unmetered** (unlimited); the dev parent runs
+limits-disabled, so existing flows are unaffected until you set finite resources. Set some to model
+exhaustion (over-carving the parent's free units → 422):
 
 ```bash
 curl -s -XPOST localhost:4010/enterprise/users/api/__quota \
@@ -116,8 +122,8 @@ readiness poll, detached-group shutdown) and a worked example of every op, the d
 - `mock/stateful.js` — pure ops over the `workspaces` tree (create / status / family / cascade
   delete) + the deterministic status budget.
 - `mock/factories.js` — typed `createXMock(Partial<T>) => T` against `src/generated/types.ts`.
-- `mock/seeds.js` / `quota.js` / `auth.js` / `context.js` — seeds, parent-pool metering, the bearer
-  gate, and the per-request Context wiring it all together.
+- `mock/seeds.js` / `quota.js` / `auth.js` / `context.js` — seeds, per-workspace AI resource
+  accounting, the bearer gate, and the per-request Context wiring it all together.
 - `mock/run.js` — materializes handlers to `.counterfact/` as `.ts`, injects the auth guard, launches
   `--serve` (no `generate`) against `build/openapi3.json`.
 

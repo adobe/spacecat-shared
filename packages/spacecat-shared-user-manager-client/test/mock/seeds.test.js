@@ -12,16 +12,52 @@
 
 import { expect } from 'chai';
 import {
-  SEEDS, DEFAULT_SEED, SEED_IDS, EMPTY_PARENT, PARENT_WITH_CHILD, buildSeed,
+  SEEDS, DEFAULT_SEED, SEED_IDS, EMPTY_PARENT, PARENT_WITH_CHILD, PARENT_WITH_CHILD_METERED,
+  TWO_HIERARCHIES, buildSeed,
 } from '../../mock/seeds.js';
 import { WORKSPACES, STATUS_CONTROL } from '../../mock/stateful.js';
-import { POOL_COLLECTION } from '../../mock/quota.js';
+import { RESOURCES_COLLECTION } from '../../mock/quota.js';
+
+const dim = (used, drafted, total) => ({ used, drafted, total });
 
 describe('mock seeds', () => {
   it('exposes the named seed sets and the default', () => {
-    expect(Object.keys(SEEDS)).to.have.members(['empty-parent', 'parent-with-child']);
+    expect(Object.keys(SEEDS))
+      .to.have.members(['empty-parent', 'parent-with-child', 'parent-with-child-metered', 'two-hierarchies']);
     expect(DEFAULT_SEED).to.equal('parent-with-child');
     expect(SEEDS[DEFAULT_SEED]).to.equal(PARENT_WITH_CHILD);
+  });
+
+  it('PARENT_WITH_CHILD_METERED seeds finite resources on the parent and child', () => {
+    expect(PARENT_WITH_CHILD_METERED[WORKSPACES].map((w) => w.id))
+      .to.deep.equal([SEED_IDS.parentWorkspaceId, SEED_IDS.childWorkspaceId]);
+    const res = PARENT_WITH_CHILD_METERED[RESOURCES_COLLECTION];
+    expect(res).to.deep.equal([
+      {
+        id: SEED_IDS.parentWorkspaceId,
+        ai: { projects: dim(0, 0, 11), prompts: dim(0, 0, 700), weekly_prompts: dim(0, 0, 0) },
+      },
+      {
+        id: SEED_IDS.childWorkspaceId,
+        ai: { projects: dim(0, 0, 2), prompts: dim(0, 0, 100), weekly_prompts: dim(0, 0, 0) },
+      },
+    ]);
+  });
+
+  it('TWO_HIERARCHIES links two independent parent→child families', () => {
+    const ws = TWO_HIERARCHIES[WORKSPACES];
+    expect(ws).to.have.length(4);
+    const ids = ws.map((w) => w.id);
+    expect(ids).to.deep.equal([
+      SEED_IDS.parentWorkspaceId, SEED_IDS.childWorkspaceId,
+      SEED_IDS.secondParentWorkspaceId, SEED_IDS.secondChildWorkspaceId,
+    ]);
+    // each child links to its OWN parent (never the other hierarchy's).
+    expect(ws[1].parent_id).to.equal(SEED_IDS.parentWorkspaceId);
+    expect(ws[3].parent_id).to.equal(SEED_IDS.secondParentWorkspaceId);
+    // roots have no parent.
+    expect(ws[0].parent_id).to.equal('');
+    expect(ws[2].parent_id).to.equal('');
   });
 
   it('EMPTY_PARENT has the org parent only', () => {
@@ -37,15 +73,15 @@ describe('mock seeds', () => {
     expect(child.status).to.equal('created');
   });
 
-  it('SEED_IDS is frozen and exposes both ids', () => {
+  it('SEED_IDS is frozen and exposes both hierarchies ids', () => {
     expect(Object.isFrozen(SEED_IDS)).to.equal(true);
-    expect(SEED_IDS).to.have.all.keys('parentWorkspaceId', 'childWorkspaceId');
+    expect(SEED_IDS).to.have.all.keys('parentWorkspaceId', 'childWorkspaceId', 'secondParentWorkspaceId', 'secondChildWorkspaceId');
   });
 
   describe('buildSeed', () => {
     it('returns empty collections with no arguments', () => {
       expect(buildSeed()).to.deep.equal({
-        [WORKSPACES]: [], [POOL_COLLECTION]: [], [STATUS_CONTROL]: [],
+        [WORKSPACES]: [], [RESOURCES_COLLECTION]: [], [STATUS_CONTROL]: [],
       });
     });
 
@@ -66,16 +102,16 @@ describe('mock seeds', () => {
       expect(seed[STATUS_CONTROL]).to.deep.equal([{ id: 'w-full', pending: 2 }]);
     });
 
-    it('builds pools with defaulted (unlimited) and explicit dimensions', () => {
+    it('builds resources with defaulted (zeroed), bare-number, and object dimensions', () => {
       const seed = buildSeed({
-        pools: [
-          { workspaceId: 'p1' }, // both unlimited
-          { workspaceId: 'p2', projects: 3, prompts: 600 },
+        resources: [
+          { workspaceId: 'r1' }, // both dimensions default to a zeroed triple
+          { workspaceId: 'r2', projects: 3, prompts: { used: 10, total: 600 } },
         ],
       });
-      expect(seed[POOL_COLLECTION]).to.deep.equal([
-        { id: 'p1', projects: null, prompts: null },
-        { id: 'p2', projects: 3, prompts: 600 },
+      expect(seed[RESOURCES_COLLECTION]).to.deep.equal([
+        { id: 'r1', ai: { projects: dim(0, 0, 0), prompts: dim(0, 0, 0), weekly_prompts: dim(0, 0, 0) } },
+        { id: 'r2', ai: { projects: dim(0, 0, 3), prompts: dim(10, 0, 600), weekly_prompts: dim(0, 0, 0) } },
       ]);
     });
   });

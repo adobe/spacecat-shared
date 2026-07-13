@@ -34,6 +34,22 @@ export function GET($) {
 export function POST($) {
   const { path, body, context } = $;
   const entries = Array.isArray(body) ? body : [];
+  // Live requires every brand URL to be a literal, lower-case https:// value (write-probed prod,
+  // #25 — see mock/brand-url-validation.js for the full tag matrix). The batch is ATOMIC: the first
+  // non-conforming entry 400s the whole request and NOTHING is created. Enforced here so an IT
+  // can't go green over a write the live gateway would reject.
+  //
+  // A MISSING or non-string `url` never reaches this loop — the spec marks `BrandURLRequest.url`
+  // required and typed, so Counterfact's request validation 400s it first. An empty string does
+  // reach us (it satisfies the schema), and yields go's `required` tag, exactly as live.
+  for (const entry of entries) {
+    const tag = context.brandUrlHttpsTag(entry.url);
+    if (tag) {
+      return $.response[400].json(context.factories.createBasicResponseMock({
+        message: `Key: 'BrandURLRequest.URL' Error:Field validation for 'URL' failed on the '${tag}' tag`,
+      }));
+    }
+  }
   const created = context.ops.brand_urls.createMany(
     { workspaceId: path.id, projectId: path.project_id, benchmarkId: path.benchmark_id },
     entries.map((u) => context.factories.createBrandUrlMock({

@@ -18,7 +18,8 @@ import BaseCollection from '../base/base.collection.js';
  * Auto-generated index query methods (via schema GSIs):
  *   allByOrganizationId(orgId)
  *   allByTaskManagementConnectionId(connectionId)
- *   findByOpportunityId(opportunityId)  — optional FK, nullable
+ *   allByOpportunityId(opportunityId)   — optional FK, returns all tickets for an opportunity
+ *   findByOpportunityId(opportunityId)  — optional FK, returns first match (nullable)
  *
  * @class TicketCollection
  * @extends BaseCollection

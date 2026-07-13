@@ -35,6 +35,7 @@ export interface Ticket extends BaseModel {
 export interface TicketCollection extends BaseCollection<Ticket> {
   allByOrganizationId(organizationId: string): Promise<Ticket[]>;
   allByTaskManagementConnectionId(connectionId: string): Promise<Ticket[]>;
+  allByOpportunityId(opportunityId: string): Promise<Ticket[]>;
   findByOpportunityId(opportunityId: string): Promise<Ticket | null>;
   findByOpportunityIdAndTicketKey(opportunityId: string, ticketKey: string): Promise<Ticket | null>;
 }

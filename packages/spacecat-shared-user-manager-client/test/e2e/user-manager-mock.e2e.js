@@ -332,4 +332,99 @@ async function waitForReady(apiBase, deadline, getStderr) {
     // restore the boot seed so this case stays order-independent.
     await fetch(`${apiBase}/__reset`, { method: 'POST' });
   });
+
+  describe('dynamic AI resource allocation (reads + absolute transfer)', () => {
+    // Self-seed PARENT + CHILD (unmetered) so these cases are order-independent — an earlier
+    // `__seed` case rebaselines the store, so the outer `__reset` no longer restores the boot seed.
+    beforeEach(async () => {
+      const snapshot = buildSeed({
+        workspaces: [
+          { id: PARENT, title: 'Parent', parentId: '' },
+          { id: CHILD, title: 'Child', parentId: PARENT },
+        ],
+      });
+      await fetch(`${apiBase}/__seed`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(snapshot),
+      });
+    });
+
+    const setResources = (workspaceId, body) => fetch(`${apiBase}/__quota`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ workspaceId, ...body }),
+    });
+    const readAi = async (id) => {
+      const { data, error, response } = await client.GET('/v1/workspaces/{id}/resources', { params: { path: { id } } });
+      if (!data) {
+        throw new Error(`read ${id} → HTTP ${response?.status} err=${JSON.stringify(error)}`);
+      }
+      return data.product_resources.ai.resources;
+    };
+
+    it('GET /resources returns the workspace\'s own { used, drafted, total }', async () => {
+      await setResources(PARENT, { projects: { used: 2, total: 13 }, prompts: 800 });
+      const ai = await readAi(PARENT);
+      expect(ai.projects).to.deep.equal({ used: 2, drafted: 0, total: 13 });
+      expect(ai.prompts).to.deep.equal({ used: 0, drafted: 0, total: 800 });
+      expect(ai.weekly_prompts.total).to.equal(0); // daily-only
+    });
+
+    it('GET /resources on an unmetered workspace returns zeroed defaults (no record set)', async () => {
+      const ai = await readAi(PARENT); // seeded but never given resources → unmetered
+      expect(ai.projects).to.deep.equal({ used: 0, drafted: 0, total: 0 });
+      expect(ai.prompts).to.deep.equal({ used: 0, drafted: 0, total: 0 });
+    });
+
+    it('GET /parent/resources returns the workspace\'s OWN allocation (Gate 0, not the master pool)', async () => {
+      await setResources(CHILD, { projects: 2, prompts: 100 });
+      const { data } = await client.GET('/v1/workspaces/{id}/parent/resources', {
+        params: { path: { id: CHILD } },
+      });
+      expect(data.product_resources.ai.resources.projects.total).to.equal(2);
+      expect(data.product_resources.ai.resources.prompts.total).to.equal(100);
+    });
+
+    it('an absolute transfer sets the child total and carves/releases the parent', async () => {
+      await setResources(PARENT, { projects: 5, prompts: 1000 });
+      // create carves 2 → parent 3
+      const { data: child } = await client.POST('/v2/workspaces/{id}/child', {
+        params: { path: { id: PARENT } },
+        body: { title: 'Alloc [e2e0alloc]', resources: { ai: { projects: 2, prompts: 100 } } },
+      });
+      expect((await readAi(child.id)).projects.total).to.equal(2);
+      expect((await readAi(PARENT)).projects.total).to.equal(3);
+
+      // absolute raise to 4 (delta +2) → parent 1
+      await client.POST('/v2/workspaces/{id}/resources/transfer', {
+        params: { path: { id: child.id } },
+        body: { resources: { ai: { projects: 4 } } },
+      });
+      expect((await readAi(child.id)).projects.total).to.equal(4);
+      expect((await readAi(PARENT)).projects.total).to.equal(1);
+
+      // release to 0 → parent restored to 5
+      await client.POST('/v2/workspaces/{id}/resources/transfer', {
+        params: { path: { id: child.id } },
+        body: { resources: { ai: { projects: 0 } } },
+      });
+      expect((await readAi(child.id)).projects.total).to.equal(0);
+      expect((await readAi(PARENT)).projects.total).to.equal(5);
+    });
+
+    it('422s a transfer that over-draws the parent pool (raise beyond free units)', async () => {
+      await setResources(PARENT, { projects: 5, prompts: 1000 });
+      const { data: child } = await client.POST('/v2/workspaces/{id}/child', {
+        params: { path: { id: PARENT } },
+        body: { title: 'OverDraw [e2e0over]', resources: { ai: { projects: 2, prompts: 100 } } },
+      });
+      // parent free is 3 projects; raising the child to 10 needs +8 → 422
+      const { response } = await client.POST('/v2/workspaces/{id}/resources/transfer', {
+        params: { path: { id: child.id } },
+        body: { resources: { ai: { projects: 10 } } },
+      });
+      expect(response.status).to.equal(422);
+    });
+  });
 });

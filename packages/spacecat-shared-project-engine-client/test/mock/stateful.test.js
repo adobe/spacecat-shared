@@ -12,6 +12,7 @@
 
 import { expect } from 'chai';
 import { InMemoryStore } from '../../mock/store.js';
+import { tagId } from '../../mock/tag-id.js';
 import {
   STATEFUL_RESOURCES,
   collectionKey,
@@ -138,8 +139,8 @@ describe('stateful — tags ops', () => {
   it('creates a clean batch (no collision), lists and bulk-removes', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
     const { tags: created, collision } = ops.upsertMany(scope, [
-      { id: 'tag-a', name: 'category:A' },
-      { id: 'tag-b', name: 'category:B' },
+      { id: 'tag-a', name: 'A' },
+      { id: 'tag-b', name: 'B' },
     ]);
     expect(collision).to.equal(false);
     expect(created).to.have.length(2);
@@ -148,13 +149,50 @@ describe('stateful — tags ops', () => {
     expect(ops.list(scope)).to.have.length(1);
   });
 
+  // Gate 4 (verified live 2026-07-02): deleting a tag detaches it from every carrying prompt, and a
+  // prompt whose only tag was deleted becomes fully unassigned — not orphaned, not still matchable.
+  it('detaches a deleted tag from every carrying prompt', () => {
+    const store = new InMemoryStore();
+    const allOps = createStatefulOps(store);
+    allOps.tags.upsertMany(scope, [{ id: 'tag-a', name: 'A' }, { id: 'tag-b', name: 'B' }]);
+    allOps.prompts.createMany(scope, [
+      { id: 'p1', name: 'both', tags: [{ id: 'tag-a', name: 'A' }, { id: 'tag-b', name: 'B' }] },
+      { id: 'p2', name: 'only doomed', tags: [{ id: 'tag-a', name: 'A' }] },
+      { id: 'p3', name: 'untagged' },
+    ]);
+
+    expect(allOps.tags.removeMany(scope, ['tag-a'])).to.equal(1);
+
+    const byId = new Map(allOps.prompts.list(scope).map((p) => [p.id, p]));
+    // the surviving tag stays on the prompt that carried both …
+    expect(byId.get('p1').tags.map((t) => t.id)).to.deep.equal(['tag-b']);
+    // … the prompt whose ONLY tag was deleted is left fully unassigned, not deleted …
+    expect(byId.get('p2').tags).to.deep.equal([]);
+    // … and a prompt with no tags at all is untouched.
+    expect(byId.get('p3').tags).to.equal(undefined);
+    expect(allOps.prompts.list(scope)).to.have.length(3);
+  });
+
+  // An id that names no stored tag still detaches from any prompt carrying it (the prompt's tag map
+  // is the only place it survives), and it does not count toward the removed total.
+  it('detaches an id that is not in the standalone tag collection, without counting it', () => {
+    const store = new InMemoryStore();
+    const allOps = createStatefulOps(store);
+    allOps.prompts.createMany(scope, [
+      { id: 'p1', name: 'stale ref', tags: [{ id: 'tag-ghost', name: 'Ghost' }] },
+    ]);
+
+    expect(allOps.tags.removeMany(scope, ['tag-ghost'])).to.equal(0);
+    expect(allOps.prompts.list(scope)[0].tags).to.deep.equal([]);
+  });
+
   it('rejects a same-name/same-parent collision atomically (gate 7 → the route 500s)', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
-    ops.upsertMany(scope, [{ id: 'tag-a', name: 'category:A' }]);
+    ops.upsertMany(scope, [{ id: 'tag-a', name: 'A' }]);
     // re-creating the same id at the same (root) level collides — nothing new is written
     const { tags, collision } = ops.upsertMany(scope, [
-      { id: 'tag-a', name: 'category:A' },
-      { id: 'tag-b', name: 'category:B' },
+      { id: 'tag-a', name: 'A' },
+      { id: 'tag-b', name: 'B' },
     ]);
     expect(collision).to.equal(true);
     expect(tags).to.have.length(0);
@@ -165,34 +203,50 @@ describe('stateful — tags ops', () => {
   it('rejects an intra-batch duplicate (same id+parent twice in one request)', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
     const { collision } = ops.upsertMany(scope, [
-      { id: 'tag-a', name: 'category:A' },
-      { id: 'tag-a', name: 'category:A' },
+      { id: 'tag-a', name: 'A' },
+      { id: 'tag-a', name: 'A' },
     ]);
     expect(collision).to.equal(true);
     expect(ops.list(scope)).to.have.length(0);
   });
 
-  it('reuses (collapses) a same-name tag under a DIFFERENT parent — not a collision', () => {
+  it('persists a same-name tag under a DIFFERENT parent as its own row', () => {
+    const ops = createStatefulOps(new InMemoryStore()).tags;
+    // Callers derive the id from `(parent, name)` (see tag-id.js), so the same bare name under two
+    // parents arrives as two distinct ids and both persist — the dimension-root model relies on it.
+    ops.upsertMany(scope, [{ id: tagId('Pricing', 'root-a'), name: 'Pricing', parent_id: 'root-a' }]);
+    const { tags, collision } = ops.upsertMany(
+      scope,
+      [{ id: tagId('Pricing', 'root-b'), name: 'Pricing', parent_id: 'root-b' }],
+    );
+    expect(collision).to.equal(false);
+    expect(tags[0]).to.include({ parent_id: 'root-b' });
+    expect(ops.list(scope)).to.have.length(2);
+  });
+
+  it('collides when an id is already stored, whatever parent it now sits under', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
     ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-a' }]);
-    // the id is derived from the name alone, so 'Trail' under a different parent shares the id and
-    // collapses onto the stored row (documented 1-level-tree limitation) rather than colliding
+    // A PATCH keeps the id stable across a re-parent, so a re-create of the tag's ORIGINAL
+    // (parent, name) derives an id the moved tag still occupies. The mock cannot hold two tags at
+    // one id, so it fails loudly rather than handing back a tag that now lives elsewhere.
     const { tags, collision } = ops.upsertMany(scope, [{ id: 'tag-x', name: 'Trail', parent_id: 'root-b' }]);
-    expect(collision).to.equal(false);
-    expect(tags[0]).to.include({ id: 'tag-x', parent_id: 'root-a' }); // the original row, reused
+    expect(collision).to.equal(true);
+    expect(tags).to.have.length(0);
     expect(ops.list(scope)).to.have.length(1);
+    expect(ops.list(scope)[0]).to.include({ id: 'tag-x', parent_id: 'root-a' }); // untouched
   });
 
   it('isolates tags across projects (the multi-market scoping invariant)', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
-    ops.upsertMany({ workspaceId: 'w1', projectId: 'p1' }, [{ id: 'tag-a', name: 'category:A' }]);
+    ops.upsertMany({ workspaceId: 'w1', projectId: 'p1' }, [{ id: 'tag-a', name: 'A' }]);
     expect(ops.list({ workspaceId: 'w1', projectId: 'p2' })).to.have.length(0);
   });
 
   it('re-parents / renames a tag in place, keeping the id stable', () => {
     const ops = createStatefulOps(new InMemoryStore()).tags;
     ops.upsertMany(scope, [
-      { id: 'tag-root', name: 'category:Root' },
+      { id: 'tag-root', name: 'category' },
       { id: 'tag-child', name: 'Child' },
     ]);
     // re-parent the child under the root

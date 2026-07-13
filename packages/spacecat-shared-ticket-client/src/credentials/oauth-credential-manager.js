@@ -16,7 +16,6 @@ const TOKEN_EXPIRY_BUFFER_MS = 10 * 60 * 1000; // refresh 10 minutes before expi
 const SM_WRITE_ATTEMPTS = 3;
 const SM_WRITE_BASE_DELAY_MS = 100;
 const CONCURRENT_REFRESH_WAIT_MS = 200;
-const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
 
 /**
  * Manages OAuth 2.0 access tokens stored in AWS Secrets Manager.
@@ -36,7 +35,7 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  * each call returns a valid access token + a NEW refresh token. After the
  * 10-minute window, the original refresh token is invalidated and only the
  * latest refresh token remains valid (for 90 days of inactivity).
- * (Ref: https://developer.atlassian.com/cloud/jira/software/oauth-2-3lo-apps/#faq-rrt-config)
+ * (Ref: https://developer.atlassian.com/cloud/jira/platform/oauth-2-3lo-apps/)
  *
  * Verified empirically: the same refresh token was exchanged 5 times within
  * 10 minutes — all calls returned 200. After 10 minutes, re-using the ORIGINAL
@@ -53,8 +52,11 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  *   Lambda B: refresh(RT) → 200 → { AT_B, RT_B } → writes RT_B to SM (overwrites RT_A)
  *
  * Both succeed (10-minute reuse). Last writer wins in SM — RT_A is lost but
- * this is harmless: AT_A is in Lambda A's memory (valid 1 hour), and RT_B in
- * SM is valid for 90 days. No token is "consumed and lost" — both calls succeed.
+ * this is harmless: AT_A is usable in Lambda A's memory for the remainder of the
+ * 10-minute leeway window (Atlassian may revoke the companion access token earlier
+ * than its exp once RT_A is superseded outside that window), and RT_B in SM is
+ * valid for 90 days. No token is "consumed and lost" — both calls succeed, and a
+ * real 401 from Jira is handled reactively via forceRefreshAuthHeaders.
  *
  * ## Grant failure scenarios
  *
@@ -98,11 +100,6 @@ const SECRET_CACHE_TTL_MS = 30_000; // cache SM reads for 30 seconds
  * inside #fetchNewTokens — callers that only read tokens do not need them set.
  */
 export default class OAuthCredentialManager {
-  // ── In-memory TTL cache for SM reads (default/read path only) ─────────────
-  #secretCache = null;
-
-  #cacheExpiresAt = 0;
-
   // ── In-process concurrency locks ──────────────────────────────────────────
   // Serialise concurrent same-Lambda calls so only one Atlassian request fires.
   // The Promise is stored while a refresh is in flight; cleared when it settles.
@@ -134,20 +131,21 @@ export default class OAuthCredentialManager {
   // ── Public methods ────────────────────────────────────────────────────────
 
   /**
-   * Returns a valid Bearer header from the current SM state.
-   * Pure read — no SM writes, no Atlassian calls.
+   * Returns a Bearer header from the current SM state.
+   * Pure read — no SM writes, no Atlassian calls. Always reads SM fresh.
    *
-   * Throws with code TOKEN_REFRESH_REQUIRED when the token is expired so the
-   * caller can return a 401 to the UI, which then triggers a refresh
-   * before retrying.
+   * Returns the token regardless of its expiry state — Jira validates
+   * access tokens via its own revocation check (tied to the refresh-token
+   * rotation window), not the JWT exp claim. Callers should handle a real
+   * 401 from Jira reactively rather than blocking on local expiry checks.
    *
    * Throws with code REQUIRES_REAUTH when the connection is flagged for
    * re-authorization (refresh token revoked — user must reconnect).
    *
    * @returns {Promise<{Authorization: string}>}
    */
-  async getAuthHeaders(bypassCache = false) {
-    const secret = await this.#readSecret(bypassCache);
+  async getAuthHeaders() {
+    const secret = await this.#readSecret();
 
     if (secret.requiresReauth) {
       throw Object.assign(
@@ -156,13 +154,10 @@ export default class OAuthCredentialManager {
       );
     }
 
-    if (this.#isExpired(secret)) {
-      throw Object.assign(
-        new Error('OAuth token expired — caller should trigger a refresh'),
-        { code: 'TOKEN_REFRESH_REQUIRED' },
-      );
-    }
-
+    // Return the token even if #isExpired — Jira validates access tokens via
+    // its own revocation check (tied to the refresh-token rotation window),
+    // NOT the JWT exp claim. Blocking locally causes false-positive 409s when
+    // the token is still valid at Jira. Let #withAuthRetry handle real 401s.
     return { Authorization: `Bearer ${secret.accessToken}` };
   }
 
@@ -192,7 +187,7 @@ export default class OAuthCredentialManager {
   }
 
   async #doRefreshAuthHeaders() {
-    const current = await this.#readSecret(true);
+    const current = await this.#readSecret();
 
     // Pre-read exit: concurrent caller already refreshed — use their token.
     if (!this.#isExpired(current) && !current.requiresReauth) {
@@ -269,7 +264,7 @@ export default class OAuthCredentialManager {
     const usedToken = usedAuthHeader
       ? (usedAuthHeader.replace(/^bearer\s+/i, '').trim() || null)
       : null;
-    const current = await this.#readSecret(true);
+    const current = await this.#readSecret();
 
     if (usedToken
       && current.accessToken !== usedToken
@@ -318,10 +313,7 @@ export default class OAuthCredentialManager {
 
   // ── Private utilities ──────────────────────────────────────────────────────
 
-  async #readSecret(bypassCache = false) {
-    if (!bypassCache && this.#secretCache !== null && Date.now() < this.#cacheExpiresAt) {
-      return this.#secretCache;
-    }
+  async #readSecret() {
     const result = await this.smClient.getSecretValue({ SecretId: this.secretPath });
     let parsed;
     try {
@@ -341,14 +333,7 @@ export default class OAuthCredentialManager {
       && (typeof parsed.accessToken !== 'string' || !parsed.accessToken)) {
       throw new Error(`SM secret at ${this.secretPath} is missing a valid accessToken`);
     }
-    this.#secretCache = parsed;
-    this.#cacheExpiresAt = Date.now() + SECRET_CACHE_TTL_MS;
     return parsed;
-  }
-
-  #invalidateSecretCache() {
-    this.#secretCache = null;
-    this.#cacheExpiresAt = 0;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -437,7 +422,6 @@ export default class OAuthCredentialManager {
    * SM is still expired, writes requiresReauth: true and throws.
    */
   async #writeTokens(refreshed) {
-    this.#invalidateSecretCache();
     const idempotencyToken = createHash('sha256')
       .update(refreshed.access_token)
       .digest('hex')
@@ -449,7 +433,9 @@ export default class OAuthCredentialManager {
       SecretString: JSON.stringify({
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
+        // expiresAt: epoch ms (numeric comparisons); tokenRefreshedAt: ISO 8601 (audit/display)
         expiresAt: Date.now() + refreshed.expires_in * 1000,
+        tokenRefreshedAt: new Date().toISOString(),
         requiresReauth: false,
       }),
     };
@@ -481,7 +467,7 @@ export default class OAuthCredentialManager {
     this.log.debug('SM write exhausted, re-reading for concurrent writer', {
       secretPath: this.secretPath,
     });
-    const reread = await this.#readSecret(true);
+    const reread = await this.#readSecret();
     if (!this.#isExpired(reread)) {
       return;
     }
@@ -515,7 +501,7 @@ export default class OAuthCredentialManager {
    *    Both scenarios return identical HTTP 403 unauthorized_client from Atlassian.
    */
   async #recoverFromRevokedGrant() {
-    const raceCheck = await this.#readSecret(true);
+    const raceCheck = await this.#readSecret();
     if (!this.#isExpired(raceCheck) && !raceCheck.requiresReauth) {
       this.log.debug('GRANT_REVOKED — concurrent caller already refreshed, using their token');
       return { Authorization: `Bearer ${raceCheck.accessToken}` };
@@ -525,7 +511,7 @@ export default class OAuthCredentialManager {
     // its fresh tokens to SM before we conclude the grant is genuinely dead.
     // eslint-disable-next-line no-promise-executor-return
     await new Promise((resolve) => setTimeout(resolve, CONCURRENT_REFRESH_WAIT_MS));
-    const finalCheck = await this.#readSecret(true);
+    const finalCheck = await this.#readSecret();
     if (!this.#isExpired(finalCheck) && !finalCheck.requiresReauth) {
       this.log.debug('Concurrent refresh completed during wait — using their token');
       return { Authorization: `Bearer ${finalCheck.accessToken}` };
@@ -543,7 +529,6 @@ export default class OAuthCredentialManager {
    * so no ClientRequestToken is needed.
    */
   async #writeReauthFlag() {
-    this.#invalidateSecretCache();
     let lastErr;
     // eslint-disable-next-line no-plusplus
     for (let attempt = 0; attempt < SM_WRITE_ATTEMPTS; attempt++) {
@@ -552,7 +537,7 @@ export default class OAuthCredentialManager {
         // new valid tokens — merging requiresReauth: true onto the freshest snapshot avoids
         // clobbering their tokens with a stale read-modify-write.
         // eslint-disable-next-line no-await-in-loop
-        const secret = await this.#readSecret(true);
+        const secret = await this.#readSecret();
         // If a concurrent Lambda wrote valid tokens since our last check, do NOT
         // clobber them with requiresReauth: true — the connection is healthy.
         if (!this.#isExpired(secret) && !secret.requiresReauth) {

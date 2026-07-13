@@ -63,15 +63,48 @@ const BENCHMARK_ID = 'f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f809102'; // AIOBenchmarkWith
 const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
 const ENGLISH_LANGUAGE_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "English" → ISO en
 const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
-// Nested category taxonomy (1-level tree, serenity-docs#21 / #1758): a root `category:` tag with
-// one bare child linked by `parent_id`. Ids derive from the shared `tagId(name)` helper (an opaque,
-// URL-safe sha256-derived token — see tag-id.js / #1760) — the same derivation the tag-minting
-// routes use — so a POST/tagged create of the same name lands on the seeded id and the Categories
-// surface / `by_tags` correlate them.
-const CATEGORY_ROOT_NAME = 'category:Running Shoes';
+
+// --- The dimension-root tag taxonomy.
+// Each dimension is a bare-named ROOT; every value is a bare-named descendant carrying `parent_id`.
+// No name contains a `:`, and a tag's dimension is `path[0]`. Ids derive from the shared
+// `tagId(name, parentId)` helper (an opaque, URL-safe sha256-derived token — see tag-id.js) — the
+// same derivation the tag-minting routes use — so a standalone tag and the same tag inline on a
+// prompt resolve to ONE id and the Categories surface / `by_tags` correlate them.
+const DIMENSION_ROOTS = Object.freeze({
+  category: 'category',
+  intent: 'intent',
+  source: 'source',
+  type: 'type',
+});
+
+/** The closed dimensions' fixed vocabularies — provisioned server-side, never client-minted. */
+const INTENT_VALUES = Object.freeze([
+  'Informational', 'Task', 'Commercial', 'Transactional', 'Navigational',
+]);
+const SOURCE_VALUES = Object.freeze(['ai', 'human']);
+const TYPE_VALUES = Object.freeze(['branded', 'non-branded']);
+
+const CATEGORY_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.category);
+const INTENT_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.intent);
+const SOURCE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.source);
+const TYPE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.type);
+
+// H1's open taxonomy: one depth-2 category with two depth-3 sub-categories. The sub-category named
+// `human` deliberately collides by NAME with the `source` value `human` — under bare names those
+// are two distinct tags only because ids are keyed on `(parent, name)`. Seeding the collision keeps
+// the cross-dimension case (model spec §7 gate 4) exercisable end-to-end rather than hypothetical.
+const CATEGORY_NAME = 'Running Shoes';
 const CATEGORY_CHILD_NAME = 'Trail';
-const CATEGORY_TAG_ID = tagId(CATEGORY_ROOT_NAME); // root category
-const CHILD_TAG_ID = tagId(CATEGORY_CHILD_NAME); // bare child under the root
+const CATEGORY_CHILD_COLLIDING_NAME = 'human';
+const CATEGORY_TAG_ID = tagId(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID); // depth-2 category
+const CHILD_TAG_ID = tagId(CATEGORY_CHILD_NAME, CATEGORY_TAG_ID); // depth-3 sub-category
+const CHILD_COLLIDING_TAG_ID = tagId(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID);
+
+// The closed-dimension values H1's seeded prompt carries. `sourceHuman` shares its NAME with the
+// sub-category above and its id with nothing.
+const SOURCE_HUMAN_TAG_ID = tagId('human', SOURCE_ROOT_TAG_ID);
+const INTENT_COMMERCIAL_TAG_ID = tagId('Commercial', INTENT_ROOT_TAG_ID);
+const TYPE_BRANDED_TAG_ID = tagId('branded', TYPE_ROOT_TAG_ID);
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -105,8 +138,9 @@ const DE_GEO_TARGET_ID = 2276; // Google geoTargetId (Germany)
  *   {@link createPromptMock} so the shape is checked
  * @property {Array<Schemas['model.AIOBenchmarkWithCounters']>} [benchmarks] build with
  *   {@link createBenchmarkMock} (the competitor + own-brand benchmarks the consumer syncs)
- * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags (the `category:<name>`
- *   taxonomy); build with {@link createAIOTagMock} so the shape is checked
+ * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags (the dimension-root
+ *   taxonomy); build with {@link createAIOTagMock} so the shape is checked. Order matters only for
+ *   readability — the tree is reconstructed from `parent_id`, not from position.
  * @property {Array<{ benchmarkId: string, urls: Array<Schemas['model.BrandURL']> }>} [brandUrls]
  *   brand URLs grouped by their benchmark id; build each url with {@link createBrandUrlMock}
  */
@@ -158,25 +192,66 @@ export function buildSeed({ workspaceId, projects = [], quota }) {
   return snapshot;
 }
 
-/** Builds `dimension:value` tags (`topic:`/`source:`/`intent:`/`type:` for prompts, `category:` for
- * the Categories surface) with the mock's deterministic {@link tagId}, so a standalone category tag
- * and the same tag inline on a prompt resolve to ONE id (#1754 gap 5).
- * @param {string[]} names
- * @returns {Array<Schemas['model.AIOTag']>} */
-const aioTags = (names) => names.map((name) => createAIOTagMock({ id: tagId(name), name }));
+/**
+ * A bare-named dimension root (no `parent_id`).
+ * @param {string} name
+ * @returns {Schemas['model.AIOTag']}
+ */
+const rootTag = (name) => createAIOTagMock({ id: tagId(name), name });
+
+/**
+ * A bare-named descendant carrying its parent's id. Its own id is keyed on `(parent, name)`, so the
+ * same name under two parents yields two tags.
+ * @param {string} name
+ * @param {string} parentId
+ * @returns {Schemas['model.AIOTag']}
+ */
+const childTag = (name, parentId) => createAIOTagMock({
+  id: tagId(name, parentId),
+  name,
+  parent_id: parentId,
+});
+
+/**
+ * The four dimension roots and the closed dimensions' full child vocabularies — the tree every
+ * project is provisioned with, before any customer-authored category exists. Pass `categories` to
+ * append the open `category` subtree: each entry is a depth-2 category and its depth-3
+ * sub-categories.
+ * @param {Array<{ name: string, children?: string[] }>} [categories]
+ * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
+ */
+const dimensionRootTree = (categories = []) => [
+  rootTag(DIMENSION_ROOTS.category),
+  rootTag(DIMENSION_ROOTS.intent),
+  rootTag(DIMENSION_ROOTS.source),
+  rootTag(DIMENSION_ROOTS.type),
+  ...INTENT_VALUES.map((v) => childTag(v, INTENT_ROOT_TAG_ID)),
+  ...SOURCE_VALUES.map((v) => childTag(v, SOURCE_ROOT_TAG_ID)),
+  ...TYPE_VALUES.map((v) => childTag(v, TYPE_ROOT_TAG_ID)),
+  ...categories.flatMap(({ name, children = [] }) => {
+    const categoryId = tagId(name, CATEGORY_ROOT_TAG_ID);
+    return [
+      childTag(name, CATEGORY_ROOT_TAG_ID),
+      ...children.map((child) => childTag(child, categoryId)),
+    ];
+  }),
+];
 
 /**
  * Authors one full sub-workspace hierarchy (a live market with a model, a tagged prompt, an
- * own-brand benchmark + URL, and standalone `category:` tags) under a CHILD workspace, via the
- * public {@link buildSeed} recipe. Both seeded hierarchies go through here so they stay identical
- * in shape.
- * `categoryTags` is passed pre-built (not as names) so a hierarchy can seed a flat list (via
- * {@link aioTags}) OR a 1-level nested tree (a root + a `parent_id`-linked child).
+ * own-brand benchmark + URL, and the standalone dimension-root tag tree) under a CHILD workspace,
+ * via the public {@link buildSeed} recipe. Both seeded hierarchies go through here so they stay
+ * identical in shape.
+ *
+ * `projectTags` and `promptTags` are passed PRE-BUILT (not as names) because a tag's id depends on
+ * its parent: only the caller, which knows the tree it is seeding, can derive the right ids. A
+ * prompt's inline tags must reuse the exact ids from `projectTags` or `by_tags` and the Categories
+ * surface stop correlating.
  * @param {{ childWorkspaceId: string, projectId: string, aiModelAssignmentId: string, name: string,
  *   domain: string, brandName: string, languageId: string, countryCode: string, locationId: number,
  *   locationName: string, modelKey: string, promptId: string, promptName: string,
- *   promptTagNames: string[], benchmarkId: string, brandUrlId: string,
- *   categoryTags: Array<Schemas['model.AIOTag']> }} cfg
+ *   promptTags: Array<Schemas['model.AIOTag']>, benchmarkId: string, brandUrlId: string,
+ *   projectTags: Array<Schemas['model.AIOTag']> }} cfg
  * @returns {Snapshot}
  */
 const peHierarchy = (cfg) => buildSeed({
@@ -200,7 +275,7 @@ const peHierarchy = (cfg) => buildSeed({
     prompts: [createPromptMock({
       id: cfg.promptId,
       name: cfg.promptName,
-      tags: aioTags(cfg.promptTagNames),
+      tags: cfg.promptTags,
     })],
     benchmarks: [createBenchmarkMock({
       id: cfg.benchmarkId,
@@ -208,7 +283,7 @@ const peHierarchy = (cfg) => buildSeed({
       domain: cfg.domain,
       main_brand: true,
     })],
-    tags: cfg.categoryTags,
+    tags: cfg.projectTags,
     brandUrls: [{
       benchmarkId: cfg.benchmarkId,
       urls: [createBrandUrlMock({ id: cfg.brandUrlId, url: `https://${cfg.domain}/about`, type: 'own' })],
@@ -223,8 +298,12 @@ export const EMPTY_WORKSPACE = Object.freeze({
 
 /**
  * A brand's CHILD sub-workspace with one LIVE US/en market (a model + a tagged prompt + own-brand
- * benchmark/URL + `category:` tags) — the "read/patch/run existing data" flow starts here. Entity
- * shapes mirror the real API responses so `__dump` and GETs look like production.
+ * benchmark/URL + the dimension-root tag tree) — the "read/patch/run existing data" flow starts
+ * here. Entity shapes mirror the real API responses so `__dump` and GETs look like production.
+ *
+ * The prompt is dual-tagged (its depth-2 category AND its depth-3 sub-category, per the id-based
+ * alignment spec's delete-resilience rule) and carries one closed value per dimension. Its
+ * sub-category `human` and its source value `human` share a name and nothing else.
  */
 export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   childWorkspaceId: CHILD_WORKSPACE_ID,
@@ -240,14 +319,19 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   modelKey: 'search-gpt',
   promptId: PROMPT_ID,
   promptName: 'What is the best running shoe?',
-  promptTagNames: ['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded'],
+  promptTags: [
+    childTag(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID),
+    childTag(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID),
+    childTag('human', SOURCE_ROOT_TAG_ID),
+    childTag('Commercial', INTENT_ROOT_TAG_ID),
+    childTag('branded', TYPE_ROOT_TAG_ID),
+  ],
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
-  // A 1-level nested taxonomy: the root category + one bare child linked by parent_id (#1758).
-  categoryTags: [
-    createAIOTagMock({ id: CATEGORY_TAG_ID, name: CATEGORY_ROOT_NAME }),
-    createAIOTagMock({ id: CHILD_TAG_ID, name: CATEGORY_CHILD_NAME, parent_id: CATEGORY_TAG_ID }),
-  ],
+  // `Trail` carries no prompts, so a 0-prompt sub-category is exercised by the tree read.
+  projectTags: dimensionRootTree([
+    { name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] },
+  ]),
 }));
 
 /**
@@ -273,10 +357,16 @@ export const TWO_HIERARCHIES = Object.freeze({
     modelKey: 'gemini-2.5-flash',
     promptId: 'd6e7f8a9-b0c1-4d2e-8f3a-5b6c7d8e9f01',
     promptName: 'Was ist der beste Laufschuh?',
-    promptTagNames: ['topic:Laufschuhe', 'source:forum', 'intent:informational', 'type:non-branded'],
+    promptTags: [
+      childTag('Laufschuhe', CATEGORY_ROOT_TAG_ID),
+      childTag('ai', SOURCE_ROOT_TAG_ID),
+      childTag('Informational', INTENT_ROOT_TAG_ID),
+      childTag('non-branded', TYPE_ROOT_TAG_ID),
+    ],
     benchmarkId: 'e7f8a9b0-c1d2-4e3f-8a4b-6c7d8e9f0112',
     brandUrlId: 'f8a9b0c1-d2e3-4f4a-8b5c-7d8e9f011223',
-    categoryTags: aioTags(['category:Laufschuhe', 'category:Trailrunning']),
+    // Two depth-2 categories, no sub-categories — a prompt tagged only at the category level.
+    projectTags: dimensionRootTree([{ name: 'Laufschuhe' }, { name: 'Trailrunning' }]),
   }),
 });
 
@@ -305,9 +395,21 @@ export const SEED_IDS = Object.freeze({
   promptId: PROMPT_ID,
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
-  // The H1 project's nested category taxonomy: the root category + its bare child (#1758).
+  // The four dimension roots — every project carries exactly these at the root level.
+  categoryRootTagId: CATEGORY_ROOT_TAG_ID,
+  intentRootTagId: INTENT_ROOT_TAG_ID,
+  sourceRootTagId: SOURCE_ROOT_TAG_ID,
+  typeRootTagId: TYPE_ROOT_TAG_ID,
+  // H1's open taxonomy: a depth-2 category and its two depth-3 sub-categories. `childTagId` carries
+  // no prompts; `childCollidingTagId` is the sub-category named `human`, whose name — and only
+  // whose name — matches the `source` value below.
   categoryTagId: CATEGORY_TAG_ID,
   childTagId: CHILD_TAG_ID,
+  childCollidingTagId: CHILD_COLLIDING_TAG_ID,
+  // H1's closed-dimension values, as carried by the seeded prompt.
+  sourceHumanTagId: SOURCE_HUMAN_TAG_ID,
+  intentCommercialTagId: INTENT_COMMERCIAL_TAG_ID,
+  typeBrandedTagId: TYPE_BRANDED_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

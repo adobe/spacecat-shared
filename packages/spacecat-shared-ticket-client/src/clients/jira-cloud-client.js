@@ -127,7 +127,10 @@ function sanitizeFilename(filename) {
  *
  * SSRF protection: all API calls route through the fixed Atlassian gateway
  * https://api.atlassian.com/ex/jira/{cloudId}/... — cloudId is validated as UUID.
- * instance_url / siteUrl are display-only and never used as request targets.
+ * instance_url / siteUrl are display-only (used to build the browse link) and never
+ * used as request targets. siteUrl is validated as a parseable https URL but its
+ * hostname is intentionally unrestricted: Premium/Enterprise sites may use a custom
+ * domain (e.g. go.jira.acme.com) rather than *.atlassian.net.
  *
  * Content sanitization: suggestion-derived text is placed as plain-text leaf nodes only.
  * Summary is truncated to 255 chars (Jira hard limit).
@@ -140,14 +143,19 @@ export default class JiraCloudClient extends BaseTicketClient {
       throw new Error(`Invalid cloudId format: ${config.cloudId}`);
     }
 
+    // siteUrl is display-only — used to build the browse link (never an API target;
+    // API calls route through the fixed api.atlassian.com gateway). Enterprise/Premium
+    // sites may use a custom domain (e.g. go.jira.acme.com) instead of *.atlassian.net,
+    // so the hostname is not restricted here. Still require a parseable https URL to keep
+    // http:/javascript: and other unsafe schemes out of the returned ticketUrl.
     let siteUrlParsed;
     try {
       siteUrlParsed = new URL(config.siteUrl);
     } catch {
-      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+      throw new Error(`Invalid siteUrl: must be a valid https URL, got: ${config.siteUrl}`);
     }
-    if (siteUrlParsed.protocol !== 'https:' || !siteUrlParsed.hostname.endsWith('.atlassian.net')) {
-      throw new Error(`Invalid siteUrl: must be https://*.atlassian.net, got: ${config.siteUrl}`);
+    if (siteUrlParsed.protocol !== 'https:') {
+      throw new Error(`Invalid siteUrl: must be a valid https URL, got: ${config.siteUrl}`);
     }
 
     this.httpClient = httpClient;
@@ -159,7 +167,9 @@ export default class JiraCloudClient extends BaseTicketClient {
    *
    * @param {object} ticketData
    * @param {string} ticketData.projectKey - Jira project key (e.g. "ASO")
-   * @param {string} [ticketData.issueType='Task'] - Jira issue type name
+   * @param {string} ticketData.issueType - Jira issue type name (e.g. "Task", "Bug").
+   *   Required — Jira has no server-side default and not every project defines "Task".
+   *   Resolve a valid type for the project via listIssueTypes() before calling.
    * @param {string} ticketData.summary - Issue summary (truncated to 255 chars)
    * @param {string} [ticketData.description] - Plain-text description (no ADF markup).
    *   Converted to ADF internally as plain-text leaf nodes only — callers MUST NOT
@@ -236,13 +246,20 @@ export default class JiraCloudClient extends BaseTicketClient {
     // Paginate remaining pages with standard auth (token was just validated).
     // Jira /project/search caps maxResults at 50 per page — enterprise instances
     // routinely have 100+ projects, so pagination is required to avoid silent truncation.
+    // Read auth headers once before the loop — avoids an SM round-trip per page.
+    //
+    // Note (intentional divergence from listIssueTypes): that method calls
+    // #withAuthRetry per page (mid-loop 401 recovery) whereas this hoists auth once.
+    // Accepted tradeoff — a token cannot be revoked within a single Lambda's
+    // sub-second pagination window, so hoisting trades unreachable mid-loop
+    // recovery for fewer Secrets Manager reads. A 401 here still surfaces via
+    // #requireOk; it just is not retried mid-pagination.
+    const paginationAuthHeaders = await this.credentialManager.getAuthHeaders();
     for (;;) {
-      // eslint-disable-next-line no-await-in-loop
-      const authHeaders = await this.credentialManager.getAuthHeaders();
       // eslint-disable-next-line no-await-in-loop
       const response = await this.httpClient.fetch(
         `${this.baseUrl}/project/search?maxResults=50&orderBy=name&startAt=${startAt}`,
-        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
+        { method: 'GET', headers: { ...paginationAuthHeaders, Accept: 'application/json' }, redirect: 'error' },
       );
       // eslint-disable-next-line no-await-in-loop
       await this.#requireOk(response, 'listProjects');
@@ -265,39 +282,69 @@ export default class JiraCloudClient extends BaseTicketClient {
   }
 
   /**
-   * Returns all non-subtask issue types for a given project.
+   * Returns the creatable non-subtask issue types for a given project.
    *
-   * Uses GET /project/{projectId}/hierarchy (REST v3) which is scoped to the
-   * project and works with read:jira-work scope. Hierarchy levels:
-   *   level -1 → Subtask (excluded)
-   *   level  0 → standard types (Story, Bug, Task, …)
-   *   level  1 → Epic
-   * All level >= 0 types are returned; the caller may further filter by level
-   * if Epic exclusion is needed.
+   * Uses GET /issue/createmeta/{projectIdOrKey}/issuetypes (REST v3). Unlike the
+   * /project/{id}/hierarchy endpoint (which Atlassian documents only for
+   * team-managed / next-gen projects), createmeta carries no project-style
+   * restriction, so it works uniformly across team-managed and company-managed
+   * projects. It is permission-filtered: it returns the issue types the calling
+   * user has the "Create issues" project permission for, so per-user differences
+   * are handled by Jira rather than by this client.
+   * (OAuth scope: read:jira-work.)
    *
-   * @param {string} projectId - Jira project numeric ID, e.g. "10000"
+   * The response is paginated ({ issueTypes, startAt, maxResults, total }) with
+   * no isLast flag, so we page until an empty batch or startAt >= total.
+   *
+   * Each issue type carries a documented `subtask` boolean. Subtask types
+   * (subtask: true) are excluded; all other types (standard + Epic) are
+   * returned as { id, name }.
+   *
+   * @param {string} projectIdOrKey - Jira project numeric ID (e.g. "10000") or key (e.g. "ASO")
    * @returns {Promise<Array<{id: string, name: string}>>}
    */
-  async listIssueTypes(projectId) {
-    if (!projectId || typeof projectId !== 'string') {
-      throw new Error('projectId is required to list issue types');
+  async listIssueTypes(projectIdOrKey) {
+    if (!projectIdOrKey || typeof projectIdOrKey !== 'string') {
+      throw new Error('projectIdOrKey is required to list issue types');
     }
 
-    const response = await this.#withAuthRetry(
-      (authHeaders) => this.httpClient.fetch(
-        `${this.baseUrl}/project/${encodeURIComponent(projectId)}/hierarchy`,
-        { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
-      ),
-    );
-    await this.#requireOk(response, 'listIssueTypes');
-    const data = await response.json();
+    const pageSize = 50;
+    const maxPages = 100;
+    const issueTypes = [];
+    let startAt = 0;
 
-    return (data.hierarchy ?? [])
-      .filter((level) => level.level >= 0)
-      .flatMap((level) => (level.issueTypes ?? []).map(({ id, name }) => ({
-        id: String(id),
-        name,
-      })));
+    for (let page = 0; page < maxPages; page += 1) {
+      const url = `${this.baseUrl}/issue/createmeta/${encodeURIComponent(projectIdOrKey)}/issuetypes`
+        + `?startAt=${startAt}&maxResults=${pageSize}`;
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.#withAuthRetry(
+        (authHeaders) => this.httpClient.fetch(
+          url,
+          { method: 'GET', headers: { ...authHeaders, Accept: 'application/json' }, redirect: 'error' },
+        ),
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.#requireOk(response, 'listIssueTypes');
+      // eslint-disable-next-line no-await-in-loop
+      const data = await response.json();
+
+      const batch = data.issueTypes ?? [];
+      for (const { id, name, subtask } of batch) {
+        // `subtask` (boolean) is the documented field on createmeta issue types;
+        // hierarchyLevel is not part of this response schema. Keep everything
+        // that is not a subtask (standard types + Epic).
+        if (!subtask) {
+          issueTypes.push({ id: String(id), name });
+        }
+      }
+
+      startAt += batch.length;
+      if (batch.length === 0 || startAt >= (data.total ?? 0)) {
+        break;
+      }
+    }
+
+    return issueTypes;
   }
 
   /**
@@ -350,18 +397,25 @@ export default class JiraCloudClient extends BaseTicketClient {
   /**
    * Wraps a Jira API call with retry-once on 401.
    *
-   * On first 401: re-reads SM via getAuthHeaders() (pure GET). If a concurrent
-   * caller already refreshed and SM holds a different valid token, retries once
-   * with it. If SM still holds the same stale token or throws (expired /
-   * requires_reauth), propagates the error so the caller can trigger a refresh.
+   * If getAuthHeaders() throws REQUIRES_REAUTH, the error propagates
+   * immediately — no Jira call is attempted.
    *
-   * On second 401 or any other HTTP error: returned as-is for #requireOk to handle.
+   * On first 401: re-reads SM via getAuthHeaders(). If a concurrent caller
+   * (e.g. auth-service ensure-tokens) already refreshed and SM holds a
+   * different valid token, retries once with it. If SM still holds the same
+   * revoked token, throws TOKEN_REFRESH_REQUIRED so the caller can trigger
+   * a refresh via ensure-tokens.
    *
-   * NOTE: this does NOT consume a refresh token or write to SM. Token rotation is
-   * the caller's responsibility.
+   * NOTE: this does NOT consume a refresh token or write to SM. Token
+   * rotation is the auth-service's responsibility.
    *
    * @param {Function} requestFn - async (authHeaders) => Response
    * @returns {Promise<Response>}
+   * @throws {Error} TOKEN_REFRESH_REQUIRED - SM still holds the rejected token; caller must
+   *   trigger ensure-tokens. The error carries `code: 'TOKEN_REFRESH_REQUIRED'` and
+   *   `status: 401` (the HTTP status returned by Jira).
+   * @throws {Error} REQUIRES_REAUTH - credential manager flagged the connection as revoked.
+   *   Also thrown if a concurrent caller flags the connection during the retry window.
    */
   async #withAuthRetry(requestFn) {
     const authHeaders = await this.credentialManager.getAuthHeaders();
@@ -369,16 +423,18 @@ export default class JiraCloudClient extends BaseTicketClient {
 
     if (response.status === 401) {
       this.log.debug('Jira API returned 401 — re-reading SM for a concurrent refresh');
-      // bypassCache=true: forces SM re-read, making a concurrent Lambda's refresh
-      // visible even within the 30s TTL window.
-      // getAuthHeaders() throws TOKEN_REFRESH_REQUIRED or REQUIRES_REAUTH when SM is
-      // still stale — let those propagate so the caller can trigger a refresh.
-      const freshHeaders = await this.credentialManager.getAuthHeaders(true);
+      // 401 means Jira revoked the access token (refresh-token rotation window
+      // closed). Re-read SM to pick up tokens written by a concurrent caller
+      // (e.g. auth-service ensure-tokens).
+      // NOTE: this Lambda does NOT refresh tokens itself — token rotation is
+      // the auth-service's responsibility (it has SM PUT + Atlassian credentials).
+      const freshHeaders = await this.credentialManager.getAuthHeaders();
       if (freshHeaders.Authorization === authHeaders.Authorization) {
-        // SM holds the same token that Jira just rejected — retrying would fail again.
+        // SM still holds the same revoked token — caller must trigger a refresh
+        // via ensure-tokens (auth-service).
         throw Object.assign(
-          new Error('OAuth token expired — caller should trigger a refresh'),
-          { code: 'TOKEN_REFRESH_REQUIRED' },
+          new Error('Jira rejected the access token'),
+          { code: 'TOKEN_REFRESH_REQUIRED', status: 401 },
         );
       }
       return requestFn(freshHeaders);
@@ -437,10 +493,18 @@ export default class JiraCloudClient extends BaseTicketClient {
    */
   // eslint-disable-next-line class-methods-use-this
   #validateTicketInput({
-    projectKey, summary, labels = [], dueDate, parent,
+    projectKey, issueType, summary, labels = [], dueDate, parent,
   }) {
     if (!projectKey || typeof projectKey !== 'string') {
       throw new Error('projectKey is required to create a ticket');
+    }
+
+    // issueType is required — Jira create needs fields.issuetype and there is no
+    // server-side default. Not every project has a "Task" type (team-managed / custom
+    // schemes), so the caller must resolve a valid type via listIssueTypes() first
+    // rather than relying on a hard-coded fallback that could 400 at create time.
+    if (!issueType || typeof issueType !== 'string' || !issueType.trim()) {
+      throw new Error('issueType is required to create a ticket');
     }
 
     if (!summary || !String(summary).trim()) {
@@ -486,7 +550,7 @@ export default class JiraCloudClient extends BaseTicketClient {
   // eslint-disable-next-line class-methods-use-this
   #buildTicketBody({
     projectKey,
-    issueType = 'Task',
+    issueType,
     summary,
     description,
     labels = [],

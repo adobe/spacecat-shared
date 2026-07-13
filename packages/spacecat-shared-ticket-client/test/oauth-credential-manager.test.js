@@ -133,7 +133,7 @@ describe('OAuthCredentialManager', () => {
       expect(err.code).to.equal('REQUIRES_REAUTH');
     });
 
-    it('throws TOKEN_REFRESH_REQUIRED when token is expired — no Atlassian call', async () => {
+    it('returns Bearer header even when token is expired — no Atlassian call', async () => {
       const httpClient = makeHttpClient({});
       const manager = new OAuthCredentialManager(
         makeSmClient(EXPIRED_SECRET),
@@ -141,9 +141,8 @@ describe('OAuthCredentialManager', () => {
         httpClient,
         makeLog(),
       );
-      const err = await manager.getAuthHeaders().catch((e) => e);
-      expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
-      expect(err.message).to.include('OAuth token expired');
+      const headers = await manager.getAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: `Bearer ${EXPIRED_SECRET.accessToken}` });
       expect(httpClient.fetch.called).to.be.false;
     });
 
@@ -184,7 +183,7 @@ describe('OAuthCredentialManager', () => {
       );
     });
 
-    it('treats missing expiresAt as expired — throws TOKEN_REFRESH_REQUIRED', async () => {
+    it('treats missing expiresAt as expired — still returns Bearer header', async () => {
       const noExpirySecret = { ...VALID_SECRET, expiresAt: undefined };
       const manager = new OAuthCredentialManager(
         makeSmClient(noExpirySecret),
@@ -192,11 +191,11 @@ describe('OAuthCredentialManager', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      const err = await manager.getAuthHeaders().catch((e) => e);
-      expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
+      const headers = await manager.getAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: `Bearer ${VALID_SECRET.accessToken}` });
     });
 
-    it('treats NaN expiresAt as expired — throws TOKEN_REFRESH_REQUIRED', async () => {
+    it('treats NaN expiresAt as expired — still returns Bearer header', async () => {
       const nanExpirySecret = { ...VALID_SECRET, expiresAt: NaN };
       const manager = new OAuthCredentialManager(
         makeSmClient(nanExpirySecret),
@@ -204,11 +203,11 @@ describe('OAuthCredentialManager', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      const err = await manager.getAuthHeaders().catch((e) => e);
-      expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
+      const headers = await manager.getAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: `Bearer ${VALID_SECRET.accessToken}` });
     });
 
-    it('treats null expiresAt as expired — throws TOKEN_REFRESH_REQUIRED', async () => {
+    it('treats null expiresAt as expired — still returns Bearer header', async () => {
       const nullExpirySecret = { ...VALID_SECRET, expiresAt: null };
       const manager = new OAuthCredentialManager(
         makeSmClient(nullExpirySecret),
@@ -216,11 +215,11 @@ describe('OAuthCredentialManager', () => {
         makeHttpClient({}),
         makeLog(),
       );
-      const err = await manager.getAuthHeaders().catch((e) => e);
-      expect(err.code).to.equal('TOKEN_REFRESH_REQUIRED');
+      const headers = await manager.getAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: `Bearer ${VALID_SECRET.accessToken}` });
     });
 
-    it('reads SM only once across 3 sequential getAuthHeaders calls (cache hit)', async () => {
+    it('re-reads SM on every getAuthHeaders call (no cache)', async () => {
       const smClient = makeSmClient(VALID_SECRET);
       const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
 
@@ -228,27 +227,10 @@ describe('OAuthCredentialManager', () => {
       await manager.getAuthHeaders();
       await manager.getAuthHeaders();
 
-      expect(smClient.getSecretValue.callCount).to.equal(1);
+      expect(smClient.getSecretValue.callCount).to.equal(3);
     });
 
-    it('bypasses TTL cache when bypassCache=true — reads SM even within the cache window', async () => {
-      const smClient = makeSmClient(VALID_SECRET);
-      const manager = new OAuthCredentialManager(smClient, '/test/secret', makeHttpClient({}), makeLog());
-
-      // First call — populates cache
-      await manager.getAuthHeaders();
-      expect(smClient.getSecretValue.callCount).to.equal(1);
-
-      // Second call within TTL — normally served from cache (no SM call)
-      await manager.getAuthHeaders();
-      expect(smClient.getSecretValue.callCount).to.equal(1);
-
-      // Third call with bypassCache=true — forces SM re-read despite live cache
-      await manager.getAuthHeaders(true);
-      expect(smClient.getSecretValue.callCount).to.equal(2);
-    });
-
-    it('re-reads SM after a write path (refreshAuthHeaders) invalidates the cache', async () => {
+    it('re-reads SM after a write path (refreshAuthHeaders)', async () => {
       const smClient = {
         getSecretValue: sinon.stub()
           .onFirstCall()
@@ -266,14 +248,14 @@ describe('OAuthCredentialManager', () => {
       });
       const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
 
-      // First getAuthHeaders — populates cache (SM call #1)
+      // First getAuthHeaders — reads SM (call #1)
       await manager.getAuthHeaders();
       expect(smClient.getSecretValue.callCount).to.equal(1);
 
-      // refreshAuthHeaders — write path, must bypass and then invalidate cache (SM call #2)
+      // refreshAuthHeaders — reads SM to check freshness (call #2)
       await manager.refreshAuthHeaders();
 
-      // Second getAuthHeaders after cache invalidation — must re-read SM (SM call #3)
+      // Second getAuthHeaders — reads SM again (call #3)
       await manager.getAuthHeaders();
       expect(smClient.getSecretValue.callCount).to.equal(3);
     });
@@ -315,6 +297,21 @@ describe('OAuthCredentialManager', () => {
       expect(smClient.putSecretValue.calledOnce).to.be.true;
     });
 
+    it('treats non-finite expiresAt as expired and refreshes via Atlassian', async () => {
+      const noExpirySecret = { ...VALID_SECRET, expiresAt: undefined };
+      const smClient = makeSmClient(noExpirySecret);
+      const httpClient = makeHttpClient({
+        access_token: 'refreshed-token',
+        refresh_token: 'refreshed-rt',
+        expires_in: 3600,
+      });
+      const manager = new OAuthCredentialManager(smClient, '/test/secret', httpClient, makeLog());
+
+      const headers = await manager.refreshAuthHeaders();
+      expect(headers).to.deep.equal({ Authorization: 'Bearer refreshed-token' });
+      expect(httpClient.fetch.calledOnce).to.be.true;
+    });
+
     it('calls Atlassian even when requiresReauth is set (auth-service clearing revoked state)', async () => {
       const reauthSecret = { ...VALID_SECRET, requiresReauth: true };
       const smClient = makeSmClient(reauthSecret);
@@ -330,6 +327,8 @@ describe('OAuthCredentialManager', () => {
       expect(httpClient.fetch.calledOnce).to.be.true;
       const written = JSON.parse(smClient.putSecretValue.firstCall.args[0].SecretString);
       expect(written.requiresReauth).to.be.false;
+      expect(written.tokenRefreshedAt).to.be.a('string');
+      expect(new Date(written.tokenRefreshedAt).getTime()).to.be.closeTo(Date.now(), 5000);
     });
 
     it('sends client_id, client_secret, grant_type, and refresh_token in Atlassian request', async () => {

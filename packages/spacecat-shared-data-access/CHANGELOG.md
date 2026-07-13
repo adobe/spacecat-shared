@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.6.0...@adobe/spacecat-shared-data-access-v4.7.0) (2026-07-13)
+
+### Features
+
+* **data-access:** add TicketSuggestion bulk accessors allBySuggestionIds and allByTicketIds (SITES-44690) ([#1804](https://github.com/adobe/spacecat-shared/issues/1804)) ([99387f6](https://github.com/adobe/spacecat-shared/commit/99387f64423c822c0f377014d245549bed68cd40))
+
 ## [@adobe/spacecat-shared-data-access-v4.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.5.0...@adobe/spacecat-shared-data-access-v4.6.0) (2026-07-12)
 
 ### Features

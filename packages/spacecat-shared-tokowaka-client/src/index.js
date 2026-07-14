@@ -50,6 +50,7 @@ import {
 
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
+export { SUGGESTION_BULK_UPDATE_TYPE } from './utils/suggestion-utils.js';
 
 // CloudFront control-plane (free functions + constants).
 export {
@@ -88,6 +89,7 @@ class TokowakaClient {
     const {
       TOKOWAKA_SITE_CONFIG_BUCKET: bucketName,
       TOKOWAKA_PREVIEW_BUCKET: previewBucketName,
+      IMPORT_WORKER_QUEUE_URL: importWorkerQueueUrl,
     } = env;
 
     if (context.tokowakaClient) {
@@ -100,6 +102,8 @@ class TokowakaClient {
       s3Client: s3?.s3Client ?? context.s3Client,
       env,
       dataAccess: context.dataAccess,
+      sqs: context.sqs,
+      importWorkerQueueUrl,
     }, log);
     context.tokowakaClient = client;
     return client;
@@ -114,10 +118,13 @@ class TokowakaClient {
    * @param {Object} config.env - Environment variables (for CDN credentials)
    * @param {Object} [config.dataAccess] - Data access layer
    *   (provides Suggestion.saveMany for batch saves)
+   * @param {Object} [config.sqs] - SQS client (sendMessage(queueUrl, payload)). Used to offload
+   *   very large covered-suggestion saves to the import worker instead of saving them directly.
+   * @param {string} [config.importWorkerQueueUrl] - Import worker SQS queue URL.
    * @param {Object} log - Logger instance
    */
   constructor({
-    bucketName, previewBucketName, s3Client, env = {}, dataAccess,
+    bucketName, previewBucketName, s3Client, env = {}, dataAccess, sqs, importWorkerQueueUrl,
   }, log) {
     this.log = log;
 
@@ -134,6 +141,8 @@ class TokowakaClient {
     this.s3Client = s3Client;
     this.env = env;
     this.dataAccess = dataAccess;
+    this.sqs = sqs;
+    this.importWorkerQueueUrl = importWorkerQueueUrl;
 
     this.mapperRegistry = new MapperRegistry(log);
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
@@ -1077,7 +1086,14 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
           }
           // eslint-disable-next-line no-await-in-loop, max-len
-          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
+          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log, {
+            sqs: this.sqs,
+            queueUrl: this.importWorkerQueueUrl,
+            siteId: site.getId(),
+            unset: fieldsToStrip,
+            updatedBy: updatedBy ?? coveredFallback,
+            log: this.log,
+          });
         }
       }
     }
@@ -1504,6 +1520,7 @@ class TokowakaClient {
    * @param {Array} allSuggestions - Full opportunity suggestion list
    * @param {string} updatedBy
    * @param {Array} coveredSuggestions - Accumulator (mutated)
+   * @param {string} siteId
    * @returns {Promise<void>} Throws on metaconfig upload failure
    * @private
    */
@@ -1516,6 +1533,7 @@ class TokowakaClient {
     allSuggestions,
     updatedBy,
     coveredSuggestions,
+    siteId,
   ) {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
@@ -1586,7 +1604,14 @@ class TokowakaClient {
         cs.setUpdatedBy(updatedBy);
       });
       try {
-        await saveSuggestions(this.dataAccess, covered);
+        await saveSuggestions(this.dataAccess, covered, {
+          sqs: this.sqs,
+          queueUrl: this.importWorkerQueueUrl,
+          siteId,
+          set: { [coverageField]: suggestion.getId() },
+          updatedBy,
+          log: this.log,
+        });
         coveredSuggestions.push(...covered);
         // eslint-disable-next-line max-len
         this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
@@ -1679,6 +1704,7 @@ class TokowakaClient {
             allSuggestions,
             updatedBy,
             coveredSuggestions,
+            site.getId(),
           );
           deployedPatternSuggestions.push(suggestion);
         } catch (error) {

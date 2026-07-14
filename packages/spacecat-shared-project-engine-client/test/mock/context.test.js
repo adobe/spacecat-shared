@@ -40,8 +40,8 @@ describe('mock Context', () => {
   it('exposes the shared tagId helper for the tag-minting routes', () => {
     const ctx = new Context();
     // The helper mints an opaque, URL-safe, deterministic id (#1760); Context just re-exposes it.
-    expect(ctx.tagId('category:Running Shoes')).to.equal(tagId('category:Running Shoes'));
-    expect(ctx.tagId('category:Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
+    expect(ctx.tagId('Running Shoes')).to.equal(tagId('Running Shoes'));
+    expect(ctx.tagId('Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
   });
 
   it('exposes the shared parentIdField helper for the tag routes', () => {

@@ -92,26 +92,68 @@ export function filterEligibleSuggestions(suggestions, mapper) {
   return { eligible, ineligible };
 }
 
+// Import worker job type for a bulk suggestion field update (agnostic set/unset by id).
+export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
+
 /**
  * Batch-saves suggestions using the optimal strategy based on count.
  *
  * - <= 1700: sequential chunked upsert via saveMany (chunkSize 25).
  *   ~4s for 1700 suggestions from the DB layer, but ~11s observed end-to-end
  *   from the API due to serialization, network, and Lambda overhead.
- * - > 1700: parallel individual .save() via Promise.allSettled to avoid
- *   sequential chunk bottleneck at scale.
+ * - > 1700 with no queueContext: parallel individual .save() via Promise.allSettled to
+ *   avoid sequential chunk bottleneck at scale.
+ * - > 1700 with queueContext: enqueues a SUGGESTION_BULK_UPDATE_TYPE job to the import
+ *   worker instead of saving here (the worker fetches by id and applies
+ *   queueContext.set/unset itself). Falls back to the Promise.allSettled path above
+ *   if sqs/queueUrl aren't configured or sendMessage fails, so a queue outage
+ *   degrades rather than silently drops the save.
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
+ * @param {Object} [queueContext] - sqs, queueUrl, siteId, set/unset,
+ *   updatedBy (already resolved), log
  * @returns {Promise<void>}
  */
 const PARALLEL_SAVE_THRESHOLD = 1700;
 
-export async function saveSuggestions(dataAccess, suggestions) {
+export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   if (suggestions.length === 0) {
     return;
   }
   if (suggestions.length > PARALLEL_SAVE_THRESHOLD) {
+    if (queueContext) {
+      const {
+        sqs, queueUrl, siteId, set, unset, updatedBy, log,
+      } = queueContext;
+
+      if (queueUrl && sqs) {
+        try {
+          await sqs.sendMessage(queueUrl, {
+            type: SUGGESTION_BULK_UPDATE_TYPE,
+            siteId,
+            suggestionIds: suggestions.map((s) => s.getId()),
+            ...(set && { set }),
+            ...(unset && { unset }),
+            updatedBy,
+          });
+          log.info(
+            `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} suggestion(s)`,
+          );
+          return;
+        } catch (error) {
+          log.error(
+            `[suggestion-bulk-update] Failed to queue bulk update, falling back to direct save: ${error.message}`,
+          );
+        }
+      } else {
+        log.warn(
+          '[suggestion-bulk-update] SQS/IMPORT_WORKER_QUEUE_URL not configured; '
+          + `falling back to direct save for ${suggestions.length} suggestion(s)`,
+        );
+      }
+    }
+
     const results = await Promise.allSettled(suggestions.map((s) => s.save()));
     const failed = results.filter((r) => r.status === 'rejected');
     if (failed.length > 0) {
@@ -150,10 +192,11 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
  * @param {string|undefined} updatedBy - Explicit actor
  * @param {string[]} fieldsToStrip - Specific fields to remove
  * @param {Object} log - Logger instance
+ * @param {Object} [queueContext] - Passed through to saveSuggestions unchanged
  * @returns {Promise<void>}
  */
 // eslint-disable-next-line max-len
-export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
+export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log, queueContext) {
   if (covered.length === 0) {
     return;
   }
@@ -162,7 +205,7 @@ export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallba
     cs.setUpdatedBy(updatedBy ?? actorFallback);
   });
   try {
-    await saveSuggestions(dataAccess, covered);
+    await saveSuggestions(dataAccess, covered, queueContext);
   } catch (error) {
     // eslint-disable-next-line max-len
     log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);

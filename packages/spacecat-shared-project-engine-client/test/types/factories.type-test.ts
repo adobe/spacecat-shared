@@ -66,14 +66,14 @@ void updatedProject;
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
 // 1e. the AIO tag factory (the GET /aio/tags list item + persisted shape).
-const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'category:X' });
+const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'Running Shoes' });
 void aioTag.prompts_count;
 void aioTag;
 // @ts-expect-error — keyword_count is a TreeNodeResponse field, not on AIOTag.
 createAIOTagMock({ keyword_count: 0 });
-// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors (1-level tree).
+// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors, root-first.
 type AIOTagLeaf = components['schemas']['model.AIOTagLeaf'];
-const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:X' });
+const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category' });
 const childTag: AIOTag = createAIOTagMock({
   id: 'tag-child', name: 'Trail', parent_id: 'tag-root', path: [tagLeaf],
 });

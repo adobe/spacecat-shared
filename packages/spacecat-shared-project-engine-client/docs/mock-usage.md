@@ -154,24 +154,30 @@ method that calls it.
 
 ## 4. Seeds
 
-Three named seeds ship in `mock/seeds.js`:
+Four named seeds ship in `mock/seeds.js`:
 
 - **`empty-workspace`** — the (child) seed workspace with no projects.
 - **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
   sub-workspace (`SEED_IDS.workspaceId`, the id a correctly-anchored brand resolves to — NOT the org
   parent), with a catalog-valid AI model (`search-gpt`), the four bare dimension roots (`category`,
-  `intent`, `source`, `type`) carrying the closed vocabularies as children plus a depth-2 category
+  `intent`, `origin`, `type`) carrying the closed vocabularies as children plus a depth-2 category
   with two depth-3 sub-categories, a prompt dual-tagged with its category and sub-category plus one
   closed value per dimension, an own-brand benchmark, and a brand URL. The sub-category `human` and
-  the `source` value `human` deliberately share a name and differ only by parent, so the
+  the `origin` value `human` deliberately share a name and differ only by parent, so the
   cross-dimension collision case stays exercised. Canonical ids are exported as `SEED_IDS`
   (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`,
   `brandUrlId`, the four `*RootTagId`s, `categoryTagId`, `childTagId`, `childCollidingTagId`,
-  `sourceHumanTagId`, `intentCommercialTagId`, `typeBrandedTagId`).
+  `originHumanTagId`, `intentCommercialTagId`, `typeBrandedTagId`).
 - **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
   independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
   `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct
   `semrush_workspace_id`.
+- **`legacy-source-workspace`** — a workspace whose dimension-root tree still uses the PRE-rename
+  `source` root name (with `ai`/`human` children), for exercising a tolerant resolver that must
+  accept both `origin` and legacy `source` roots during the migration window
+  (adobe/spacecat-shared#1812, the origin dimension). Ids: `SEED_IDS.legacyWorkspaceId`,
+  `legacyProjectId`, `legacySourceRootTagId`, `legacySourceAiTagId`, `legacySourceHumanTagId`. This
+  snapshot is deleted in WP-O6 once every consumer only reads `origin`.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:

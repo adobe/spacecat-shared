@@ -28,8 +28,9 @@ import {
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
-    expect(Object.keys(SEEDS))
-      .to.include.members(['empty-workspace', 'workspace-with-data', 'two-hierarchies']);
+    expect(Object.keys(SEEDS)).to.include.members([
+      'empty-workspace', 'workspace-with-data', 'two-hierarchies', 'legacy-source-workspace',
+    ]);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
 
@@ -83,7 +84,7 @@ describe('seeds', () => {
 
     // Exactly the four dimension roots sit at the root level (model spec §7 gate 2).
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'type']);
 
     // The closed dimensions carry their full fixed vocabularies as bare children.
     const childNamesOf = (parentId) => tags
@@ -91,7 +92,7 @@ describe('seeds', () => {
       .map((t) => t.name);
     expect(childNamesOf(SEED_IDS.intentRootTagId))
       .to.deep.equal(['Informational', 'Task', 'Commercial', 'Transactional', 'Navigational']);
-    expect(childNamesOf(SEED_IDS.sourceRootTagId)).to.deep.equal(['ai', 'human']);
+    expect(childNamesOf(SEED_IDS.originRootTagId)).to.deep.equal(['ai', 'human']);
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
 
     // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories.
@@ -100,14 +101,14 @@ describe('seeds', () => {
     expect(category).to.include({ name: 'Running Shoes', parent_id: SEED_IDS.categoryRootTagId });
     expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human']);
 
-    // The sub-category `human` and the source value `human` share a name and NOTHING else — the
+    // The sub-category `human` and the origin value `human` share a name and NOTHING else — the
     // cross-dimension collision the model spec §7 gate 4 requires to be survivable.
     const subcategoryHuman = tags.find((t) => t.id === SEED_IDS.childCollidingTagId);
-    const sourceHuman = tags.find((t) => t.id === SEED_IDS.sourceHumanTagId);
-    expect(subcategoryHuman.name).to.equal(sourceHuman.name);
-    expect(subcategoryHuman.id).to.not.equal(sourceHuman.id);
+    const originHuman = tags.find((t) => t.id === SEED_IDS.originHumanTagId);
+    expect(subcategoryHuman.name).to.equal(originHuman.name);
+    expect(subcategoryHuman.id).to.not.equal(originHuman.id);
     expect(subcategoryHuman.parent_id).to.equal(SEED_IDS.categoryTagId);
-    expect(sourceHuman.parent_id).to.equal(SEED_IDS.sourceRootTagId);
+    expect(originHuman.parent_id).to.equal(SEED_IDS.originRootTagId);
 
     // The seeded prompt is dual-tagged (category + sub-category) and carries one closed value per
     // dimension, reusing the ids the standalone tree registered so `by_tags` correlates.
@@ -117,7 +118,7 @@ describe('seeds', () => {
     expect(prompt.tags.map((t) => t.id)).to.deep.equal([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
-      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.typeBrandedTagId,
     ]);
@@ -138,6 +139,27 @@ describe('seeds', () => {
     expect(secondProject.settings.ai.language.name).to.equal('de');
     // distinct workspace ids (the DB enforces unique semrush_workspace_id per org/brand).
     expect(secondWs).to.not.equal(SEED_IDS.workspaceId);
+  });
+
+  it('legacy-source-workspace still roots the origin dimension under the pre-rename `source` name', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['legacy-source-workspace']);
+    const ops = createStatefulOps(store);
+    const { legacyWorkspaceId, legacyProjectId } = SEED_IDS;
+
+    expect(ops.projects.list({ workspaceId: legacyWorkspaceId })).to.have.length(1);
+    const tags = ops.tags.list({ workspaceId: legacyWorkspaceId, projectId: legacyProjectId });
+    const roots = tags.filter((t) => !t.parent_id);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+
+    const legacySource = roots.find((t) => t.name === 'source');
+    expect(legacySource.id).to.equal(SEED_IDS.legacySourceRootTagId);
+    const originChildren = tags.filter((t) => t.parent_id === legacySource.id);
+    expect(originChildren.map((t) => t.name)).to.deep.equal(['ai', 'human']);
+    expect(originChildren.map((t) => t.id)).to.deep.equal([
+      SEED_IDS.legacySourceAiTagId,
+      SEED_IDS.legacySourceHumanTagId,
+    ]);
   });
 
   it('reset restores a seed after mutation', () => {

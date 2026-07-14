@@ -1705,12 +1705,8 @@ class TokowakaClient {
   }
 
   /**
-   * Finds and marks the suggestions under the opportunity that fall within a pattern
-   * suggestion's scope (domain-wide or segment/path) as covered, saving them. Same matching
-   * rules as `deployToEdge` uses at actual deploy time (`findCoveredSuggestions`), so a
-   * suggestion marked covered here is guaranteed to be treated as covered later at deploy.
-   * Domain-wide patterns set `coveredByDomainWide`, segment/path patterns set `coveredByPattern`
-   * (the same fields `deployToEdge` and rollback use); the value is the pattern suggestion's id.
+   * Finds and marks the suggestions that fall within a pattern suggestion's
+   * scope (domain-wide or segment/path) as covered and saves them.
    *
    * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
    * @param {Array} allSuggestions - Full opportunity suggestion list to search for matches
@@ -1720,8 +1716,8 @@ class TokowakaClient {
   async markPatternCoveredSuggestions(patternSuggestion, allSuggestions, updatedBy = 'edge-deploy') {
     const allowedRegexPatterns = patternSuggestion.getData()?.allowedRegexPatterns;
     if (!Array.isArray(allowedRegexPatterns) || allowedRegexPatterns.length === 0) {
-      // eslint-disable-next-line max-len
-      this.log.warn(`[edge-deploy] Pattern suggestion ${patternSuggestion.getId()} has no allowedRegexPatterns, skipping cover-marking`);
+      this.log.warn(`[edge-deploy] Pattern suggestion ${patternSuggestion.getId()} has `
+      + 'no allowedRegexPatterns, skipping cover-marking');
       return [];
     }
     const covered = findCoveredSuggestions(

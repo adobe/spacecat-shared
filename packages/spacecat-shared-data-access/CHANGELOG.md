@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v4.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.6.0...@adobe/spacecat-shared-data-access-v4.7.0) (2026-07-13)
+
+### Features
+
+* **data-access:** add TicketSuggestion bulk accessors allBySuggestionIds and allByTicketIds (SITES-44690) ([#1804](https://github.com/adobe/spacecat-shared/issues/1804)) ([99387f6](https://github.com/adobe/spacecat-shared/commit/99387f64423c822c0f377014d245549bed68cd40))
+
+## [@adobe/spacecat-shared-data-access-v4.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.5.0...@adobe/spacecat-shared-data-access-v4.6.0) (2026-07-12)
+
+### Features
+
+* added non prod domain in plg onboarding steps ([#1750](https://github.com/adobe/spacecat-shared/issues/1750)) ([3f56508](https://github.com/adobe/spacecat-shared/commit/3f56508a47ffd4b92584c424fcb7876bddd48838))
+
 ## [@adobe/spacecat-shared-data-access-v4.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.4.0...@adobe/spacecat-shared-data-access-v4.5.0) (2026-07-10)
 
 ### Features

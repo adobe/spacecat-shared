@@ -1834,6 +1834,83 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.brand_urls.map((u) => u.id)).to.not.include(created.ids[0]);
   });
 
+  it('rejects a non-https brand URL with the live 400 (https:// required, #25)', async () => {
+    const { benchmarkId } = SEED_IDS;
+    const BRAND_URLS = '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls';
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: benchmarkId };
+
+    // Scheme-less (the resolve `primary_url` form) → 400 on the go-validator `url` tag, exactly
+    // as prod: the value cannot be written as a brand URL. Guards the mock against going green
+    // over a write the live gateway rejects.
+    const { response, error } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'lovesac.com', type: 'website' }],
+    });
+    expect(response.status).to.equal(400);
+    expect(error.message).to.match(/failed on the 'url' tag/);
+
+    // A valid but http:// URL → 400 on `startswith`.
+    const { response: httpRes, error: httpErr } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'http://lovesac.com', type: 'website' }],
+    });
+    expect(httpRes.status).to.equal(400);
+    expect(httpErr.message).to.match(/failed on the 'startswith' tag/);
+
+    // An upper-case scheme → `startswith`, not an accept: go's HasPrefix is case-SENSITIVE.
+    const { response: upRes, error: upErr } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'HTTPS://LOVESAC.COM', type: 'website' }],
+    });
+    expect(upRes.status).to.equal(400);
+    expect(upErr.message).to.match(/failed on the 'startswith' tag/);
+
+    // An opaque, hostless URL clears go's `url` tag and dies on `startswith`.
+    const { response: mailRes, error: mailErr } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: 'mailto:hi@lovesac.com', type: 'website' }],
+    });
+    expect(mailRes.status).to.equal(400);
+    expect(mailErr.message).to.match(/failed on the 'startswith' tag/);
+
+    // An empty url → `required` (go's zero value), reported before `url` is ever evaluated. This
+    // is the one empty-ish form that satisfies the request schema and so reaches the gate; a
+    // MISSING or non-string url is 400ed earlier by request validation (asserted below).
+    const { response: reqRes, error: reqErr } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: '', type: 'website' }],
+    });
+    expect(reqRes.status).to.equal(400);
+    expect(reqErr.message).to.match(/failed on the 'required' tag/);
+
+    // A missing url is rejected by request validation (the spec marks it required) — still a 400,
+    // just not one this gate produces.
+    const { response: missingRes } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ type: 'website' }],
+    });
+    expect(missingRes.status).to.equal(400);
+  });
+
+  it('rejects the whole batch atomically when one entry is non-https (#25)', async () => {
+    const { benchmarkId } = SEED_IDS;
+    const BRAND_URLS = '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls';
+    const path = { id: SEED_WORKSPACE, project_id: SEED_PROJECT, benchmark_id: benchmarkId };
+    const GOOD = 'https://atomicity-probe.example.net';
+
+    // Live is atomic: a good entry alongside a bad one is NOT created (verified by write-probe).
+    const { response, error } = await client.POST(BRAND_URLS, {
+      params: { path },
+      body: [{ url: GOOD, type: 'website' }, { url: 'lovesac.com', type: 'website' }],
+    });
+    expect(response.status).to.equal(400);
+    // The 400 came from the validation gate, not from some other source.
+    expect(error.message).to.match(/failed on the 'url' tag/);
+
+    const { data } = await client.GET(BRAND_URLS, { params: { path } });
+    expect(data.brand_urls.map((u) => u.url)).to.not.include(GOOD);
+  });
+
   it('publishProject + getInitStatus respond with the intended mock contract', async () => {
     const { response: pubRes } = await client.POST(
       '/v1/workspaces/{id}/projects/{project_id}/publish',

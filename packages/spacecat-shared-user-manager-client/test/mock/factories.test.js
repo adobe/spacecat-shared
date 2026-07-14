@@ -16,6 +16,7 @@ import {
   createWorkspaceStatusMock,
   createWorkspaceDeleteResponseMock,
   createBasicResponseMock,
+  createWorkspaceResourcesMock,
 } from '../../mock/factories.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -48,5 +49,26 @@ describe('mock factories', () => {
     expect(createBasicResponseMock()).to.deep.equal({ message: '' });
     expect(createBasicResponseMock({ message: 'insufficient available units' }))
       .to.deep.equal({ message: 'insufficient available units' });
+  });
+
+  it('createWorkspaceResourcesMock — NewWorkspaceResources shape, zeroed defaults + overrides', () => {
+    const zeroed = createWorkspaceResourcesMock();
+    expect(zeroed.product_resources.ai.tier).to.deep.equal({ id: 'gold', name: 'gold', rank: 30 });
+    expect(zeroed.product_resources.ai.resources).to.deep.equal({
+      projects: { used: 0, drafted: 0, total: 0 },
+      prompts: { used: 0, drafted: 0, total: 0 },
+      weekly_prompts: { used: 0, drafted: 0, total: 0 },
+    });
+    expect(zeroed.general.resources)
+      .to.have.all.keys('users', 'service_credits', 'api_units', 'service_units');
+    const custom = createWorkspaceResourcesMock({
+      projects: { used: 2, total: 13 },
+      prompts: { total: 800 },
+      tier: { id: 'platinum', name: 'platinum', rank: 40 },
+    });
+    const r = custom.product_resources.ai.resources;
+    expect(r.projects).to.deep.equal({ used: 2, drafted: 0, total: 13 });
+    expect(r.prompts).to.deep.equal({ used: 0, drafted: 0, total: 800 });
+    expect(custom.product_resources.ai.tier.id).to.equal('platinum');
   });
 });

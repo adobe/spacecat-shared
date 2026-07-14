@@ -19,7 +19,7 @@ export interface TicketResult {
 
 export interface TicketData {
   projectKey: string;
-  issueType?: string;
+  issueType: string;
   summary: string;
   description?: string;
   labels?: string[];
@@ -46,10 +46,34 @@ export interface Attachment {
   filename: string;
 }
 
+/**
+ * Error thrown by JiraCloudClient when Jira rejects the access token and no
+ * refreshed token is available in Secrets Manager.
+ *
+ * Properties:
+ *   code:   'TOKEN_REFRESH_REQUIRED' — caller must trigger ensure-tokens via auth-service
+ *   status: 401                      — the HTTP status returned by Jira
+ */
+export interface TokenRefreshRequiredError extends Error {
+  code: 'TOKEN_REFRESH_REQUIRED';
+  status: 401;
+}
+
+/**
+ * Error thrown by JiraCloudClient / OAuthCredentialManager when the OAuth
+ * connection is flagged as requiring re-authorization (refresh token revoked).
+ *
+ * Properties:
+ *   code: 'REQUIRES_REAUTH' — user must reconnect via the OAuth consent flow
+ */
+export interface RequiresReauthError extends Error {
+  code: 'REQUIRES_REAUTH';
+}
+
 export declare class BaseTicketClient {
   createTicket(ticketData: TicketData): Promise<TicketResult>;
   listProjects(): Promise<Project[]>;
-  listIssueTypes(projectId: string): Promise<IssueType[]>;
+  listIssueTypes(projectIdOrKey: string): Promise<IssueType[]>;
 }
 
 export declare class JiraCloudClient extends BaseTicketClient {
@@ -57,7 +81,7 @@ export declare class JiraCloudClient extends BaseTicketClient {
 }
 
 export declare class OAuthCredentialManager {
-  getAuthHeaders(bypassCache?: boolean): Promise<Record<string, string>>;
+  getAuthHeaders(): Promise<Record<string, string>>;
   refreshAuthHeaders(): Promise<Record<string, string>>;
   forceRefreshAuthHeaders(usedAuthHeader?: string | null): Promise<Record<string, string>>;
   setRequiresReauth(): Promise<void>;

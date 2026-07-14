@@ -37,6 +37,9 @@
     "@adobe/fetch": "4.3.0",
     "@adobe/helix-universal": "5.4.2",
     "@adobe/spacecat-shared-utils": "1.81.1",
+    "@bufbuild/protobuf": "2.7.0",
+    "@connectrpc/connect": "^2.1.1",
+    "@connectrpc/connect-node": "^2.1.1",
     "urijs": "1.19.11"
   },
   "devDependencies": {

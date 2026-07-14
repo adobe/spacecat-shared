@@ -25,6 +25,8 @@ export default defineConfig([
     '**/.counterfact/**',
     '**/.releaserc.cjs',
     '**/test/fixtures/**',
+    'packages/quazar-ai-seo-ts/**',
+    'packages/*/src/vendor/**',
   ]),
   {
     languageOptions: {

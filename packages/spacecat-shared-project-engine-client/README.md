@@ -46,8 +46,11 @@ version control. Semrush only provides the file (no endpoint access in the near 
 it's **Swagger 2.0** (no v3/v3.1 on offer). The vendored file is **never edited**; where it
 diverges from the live API, a generation-time overlay corrects the converted artifact instead (see
 [Spec corrections](#spec-corrections)). Refresh is **manual**: drop in the newer file, re-run
-`npm run generate`, and review the diff. There is no automated drift detection while endpoint
-access is restricted.
+`npm run generate`, and review the diff. A committed checksum lock
+(`spec/projectengine_swagger_public.yaml.sha256`) is verified by `npm run spec:verify` (wired into
+`pretest`, so CI enforces it): any re-vendor of the spec fails the build until the hash is
+explicitly regenerated (`shasum -a 256 spec/projectengine_swagger_public.yaml > spec/projectengine_swagger_public.yaml.sha256`)
+and reviewed. A true live-drift contract test against Semrush remains blocked on endpoint access.
 
 ## Pipeline
 

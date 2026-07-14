@@ -1736,10 +1736,16 @@ class TokowakaClient {
    *
    * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
    * @param {Array} allSuggestions - Full opportunity suggestion list to search for matches
+   * @param {string} siteId - Site ID
    * @param {string} [updatedBy]
    * @returns {Promise<Array>} the marked suggestions
    */
-  async markPatternCoveredSuggestions(patternSuggestion, allSuggestions, updatedBy = 'edge-deploy') {
+  async markPatternCoveredSuggestions(
+    patternSuggestion,
+    allSuggestions,
+    siteId,
+    updatedBy = 'edge-deploy',
+  ) {
     const allowedRegexPatterns = patternSuggestion.getData()?.allowedRegexPatterns;
     if (!Array.isArray(allowedRegexPatterns) || allowedRegexPatterns.length === 0) {
       this.log.warn(`[edge-deploy] Pattern suggestion ${patternSuggestion.getId()} has `
@@ -1762,7 +1768,14 @@ class TokowakaClient {
       s.setData({ ...s.getData(), [coverageField]: patternSuggestion.getId() });
       s.setUpdatedBy(updatedBy);
     });
-    await saveSuggestions(this.dataAccess, covered);
+    await saveSuggestions(this.dataAccess, covered, {
+      sqs: this.sqs,
+      queueUrl: this.importWorkerQueueUrl,
+      siteId,
+      set: { [coverageField]: patternSuggestion.getId() },
+      updatedBy,
+      log: this.log,
+    });
     this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${patternSuggestion.getId()}`);
     return covered;
   }

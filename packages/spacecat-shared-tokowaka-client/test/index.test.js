@@ -168,6 +168,7 @@ describe('TokowakaClient', () => {
       const result = await client.markPatternCoveredSuggestions(
         mkPattern(true),
         covered,
+        'site-1',
         'tester',
       );
 
@@ -186,6 +187,7 @@ describe('TokowakaClient', () => {
       const result = await client.markPatternCoveredSuggestions(
         mkPattern(false),
         [matching, nonMatching],
+        'site-1',
       );
 
       expect(result).to.deep.equal([matching]);
@@ -197,15 +199,31 @@ describe('TokowakaClient', () => {
     it('is a no-op when the pattern suggestion has no allowedRegexPatterns', async () => {
       const noPattern = { getId: () => 'dw-1', getData: () => ({ isDomainWide: true }) };
 
-      expect(await client.markPatternCoveredSuggestions(noPattern, [mkCovered('a')]))
+      expect(await client.markPatternCoveredSuggestions(noPattern, [mkCovered('a')], 'site-1'))
         .to.deep.equal([]);
       expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
     });
 
     it('is a no-op when nothing in allSuggestions matches', async () => {
-      const result = await client.markPatternCoveredSuggestions(mkPattern(true), []);
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), [], 'site-1');
 
       expect(result).to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('enqueues a bulk-update job with the passed-in siteId when covered count is large', async () => {
+      const covered = Array.from({ length: 1701 }, (_, i) => mkCovered(`c${i}`));
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1', 'tester');
+
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-1' });
+      expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw-1' });
+      expect(payload.updatedBy).to.equal('tester');
       expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
     });
   });

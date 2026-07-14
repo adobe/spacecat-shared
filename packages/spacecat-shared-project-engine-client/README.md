@@ -49,8 +49,15 @@ diverges from the live API, a generation-time overlay corrects the converted art
 `npm run generate`, and review the diff. A committed checksum lock
 (`spec/projectengine_swagger_public.yaml.sha256`) is verified by `npm run spec:verify` (wired into
 `pretest`, so CI enforces it): any re-vendor of the spec fails the build until the hash is
-explicitly regenerated (`shasum -a 256 spec/projectengine_swagger_public.yaml > spec/projectengine_swagger_public.yaml.sha256`)
-and reviewed. A true live-drift contract test against Semrush remains blocked on endpoint access.
+explicitly regenerated with `npm run spec:lock` and reviewed. A true live-drift contract test
+against Semrush remains blocked on endpoint access.
+
+Both scripts use a **package-root-relative** path and assume the working directory is this
+package root — always invoke them via `npm run spec:verify` / `npm run spec:lock`, which npm
+runs from the package root, rather than calling `shasum -c` by hand from the monorepo root or a
+subdirectory (that yields a confusing "no such file" error). They also assume `shasum` (Perl,
+present on macOS and the `ubuntu-latest` CI runner); minimal images such as Alpine ship
+`sha256sum` instead and would need the scripts adjusted.
 
 ## Pipeline
 

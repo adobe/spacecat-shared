@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.20.0...@adobe/spacecat-shared-tokowaka-client-v1.21.0) (2026-07-14)
+
+### Features
+
+* **tokowaka-client:** offload covered-marking saves to import worker queue above threshold ([#1802](https://github.com/adobe/spacecat-shared/issues/1802)) ([ad1fe43](https://github.com/adobe/spacecat-shared/commit/ad1fe433b4628c38ef0d2d4f4008c2932b5981e0))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.1...@adobe/spacecat-shared-tokowaka-client-v1.20.0) (2026-06-27)
 
 ### Features

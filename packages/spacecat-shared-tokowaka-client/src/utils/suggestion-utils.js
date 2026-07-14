@@ -115,7 +115,7 @@ export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
  *   updatedBy (already resolved), log
  * @returns {Promise<void>}
  */
-const PARALLEL_SAVE_THRESHOLD = 1700;
+const PARALLEL_SAVE_THRESHOLD = 0;
 
 export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   if (suggestions.length === 0) {
@@ -287,9 +287,7 @@ export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestio
 
 /**
  * Finds the suggestions in `allSuggestions` that are covered by a pattern suggestion's
- * allowedRegexPatterns — shared by real edge-deploy (`#deployPatternSuggestion`) and by
- * launch-time cover-marking (`markPatternCoveredSuggestions`), so both agree on what "covered"
- * means for a domain-wide / segment pattern.
+ * allowedRegexPatterns
  *
  * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
  * @param {Array<string>} allowedRegexPatterns

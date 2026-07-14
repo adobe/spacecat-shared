@@ -115,7 +115,7 @@ export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
  *   updatedBy (already resolved), log
  * @returns {Promise<void>}
  */
-const PARALLEL_SAVE_THRESHOLD = 0;
+const PARALLEL_SAVE_THRESHOLD = 1700;
 
 export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   if (suggestions.length === 0) {

@@ -35,6 +35,8 @@ export interface Configuration {
   getVersion(): string;
   isHandlerDependencyMetForOrg(type: string, org: Organization): true | string[];
   isHandlerDependencyMetForSite(type: string, site: Site): true | string[];
+  isHandlerDisabledForOrg(type: string, org: Organization): boolean;
+  isHandlerDisabledForSite(type: string, site: Site): boolean;
   isHandlerEnabledForOrg(type: string, org: Organization): boolean;
   isHandlerEnabledForSite(type: string, site: Site): boolean;
   registerAudit(type: string, enabledByDefault?: boolean, interval?: string, productCodes?: string[]): void;

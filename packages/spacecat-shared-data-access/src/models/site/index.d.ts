@@ -419,4 +419,7 @@ export interface SiteCollection extends BaseCollection<Site> {
   findByExternalOwnerIdAndExternalSiteId(
     externalOwnerId: string, externalSiteId: string
   ): Promise<Site | null>;
+  allByExternalOwnerIdAndExternalSiteId(
+    externalOwnerId: string, externalSiteId: string
+  ): Promise<Site[]>;
 }

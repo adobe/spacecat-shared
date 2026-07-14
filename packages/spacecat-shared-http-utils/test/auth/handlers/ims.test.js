@@ -402,6 +402,62 @@ describe('AdobeImsHandler', () => {
       expect(result.authenticated).to.be.true;
       expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
     });
+
+    it('gives admin scope to @adobe.com users in LLMO Admin group without ASO admin group', async () => {
+      const token = await createToken({
+        user_id: 'llmo-admin@adobe.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'llmo-admin@adobe.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([
+        {
+          orgRef: { ident: '908936ED5D35CC220A495CD4' },
+          groups: [{ ident: 964401320 }],
+        },
+      ]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{ name: 'admin' }]);
+    });
+
+    it('does not give admin scope when user has only LLMO Admin group and non-adobe email', async () => {
+      const token = await createToken({
+        user_id: 'customer@example.com',
+        as: 'ims-na1-stg1',
+        created_at: Date.now(),
+        expires_in: 3600,
+      });
+      context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      mockImsClient.getImsUserProfile.resolves({
+        email: 'customer@example.com',
+      });
+      mockImsClient.getImsUserOrganizations.resolves([
+        {
+          orgRef: { ident: '908936ED5D35CC220A495CD4' },
+          groups: [{ ident: 964401320 }],
+        },
+      ]);
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.instanceof(AuthInfo);
+      expect(result.authenticated).to.be.true;
+      expect(result.scopes).to.deep.equal([{
+        name: 'user',
+        domains: ['908936ED5D35CC220A495CD4'],
+        subScopes: ['dx_aem_perf_auto_suggest', 'dx_aem_perf_auto_fix'],
+      }]);
+    });
   });
 
   describe('read-only org feature flag gate', () => {
@@ -590,6 +646,140 @@ describe('AdobeImsHandler', () => {
         expires_in: 3600,
       });
       context.pathInfo.headers.authorization = `Bearer ${token}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+  });
+
+  describe('RBAC (FACS) org feature flag gate', () => {
+    let ldClient;
+
+    beforeEach(async () => {
+      // Read-only flag OFF; RBAC/FACS flag (LLMO) ON for the org.
+      ldClient = { isFlagEnabledForIMSOrg: sinon.stub().resolves(false) };
+      ldClient.isFlagEnabledForIMSOrg.withArgs('FF_LLMO-3026').resolves(true);
+
+      const { default: MockedImsHandler } = await esmock('../../../src/auth/handlers/ims.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: {
+            createFrom: sinon.stub().returns(ldClient),
+          },
+        },
+      });
+      handler = new MockedImsHandler(logStub);
+
+      context.pathInfo.headers['x-product'] = 'LLMO';
+      mockImsClient.getImsUserProfile.resolves({ email: 'user@customer.com' });
+      mockImsClient.getImsUserOrganizations.resolves([{
+        orgRef: { ident: 'org-rbac-1' },
+        orgName: 'RBAC Org',
+        groups: [],
+      }]);
+    });
+
+    const tokenFor = (userId) => createToken({
+      user_id: userId,
+      as: 'ims-na1-stg1',
+      created_at: Date.now(),
+      expires_in: 3600,
+    });
+
+    it('blocks IMS auth when the RBAC flag is enabled for the org', async () => {
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWithMatch('RBAC-enabled org')).to.be.true;
+      const facsCall = ldClient.isFlagEnabledForIMSOrg.getCalls()
+        .find((c) => c.args[0] === 'FF_LLMO-3026');
+      expect(facsCall, 'FACS flag evaluated').to.not.be.undefined;
+      expect(facsCall.args[1]).to.equal('org-rbac-1@AdobeOrg');
+    });
+
+    it('resolves x-product case-insensitively (lower-case header still blocks)', async () => {
+      context.pathInfo.headers['x-product'] = 'llmo';
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.null;
+      expect(logStub.warn.calledWithMatch('RBAC-enabled org')).to.be.true;
+    });
+
+    it('does not block when no x-product header is present', async () => {
+      delete context.pathInfo.headers['x-product'];
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+      // No FACS flag key for an absent product → the flag is never evaluated.
+      expect(ldClient.isFlagEnabledForIMSOrg.calledWith('FF_LLMO-3026')).to.be.false;
+    });
+
+    it('does not block for an unknown product', async () => {
+      context.pathInfo.headers['x-product'] = 'UNKNOWN';
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('does not block when the RBAC flag is disabled', async () => {
+      ldClient.isFlagEnabledForIMSOrg.withArgs('FF_LLMO-3026').resolves(false);
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('fails open when the LD client is unavailable (createFrom returns null)', async () => {
+      const { default: NullLdHandler } = await esmock('../../../src/auth/handlers/ims.js', {
+        '@adobe/spacecat-shared-launchdarkly-client': {
+          LaunchDarklyClient: { createFrom: sinon.stub().returns(null) },
+        },
+      });
+      handler = new NullLdHandler(logStub);
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('fails open when the FACS flag evaluation throws', async () => {
+      ldClient.isFlagEnabledForIMSOrg.withArgs('FF_LLMO-3026').rejects(new Error('LD unavailable'));
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('does not block when the org has no ident', async () => {
+      mockImsClient.getImsUserOrganizations.resolves([{ orgRef: {}, orgName: 'No-Ident', groups: [] }]);
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
+
+      const result = await handler.checkAuth({}, context);
+
+      expect(result).to.be.an('object');
+      expect(result.authenticated).to.be.true;
+    });
+
+    it('does not block when the user has no organizations', async () => {
+      mockImsClient.getImsUserOrganizations.resolves([]);
+      context.pathInfo.headers.authorization = `Bearer ${await tokenFor('user@customer.com')}`;
 
       const result = await handler.checkAuth({}, context);
 

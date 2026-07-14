@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.4...@adobe/spacecat-shared-cloud-manager-client-v1.4.5) (2026-07-08)
+
+### Bug Fixes
+
+* **cloud-manager-client:** pass ref as last pull argument ([#1790](https://github.com/adobe/spacecat-shared/issues/1790)) ([cb6fa28](https://github.com/adobe/spacecat-shared/commit/cb6fa28ca73854d4ee365c0a2bc71fec8314ed4c))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.3...@adobe/spacecat-shared-cloud-manager-client-v1.4.4) (2026-06-16)
+
+### Bug Fixes
+
+* **cloud-manager-client:** bump ims-client 1.11.6 -> 1.13.3 to drop electrodb/jsonschema ([#1687](https://github.com/adobe/spacecat-shared/issues/1687)) ([1e07634](https://github.com/adobe/spacecat-shared/commit/1e076343a6e9321f101888d5510b1670b31340a9))
+
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.2...@adobe/spacecat-shared-cloud-manager-client-v1.4.3) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.4.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.1...@adobe/spacecat-shared-cloud-manager-client-v1.4.2) (2026-05-29)
 
 ### Bug Fixes

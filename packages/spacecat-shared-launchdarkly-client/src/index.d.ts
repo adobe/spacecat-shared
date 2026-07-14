@@ -74,4 +74,9 @@ export declare class LaunchDarklyClient {
   ): Promise<Record<string, any>>;
 }
 
+/**
+ * Resets the module-scope SDK-client cache. Intended for use in tests only.
+ */
+export declare function clearClientCache(): void;
+
 export { LaunchDarklyClient as default };

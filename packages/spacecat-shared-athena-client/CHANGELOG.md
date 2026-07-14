@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-athena-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.10.3...@adobe/spacecat-shared-athena-client-v1.11.0) (2026-06-11)
+
+### Features
+
+* **athena-client:** surface structured AthenaError on query failure ([#1663](https://github.com/adobe/spacecat-shared/issues/1663)) ([60baccf](https://github.com/adobe/spacecat-shared/commit/60baccf3fc2b389d5f469397ebc59a434b44973c))
+
+## [@adobe/spacecat-shared-athena-client-v1.10.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.10.2...@adobe/spacecat-shared-athena-client-v1.10.3) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
 ## [@adobe/spacecat-shared-athena-client-v1.10.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-athena-client-v1.10.1...@adobe/spacecat-shared-athena-client-v1.10.2) (2026-05-29)
 
 ### Bug Fixes

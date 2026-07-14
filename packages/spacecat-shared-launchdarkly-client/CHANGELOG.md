@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.3.0...@adobe/spacecat-shared-launchdarkly-client-v1.3.1) (2026-07-13)
+
+### Bug Fixes
+
+* **launchdarkly-client:** document fail-open contract for variation/isFlagEnabledForIMSOrg ([#1808](https://github.com/adobe/spacecat-shared/issues/1808)) ([1c37b82](https://github.com/adobe/spacecat-shared/commit/1c37b82383f49217d560e99d4b264d1f18eaf2a5)), closes [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1800](https://github.com/adobe/spacecat-shared/issues/1800) [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1803](https://github.com/adobe/spacecat-shared/issues/1803)
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.2...@adobe/spacecat-shared-launchdarkly-client-v1.3.0) (2026-06-15)
+
+### Features
+
+* **launchdarkly-client:** eliminate Lambda log noise (cache + polling + init timeout) ([#1674](https://github.com/adobe/spacecat-shared/issues/1674)) ([a673a4a](https://github.com/adobe/spacecat-shared/commit/a673a4aa443f9af69c96e5cda0503aa6db791f40))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.1...@adobe/spacecat-shared-launchdarkly-client-v1.2.2) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.0...@adobe/spacecat-shared-launchdarkly-client-v1.2.1) (2026-05-29)
 
 ### Bug Fixes

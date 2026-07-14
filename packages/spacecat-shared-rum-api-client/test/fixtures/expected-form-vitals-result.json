@@ -1,69 +1,65 @@
 [
   {
-    "formengagement": {},
-    "forminternalnavigation": [],
-    "formsource": ".form",
+    "url": "https://business.adobe.com/products/marketo.html",
     "formsubmit": {},
     "formview": {
       "desktop": 100
     },
+    "formengagement": {},
     "pageview": {
       "desktop": 4500,
       "mobile": 500
     },
+    "forminternalnavigation": [],
     "trafficacquisition": {
+      "total": 5000,
       "earned": 0,
-      "maxTimeDelta": 467,
       "owned": 5000,
       "paid": 0,
+      "maxTimeDelta": 467,
       "sources": [
         {
           "type": "owned:direct",
           "views": 5000
         }
-      ],
-      "total": 5000
+      ]
     },
-    "url": "https://business.adobe.com/products/marketo.html"
+    "formsource": ".form",
+    "fieldEngagement": []
   },
   {
     "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
-    "formsubmit": {
-
-    },
+    "formsubmit": {},
     "formview": {
       "desktop": 100
     },
-    "formengagement": {
-
-    },
+    "formengagement": {},
     "pageview": {
       "desktop": 2500
     },
     "forminternalnavigation": [
       {
         "url": "https://business.adobe.com/products/marketo.html",
+        "pageview": {
+          "desktop": 4500,
+          "mobile": 500
+        },
         "CTAs": [
           {
             "source": "#tab-features-2",
             "clicks": 100
           }
         ],
-        "pageview": {
-          "desktop": 4500,
-          "mobile": 500
-        },
         "totalClicksOnPage": 800
       },
       {
-        "CTAs": [
-        ],
+        "url": "https://business.adobe.com/uk/products/marketo.html",
         "pageview": {
           "desktop": 1600,
           "mobile": 100
         },
-        "totalClicksOnPage": 100,
-        "url": "https://business.adobe.com/uk/products/marketo.html"
+        "CTAs": [],
+        "totalClicksOnPage": 100
       }
     ],
     "trafficacquisition": {
@@ -79,34 +75,36 @@
         }
       ]
     },
-    "formsource": ".form"
+    "formsource": ".form",
+    "fieldEngagement": []
   },
   {
-    "formengagement": {},
-    "forminternalnavigation": [],
-    "formsource": ".form",
+    "url": "https://business.adobe.com/uk/products/marketo.html",
     "formsubmit": {},
     "formview": {
       "desktop": 100
     },
+    "formengagement": {},
     "pageview": {
       "desktop": 1600,
       "mobile": 100
     },
+    "forminternalnavigation": [],
     "trafficacquisition": {
+      "total": 1700,
       "earned": 0,
-      "maxTimeDelta": 251,
       "owned": 1700,
       "paid": 0,
+      "maxTimeDelta": 251,
       "sources": [
         {
           "type": "owned:direct",
           "views": 1700
         }
-      ],
-      "total": 1700
+      ]
     },
-    "url": "https://business.adobe.com/uk/products/marketo.html"
+    "formsource": ".form",
+    "fieldEngagement": []
   },
   {
     "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
@@ -122,87 +120,89 @@
     "pageview": {
       "desktop": 2500
     },
-    "forminternalnavigation": [
-
-    ],
+    "forminternalnavigation": [],
     "trafficacquisition": {
+      "total": 2500,
       "earned": 0,
-      "maxTimeDelta": 33324,
       "owned": 2500,
       "paid": 0,
+      "maxTimeDelta": 33324,
       "sources": [
         {
           "type": "owned:direct",
           "views": 2500
         }
-      ],
-      "total": 2500
+      ]
     },
-    "formsource": "form#abc"
+    "formsource": "form#abc",
+    "fieldEngagement": [
+      {
+        "source": "form#abc input[type=number] age",
+        "clicks": 0,
+        "fills": 100,
+        "avg_time_spend": 0.34
+      },
+      {
+        "source": "form#abc input[type=text] firstName",
+        "clicks": 200,
+        "fills": 0,
+        "avg_time_spend": 0
+      }
+    ]
   },
   {
     "url": "https://business.adobe.com/de/products/magento/magento-commerce.html",
-    "formsubmit": {
-
-    },
+    "formsubmit": {},
     "formview": {
       "desktop": 100
     },
-    "formengagement": {
-
-    },
+    "formengagement": {},
     "pageview": {
       "desktop": 1500
     },
-    "forminternalnavigation": [
-
-    ],
+    "forminternalnavigation": [],
     "trafficacquisition": {
+      "total": 1500,
       "earned": 0,
-      "maxTimeDelta": 497,
       "owned": 1500,
       "paid": 0,
+      "maxTimeDelta": 497,
       "sources": [
         {
           "type": "owned:direct",
           "views": 1500
         }
-      ],
-      "total": 1500
+      ]
     },
-    "formsource": "form#abc"
+    "formsource": "form#abc",
+    "fieldEngagement": []
   },
   {
     "url": "https://business.adobe.com/jp/products/magento/magento-commerce.html",
-    "formsubmit": {
-
-    },
+    "formsubmit": {},
     "formview": {
       "desktop": 200
     },
-    "formengagement": {
-
-    },
+    "formengagement": {},
     "pageview": {
       "desktop": 2500
     },
-    "forminternalnavigation": [
-
-    ],
+    "forminternalnavigation": [],
     "trafficacquisition": {
+      "total": 2500,
       "earned": 0,
-      "maxTimeDelta": 33324,
       "owned": 2500,
       "paid": 0,
+      "maxTimeDelta": 33324,
       "sources": [
         {
           "type": "owned:direct",
           "views": 2500
         }
-      ],
-      "total": 2500
+      ]
     },
-    "formsource": "form.xyz"
+    "formsource": "form.xyz",
+    "fieldEngagement": []
   },
   {
     "url": "https://www.iframe-example.com/test/getting-iframe-example/guide/begin",
@@ -215,7 +215,6 @@
       "mobile": 400,
       "desktop": 100
     },
-    "formsource": "form#guideContainerForm",
     "forminternalnavigation": [
       {
         "url": "https://www.iframe-example.com/test/getting-iframe-example/guide-home",
@@ -224,18 +223,20 @@
       }
     ],
     "trafficacquisition": {
+      "total": 200,
       "earned": 0,
-      "maxTimeDelta": 17093,
       "owned": 200,
       "paid": 0,
+      "maxTimeDelta": 17093,
       "sources": [
         {
           "type": "owned:direct",
           "views": 200
         }
-      ],
-      "total": 200
+      ]
     },
-    "iframeSrc": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html"
+    "formsource": "form#guideContainerForm",
+    "iframeSrc": "https://www.iframe-example.com/content/iframe-example/en-us/test/getting-iframe-example/guide/begin/jcr:content/contentpar/columns/0/aemform.iframe.en.html",
+    "fieldEngagement": []
   }
 ]

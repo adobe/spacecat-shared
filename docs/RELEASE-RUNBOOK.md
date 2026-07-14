@@ -115,10 +115,12 @@ removal and the SR_NO_NPM_AUTH guards leaves an intermediate state where
 the release job has no working publish auth. The OIDC migration must come
 back as a single PR equivalent in scope to #1592.
 
-`ADOBE_BOT_NPM_TOKEN` is intentionally retained in GitHub repo secrets for
-≥ 2 successful release cycles (per SITES-42702). The revert re-adds
-`NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}` to the workflow env and the
-next release publishes via the token path.
+`ADOBE_BOT_NPM_TOKEN` was retained in GitHub repo secrets as rollback insurance
+during the migration (per SITES-42702) and is being retired now that OIDC is
+proven (see "ADOBE_BOT_NPM_TOKEN retirement"). A token-path revert would first
+re-create the `ADOBE_BOT_NPM_TOKEN` secret, then re-add
+`NPM_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}` to the workflow env so the next
+release publishes via the token path.
 
 Investigate the OIDC failure:
 
@@ -410,6 +412,54 @@ Recovery options:
 that defeats the human gate's purpose. Use cancel-and-retry or temporary
 removal instead.
 
+## Failure mode 7: package-lock.json sync after release failed
+
+The release job's `Sync package-lock.json after release` step regenerates the
+root `package-lock.json` against the just-published versions and commits it back
+to `main` with `[skip ci]`. This exists because semantic-release bumps each
+package's `package.json` but its `@semantic-release/git` `assets` list does not
+include the lockfile, so the lock drifts every release; once a released version
+crosses a consumer's exact internal pin, the lock loses that resolution and
+`npm ci` fails on **every** branch (the `Missing <pkg>@<ver> from lock file`
+outage).
+
+The step is `continue-on-error: true` — it can never fail a release. So a
+failure here is **silent** and surfaces later as the `Verify package-lock.json
+is in sync` check going red on the next unrelated PR.
+
+Known limitation — single-retry push race: the step pushes the sync commit to
+`main` and, if that push is rejected (someone else advanced `main` first),
+rebases and retries **once**. A *second* concurrent push landing inside that
+retry window still loses; by design the step does not loop. Releases are
+serialized (`concurrency: npm-publish-main`), so two release jobs cannot race,
+and a non-release push to `main` in the same sub-second window is vanishingly
+rare — so this is accepted rather than guarded with an unbounded retry. When it
+does happen the outcome is identical to any other sync failure: `continue-on-error`
+absorbs it, the `ERR` trap emits a `::warning::`, and recovery is the manual
+lockfile-only PR below.
+
+Symptoms:
+
+- The `Sync package-lock.json after release` step shows a red ✗ in the release
+  run (push rejected after the one-shot rebase retry, or registry hiccup during
+  regeneration), **or**
+- An unrelated PR's `Test` job fails at `Verify package-lock.json is in sync`
+  with a `package-lock.json` diff it did not author.
+
+Recovery (same as the manual unblock that PR #1694 performed):
+
+```bash
+git checkout main && git pull
+npm install --package-lock-only --ignore-scripts
+git checkout -b fix/sync-package-lock
+git add package-lock.json
+git commit -m "fix: sync package-lock.json with released workspace versions"
+# open a PR; the lock-only change merges and unblocks all branches
+```
+
+No package is republished — this is a lockfile-only commit. The drift guard on
+the recovery PR confirms the fix (it will pass once the lock is regenerated).
+
 ## Re-enabling the environment approval gate
 
 Status today: **the `npm-publish` environment has no required reviewers** —
@@ -447,26 +497,27 @@ To revert (drop the gate again), repeat the PUT with `"reviewers": []`.
 
 ---
 
-## ADOBE_BOT_NPM_TOKEN rotation
+## ADOBE_BOT_NPM_TOKEN retirement
 
-Per SITES-42702, retain `ADOBE_BOT_NPM_TOKEN` in GitHub repo secrets for at
-least 2 successful OIDC releases as rollback insurance. After that, complete
-the cleanup in this order (each step is a separate PR; the CI tripwire
-validates atomicity of step 3):
+`ADOBE_BOT_NPM_TOKEN` was the pre-OIDC publish token, retained in GitHub repo
+secrets as rollback insurance during the migration. OIDC has been the live
+publish path since #1592 (2026-05-21) with many successful releases, and no
+workflow references the token any more (grep `.github/` — only this runbook
+mentions it). Retire it:
 
 1. Delete the `ADOBE_BOT_NPM_TOKEN` secret from
-   `Settings → Secrets and variables → Actions`.
+   `Settings → Secrets and variables → Actions` (it may already be gone — it is
+   no longer present in the repo secret list).
 2. Revoke the npm-side token on npmjs.com (separate from GitHub deletion).
-3. In a single PR: remove the `SR_NO_NPM_AUTH: 'true'` env var from
-   `.github/workflows/main.yaml` AND remove the strict guard
-   (`...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : ["@semantic-release/npm"]),`)
-   from all 23 `.releaserc.cjs` files. The CI step
-   `Verify SR_NO_NPM_AUTH guard consistency` auto-detects this transition
-   and validates that the cleanup is complete (it would fail if env var is
-   removed while some configs still reference `SR_NO_NPM_AUTH`).
-4. (Optional follow-up) Remove the `Verify SR_NO_NPM_AUTH guard consistency`
-   CI step itself — it becomes a no-op once `SR_NO_NPM_AUTH` is gone from
-   the workflow.
+
+Do NOT remove the `SR_NO_NPM_AUTH` guard as part of this. It is permanent, not a
+bootstrap artifact: the Test-job dry-run has no npm publish auth (OIDC works only
+in the release job, which has `id-token: write` + the `npm-publish` environment),
+so `@semantic-release/npm`'s verifyConditions would fail `npm whoami` there.
+#1592 added `SR_NO_NPM_AUTH` in the same change that removed `NPM_TOKEN` from the
+dry-run step. The `Verify SR_NO_NPM_AUTH guard consistency` CI step enforces that
+the env var and all `.releaserc.cjs` guards stay present; removing them would
+red-line the dry-run on every PR.
 
 ---
 

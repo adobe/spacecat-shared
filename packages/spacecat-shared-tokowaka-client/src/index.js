@@ -25,8 +25,21 @@ import {
   getHostName,
   normalizePath,
 } from './utils/s3-utils.js';
-import { groupSuggestionsByUrlPath, filterEligibleSuggestions } from './utils/suggestion-utils.js';
+import {
+  omitKeys,
+  isEdgeDeployableSuggestionStatus,
+  isPatternSuggestion,
+  groupSuggestionsByUrlPath,
+  filterEligibleSuggestions,
+  saveSuggestions,
+  stripSuggestion,
+  cleanupCoveredSuggestions,
+  classifySuggestions,
+  filterBatchCoveredSuggestions,
+} from './utils/suggestion-utils.js';
+import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
+import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
 import {
   EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
@@ -38,14 +51,28 @@ import {
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
 
+// CloudFront control-plane (free functions + constants).
+export {
+  assumeConnectorRole,
+  listDistributions,
+  getDistributionConfig,
+  createOrigin,
+  createCloudFrontFunction,
+  updateCacheSettings,
+  createLambdaAtEdge,
+  getLambdaAtEdgeStatus,
+  applyAssociations,
+  verifyRouting,
+  runDeployStep,
+  planDeploy,
+  CloudFrontEdgeClient,
+  buildCloudfrontFunctionCode,
+  buildLambdaZip,
+} from './cdn/cloudfront/index.js';
+
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
-
-/** Matches SpaceCat API eligibility for edge deploy (non-domain-wide). */
-function isEdgeDeployableSuggestionStatus(status) {
-  return status === 'NEW' || status === 'PENDING_VALIDATION';
-}
 
 /**
  * Tokowaka Client - Manages edge optimization configurations
@@ -72,6 +99,7 @@ class TokowakaClient {
       previewBucketName,
       s3Client: s3?.s3Client ?? context.s3Client,
       env,
+      dataAccess: context.dataAccess,
     }, log);
     context.tokowakaClient = client;
     return client;
@@ -84,10 +112,12 @@ class TokowakaClient {
    * @param {string} config.previewBucketName - S3 bucket name for preview configs
    * @param {Object} config.s3Client - AWS S3 client
    * @param {Object} config.env - Environment variables (for CDN credentials)
+   * @param {Object} [config.dataAccess] - Data access layer
+   *   (provides Suggestion.saveMany for batch saves)
    * @param {Object} log - Logger instance
    */
   constructor({
-    bucketName, previewBucketName, s3Client, env = {},
+    bucketName, previewBucketName, s3Client, env = {}, dataAccess,
   }, log) {
     this.log = log;
 
@@ -103,6 +133,7 @@ class TokowakaClient {
     this.previewBucketName = previewBucketName;
     this.s3Client = s3Client;
     this.env = env;
+    this.dataAccess = dataAccess;
 
     this.mapperRegistry = new MapperRegistry(log);
     this.cdnClientRegistry = new CdnClientRegistry(env, log);
@@ -267,6 +298,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const metaconfig = JSON.parse(bodyContents);
 
+      // eslint-disable-next-line max-len
       this.log.debug(`Successfully fetched metaconfig from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
 
       return {
@@ -479,6 +511,7 @@ class TokowakaClient {
       const command = new PutObjectCommand(putObjectParams);
 
       await this.s3Client.send(command);
+      // eslint-disable-next-line max-len
       this.log.info(`Successfully uploaded metaconfig to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       // Invalidate CDN cache for the metaconfig (both CloudFront and Fastly)
@@ -517,6 +550,7 @@ class TokowakaClient {
       const bodyContents = await response.Body.transformToString();
       const config = JSON.parse(bodyContents);
 
+      // eslint-disable-next-line max-len
       this.log.debug(`Successfully fetched existing Tokowaka config from s3://${bucketName}/${s3Path} in ${Date.now() - fetchStartTime}ms`);
       return config;
     } catch (error) {
@@ -597,6 +631,7 @@ class TokowakaClient {
       });
 
       await this.s3Client.send(command);
+      // eslint-disable-next-line max-len
       this.log.info(`Successfully uploaded Tokowaka config to s3://${bucketName}/${s3Path} in ${Date.now() - uploadStartTime}ms`);
 
       return s3Path;
@@ -684,6 +719,7 @@ class TokowakaClient {
         });
       }
     }
+    // eslint-disable-next-line max-len
     this.log.info(`CDN cache invalidation completed in total ${Date.now() - invalidationStartTime}ms`);
     return results;
   }
@@ -695,7 +731,8 @@ class TokowakaClient {
    * @param {Array} suggestions - Array of suggestion entities to deploy
    * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
    */
-  async deploySuggestions(site, opportunity, suggestions) {
+  async deploySuggestions(site, opportunity, suggestions, metadata = {}) {
+    const { applyStale = false } = metadata;
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -771,6 +808,10 @@ class TokowakaClient {
         continue;
       }
 
+      if (applyStale && newConfig.patches?.length > 0) {
+        newConfig.patches = newConfig.patches.map((patch) => ({ ...patch, applyStale: true }));
+      }
+
       // Merge with existing config for this URL
       const config = this.mergeConfigs(existingConfig, newConfig);
 
@@ -798,14 +839,86 @@ class TokowakaClient {
   }
 
   /**
+   * Rolls back a single URL's S3 config by removing the relevant patches.
+   * Returns the number of patches removed, or 0 if nothing changed.
+   * Pushes the uploaded S3 path into s3Paths and the URL into rolledBackUrls on success.
+   * @param {string} fullUrl
+   * @param {Array} urlSuggestions - Suggestions for this URL
+   * @param {Object} opportunity
+   * @param {Object} mapper
+   * @param {string} opportunityType
+   * @param {Array} s3Paths - Accumulator array (mutated)
+   * @param {Array} rolledBackUrls - Accumulator array (mutated)
+   * @returns {Promise<number>} Number of patches removed
+   * @private
+   */
+  async #rollbackPerUrlConfig(
+    fullUrl,
+    urlSuggestions,
+    opportunity,
+    mapper,
+    opportunityType,
+    s3Paths,
+    rolledBackUrls,
+  ) {
+    const existingConfig = await this.fetchConfig(fullUrl);
+    if (!existingConfig) {
+      this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
+      return 0;
+    }
+
+    if (opportunityType === 'prerender') {
+      this.log.info(`Rolling back prerender config for URL: ${fullUrl}`);
+      const s3Path = await this.uploadConfig(fullUrl, { ...existingConfig, prerender: false });
+      s3Paths.push(s3Path);
+      rolledBackUrls.push(fullUrl);
+      return 1;
+    }
+
+    if (!existingConfig.patches) {
+      this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
+      return 0;
+    }
+
+    const suggestionIdsToRemove = urlSuggestions.map((s) => s.getId());
+    const updatedConfig = mapper.rollbackPatches(
+      existingConfig,
+      suggestionIdsToRemove,
+      opportunity.getId(),
+    );
+
+    if (updatedConfig.removedCount === 0) {
+      this.log.warn(`No patches found for suggestions at URL: ${fullUrl}`);
+      return 0;
+    }
+
+    this.log.info(`Removed ${updatedConfig.removedCount} patches for URL: ${fullUrl}`);
+    const removed = updatedConfig.removedCount;
+    delete updatedConfig.removedCount;
+
+    const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
+    s3Paths.push(s3Path);
+    rolledBackUrls.push(fullUrl);
+    return removed;
+  }
+
+  /**
    * Rolls back deployed suggestions by removing their patches from the configuration
    * Now updates one file per URL instead of a single file with all URLs
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to rollback
+   * @param {Object} [options] - Optional parameters
+   * @param {Array} [options.allSuggestions=[]] - All suggestions for the opportunity,
+   *   used to clean up suggestions covered by a domain-wide or path-level pattern rollback
+   * @param {string} [options.updatedBy] - Actor identity (e.g. profile email). When undefined,
+   *   context-specific fallback strings are used: 'tokowaka-rollback' for direct suggestions,
+   *   'domain-wide-rollback' for per-URL suggestions covered by a domain-wide pattern, and
+   *   'path-rollback' for per-URL suggestions covered by a path pattern.
    * @returns {Promise<Object>} - Rollback result with succeeded/failed suggestions
    */
-  async rollbackSuggestions(site, opportunity, suggestions) {
+  // eslint-disable-next-line max-len
+  async rollbackSuggestions(site, opportunity, suggestions, { allSuggestions = [], updatedBy } = {}) {
     const opportunityType = opportunity.getType();
     const baseURL = getEffectiveBaseURL(site);
     const mapper = this.mapperRegistry.getMapper(opportunityType);
@@ -817,19 +930,25 @@ class TokowakaClient {
       );
     }
 
-    // Validate which suggestions can be rolled back
-    // For rollback, we use the same canDeploy check to ensure data integrity
+    // Separate pattern-based suggestions (path and domain-wide allowList entries)
+    // from per-URL suggestions — each group is rolled back via a different code path.
+    const patternSuggestions = suggestions.filter(isPatternSuggestion);
+    const perUrlSuggestions = suggestions.filter((s) => !isPatternSuggestion(s));
+    // eslint-disable-next-line max-len
+    this.log.info(`[edge-rollback] Site: ${baseURL}, total: ${suggestions.length}, pattern: ${patternSuggestions.length}, perUrl: ${perUrlSuggestions.length}, allSuggestions: ${allSuggestions.length}`);
+
     const {
       eligible: eligibleSuggestions,
       ineligible: ineligibleSuggestions,
-    } = filterEligibleSuggestions(suggestions, mapper);
+    } = filterEligibleSuggestions(perUrlSuggestions, mapper);
 
     this.log.debug(
       `Rolling back ${eligibleSuggestions.length} eligible suggestions `
-      + `(${ineligibleSuggestions.length} ineligible)`,
+      + `(${ineligibleSuggestions.length} ineligible), `
+      + `${patternSuggestions.length} pattern suggestions`,
     );
 
-    if (eligibleSuggestions.length === 0) {
+    if (eligibleSuggestions.length === 0 && patternSuggestions.length === 0) {
       this.log.warn('No eligible suggestions to rollback');
       return {
         succeededSuggestions: [],
@@ -837,95 +956,148 @@ class TokowakaClient {
       };
     }
 
-    // Group suggestions by URL
+    // Roll back per-URL suggestions: one S3 config file per URL.
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
-
-    // Process each URL separately
     const s3Paths = [];
-    const rolledBackUrls = []; // Track URLs for batch CDN invalidation
+    const rolledBackUrls = [];
     let totalRemovedCount = 0;
 
     for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
       const fullUrl = new URL(urlPath, baseURL).toString();
       this.log.debug(`Rolling back ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
-
-      // Fetch existing configuration for this URL from S3
       // eslint-disable-next-line no-await-in-loop
-      const existingConfig = await this.fetchConfig(fullUrl);
-
-      if (!existingConfig) {
-        this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      // Extract suggestion IDs to remove for this URL
-      const suggestionIdsToRemove = urlSuggestions.map((s) => s.getId());
-
-      // For prerender opportunities, disable prerender flag
-      if (opportunityType === 'prerender') {
-        this.log.info(`Rolling back prerender config for URL: ${fullUrl}`);
-
-        // Set prerender to false (keep other patches if they exist)
-        const updatedConfig = {
-          ...existingConfig,
-          prerender: false,
-        };
-
-        // Upload updated config to S3 for this URL
-        // eslint-disable-next-line no-await-in-loop
-        const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
-        s3Paths.push(s3Path);
-        rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
-
-        totalRemovedCount += 1; // Count as 1 rollback
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      if (!existingConfig.patches) {
-        this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      // Use mapper to remove patches
-      const updatedConfig = mapper.rollbackPatches(
-        existingConfig,
-        suggestionIdsToRemove,
-        opportunity.getId(),
+      const removed = await this.#rollbackPerUrlConfig(
+        fullUrl,
+        urlSuggestions,
+        opportunity,
+        mapper,
+        opportunityType,
+        s3Paths,
+        rolledBackUrls,
       );
-
-      if (updatedConfig.removedCount === 0) {
-        this.log.warn(`No patches found for suggestions at URL: ${fullUrl}`);
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      this.log.info(`Removed ${updatedConfig.removedCount} patches for URL: ${fullUrl}`);
-      totalRemovedCount += updatedConfig.removedCount;
-
-      // Remove the removedCount property before uploading
-      delete updatedConfig.removedCount;
-
-      // Upload updated config to S3 for this URL
-      // eslint-disable-next-line no-await-in-loop
-      const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
-      s3Paths.push(s3Path);
-      rolledBackUrls.push(fullUrl); // Collect URL for batch invalidation
+      totalRemovedCount += removed;
     }
 
+    // eslint-disable-next-line max-len
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
 
-    // Batch invalidate CDN cache for all rolled back URLs at once
-    // (much more efficient than individual invalidations)
+    // Strip deployment markers and batch-save all eligible per-URL suggestions.
+    const savedEligibleSuggestions = eligibleSuggestions
+      .map((s) => stripSuggestion(s, 'tokowaka-rollback', updatedBy));
+    await saveSuggestions(this.dataAccess, savedEligibleSuggestions);
+
+    // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
+    // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
+    const succeededPatternSuggestions = [];
+    const failedPatternSuggestions = [];
+
+    if (patternSuggestions.length > 0) {
+      const metaconfig = await this.fetchMetaconfig(baseURL);
+      if (!metaconfig) {
+        // eslint-disable-next-line max-len
+        this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping all pattern suggestions`);
+        // eslint-disable-next-line max-len
+        patternSuggestions.forEach((s) => ineligibleSuggestions.push({ suggestion: s, reason: 'No metaconfig found' }));
+      } else {
+        // Pass 1: remove all patterns from the in-memory metaconfig, stage suggestions for saving.
+        const toSave = [];
+        let metaconfigChanged = false;
+
+        for (const suggestion of patternSuggestions) {
+          const data = suggestion.getData();
+          const patternToRemove = data?.allowedRegexPatterns?.[0];
+          if (!patternToRemove) {
+            // eslint-disable-next-line max-len
+            this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
+            ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
+            // eslint-disable-next-line no-continue
+            continue;
+          }
+
+          const existingAllowList = metaconfig.prerender?.allowList ?? [];
+          const changed = removePatternFromMetaconfig(metaconfig, patternToRemove);
+          const updatedAllowList = metaconfig.prerender?.allowList ?? [];
+          // eslint-disable-next-line max-len
+          this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
+          if (changed) {
+            metaconfigChanged = true;
+          } else {
+            // eslint-disable-next-line max-len
+            this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+          }
+
+          suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
+          suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
+          toSave.push(suggestion);
+        }
+
+        // Pass 2: upload the mutated metaconfig once, then save each suggestion and clean up.
+        try {
+          if (metaconfigChanged) {
+            await this.uploadMetaconfig(baseURL, metaconfig);
+          }
+        } catch (error) {
+          this.log.error(`[edge-rollback] Metaconfig upload failed: ${error.message}`, error);
+          toSave.forEach((s) => failedPatternSuggestions.push({
+            suggestion: s, reason: 'Internal server error', statusCode: 500,
+          }));
+          // Skip per-suggestion saves when metaconfig upload failed
+          toSave.length = 0;
+        }
+
+        // Batch-save all pattern suggestions.
+        if (toSave.length > 0) {
+          try {
+            await saveSuggestions(this.dataAccess, toSave);
+            succeededPatternSuggestions.push(...toSave);
+          } catch (error) {
+            // eslint-disable-next-line max-len
+            this.log.error(`[edge-rollback] Error saving pattern suggestions: ${error.message}`);
+            toSave.forEach((s) => failedPatternSuggestions.push({
+              suggestion: s, reason: 'Internal server error', statusCode: 500,
+            }));
+          }
+        }
+
+        // Clean up covered suggestions for each succeeded pattern suggestion.
+        for (const suggestion of succeededPatternSuggestions) {
+          const suggData = suggestion.getData();
+          const isDomainWide = suggData?.isDomainWide === true;
+          const coveredFallback = isDomainWide ? 'domain-wide-rollback' : 'path-rollback';
+          const coverageField = isDomainWide
+            ? 'coveredByDomainWide' : 'coveredByPattern';
+          const covered = allSuggestions.filter(
+            (s) => s.getData()?.[coverageField] === suggestion.getId(),
+          );
+          const fieldsToStrip = isDomainWide
+            ? ['coveredByDomainWide']
+            : ['edgeDeployed', 'tokowakaDeployed', 'coveredByPattern'];
+          if (covered.length > 0) {
+            // eslint-disable-next-line max-len
+            this.log.info(`[edge-rollback] Cleaning ${covered.length} covered suggestion(s) for pattern ${suggestion.getId()} (isDomainWide=${isDomainWide}, fallback=${coveredFallback})`);
+          }
+          // eslint-disable-next-line no-await-in-loop, max-len
+          await cleanupCoveredSuggestions(this.dataAccess, covered, coveredFallback, updatedBy, fieldsToStrip, this.log);
+        }
+      }
+    }
+
     const cdnInvalidations = await this.invalidateCdnCache({ urls: rolledBackUrls });
+
+    const allSucceeded = [...savedEligibleSuggestions, ...succeededPatternSuggestions];
+    const allFailed = [...ineligibleSuggestions, ...failedPatternSuggestions];
+    const total = allSucceeded.length + allFailed.length;
+
+    if (allFailed.length > 0) {
+      // eslint-disable-next-line max-len
+      this.log.error(`[edge-rollback-failed] ${allFailed.length} out of ${total} suggestion(s) failed to rollback for ${baseURL}`);
+    }
 
     return {
       s3Paths,
       cdnInvalidations,
-      succeededSuggestions: eligibleSuggestions,
-      failedSuggestions: ineligibleSuggestions,
+      succeededSuggestions: allSucceeded,
+      failedSuggestions: allFailed,
       removedPatchesCount: totalRemovedCount,
     };
   }
@@ -1063,6 +1235,7 @@ class TokowakaClient {
     }
 
     // Upload to preview S3 path for this URL
+    // eslint-disable-next-line max-len
     this.log.info(`Uploading preview Tokowaka config with ${eligibleSuggestions.length} new suggestions`);
     const s3Path = await this.uploadConfig(previewUrl, config, true);
 
@@ -1094,6 +1267,7 @@ class TokowakaClient {
       ]);
       /* c8 ignore start */
       if (!originalHtml || !optimizedHtml) {
+        // eslint-disable-next-line max-len
         throw this.#createError('Failed to fetch original or optimized HTML', HTTP_INTERNAL_SERVER_ERROR);
       }
       /* c8 ignore stop */
@@ -1144,10 +1318,18 @@ class TokowakaClient {
       return { edgeOptimizeEnabled: true };
     }
 
+    const defaultProbeHeaders = {
+      // eslint-disable-next-line max-len
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
+      'fastly-debug': '1',
+    };
+    const customHeaders = currentConfig?.getScraperConfig?.()?.headers ?? {};
+    const probeHeaders = { ...customHeaders, ...defaultProbeHeaders };
+
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
 
-    this.log.info(`Checking edge optimize status for ${targetUrl}`);
+    this.log.info(`[edge-optimize-status] Checking edge optimize status for ${targetUrl}`);
 
     const maxRetries = 3;
     let attempt = 0;
@@ -1156,24 +1338,22 @@ class TokowakaClient {
 
     while (attempt <= maxRetries) {
       try {
-        this.log.debug(`Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
+        // eslint-disable-next-line max-len
+        this.log.debug(`[edge-optimize-status] Attempt ${attempt + 1}/${maxRetries + 1}: Checking edge optimize status for ${targetUrl}`);
 
         // eslint-disable-next-line no-await-in-loop
         const response = await tracingFetch(targetUrl, {
           method: 'GET',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
-            'fastly-debug': '1',
-          },
+          headers: probeHeaders,
           timeout: REQUEST_TIMEOUT_MS,
         });
 
-        this.log.debug(`Response status: ${response.status}`);
+        this.log.info(`[edge-optimize-status] Response status: ${response.status} for ${targetUrl}`);
 
         const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
           || response.headers.get('x-edgeoptimize-request-id') !== null;
 
-        this.log.debug(`Edge optimize headers found: ${edgeOptimizeEnabled}`);
+        this.log.info(`[edge-optimize-status] Edge optimize headers found: ${edgeOptimizeEnabled} for ${targetUrl}`);
 
         return {
           edgeOptimizeEnabled,
@@ -1182,7 +1362,8 @@ class TokowakaClient {
         const isTimeout = error?.code === 'ETIMEOUT';
 
         if (isTimeout) {
-          this.log.warn(`Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
+          // eslint-disable-next-line max-len
+          this.log.warn(`[edge-optimize-status] Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
           return { edgeOptimizeEnabled: false };
         }
 
@@ -1190,7 +1371,7 @@ class TokowakaClient {
 
         if (attempt > maxRetries) {
           // All retries exhausted
-          this.log.error(`Failed after ${maxRetries + 1} attempts: ${error.message}`);
+          this.log.error(`[edge-optimize-status] Failed after ${maxRetries + 1} attempts: ${error.message} for ${targetUrl}`);
           throw this.#createError(
             `Failed to check edge optimize status: ${error.message}`,
             HTTP_INTERNAL_SERVER_ERROR,
@@ -1200,7 +1381,7 @@ class TokowakaClient {
         // Exponential backoff: 200ms, 400ms, 800ms
         const delay = 100 * (2 ** attempt);
         this.log.warn(
-          `Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms...`,
+          `[edge-optimize-status] Attempt ${attempt} to fetch failed: ${error.message}. Retrying in ${delay}ms... for ${targetUrl}`,
         );
         // eslint-disable-next-line no-await-in-loop
         await new Promise((res) => {
@@ -1267,6 +1448,158 @@ class TokowakaClient {
   }
 
   /**
+   * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed,
+   * and returns { succeededSuggestions, failedSuggestions }.
+   * Throws if the underlying deployment throws.
+   * @param {Object} site
+   * @param {Object} opportunity
+   * @param {Array} validSuggestions
+   * @param {string} updatedBy
+   * @returns {Promise<{ succeededSuggestions: Array, failedSuggestions: Array }>}
+   * @private
+   */
+  // eslint-disable-next-line max-len
+  async #deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata = {}) {
+    try {
+      // eslint-disable-next-line max-len
+      const result = await this.deploySuggestions(site, opportunity, validSuggestions, metadata);
+      const deploymentTimestamp = Date.now();
+
+      const succeeded = result.succeededSuggestions.map((s) => {
+        const currentData = s.getData();
+        const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
+        if (updated.edgeOptimizeStatus === 'STALE') {
+          delete updated.edgeOptimizeStatus;
+        }
+        s.setData(updated);
+        s.setUpdatedBy(updatedBy);
+        return s;
+      });
+      await saveSuggestions(this.dataAccess, succeeded);
+
+      const failed = result.failedSuggestions.map((item) => {
+        this.log.info(
+          `[edge-deploy] ${opportunity.getType()} suggestion `
+          + `${item.suggestion.getId()} is ineligible: ${item.reason}`,
+        );
+        return { ...item, statusCode: 400 };
+      });
+
+      return { succeededSuggestions: succeeded, failedSuggestions: failed };
+    } catch (error) {
+      this.log.error(`[edge-deploy] Error deploying suggestions: ${error.message}`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Deploys a single pattern suggestion by appending its patterns to the metaconfig allowList
+   * (append-and-deduplicate; CDN write is skipped when nothing changes), stamps the suggestion
+   * with edgeDeployed, and marks qualifying per-URL suggestions as covered.
+   * @param {Object} suggestion - The pattern suggestion entity
+   * @param {Array<string>} allowedRegexPatterns
+   * @param {Object} metaconfig - Metaconfig object (mutated in place)
+   * @param {string} baseURL
+   * @param {Set<string>} skippedInBatchIds - IDs already handled as same-batch skips
+   * @param {Array} allSuggestions - Full opportunity suggestion list
+   * @param {string} updatedBy
+   * @param {Array} coveredSuggestions - Accumulator (mutated)
+   * @returns {Promise<void>} Throws on metaconfig upload failure
+   * @private
+   */
+  async #deployPatternSuggestion(
+    suggestion,
+    allowedRegexPatterns,
+    metaconfig,
+    baseURL,
+    skippedInBatchIds,
+    allSuggestions,
+    updatedBy,
+    coveredSuggestions,
+  ) {
+    const data = suggestion.getData();
+    const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
+
+    const beforeAllowList = metaconfig.prerender?.allowList ?? [];
+    const changed = addPatternsToMetaconfig(metaconfig, allowedRegexPatterns);
+    const afterAllowList = changed ? metaconfig.prerender.allowList : beforeAllowList;
+    this.log.info(
+      // eslint-disable-next-line max-len
+      `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(beforeAllowList)}, after=${JSON.stringify(afterAllowList)}`,
+    );
+
+    if (changed) {
+      await this.uploadMetaconfig(baseURL, metaconfig);
+      // eslint-disable-next-line max-len
+      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(afterAllowList)}`);
+    } else {
+      // eslint-disable-next-line max-len
+      this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
+    }
+
+    suggestion.setData({ ...suggestion.getData(), edgeDeployed: Date.now() });
+    suggestion.setUpdatedBy(updatedBy);
+    // suggestion.save() is deferred — caller batches saves via saveSuggestions.
+
+    // Mark per-URL suggestions covered by this pattern.
+    const matchers = allowedRegexPatterns.flatMap((p) => {
+      const m = buildUrlMatcher(p);
+      if (!m) {
+        // eslint-disable-next-line max-len
+        this.log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${suggestion.getId()} is invalid, skipping`);
+      }
+      return m ? [m] : [];
+    });
+
+    if (matchers.length === 0) {
+      return;
+    }
+
+    const covered = allSuggestions.filter((s) => {
+      if (s.getId() === suggestion.getId()) {
+        return false;
+      }
+      if (skippedInBatchIds.has(s.getId())) {
+        return false;
+      }
+      if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+        return false;
+      }
+      if (s.getData()?.edgeDeployed) {
+        return false;
+      }
+      // Path-level pattern suggestions (not domain-wide) are fully covered by a
+      // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
+      if (isPatternSuggestion(s)) {
+        return coverageField === 'coveredByDomainWide' && !s.getData()?.isDomainWide;
+      }
+      const url = s.getData()?.url;
+      return url && matchers.some((match) => match(url));
+    });
+
+    // eslint-disable-next-line max-len
+    this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
+
+    if (covered.length > 0) {
+      covered.forEach((cs) => {
+        cs.setData({ ...cs.getData(), [coverageField]: suggestion.getId() });
+        cs.setUpdatedBy(updatedBy);
+      });
+      try {
+        await saveSuggestions(this.dataAccess, covered);
+        coveredSuggestions.push(...covered);
+        // eslint-disable-next-line max-len
+        this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${suggestion.getId()}`);
+      } catch (coverError) {
+        this.log.warn(
+          '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
+          + `${suggestion.getId()}: ${coverError.message}`,
+        );
+      }
+    }
+  }
+
+  /**
    * Deploys suggestions to edge, handling both regular and domain-wide suggestions.
    *
    * Regular suggestions are deployed via deploySuggestions(). Domain-wide suggestions
@@ -1290,193 +1623,182 @@ class TokowakaClient {
     targetSuggestions,
     allSuggestions,
     updatedBy = 'edge-deploy',
+    metadata = {},
   }) {
-    const validSuggestions = [];
-    const domainWideSuggestions = [];
+    // Step 1: classify suggestions into pattern vs per-URL buckets.
+    // eslint-disable-next-line max-len
+    const { patternSuggestions, validSuggestions: classified } = classifySuggestions(targetSuggestions, this.log);
+    this.log.info(
+      `[edge-deploy] Classification: pattern=${patternSuggestions.length},`
+      + ` perUrl=${classified.length}, allSuggestions=${allSuggestions.length}`,
+    );
 
-    targetSuggestions.forEach((suggestion) => {
-      const data = suggestion.getData();
-      if (data?.isDomainWide === true) {
-        const { allowedRegexPatterns } = data;
-        if (Array.isArray(allowedRegexPatterns) && allowedRegexPatterns.length > 0) {
-          domainWideSuggestions.push({ suggestion, allowedRegexPatterns });
-        }
-      } else if (isEdgeDeployableSuggestionStatus(suggestion.getStatus())) {
-        validSuggestions.push(suggestion);
-      }
-    });
-
-    // Filter valid suggestions that are covered by domain-wide patterns in the same batch
-    const skippedInBatch = [];
-    if (domainWideSuggestions.length > 0 && validSuggestions.length > 0) {
-      const allPatterns = [];
-      domainWideSuggestions.forEach(({ allowedRegexPatterns }) => {
-        allowedRegexPatterns.forEach((pattern) => {
-          try {
-            allPatterns.push(new RegExp(pattern));
-          } catch {
-            this.log.warn(`[edge-deploy] Skipping domain-wide pattern ${pattern} - invalid regex`);
-          }
-        });
-      });
-
-      const remaining = [];
-      validSuggestions.forEach((s) => {
-        const url = s.getData()?.url;
-        if (url && allPatterns.some((regex) => regex.test(url))) {
-          skippedInBatch.push(s);
-          this.log.info(`[edge-deploy] Skipping suggestion ${s.getId()} - covered by domain-wide pattern`);
-        } else {
-          remaining.push(s);
-        }
-      });
-      validSuggestions.length = 0;
-      validSuggestions.push(...remaining);
-    }
+    // Step 2: remove per-URL suggestions already covered by a pattern in this batch.
+    // eslint-disable-next-line max-len
+    const { remaining: validSuggestions, skippedInBatch } = filterBatchCoveredSuggestions(classified, patternSuggestions, this.log);
 
     let succeededSuggestions = [];
     const failedSuggestions = [];
 
-    // Deploy regular suggestions via tokowaka
+    // Step 3: deploy per-URL suggestions via S3.
     if (validSuggestions.length > 0) {
-      try {
-        const result = await this.deploySuggestions(site, opportunity, validSuggestions);
-        const deploymentTimestamp = Date.now();
-
-        succeededSuggestions = await Promise.all(
-          result.succeededSuggestions.map(async (s) => {
-            const currentData = s.getData();
-            const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
-            if (updated.edgeOptimizeStatus === 'STALE') {
-              delete updated.edgeOptimizeStatus;
-            }
-            s.setData(updated);
-            s.setUpdatedBy(updatedBy);
-            await s.save();
-            return s;
-          }),
-        );
-
-        // ineligible suggestions get statusCode 400 — they weren't deployable
-        result.failedSuggestions.forEach((item) => {
-          failedSuggestions.push({ ...item, statusCode: 400 });
-          this.log.info(`[edge-deploy] ${opportunity.getType()} suggestion ${item.suggestion.getId()} is ineligible: ${item.reason}`);
-        });
-      } catch (error) {
-        this.log.error(`[edge-deploy] Error deploying suggestions: ${error.message}`, error);
-        throw error;
-      }
+      // eslint-disable-next-line max-len
+      const result = await this.#deployPerUrlSuggestions(site, opportunity, validSuggestions, updatedBy, metadata);
+      const { succeededSuggestions: perUrlSucceeded, failedSuggestions: perUrlFailed } = result;
+      succeededSuggestions = perUrlSucceeded;
+      failedSuggestions.push(...perUrlFailed);
     }
 
-    // Deploy domain-wide suggestions via metaconfig
+    // Step 4: deploy pattern suggestions via metaconfig allowList.
     const coveredSuggestions = [];
-    if (domainWideSuggestions.length > 0) {
+    const deployedPatternSuggestions = [];
+    if (patternSuggestions.length > 0) {
+      const skippedInBatchIds = new Set(skippedInBatch.map((item) => item.suggestion.getId()));
       const baseURL = site.getBaseURL();
-      const skippedInBatchIds = new Set(skippedInBatch.map((s) => s.getId()));
+      let metaconfig = await this.fetchMetaconfig(baseURL);
+      if (!metaconfig) {
+        metaconfig = { siteId: site.getId() };
+      }
 
-      for (const { suggestion, allowedRegexPatterns } of domainWideSuggestions) {
-        // Fix #1: compile + validate regexes before any upload/save so a bad pattern
-        // never causes a suggestion to land in both succeeded and failed lists.
-        const regexPatterns = [];
-        for (const pattern of allowedRegexPatterns) {
-          try {
-            regexPatterns.push(new RegExp(pattern));
-          } catch {
-            this.log.warn(`[edge-deploy] Invalid regex pattern "${pattern}" for domain-wide suggestion ${suggestion.getId()}, skipping`);
-          }
+      for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
+        if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
+          // eslint-disable-next-line max-len
+          this.log.warn(`[edge-deploy] Pattern suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
+          // eslint-disable-next-line no-continue
+          continue;
         }
 
         try {
           // eslint-disable-next-line no-await-in-loop
-          let metaconfig = await this.fetchMetaconfig(baseURL);
-          if (!metaconfig) {
-            metaconfig = { siteId: site.getId() };
-          }
-          metaconfig.prerender = { allowList: allowedRegexPatterns };
-          // eslint-disable-next-line no-await-in-loop
-          await this.uploadMetaconfig(baseURL, metaconfig);
-
-          const deploymentTimestamp = Date.now();
-          suggestion.setData({ ...suggestion.getData(), edgeDeployed: deploymentTimestamp });
-          suggestion.setUpdatedBy(updatedBy);
-          // eslint-disable-next-line no-await-in-loop
-          await suggestion.save();
-          succeededSuggestions.push(suggestion);
-
-          if (regexPatterns.length > 0) {
-            const covered = allSuggestions.filter((s) => {
-              if (s.getId() === suggestion.getId()) {
-                return false;
-              }
-              if (skippedInBatchIds.has(s.getId())) {
-                return false;
-              }
-              if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
-                return false;
-              }
-              if (s.getData()?.isDomainWide === true) {
-                return false;
-              }
-              if (s.getData()?.edgeDeployed) {
-                return false;
-              }
-              const url = s.getData()?.url;
-              return url && regexPatterns.some((r) => r.test(url));
-            });
-
-            if (covered.length > 0) {
-              try {
-                // eslint-disable-next-line no-await-in-loop
-                await Promise.all(covered.map(async (cs) => {
-                  cs.setData({
-                    ...cs.getData(),
-                    coveredByDomainWide: suggestion.getId(),
-                  });
-                  cs.setUpdatedBy(updatedBy);
-                  return cs.save();
-                }));
-                coveredSuggestions.push(...covered);
-              } catch (coverError) {
-                this.log.warn(`[edge-deploy] Failed to mark covered suggestions for domain-wide ${suggestion.getId()}: ${coverError.message}`);
-              }
-            }
-          }
+          await this.#deployPatternSuggestion(
+            suggestion,
+            allowedRegexPatterns,
+            metaconfig,
+            baseURL,
+            skippedInBatchIds,
+            allSuggestions,
+            updatedBy,
+            coveredSuggestions,
+          );
+          deployedPatternSuggestions.push(suggestion);
         } catch (error) {
-          this.log.error(`[edge-deploy] Error deploying domain-wide suggestion ${suggestion.getId()}: ${error.message}`, error);
-          // statusCode 500 — deploy itself failed, not an eligibility issue
-          failedSuggestions.push({ suggestion, reason: error.message, statusCode: 500 });
+          // eslint-disable-next-line max-len
+          this.log.error(`[edge-deploy] Error deploying pattern suggestion ${suggestion.getId()}: ${error.message}`, error);
+          failedSuggestions.push({ suggestion, reason: 'Internal server error', statusCode: 500 });
+        }
+      }
+
+      // Batch-save all pattern suggestions.
+      if (deployedPatternSuggestions.length > 0) {
+        try {
+          await saveSuggestions(this.dataAccess, deployedPatternSuggestions);
+          succeededSuggestions.push(...deployedPatternSuggestions);
+        } catch (error) {
+          // eslint-disable-next-line max-len
+          this.log.error(`[edge-deploy] Failed to save pattern suggestions: ${error.message}`);
+          deployedPatternSuggestions.forEach((s) => {
+            failedSuggestions.push({ suggestion: s, reason: 'Internal server error', statusCode: 500 });
+          });
         }
       }
     }
 
-    // Mark same-batch skipped suggestions individually so a single save failure
-    // surfaces as a per-item failure rather than swallowing the whole batch.
+    // Step 5: mark same-batch skipped suggestions, then batch-save.
     if (skippedInBatch.length > 0) {
-      const results = await Promise.allSettled(skippedInBatch.map(async (s) => {
-        s.setData({
-          ...s.getData(),
-          coveredByDomainWide: 'same-batch-deployment',
+      const skippedSuggestions = skippedInBatch.map((item) => {
+        const coverageField = item.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
+        item.suggestion.setData({
+          ...item.suggestion.getData(),
+          [coverageField]: 'same-batch-deployment',
           skippedInDeployment: true,
         });
-        s.setUpdatedBy(updatedBy);
-        await s.save();
-        return s;
-      }));
-
-      results.forEach((result, i) => {
-        const s = skippedInBatch[i];
-        if (result.status === 'fulfilled') {
-          succeededSuggestions.push(s);
-          coveredSuggestions.push(s);
-        } else {
-          this.log.warn(`[edge-deploy] Failed to mark same-batch skipped suggestion ${s.getId()}`
-          + ` - ${result.reason?.message}`);
-          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered by domain-wide', statusCode: 500 });
-        }
+        item.suggestion.setUpdatedBy(updatedBy);
+        return item.suggestion;
       });
+
+      try {
+        await saveSuggestions(this.dataAccess, skippedSuggestions);
+        succeededSuggestions.push(...skippedSuggestions);
+        coveredSuggestions.push(...skippedSuggestions);
+      } catch (error) {
+        // eslint-disable-next-line max-len
+        this.log.warn(`[edge-deploy] Failed to save same-batch skipped suggestions: ${error.message}`);
+        skippedSuggestions.forEach((s) => {
+          // eslint-disable-next-line max-len
+          failedSuggestions.push({ suggestion: s, reason: 'Failed to mark as covered', statusCode: 500 });
+        });
+      }
     }
 
     return { succeededSuggestions, failedSuggestions, coveredSuggestions };
+  }
+
+  /**
+   * Strips the `applyStale` flag from patches in S3 for the given per-URL suggestions.
+   * Called when an experiment completes so edge reverts to normal (non-stale) behaviour.
+   * Pattern / domain-wide suggestions are skipped — they have no per-URL S3 config.
+   * CDN cache is invalidated for every URL whose config was actually modified.
+   *
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array}  suggestions - Suggestion entities to clear (may include pattern suggestions,
+   *   which are silently skipped)
+   * @returns {Promise<void>}
+   */
+  async clearApplyStaleFromPatches(site, opportunity, suggestions) {
+    const baseURL = getEffectiveBaseURL(site);
+
+    const perUrlSuggestions = suggestions.filter((s) => {
+      const data = s.getData();
+      return data?.url && !Array.isArray(data?.allowedRegexPatterns);
+    });
+
+    if (perUrlSuggestions.length === 0) {
+      return;
+    }
+
+    const suggestionsByUrl = groupSuggestionsByUrlPath(perUrlSuggestions, baseURL, this.log);
+    const clearedUrls = [];
+
+    for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
+      const fullUrl = new URL(urlPath, baseURL).toString();
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const existingConfig = await this.fetchConfig(fullUrl);
+        if (!existingConfig?.patches?.length) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const suggestionIds = new Set(urlSuggestions.map((s) => s.getId()));
+        let modified = false;
+        const updatedPatches = existingConfig.patches.map((patch) => {
+          if (suggestionIds.has(patch.suggestionId) && patch.applyStale) {
+            modified = true;
+            const { applyStale: _, ...rest } = patch;
+            return rest;
+          }
+          return patch;
+        });
+
+        if (modified) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadConfig(fullUrl, { ...existingConfig, patches: updatedPatches });
+          clearedUrls.push(fullUrl);
+        }
+      } catch (err) {
+        this.log.error(`[clear-apply-stale-failed] Failed to process URL ${fullUrl}: ${err.message}`, err);
+      }
+    }
+
+    if (clearedUrls.length > 0) {
+      try {
+        await this.invalidateCdnCache({ urls: clearedUrls });
+        this.log.info(`[clear-apply-stale] Cleared applyStale from ${clearedUrls.length} URL(s) and invalidated CDN`);
+      } catch (err) {
+        this.log.warn(`[clear-apply-stale-failed] CDN invalidation failed for ${clearedUrls.length} URL(s), S3 configs already updated: ${err.message}`, err);
+      }
+    }
   }
 }
 

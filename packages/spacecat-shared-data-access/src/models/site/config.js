@@ -477,6 +477,7 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
+      maxCharacters: Joi.number().integer().min(0).optional(),
     }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({

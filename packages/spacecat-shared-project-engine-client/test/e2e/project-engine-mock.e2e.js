@@ -846,7 +846,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // In-place prompt rename (aio-rename-prompt, serenity-docs#63): POST
   // /aio/prompts/{prompt_id}/rename edits a prompt's text WITHOUT deleting it — the id is
   // preserved, the count is unchanged, and a text collision with a sibling prompt is a clean
-  // 409 (live-verified 2026-07-14, declared via overlay CR17).
+  // 409 (live-verified 2026-07-14, declared via overlay CR17; exact bodies, is_updated
+  // semantics, empty-name literalism and the no-body 400 all live-pinned 2026-07-15).
   // ───────────────────────────────────────────────────────────────────────
 
   const renamePrompt = (promptId, newName) => client.POST(
@@ -902,7 +903,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { error, response } = await renamePrompt(sibling.id, 'What is the best running shoe?');
     expect(response.status).to.equal(409);
     expect(error).to.deep.equal({
-      message: 'prompt name conflict: a prompt with this name already exists',
+      message: 'conflict\nprompt with name "What is the best running shoe?" already exists',
     });
 
     // Nothing mutated: the sibling keeps its text, and the seeded prompt is untouched.
@@ -915,6 +916,66 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { error, response } = await renamePrompt('00000000-0000-4000-8000-000000000000', 'Whatever');
     expect(response.status).to.equal(404);
     expect(error).to.deep.equal({ message: 'not found' });
+  });
+
+  // `is_updated` mirrors the LIVE layer, not whether the rename landed (live-pinned 2026-07-15):
+  // a draft-only prompt (`is_new: true`) always answers false while the rename still applies.
+  it('applies the rename but answers is_updated: false for a draft-only prompt', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Draft-only rename probe'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [draft] } = await res.json();
+
+    const { data: renamed, error } = await renamePrompt(draft.id, 'Draft-only rename probe v2');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: draft.id,
+      name: 'Draft-only rename probe v2',
+      is_updated: false,
+    });
+
+    const { data: listed } = await listByTags([], { draft: true });
+    expect(listed.items.map((p) => p.name)).to.include('Draft-only rename probe v2');
+  });
+
+  // Live applies `new_name` literally — an empty or omitted one renames the prompt to ''
+  // with no validation error (live-pinned 2026-07-15; the request schema does not require
+  // `new_name`). Only a request with NO body at all is rejected: 400 {"message":"EOF"}.
+  it('renames to the empty string for an empty or omitted new_name; 400s EOF for no body', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Empty-name rename probe'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [victim] } = await res.json();
+
+    const { data: emptied, error: emptyErr } = await renamePrompt(victim.id, '');
+    expect(emptyErr).to.equal(undefined);
+    expect(emptied).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
+    // Omitted `new_name` behaves identically (the `?? ''` fallback, matching live).
+    const { data: omitted, error: omittedErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: victim.id },
+        },
+        body: {},
+      },
+    );
+    expect(omittedErr).to.equal(undefined);
+    expect(omitted).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
+    const noBody = await fetch(`${promptsUrl()}/${victim.id}/rename`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-token', Accept: 'application/json' },
+    });
+    expect(noBody.status).to.equal(400);
+    expect(await noBody.json()).to.deep.equal({ message: 'EOF' });
   });
 
   it('__reset restores the seed between mutations', async () => {

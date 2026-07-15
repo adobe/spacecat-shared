@@ -67,6 +67,23 @@ const sleep = (ms) => new Promise((resolve) => {
 });
 
 /**
+ * Extracts the lower-cased hostname from a repository URL, or '' if it cannot
+ * be parsed. Provider detection matches on the hostname (never the path) so a
+ * provider domain embedded in the repo path — e.g.
+ * https://bitbucket.org/team/github.com-mirror — can't be misclassified.
+ *
+ * @param {string} repoUrl - External repository URL
+ * @returns {string} Lower-cased hostname, or '' if unparseable
+ */
+const extractRepoHost = (repoUrl) => {
+  try {
+    return new URL(repoUrl).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+};
+
+/**
  * Returns true for any repo type that tunnels through the CM repo service
  * proxy (i.e. anything other than STANDARD). BYOG repos need extra handling
  * for submodules because the proxy URL uses numeric repository IDs, not
@@ -1013,22 +1030,25 @@ export default class CloudManagerClient {
 
   /**
    * Builds the pull request URL from the external repo URL and PR number.
-   * Detects the git provider from the repo URL to use the correct path format.
-   * Returns null if the provider is not recognized.
+   * Detects the git provider from the repo URL's hostname to use the correct
+   * path format. Returns null if the provider is not recognized.
    *
    * @param {string} repoUrl - External repository URL (e.g. https://github.com/owner/repo.git)
    * @param {string} externalNumber - PR/MR number from the CM API response
    * @returns {string|null} Full pull request URL, or null if provider is unsupported
    */
   #buildPullRequestUrl(repoUrl, externalNumber) {
+    // Detect the provider from the hostname only — never the path — so a
+    // provider domain embedded in the repo path can't cause a misclassification.
+    const host = extractRepoHost(repoUrl);
     let provider = null;
-    if (repoUrl.includes('github.com') || repoUrl.includes('github.')) {
+    if (host.includes('github.')) {
       provider = CM_REPO_TYPE.GITHUB;
-    } else if (repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.')) {
+    } else if (host.includes('gitlab.')) {
       provider = CM_REPO_TYPE.GITLAB;
-    } else if (repoUrl.includes('dev.azure.com') || repoUrl.includes('visualstudio.com')) {
+    } else if (host.includes('dev.azure.com') || host.includes('visualstudio.com')) {
       provider = CM_REPO_TYPE.AZURE_DEVOPS;
-    } else if (repoUrl.includes('bitbucket.org')) {
+    } else if (host.includes('bitbucket.org')) {
       provider = CM_REPO_TYPE.BITBUCKET;
     }
 

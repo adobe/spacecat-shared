@@ -1899,6 +1899,52 @@ describe('CloudManagerClient', () => {
       expect(result.pullRequestUrl).to.be.undefined;
     });
 
+    it('classifies by hostname, not path (provider domain in the repo path does not misclassify)', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '6', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/team/github.com-mirror.git',
+        },
+      );
+
+      // Hostname is bitbucket.org, so the Bitbucket path format wins even though
+      // "github.com" appears in the repository path.
+      expect(result.pullRequestUrl).to.equal('https://bitbucket.org/team/github.com-mirror/pull-requests/6');
+    });
+
+    it('does not set pullRequestUrl when repoUrl is not a parseable URL', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'not-a-valid-url',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
     it('does not set pullRequestUrl when repoUrl is not provided', async () => {
       nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)

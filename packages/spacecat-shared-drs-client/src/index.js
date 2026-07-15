@@ -73,8 +73,87 @@ const BRAND_PRESENCE_BRIGHTDATA_PLATFORMS = Object.freeze([
   'aimode',
 ]);
 
+// Fixed cadences for the generic `createSchedule` (LLMO prompt-suggestion pipelines). The
+// cron is derived server-side-of-the-client from the cadence — the caller CANNOT pass an
+// arbitrary cron string. This is deliberate: a leaked `x-api-key` setting `* * * * *` would
+// be a fleet-wide Fargate storm, so the client only ever emits one of a small, audited set of
+// cron expressions. New cadences must be added here (and mirrored in DRS) rather than by
+// smuggling a raw cron through the API.
+export const SCHEDULE_CADENCES = Object.freeze({
+  // 1st & 15th of every month (~2-week cadence, per-site hour jitter — see cronForCadence).
+  TWICE_MONTHLY: 'twice_monthly',
+  // 1st of Jan/Apr/Jul/Oct at 08:00 UTC (exact).
+  QUARTERLY: 'quarterly',
+});
+
+const VALID_SCHEDULE_CADENCES = new Set(Object.values(SCHEDULE_CADENCES));
+
+// Defense-in-depth size caps. A DynamoDB item is capped at 400 KB and a schedule row carries
+// more than just job_config, so cap the caller-controlled fields well under that hard limit.
+const MAX_SCHEDULE_DESCRIPTION_LENGTH = 1024;
+const MAX_JOB_CONFIG_BYTES = 100 * 1024;
+
+// Matches imsOrgId / ims_org_id / imsorgid (any case). DRS derives the tenant-isolation S3
+// key from site_id server-side; a caller-supplied org id inside the opaque job_config
+// passthrough must never be trusted, so we reject it outright as defense in depth.
+const IMS_ORG_ID_KEY = /^ims_?org_?id$/i;
+
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+/**
+ * Deterministic per-site hour in [0,23] so a large fleet on the same twice-monthly cadence is
+ * spread across 24 daily ticks instead of all firing at one wall-clock hour (thundering-herd
+ * guard). Same site always maps to the same hour, so re-runs stay idempotent with DRS dedup.
+ * @param {string} siteId
+ * @returns {number} hour in [0,23]
+ */
+function siteHourJitter(siteId) {
+  let hash = 0;
+  for (let i = 0; i < siteId.length; i += 1) {
+    // eslint-disable-next-line no-bitwise
+    hash = (Math.imul(hash, 31) + siteId.charCodeAt(i)) >>> 0;
+  }
+  return hash % 24;
+}
+
+/**
+ * Maps a fixed cadence to a cron expression. Arbitrary cron is intentionally not accepted.
+ * @param {string} cadence - One of SCHEDULE_CADENCES values.
+ * @param {string} siteId - Used to jitter the twice-monthly hour.
+ * @returns {string} cron expression
+ */
+function cronForCadence(cadence, siteId) {
+  switch (cadence) {
+    case SCHEDULE_CADENCES.TWICE_MONTHLY:
+      return `0 ${siteHourJitter(siteId)} 1,15 * *`;
+    case SCHEDULE_CADENCES.QUARTERLY:
+      return '0 8 1 1,4,7,10 *';
+    default:
+      throw new Error(`cadence must be one of: ${[...VALID_SCHEDULE_CADENCES].join(', ')}`);
+  }
+}
+
+/**
+ * Recursively rejects any imsOrgId-shaped key anywhere in a job_config object. DRS resolves the
+ * isolation key from site_id, so a caller-supplied org id is never legitimate here.
+ * @param {unknown} value
+ * @param {string} [path='job_config']
+ */
+function assertNoImsOrgId(value, path = 'job_config') {
+  if (Array.isArray(value)) {
+    value.forEach((item, i) => assertNoImsOrgId(item, `${path}[${i}]`));
+    return;
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, val] of Object.entries(value)) {
+      if (IMS_ORG_ID_KEY.test(key)) {
+        throw new Error(`imsOrgId must not be supplied in ${path}; DRS derives it from site_id`);
+      }
+      assertNoImsOrgId(val, `${path}.${key}`);
+    }
+  }
 }
 
 export default class DrsClient {
@@ -449,6 +528,77 @@ export default class DrsClient {
   }
 
   /**
+   * Builds the `POST /schedules` request body shared by {@link DrsClient#createExperimentSchedule}
+   * and {@link DrsClient#createSchedule}. Centralising it keeps the two paths from drifting and
+   * applies the same defense-in-depth guards (imsOrgId rejection + size caps) to both.
+   *
+   * @param {object} params
+   * @param {string} params.siteId
+   * @param {string} params.cronExpression
+   * @param {string} [params.expiresAt] - ISO 8601; omitted from the body when absent.
+   * @param {boolean} [params.triggerImmediately]
+   * @param {string} params.description
+   * @param {string} params.cadence - `job_config.cadence` label.
+   * @param {boolean} [params.enableBrandPresence=false]
+   * @param {string[]} params.providerIds
+   * @param {object} [params.providerParameters] - Per-provider params; omitted when absent.
+   * @param {('HIGH'|'LOW')} [params.priority='HIGH']
+   * @param {object} [params.metadata] - Attached under `job_config.metadata`.
+   * @returns {object} Request body for `POST /schedules`.
+   */
+  static #buildScheduleBody({
+    siteId,
+    cronExpression,
+    expiresAt,
+    triggerImmediately,
+    description,
+    cadence,
+    enableBrandPresence = false,
+    providerIds,
+    providerParameters,
+    priority = 'HIGH',
+    metadata,
+  }) {
+    // Both callers always supply a description, so check length unconditionally.
+    if (description.length > MAX_SCHEDULE_DESCRIPTION_LENGTH) {
+      throw new Error(`description must be at most ${MAX_SCHEDULE_DESCRIPTION_LENGTH} characters`);
+    }
+
+    const jobConfig = {
+      cadence,
+      enable_brand_presence: enableBrandPresence,
+      provider_ids: providerIds,
+      priority,
+      metadata: metadata || {},
+    };
+    if (providerParameters !== undefined) {
+      jobConfig.provider_parameters = providerParameters;
+    }
+
+    // Reject any caller-supplied imsOrgId anywhere in job_config (see assertNoImsOrgId).
+    assertNoImsOrgId(jobConfig);
+
+    // DynamoDB oversized-item guard on the caller-controlled blob.
+    const serialized = JSON.stringify(jobConfig);
+    if (serialized.length > MAX_JOB_CONFIG_BYTES) {
+      throw new Error(`job_config exceeds ${MAX_JOB_CONFIG_BYTES} bytes`);
+    }
+
+    const body = {
+      site_id: siteId,
+      frequency: 'cron',
+      cron_expression: cronExpression,
+      trigger_immediately: triggerImmediately === true,
+      description,
+      job_config: jobConfig,
+    };
+    if (hasText(expiresAt)) {
+      body.expires_at = expiresAt;
+    }
+    return body;
+  }
+
+  /**
    * Creates an experiment schedule in DRS.
    * @param {object} params
    * @param {string} params.siteId - SpaceCat site ID
@@ -499,33 +649,30 @@ export default class DrsClient {
       throw new Error('providerIds must be a non-empty array');
     }
 
-    const body = {
-      site_id: siteId,
-      frequency: 'cron',
-      cron_expression: cronExpression,
-      expires_at: expiresAt,
-      trigger_immediately: triggerImmediately === true,
+    const body = DrsClient.#buildScheduleBody({
+      siteId,
+      cronExpression,
+      expiresAt,
+      triggerImmediately,
       description: `${experimentPhase} phase schedule of geo experiment: ${experimentId}`,
-      job_config: {
-        cadence: 'experiment',
-        enable_brand_presence: enableBrandPresence,
-        provider_ids: providerIds,
-        provider_parameters: {
-          brightdata: {
-            dataset_id: platforms.join(','),
-            metadata: {
-              site: siteId,
-            },
+      cadence: 'experiment',
+      enableBrandPresence,
+      providerIds,
+      providerParameters: {
+        brightdata: {
+          dataset_id: platforms.join(','),
+          metadata: {
+            site: siteId,
           },
         },
-        priority: 'HIGH',
-        metadata: {
-          experiment_id: experimentId,
-          experiment_phase: experimentPhase,
-          ...(metadata || {}),
-        },
       },
-    };
+      priority: 'HIGH',
+      metadata: {
+        experiment_id: experimentId,
+        experiment_phase: experimentPhase,
+        ...(metadata || {}),
+      },
+    });
 
     this.log.info(`Creating DRS experiment schedule for site ${siteId}`, {
       experimentId,
@@ -542,6 +689,113 @@ export default class DrsClient {
       experimentPhase,
     });
     return result;
+  }
+
+  /**
+   * Creates (or reuses) a recurring DRS schedule on a fixed cadence.
+   *
+   * Generic sibling of {@link DrsClient#createExperimentSchedule} used for the LLMO
+   * prompt-suggestion pipelines (semrush / agentic-traffic / synthetic-personas). Both share
+   * {@link DrsClient##buildScheduleBody} so the envelope cannot drift.
+   *
+   * Constrained by design:
+   * - `frequency` is always `'cron'`; the cron is DERIVED from `cadence` (see SCHEDULE_CADENCES).
+   *   A raw cron string is never accepted — see the SCHEDULE_CADENCES comment for why.
+   * - A caller-supplied `imsOrgId` anywhere in `job_config` (via `metadata` or
+   *   `providerParameters`) is rejected; DRS derives the tenant-isolation key from `site_id`.
+   * - `description` and the serialized `job_config` are length-capped.
+   *
+   * Idempotent: DRS upserts on `(site_id, provider set)` and returns 409 + `existing_schedule_id`
+   * on a match, which this treats as success (`alreadyExisted: true`) — so onboarding retries and
+   * the operational backfill create no duplicate rows. `triggerImmediately` is carried in the body
+   * (the DRS schedule path runs the first job); on a 409 the immediate run does not re-fire, which
+   * is acceptable because the next scheduled run self-heals.
+   *
+   * @param {object} params
+   * @param {string} params.siteId - SpaceCat site UUID (required).
+   * @param {string[]} params.providerIds - DRS provider ids (required, non-empty).
+   * @param {string} params.cadence - One of SCHEDULE_CADENCES values (required).
+   * @param {string} [params.description] - Schedule description (length-capped).
+   * @param {boolean} [params.enableBrandPresence=false] - Enable brand-presence in the job.
+   * @param {object} [params.providerParameters] - Per-provider params passthrough.
+   * @param {('HIGH'|'LOW')} [params.priority='HIGH'] - Job priority.
+   * @param {object} [params.metadata] - Extra job metadata (imsOrgId rejected).
+   * @param {boolean} [params.triggerImmediately=false] - Run the first job on creation.
+   * @param {number} [params.timeout] - Fetch timeout in ms; omit for the tracingFetch default.
+   * @returns {Promise<{ scheduleId: string, alreadyExisted: boolean }>}
+   */
+  async createSchedule({
+    siteId,
+    providerIds,
+    cadence,
+    description,
+    enableBrandPresence = false,
+    providerParameters,
+    priority = 'HIGH',
+    metadata,
+    triggerImmediately = false,
+    timeout,
+  }) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!Array.isArray(providerIds) || providerIds.length === 0) {
+      throw new Error('providerIds must be a non-empty array');
+    }
+
+    // cronForCadence validates the cadence (throws with the allowed set) and derives the cron.
+    const cronExpression = cronForCadence(cadence, siteId);
+    const body = DrsClient.#buildScheduleBody({
+      siteId,
+      cronExpression,
+      triggerImmediately,
+      description: description || `${cadence} schedule: ${siteId}`,
+      cadence,
+      enableBrandPresence,
+      providerIds,
+      providerParameters,
+      priority,
+      metadata,
+    });
+
+    this.log.info(`Creating DRS schedule for site ${siteId}`, {
+      providerIds,
+      cadence,
+      cronExpression,
+      triggerImmediately: body.trigger_immediately,
+    });
+
+    const { ok, status, body: payload } = await this.#requestRaw(
+      'POST',
+      '/schedules',
+      body,
+      timeout ? { timeout } : {},
+    );
+
+    // DRS returns top-level `schedule_id` on 201 and `existing_schedule_id` on a 409 dedup.
+    let scheduleId;
+    let alreadyExisted = false;
+    if (ok) {
+      scheduleId = payload?.schedule_id || payload?.schedule?.schedule_id;
+    } else if (status === 409) {
+      alreadyExisted = true;
+      scheduleId = payload?.existing_schedule_id;
+      this.log.info(`DRS schedule already exists for site ${siteId}: ${scheduleId}`);
+    } else {
+      const errorText = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const error = new Error(`DRS POST /schedules failed: ${status} - ${errorText}`);
+      error.status = status;
+      throw error;
+    }
+
+    if (!hasText(scheduleId)) {
+      throw new Error('DRS schedule create/dedup returned no schedule_id');
+    }
+
+    this.log.info('DRS schedule created', {
+      scheduleId, siteId, cadence, alreadyExisted,
+    });
+    return { scheduleId, alreadyExisted };
   }
 
   /**

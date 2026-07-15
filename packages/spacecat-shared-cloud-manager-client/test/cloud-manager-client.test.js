@@ -1393,10 +1393,74 @@ describe('CloudManagerClient', () => {
       expect(checkoutArgStr).to.include('checkout');
       expect(checkoutArgStr).to.include('feature/my-branch');
 
-      // Second call: pull
+      // Second call: pull, with the ref appended as the last argument so
+      // git pulls (fetches + merges) that branch instead of the remote's
+      // default branch.
+      const pullArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(pullArgs[pullArgs.length - 1]).to.equal('feature/my-branch');
       const pullArgStr = getGitArgsStr(execFileSyncStub.secondCall);
       expect(pullArgStr).to.include('pull');
       expect(pullArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
+    });
+
+    it('appends the ref as the last pull argument for a BYOG repo', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID, ref: 'release/5.11' },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledTwice;
+      const pullArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(pullArgs).to.deep.equal([
+        '-c', `http.${TEST_ENV.CM_REPO_URL}.extraheader=Authorization: Bearer ${TEST_TOKEN}`,
+        '-c', `http.${TEST_ENV.CM_REPO_URL}.extraheader=x-api-key: test-client-id`,
+        '-c', `http.${TEST_ENV.CM_REPO_URL}.extraheader=x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`,
+        'pull',
+        `${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`,
+        'release/5.11',
+      ]);
+    });
+
+    it('appends the ref as the last pull argument for a standard repo', async () => {
+      const client = CloudManagerClient.createFrom(
+        createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
+      );
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL, ref: 'main' },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledTwice;
+      const pullArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(pullArgs).to.deep.equal([
+        '-c', 'http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
+        'pull',
+        TEST_STANDARD_REPO_URL,
+        'main',
+      ]);
+    });
+
+    it('does not append a ref argument to pull when ref is not provided', async () => {
+      const client = CloudManagerClient.createFrom(createContext());
+
+      await client.pull(
+        '/tmp/cm-repo-test',
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        { imsOrgId: TEST_IMS_ORG_ID },
+      );
+
+      expect(execFileSyncStub).to.have.been.calledOnce;
+      const pullArgs = getGitArgs(execFileSyncStub.firstCall);
+      expect(pullArgs[pullArgs.length - 1])
+        .to.equal(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
     });
 
     it('skips checkout when ref is not provided', async () => {

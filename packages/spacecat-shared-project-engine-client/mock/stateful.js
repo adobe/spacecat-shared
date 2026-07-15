@@ -38,8 +38,9 @@
  * write-then-reads: projects, ai_models, prompts, plus benchmarks (per project) and brand_urls
  * (per benchmark) — the competitor-benchmark and brand-URL sync flows create→list→update→delete,
  * so they need real state to be faithfully testable. `tags` are the project-level AIO taxonomy
- * (the Categories surface): the consumer creates a standalone `category:<name>` tag per market
- * project and must read it back even before any prompt carries it, so it needs real state too.
+ * (the Categories surface): the consumer creates standalone tags per market project — a bare-named
+ * category under the `category` dimension root — and must read them back even before any prompt
+ * carries them, so they need real state too.
  */
 export const STATEFUL_RESOURCES = Object.freeze([
   'projects', 'ai_models', 'prompts', 'benchmarks', 'tags', 'brand_urls',
@@ -241,35 +242,37 @@ export function createStatefulOps(store) {
        * consumer (gate 7, verified 2026-07-02): the `POST /aio/tags` endpoint does NOT dedupe, so
        * creating a tag whose NAME already exists at the same parent is a same-name/same-parent
        * COLLISION that live answers with a hard 500. This models it: it resolves each requested tag
-       * (by its deterministic id) against the stored collection and, if any would collide with a
-       * stored tag at the same parent — or duplicate another entry in the batch — the batch is
-       * rejected ATOMICALLY (`collision: true`, nothing written) so the caller can 500. On no
-       * collision every tag is persisted. Because the id is derived from the name ALONE, a
-       * same-name tag under a DIFFERENT parent shares the id and collapses onto the stored row
-       * (not a collision) — the documented 1-level-tree limitation (see the tags.js header).
+       * (by its deterministic id) against the stored collection and, if any id is already taken —
+       * or repeats within the batch — the batch is rejected ATOMICALLY (`collision: true`, nothing
+       * written) so the caller can 500. On no collision every tag is persisted.
+       *
+       * The id is derived from the tag's `(parent, name)` pair (see tag-id.js), so an id clash IS a
+       * same-name/same-parent clash: the same name under a DIFFERENT parent derives a different id
+       * and is created normally, which is what live does and what the dimension-root model needs
+       * (two sub-categories may share a bare name under different categories).
+       *
+       * One deliberate, LOUD divergence: `PATCH` keeps a tag's id stable across a rename or a
+       * re-parent, after which the stored id no longer equals `tagId(name, parent)`. Re-creating
+       * the tag's ORIGINAL `(parent, name)` then derives an id already occupied by the moved tag,
+       * and this reports a collision where live would mint a fresh opaque id and return 201.
+       * The mock cannot represent two tags at one derived id; failing loudly beats silently handing
+       * the caller back a tag that now lives somewhere else in the tree.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<Entity>} tags each carrying its deterministic `id` (+ optional `parent_id`)
        * @returns {{ tags: Entity[], collision: boolean }} `collision: true` ⇒ nothing was written
        */
       upsertMany(scope, tags) {
         const key = collectionKey('tags', scope);
-        /** @param {Entity} t */
-        const parentOf = (t) => (t.parent_id ? String(t.parent_id) : '');
-        // Atomic pre-check: a tag collides when one with the SAME id already sits at the same
-        // parent, OR the same (id, parent) appears twice in this batch. Checked before any write,
-        // so a collision leaves the store untouched.
+        // Atomic pre-check: an id already in the store, or repeated inside this batch, is a
+        // collision. Checked before any write, so a collision leaves the store untouched.
         const seen = new Set();
         for (const tag of tags) {
-          const marker = `${tag.id}@${parentOf(tag)}`;
-          const existing = store.get(key, tag.id);
-          if (seen.has(marker) || (existing && parentOf(existing) === parentOf(tag))) {
+          if (seen.has(tag.id) || store.get(key, tag.id)) {
             return { tags: [], collision: true };
           }
-          seen.add(marker);
+          seen.add(tag.id);
         }
-        // No collision: create each. A same-name tag under a different parent shares the derived
-        // id, so `get() ?? create()` reuses the stored row (documented collapse) rather than throw.
-        const stored = tags.map((tag) => store.get(key, tag.id) ?? store.create(key, tag));
+        const stored = tags.map((tag) => store.create(key, tag));
         return { tags: stored, collision: false };
       },
       /**
@@ -287,16 +290,36 @@ export function createStatefulOps(store) {
         return store.update(collectionKey('tags', scope), id, patch);
       },
       /**
-       * Removes the given tag ids from the project's tag collection, reporting how many were
-       * actually removed. Only the standalone tag collection is touched — prompts that carry a
-       * removed tag are a separate collection and keep their tag map intact.
+       * Removes the given tag ids from the project's tag collection, reporting how many standalone
+       * tags were actually removed, and DETACHES each removed id from every prompt that carries it.
+       *
+       * The detach is not a courtesy — it is the live contract (gate 4, verified 2026-07-02):
+       * deleting a tag detaches it from every carrying prompt, and a prompt whose only tag was
+       * deleted becomes fully unassigned rather than orphaned or silently still matchable through
+       * `by_tags`. A mock that left the tag embedded on the prompt would keep answering `by_tags`
+       * queries for an id that no longer exists, hiding exactly the class of bug consumers must
+       * handle.
+       *
+       * The returned count reports the STANDALONE tags removed, not prompts touched: an id that
+       * names no stored tag still detaches from any prompt carrying it, and does not count.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<string>} ids
        * @returns {number}
        */
       removeMany(scope, ids) {
         const key = collectionKey('tags', scope);
-        return ids.reduce((removed, id) => (store.delete(key, id) ? removed + 1 : removed), 0);
+        const removed = ids.reduce((n, id) => (store.delete(key, id) ? n + 1 : n), 0);
+
+        const doomed = new Set(ids.map((id) => String(id)));
+        const promptsKey = collectionKey('prompts', scope);
+        for (const prompt of store.list(promptsKey)) {
+          const tags = Array.isArray(prompt.tags) ? prompt.tags : [];
+          const kept = tags.filter((t) => !doomed.has(String(t?.id)));
+          if (kept.length !== tags.length) {
+            store.update(promptsKey, prompt.id, { tags: kept });
+          }
+        }
+        return removed;
       },
     },
 

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.4...@adobe/spacecat-shared-cloud-manager-client-v1.4.5) (2026-07-08)
+
+### Bug Fixes
+
+* **cloud-manager-client:** pass ref as last pull argument ([#1790](https://github.com/adobe/spacecat-shared/issues/1790)) ([cb6fa28](https://github.com/adobe/spacecat-shared/commit/cb6fa28ca73854d4ee365c0a2bc71fec8314ed4c))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.4.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.3...@adobe/spacecat-shared-cloud-manager-client-v1.4.4) (2026-06-16)
 
 ### Bug Fixes

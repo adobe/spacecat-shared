@@ -842,6 +842,79 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
   });
 
+  // ───────────────────────────────────────────────────────────────────────
+  // In-place prompt rename (aio-rename-prompt, serenity-docs#63): POST
+  // /aio/prompts/{prompt_id}/rename edits a prompt's text WITHOUT deleting it — the id is
+  // preserved, the count is unchanged, and a text collision with a sibling prompt is a clean
+  // 409 (live-verified 2026-07-14, declared via overlay CR17).
+  // ───────────────────────────────────────────────────────────────────────
+
+  const renamePrompt = (promptId, newName) => client.POST(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename',
+    {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: promptId },
+      },
+      body: { new_name: newName },
+    },
+  );
+
+  it('renames a prompt in place — same id, count unchanged, by_tags reflects the new text', async () => {
+    const { data: renamed, error } = await renamePrompt(SEED_IDS.promptId, 'What is the best trail shoe?');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: SEED_IDS.promptId,
+      name: 'What is the best trail shoe?',
+      is_updated: true,
+    });
+
+    const { data: listed } = await listByTags([]);
+    expect(listed.total).to.equal(1); // no duplicate was minted
+    expect(listed.items[0]).to.include({
+      id: SEED_IDS.promptId,
+      name: 'What is the best trail shoe?',
+    });
+  });
+
+  // The documented no-op: renaming a prompt onto its OWN current text answers is_updated: false
+  // (not a 409 — the collision check is against SIBLING prompts only).
+  it('answers is_updated: false for a rename onto the prompt\'s own current text', async () => {
+    const { data: renamed, error } = await renamePrompt(SEED_IDS.promptId, 'What is the best running shoe?');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: SEED_IDS.promptId,
+      name: 'What is the best running shoe?',
+      is_updated: false,
+    });
+  });
+
+  // The one hazard, live-verified 2026-07-14 (serenity-docs#63 §2): renaming onto ANOTHER
+  // prompt's exact text is a 409 with NOTHING mutated — no rename, no duplicate.
+  it('409s a rename onto a sibling prompt\'s exact text, mutating nothing', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['A sibling prompt'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [sibling] } = await res.json();
+
+    const { error, response } = await renamePrompt(sibling.id, 'What is the best running shoe?');
+    expect(response.status).to.equal(409);
+    expect(error).to.have.property('message');
+
+    // Nothing mutated: the sibling keeps its text, and the seeded prompt is untouched.
+    const { data: listed } = await listByTags([], { draft: true });
+    expect(listed.items.map((p) => p.name))
+      .to.have.members(['What is the best running shoe?', 'A sibling prompt']);
+  });
+
+  it('404s a rename of an unknown prompt id', async () => {
+    const { error, response } = await renamePrompt('00000000-0000-4000-8000-000000000000', 'Whatever');
+    expect(response.status).to.equal(404);
+    expect(error).to.deep.equal({ message: 'not found' });
+  });
+
   it('__reset restores the seed between mutations', async () => {
     await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },

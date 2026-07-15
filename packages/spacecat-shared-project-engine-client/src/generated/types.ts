@@ -7723,6 +7723,15 @@ export interface operations {
                     "application/json": components["schemas"]["http_server.BasicResponse"];
                 };
             };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {

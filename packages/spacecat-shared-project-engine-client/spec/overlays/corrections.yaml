@@ -85,6 +85,11 @@ info:
 #      populates them, so we mark them required (the same faithful-`required` philosophy as CR5).
 #      The query param is already `required` upstream, and auth is handled by CR2's global
 #      Auth-Data-Jwt strip + imsBearer. Remove if Semrush marks the fields required upstream.
+# CR17 aio-rename-prompt returns 409 on a text collision. Renaming a prompt onto ANOTHER
+#      prompt's exact text fails with `409 conflict` — no mutation, no duplicate (verified
+#      2026-07-14 against prod, serenity-docs#63 §2 live probe). The vendored swagger declares
+#      no 409; add it (http_server.BasicResponse) so the mock can return the live status and
+#      Counterfact response validation accepts it. Remove if Semrush declares it upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -411,3 +416,19 @@ actions:
     description: "CR16: model.ResolveURLResponse always carries domain + primary_url + is_valid"
     update:
       required: [domain, primary_url, is_valid]
+
+  # ── CR17: aio-rename-prompt returns 409 on a text collision ───────────────
+  # Live: POST /v2/.../aio/prompts/{prompt_id}/rename onto a SIBLING prompt's exact text ->
+  # 409 conflict, with no mutation and no duplicate (verified 2026-07-14 against prod,
+  # serenity-docs#63 §2 live probe). The vendored swagger declares no 409; add it
+  # (http_server.BasicResponse, the same shape as CR12's 404) so the mock can return the live
+  # status and Counterfact response validation accepts it.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename'].post.responses"
+    description: "CR17: add the 409 Conflict response on aio-rename-prompt (text collision)"
+    update:
+      "409":
+        description: "Conflict"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"

@@ -52,6 +52,13 @@ export interface SerenityProjectEngineApiClientOptions {
     status?: number;
     error?: Error;
   }) => void | Promise<void>;
+  /**
+   * Per-attempt request deadline in ms. When set (> 0), each fetch attempt is aborted via
+   * `AbortSignal.timeout` after this many ms (and retried for idempotent methods under the retry
+   * budget); any caller-supplied `signal` is combined with it, never replaced. Unset ⇒ no
+   * client-imposed deadline.
+   */
+  requestTimeoutMs?: number;
   /** Injectable fetch (tests, custom agents). Defaults to the global fetch. */
   fetch?: typeof globalThis.fetch;
 }

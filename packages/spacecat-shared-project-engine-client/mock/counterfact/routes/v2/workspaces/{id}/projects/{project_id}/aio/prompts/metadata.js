@@ -41,11 +41,18 @@
 /** Reads the batch `items` from the request body, tolerating an absent/typeless payload. */
 const readItems = (body) => (Array.isArray(body?.items) ? body.items : []);
 
-/** Shapes the shared response envelope from the ops result. */
+/**
+ * Shapes the shared response envelope from the ops result. `missing_ids` drops falsy entries: an
+ * id-less request item can't be echoed back as an actionable id, so only real unmatched ids show.
+ */
 const respond = ({ updated, missing }) => ({
   status: 200,
   contentType: 'application/json',
-  body: { items: updated, updated_count: updated.length, missing_ids: missing },
+  body: {
+    items: updated,
+    updated_count: updated.length,
+    missing_ids: missing.filter(Boolean),
+  },
 });
 
 /** PUT — batch whole-object metadata overwrite on existing prompts → 200. */

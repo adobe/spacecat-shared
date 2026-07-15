@@ -217,7 +217,9 @@ export function createStatefulOps(store) {
        * entity's top level, so a `{ metadata }` patch swaps the whole value). The payload is
        * OPAQUE — object or text-shaped — because the mock pins the endpoint and wiring, not the
        * `metadata` content-schema, until Semrush's WP0 ships the real semantics. An unknown (or
-       * absent) id writes nothing and is reported in `missing`, matching live's silent skip.
+       * absent) id writes nothing and is reported in `missing`, matching live's silent skip. An
+       * item that carries an id but OMITS `metadata` clears the field (writes `undefined`) — the
+       * overwrite is unconditional, it does not treat a missing key as a no-op.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<{ id?: string, metadata?: unknown }>} items
        * @returns {{ updated: Entity[], missing: Array<string | undefined> }} `updated` are the

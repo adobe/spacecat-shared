@@ -36,6 +36,10 @@ export function POST($) {
     return denied;
   }
   const scope = { workspaceId: path.id, projectId: path.project_id };
+  // The draft-gating + tag-id filter + tag-view serialize below deliberately MIRROR by_tags.js
+  // (the metadata-blind list), kept in step by hand rather than shared: by_tags.js returns through
+  // Counterfact's spec-validated envelope, which can't carry `metadata`, so this route can't call
+  // it. Any change to the read/gating contract in by_tags.js must be mirrored here.
   const draft = String(query?.draft ?? '') === 'true';
   const all = context.ops.prompts.list(scope).filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];

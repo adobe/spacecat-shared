@@ -1386,8 +1386,9 @@ describe('DrsClient', () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules', (body) => {
           expect(body.site_id).to.equal('site-1');
-          expect(body.frequency).to.equal('cron');
-          expect(body.cron_expression).to.match(/^0 \d{1,2} 1,15 \* \*$/);
+          // DRS derives frequency + cron server-side from the cadence; the client sends neither.
+          expect(body).to.not.have.property('frequency');
+          expect(body).to.not.have.property('cron_expression');
           expect(body.trigger_immediately).to.equal(false);
           expect(body).to.not.have.property('expires_at');
           expect(body.job_config.cadence).to.equal('twice_monthly');
@@ -1410,10 +1411,11 @@ describe('DrsClient', () => {
       scope.done();
     });
 
-    it('creates a quarterly schedule with an exact cron', async () => {
+    it('sends the cadence label (not a client cron) for a quarterly schedule', async () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules', (body) => {
-          expect(body.cron_expression).to.equal('0 8 1 1,4,7,10 *');
+          expect(body).to.not.have.property('cron_expression');
+          expect(body).to.not.have.property('frequency');
           expect(body.job_config.cadence).to.equal('quarterly');
           return true;
         })
@@ -1429,28 +1431,21 @@ describe('DrsClient', () => {
       scope.done();
     });
 
-    it('jitters the twice-monthly hour deterministically per site', async () => {
-      const crons = [];
+    it('defaults job_config.metadata to {} when metadata is omitted', async () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules', (body) => {
-          crons.push(body.cron_expression);
+          expect(body.job_config.metadata).to.deep.equal({});
           return true;
         })
-        .times(3)
-        .reply(201, { schedule_id: 's' });
+        .reply(201, { schedule_id: 'sched-meta-default' });
 
-      await client.createSchedule({
-        siteId: 'alpha', providerIds: ['p'], cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
-      });
-      await client.createSchedule({
-        siteId: 'alpha', providerIds: ['p'], cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
-      });
-      await client.createSchedule({
-        siteId: 'beta', providerIds: ['p'], cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+      const result = await client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
       });
 
-      expect(crons[0]).to.equal(crons[1]); // same site -> same jittered hour
-      crons.forEach((cron) => expect(cron).to.match(/^0 \d{1,2} 1,15 \* \*$/));
+      expect(result.scheduleId).to.equal('sched-meta-default');
       scope.done();
     });
 
@@ -1496,10 +1491,10 @@ describe('DrsClient', () => {
       scope.done();
     });
 
-    it('treats a 409 dedup as success', async () => {
+    it('treats a 200 idempotent collision as success (alreadyExisted)', async () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules')
-        .reply(409, { existing_schedule_id: 'sched-existing' });
+        .reply(200, { idempotent: true, schedule_id: 'sched-existing', schedule: {} });
 
       const result = await client.createSchedule({
         siteId: 'site-1',
@@ -1508,6 +1503,19 @@ describe('DrsClient', () => {
       });
 
       expect(result).to.deep.equal({ scheduleId: 'sched-existing', alreadyExisted: true });
+      scope.done();
+    });
+
+    it('throws when a 200 idempotent response carries no schedule_id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(200, { idempotent: true });
+
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+      })).to.be.rejectedWith('DRS schedule create/dedup returned no schedule_id');
       scope.done();
     });
 
@@ -1652,6 +1660,92 @@ describe('DrsClient', () => {
         cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
         metadata: { blob: 'x'.repeat(100 * 1024 + 1) },
       })).to.be.rejectedWith(/job_config exceeds \d+ bytes/);
+    });
+
+    it('accepts a description of exactly the max length (1024)', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(body.description).to.have.lengthOf(1024);
+          return true;
+        })
+        .reply(201, { schedule_id: 'sched-desc-max' });
+
+      const result = await client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+        description: 'x'.repeat(1024),
+      });
+
+      expect(result.scheduleId).to.equal('sched-desc-max');
+      scope.done();
+    });
+
+    it('accepts a job_config whose serialized size is exactly at the byte cap', async () => {
+      const MAX_JOB_CONFIG_BYTES = 100 * 1024;
+      // Reconstruct the job_config the client builds so we can pad the blob to land the
+      // serialized size EXACTLY on the cap — a `>`→`>=` off-by-one would then reject it.
+      const jobConfigNoBlob = {
+        cadence: 'twice_monthly',
+        enable_brand_presence: false,
+        provider_ids: ['prompt_generation_semrush'],
+        priority: 'HIGH',
+        metadata: { blob: '' },
+      };
+      const overhead = Buffer.byteLength(JSON.stringify(jobConfigNoBlob), 'utf8');
+      const blob = 'x'.repeat(MAX_JOB_CONFIG_BYTES - overhead);
+
+      const scope = nock(DRS_API_URL)
+        .post('/schedules', (body) => {
+          expect(Buffer.byteLength(JSON.stringify(body.job_config), 'utf8'))
+            .to.equal(MAX_JOB_CONFIG_BYTES);
+          return true;
+        })
+        .reply(201, { schedule_id: 'sched-jc-max' });
+
+      const result = await client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+        metadata: { blob },
+      });
+
+      expect(result.scheduleId).to.equal('sched-jc-max');
+      scope.done();
+    });
+
+    it('rejects an invalid priority', async () => {
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+        priority: 'URGENT',
+      })).to.be.rejectedWith('priority must be one of: HIGH, LOW');
+    });
+
+    it('rejects a hyphenated imsOrgId key variant (ims-org-id)', async () => {
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+        metadata: { 'ims-org-id': 'ABC@AdobeOrg' },
+      })).to.be.rejectedWith(/imsOrgId must not be supplied/);
+    });
+
+    it('rejects a pathologically deep job_config instead of overflowing the stack', async () => {
+      let deep = {};
+      const root = deep;
+      for (let i = 0; i < 150; i += 1) {
+        deep.child = {};
+        deep = deep.child;
+      }
+
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+        metadata: root,
+      })).to.be.rejectedWith(/job_config nesting exceeds \d+ levels/);
     });
   });
 

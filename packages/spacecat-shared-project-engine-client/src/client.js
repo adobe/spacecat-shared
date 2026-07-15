@@ -139,7 +139,11 @@ export function createSerenityProjectEngineApiClient(options) {
       || requestTimeoutMs <= 0)
   ) {
     throw new Error(
-      `Project Engine client: requestTimeoutMs must be a positive finite number of ms, got ${JSON.stringify(requestTimeoutMs)}`,
+      // Report numbers verbatim so NaN/Infinity read as themselves (JSON.stringify would render
+      // both as "null"); stringify other types so a bad string is visibly quoted.
+      `Project Engine client: requestTimeoutMs must be a positive finite number of ms, got ${
+        typeof requestTimeoutMs === 'number' ? requestTimeoutMs : JSON.stringify(requestTimeoutMs)
+      }`,
     );
   }
 

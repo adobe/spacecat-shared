@@ -14,7 +14,7 @@ This ADR governs **REST transport to the Semrush gateway authenticated by IMS Be
 
 The Semrush Project Engine and User Manager clients exist as typed wrappers in `spacecat-shared` (`@adobe/spacecat-shared-project-engine-client`, `@adobe/spacecat-shared-user-manager-client`; PR #1661 lineage: IMS Bearer auth, retry/backoff).
 
-`spacecat-api-service` **already consumes these shared clients** for its Project Engine and User Manager call paths (`controllers/serenity.js`, `controllers/brands.js`, `support/serenity/**`) — a migration that landed in prior shipped work. That migration pinned `maxRetries: 0` to preserve the previous one-shot behaviour, which silently disabled the shared clients' retry in production. PR #2766 removes that pin, restoring retry/backoff on those paths.
+`spacecat-api-service` **already consumes these shared clients** for its Project Engine and User Manager call paths (`controllers/serenity.js`, `controllers/brands.js`, `support/serenity/**`) — a migration that landed in prior shipped work. That migration pinned `maxRetries: 0` to preserve the previous one-shot behaviour, which silently disabled the shared clients' retry in production. PR #2766 (open at the time of writing) removes that pin to restore retry/backoff on those paths.
 
 We need the ownership boundary stated explicitly so future consumers and future transport work don't re-litigate what belongs in the shared client versus the calling service.
 
@@ -43,8 +43,8 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 
 | Surface | On shared client? | Retry |
 |---|---|---|
-| Project Engine | Yes (`project-engine-client`) | Restored by #2766 |
-| User Manager | Yes (`user-manager-client`) | Restored by #2766 |
+| Project Engine | Yes (`project-engine-client`) | Pending #2766 (open) |
+| User Manager | Yes (`user-manager-client`) | Pending #2766 (open) |
 | **Elements API** | **No** — hand-rolled `elements-transport.js` | **None** |
 | **AI Visibility** | **No** — gRPC/OAuth2, `grpc-transport.js` | **None** |
 
@@ -62,7 +62,7 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 **Good**
 
 - One obvious home for REST/IMS-Bearer transport logic; PRs stop re-arguing the boundary.
-- The production retry gap on the migrated surfaces is closed (#2766), independent of any further work.
+- The production retry gap on the migrated surfaces will be closed once #2766 merges, independent of any further work.
 - No speculative expansion of the boundary to protocols nobody is currently working.
 
 **Costs / risks**

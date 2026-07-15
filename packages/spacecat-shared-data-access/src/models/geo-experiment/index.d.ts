@@ -36,6 +36,7 @@ export interface GeoExperiment extends BaseModel {
   getStartTime(): string | undefined;
   getEndTime(): string | undefined;
   getMetadata(): object | undefined;
+  getInsightsLocation(): string | undefined;
   getError(): object | undefined;
   getUpdatedBy(): string;
 
@@ -53,6 +54,7 @@ export interface GeoExperiment extends BaseModel {
   setStartTime(startTime?: string): GeoExperiment;
   setEndTime(endTime?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
+  setInsightsLocation(insightsLocation?: string): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
 }

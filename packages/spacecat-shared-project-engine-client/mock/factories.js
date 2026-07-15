@@ -29,6 +29,7 @@
 /** @typedef {Schemas['model.AIModelResponse']} AIModel */
 /** @typedef {Schemas['model.ProjectAIModelResponse']} ProjectAIModel */
 /** @typedef {Schemas['model.AIOPromptWithStatus']} Prompt */
+/** @typedef {Schemas['model.RenamePromptResponse']} RenamePromptResponse */
 /** @typedef {Schemas['model.ProjectResponse']} Project */
 /** @typedef {Schemas['model.ProjectRequest']} ProjectRequest */
 /** @typedef {Schemas['model.AIOBenchmarkWithCounters']} Benchmark */
@@ -133,6 +134,21 @@ export const createPromptMock = (overrides = {}) => ({
   name: 'What is the best running shoe?',
   is_new: false,
   tags: [],
+  ...overrides,
+});
+
+/**
+ * A prompt-rename result (`RenamePromptResponse`) — the `aio-rename-prompt` 200 body. The
+ * prompt id is echoed UNCHANGED (rename is in-place; verified live 2026-07-14,
+ * serenity-docs#63 §2); `is_updated` mirrors the live layer — `false` for a no-op rename
+ * or a draft-only prompt (the default `true` is the published-prompt-changed path).
+ * @param {Partial<RenamePromptResponse>} [overrides]
+ * @returns {RenamePromptResponse}
+ */
+export const createRenamePromptResponseMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'What is the best running shoe?',
+  is_updated: true,
   ...overrides,
 });
 
@@ -334,7 +350,7 @@ export const createLanguageMock = (overrides = {}) => ({
  */
 export const createTagNodeMock = (overrides = {}) => ({
   id: uuid(),
-  name: 'type:branded',
+  name: 'branded',
   children_count: 0,
   keyword_count: 0,
   ...overrides,
@@ -344,14 +360,16 @@ export const createTagNodeMock = (overrides = {}) => ({
  * A stored/listed project tag (`AIOTag`) — the `GET /aio/tags` (`AIOTagsListResponse`) item and
  * the shape the mock persists in the per-project `tags` collection.
  *
- * The tag taxonomy is a 1-level tree (see serenity-docs#21): a **root category** is a top-level
- * node named `category:<name>` with no `parent_id`; a **child** (sub-category / migrated topic) is
- * a bare `<name>` (no prefix) whose `parent_id` is its root's id. Because roots legitimately have
- * no parent, `parent_id` is left OUT of the defaults (optional, supplied via override on a child) —
- * a plain `createAIOTagMock()` is a root. `children_count` and `path` are DERIVED at read time by
- * the `GET /aio/tags` handler from the stored collection (count of children; the ancestor
- * breadcrumb), never stored — so they stay consistent as children are added; the
- * `children_count: 0` default is only the empty baseline a childless root carries in the store.
+ * The tag taxonomy is a dimension-root tree (see the dimension-root tag model): each **dimension**
+ * — `category`, `intent`, `source`, `type` — is a bare-named ROOT with no `parent_id`, and every
+ * **value** is a bare-named descendant carrying its parent's id. No name ever contains a `:`. A
+ * category sits at depth 2 and a sub-category at depth 3; the API caps no depth. Because roots
+ * legitimately have no parent, `parent_id` is left OUT of the defaults (optional, supplied via
+ * override on a descendant) — a plain `createAIOTagMock()` is a root. `children_count` and `path`
+ * are DERIVED at read time by the `GET /aio/tags` handler from the stored collection (count of
+ * children; the root-first ancestor breadcrumb), never stored — so they stay consistent as children
+ * are added; the `children_count: 0` default is only the empty baseline a childless root carries in
+ * the store.
  *
  * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
  * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely
@@ -361,24 +379,28 @@ export const createTagNodeMock = (overrides = {}) => ({
  */
 export const createAIOTagMock = (overrides = {}) => ({
   id: uuid(),
-  name: 'category:Running Shoes',
+  name: 'category',
   children_count: 0,
   prompts_count: 0,
   ...overrides,
 });
 
 /**
- * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one level of an {@link AIOTag}'s `path[]`. In the
- * 1-level tree a child's `path` is a single leaf: its root category. Live returns each path leaf
- * as `{ id, name }` — `parent_id` is NOT echoed on the breadcrumb (verified 2026-07-01 against
- * prod) — so it is omitted by default (still overridable, the schema keeps it optional). Built
- * through this factory (not an inline literal) so the derived breadcrumb stays tsc-checked.
+ * A tag ancestry-breadcrumb leaf (`AIOTagLeaf`) — one level of an {@link AIOTag}'s `path[]`, which
+ * lists every ancestor ROOT-FIRST and excludes the tag itself. A depth-2 tag's `path` is one leaf
+ * (its dimension root); a depth-3 tag's is two (the dimension root, then its category).
+ *
+ * A leaf echoes `parent_id` only when it HAS a parent: the root leaf carries none, and each deeper
+ * leaf carries the id of the leaf before it (verified 2026-07-09 against prod, where a depth-3
+ * node's second breadcrumb leaf carries `parent_id`). `parent_id` is therefore omitted from the
+ * defaults and supplied by the caller per leaf. Built through this factory (not an inline literal)
+ * so the derived breadcrumb stays tsc-checked.
  * @param {Partial<AIOTagLeaf>} [overrides]
  * @returns {AIOTagLeaf}
  */
 export const createAIOTagLeafMock = (overrides = {}) => ({
   id: uuid(),
-  name: 'category:Running Shoes',
+  name: 'category',
   ...overrides,
 });
 

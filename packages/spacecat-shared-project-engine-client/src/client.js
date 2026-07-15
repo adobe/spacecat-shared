@@ -129,6 +129,20 @@ export function createSerenityProjectEngineApiClient(options) {
     fetch: injectedFetch = globalThis.fetch,
   } = options;
 
+  // Fail fast on a misconfigured timeout rather than silently disabling it: a NaN/negative value
+  // would no-op in withDeadline (leaving the caller unprotected), and Infinity would reach
+  // AbortSignal.timeout. Mirrors the defensive toTokenGetter/resolveBaseUrl guards below.
+  if (
+    requestTimeoutMs !== undefined
+    && (typeof requestTimeoutMs !== 'number'
+      || !Number.isFinite(requestTimeoutMs)
+      || requestTimeoutMs <= 0)
+  ) {
+    throw new Error(
+      `Project Engine client: requestTimeoutMs must be a positive finite number of ms, got ${JSON.stringify(requestTimeoutMs)}`,
+    );
+  }
+
   const client = createClient({
     baseUrl: resolveBaseUrl(baseUrl),
     fetch: createRetryingFetch(

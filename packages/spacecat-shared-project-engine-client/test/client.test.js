@@ -237,4 +237,19 @@ describe('createSerenityProjectEngineApiClient', () => {
     expect(thrown).to.be.an.instanceOf(Error);
     expect(thrown.name).to.equal('TimeoutError');
   });
+
+  it('throws at construction when requestTimeoutMs is not a positive finite number', () => {
+    const make = (requestTimeoutMs) => () => createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example',
+      authToken: 'raw-ims-jwt',
+      requestTimeoutMs,
+    });
+    expect(make(0)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(-5)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(NaN)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(Infinity)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make('5000')).to.throw(/requestTimeoutMs must be a positive finite number/);
+    // undefined (omitted) stays valid — the option is opt-in.
+    expect(make(undefined)).to.not.throw();
+  });
 });

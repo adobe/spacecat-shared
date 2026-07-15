@@ -303,6 +303,23 @@ describe('createRetryingFetch request timeout', () => {
     expect(calls).to.equal(2);
   });
 
+  it('does NOT retry a timed-out non-idempotent (POST) attempt — surfaces the timeout once', async () => {
+    let calls = 0;
+    const base = (input, init) => {
+      calls += 1;
+      return hangUntilAbort(input, init);
+    };
+    let thrown;
+    try {
+      await createRetryingFetch(base, 2, 0, undefined, 10)('https://x', { method: 'POST' });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown.name).to.equal('TimeoutError');
+    // A POST timeout is a thrown error; the isIdempotent gate rethrows it without a replay.
+    expect(calls).to.equal(1);
+  });
+
   it('still honours a caller-supplied signal — combined, not clobbered', async () => {
     const controller = new AbortController();
     // Large deadline so the caller abort (not the timeout) is what settles the request.

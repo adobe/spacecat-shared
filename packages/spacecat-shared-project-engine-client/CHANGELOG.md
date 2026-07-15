@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.10.1...@adobe/spacecat-shared-project-engine-client-v1.11.0) (2026-07-15)
+
+### Features
+
+* **project-engine-client:** mock the in-place prompt rename with 409 on text collision ([#1814](https://github.com/adobe/spacecat-shared/issues/1814)) ([816e613](https://github.com/adobe/spacecat-shared/commit/816e61315dcc5351d3494d26c0e354918ca750e0))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.10.0...@adobe/spacecat-shared-project-engine-client-v1.10.1) (2026-07-13)
 
 ### Bug Fixes

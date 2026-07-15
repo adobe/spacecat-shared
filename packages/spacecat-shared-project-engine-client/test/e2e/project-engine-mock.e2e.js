@@ -901,7 +901,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     const { error, response } = await renamePrompt(sibling.id, 'What is the best running shoe?');
     expect(response.status).to.equal(409);
-    expect(error).to.have.property('message');
+    expect(error).to.deep.equal({
+      message: 'prompt name conflict: a prompt with this name already exists',
+    });
 
     // Nothing mutated: the sibling keeps its text, and the seeded prompt is untouched.
     const { data: listed } = await listByTags([], { draft: true });

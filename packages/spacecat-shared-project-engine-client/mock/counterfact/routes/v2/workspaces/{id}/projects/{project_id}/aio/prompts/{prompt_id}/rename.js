@@ -41,6 +41,10 @@
 export function POST($) {
   const { path, body, context } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
+  // Applied literally — an empty or missing `new_name` renames the prompt to ''. The request
+  // schema does not mark `new_name` required and live's response to an empty text is unverified
+  // (the declared 400 has no live pin), so the mock doesn't invent a validation error it cannot
+  // cite. Known simplification; unreachable via the typed client, which requires `new_name`.
   const newName = body?.new_name ?? '';
 
   const prompts = context.ops.prompts.list(scope);
@@ -53,7 +57,9 @@ export function POST($) {
 
   // A text collision with a SIBLING prompt is a 409 with nothing mutated (live-verified
   // 2026-07-14, declared via overlay CR17). The prompt itself is excluded: an unchanged-name
-  // rename is the documented `is_updated: false` no-op below, not a conflict.
+  // rename is the documented `is_updated: false` no-op below, not a conflict. The comparison is
+  // exact (`===`) — any live-side whitespace or Unicode normalization is unverified and not
+  // modelled.
   const conflict = prompts.some((p) => p.id !== path.prompt_id && p.name === newName);
   if (conflict) {
     return $.response[409].json(

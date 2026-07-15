@@ -213,4 +213,28 @@ describe('createSerenityProjectEngineApiClient', () => {
       authToken: 42,
     })).to.throw(/must be a string or a function/);
   });
+
+  it('threads requestTimeoutMs into the fetch layer (aborts a hung attempt)', async () => {
+    // A fetch that never resolves on its own — it settles only when the per-attempt deadline
+    // aborts it. With maxRetries 0 the single attempt times out and the abort propagates.
+    const fetch = (input, init) => new Promise((_, reject) => {
+      init.signal.addEventListener('abort', () => reject(init.signal.reason));
+    });
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example',
+      authToken: 'raw-ims-jwt',
+      maxRetries: 0,
+      requestTimeoutMs: 10,
+      fetch,
+    });
+
+    let thrown;
+    try {
+      await client.GET('/v1/countries');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).to.be.an.instanceOf(Error);
+    expect(thrown.name).to.equal('TimeoutError');
+  });
 });

@@ -34,6 +34,9 @@ const { data, error } = await client.GET('/v1/countries');
 - **Retries:** `429` is retried for any method; `5xx`/network errors only for idempotent methods
   (so a POST is never replayed). Backoff is exponential with jitter, honours `Retry-After`, and is
   capped at 20s/attempt. Pass `onRetry` to observe the loop.
+- **Timeouts:** pass `requestTimeoutMs` to bound each attempt — a stalled attempt is aborted via
+  `AbortSignal.timeout` (a per-attempt deadline, combined with any caller `signal`, never
+  replacing it) and, for idempotent methods, retried. Unset (default) ⇒ no client-imposed deadline.
 - **Shape:** this is a thin factory function rather than the `CLAUDE.md` "class + factory" client
   pattern — the wrapper has no per-instance state or behaviour beyond what `openapi-fetch` already
   provides, so a class would add ceremony without value. The typed surface IS the `openapi-fetch`

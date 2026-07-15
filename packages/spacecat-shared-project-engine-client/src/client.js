@@ -44,6 +44,11 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
  *   retry sleep (`{ attempt, delayMs, method, status?, error? }`), for logging/metrics. A retry
  *   loop is otherwise silent — an operator can't tell "slow upstream" from "stuck in backoff". A
  *   throwing or rejecting hook is swallowed and never affects the request.
+ * @property {number} [requestTimeoutMs] Per-attempt request deadline in ms. When set (> 0), each
+ *   fetch attempt is aborted via `AbortSignal.timeout` after this many ms and — for an idempotent
+ *   method — retried under the retry budget; a caller-supplied `signal` is still honoured
+ *   (combined, not replaced). Unset (the default) ⇒ no client-imposed deadline, so a hung socket
+ *   blocks until the platform's own limit; set this to bound it.
  * @property {typeof globalThis.fetch} [fetch] Injectable fetch (tests, custom agents).
  *   Defaults to the global fetch.
  */
@@ -120,12 +125,19 @@ export function createSerenityProjectEngineApiClient(options) {
     maxRetries = 2,
     retryBaseDelayMs = 200,
     onRetry,
+    requestTimeoutMs,
     fetch: injectedFetch = globalThis.fetch,
   } = options;
 
   const client = createClient({
     baseUrl: resolveBaseUrl(baseUrl),
-    fetch: createRetryingFetch(injectedFetch, maxRetries, retryBaseDelayMs, onRetry),
+    fetch: createRetryingFetch(
+      injectedFetch,
+      maxRetries,
+      retryBaseDelayMs,
+      onRetry,
+      requestTimeoutMs,
+    ),
   });
   // Auth runs as openapi-fetch middleware, so the token getter resolves once per logical request
   // and that token is reused across the request's retries (the retry layer clones the same Request

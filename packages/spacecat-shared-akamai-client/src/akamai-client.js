@@ -363,7 +363,7 @@ export default class AkamaiClient {
    * @param {number} version
    * @param {string} contractId
    * @param {string} groupId
-   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined}>}
+   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined, etag: string|undefined}>}
    */
   async getRuleTree(propertyId, version, contractId, groupId) {
     requirePropertyRef(propertyId, contractId, groupId);
@@ -377,7 +377,9 @@ export default class AkamaiClient {
       `/papi/v1/properties/${id}/versions/${version}/rules`,
       { params: { contractId, groupId } },
     );
-    return { ruleTree: data, ruleFormat: data.ruleFormat };
+    // `etag` is the version's optimistic-concurrency token; patchRuleTree passes it back as
+    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering.
+    return { ruleTree: data, ruleFormat: data.ruleFormat, etag: data.etag };
   }
 
   /**
@@ -442,6 +444,55 @@ export default class AkamaiClient {
         body: ruleTree,
         headers,
       },
+    );
+  }
+
+  /**
+   * Applies a JSON Patch (RFC 6902) to a rule tree, with PAPI-side validation enabled. Unlike
+   * updateRuleTree (a full-tree PUT), PATCH applies the deltas to the STORED tree server-side, so
+   * behaviors we don't name in an op are never re-serialized by us — this avoids re-storing PAPI's
+   * GET-expanded projection of untouched behaviors, which is what made validateRules reject an
+   * existing "Use Platform Settings" origin. Errors/warnings, if any, come back in the response
+   * body rather than as an HTTP error (same shape as updateRuleTree).
+   *
+   * @param {string} propertyId
+   * @param {number} version - must be an editable (inactive) version for a real patch; a dry-run
+   *   only validates and never persists.
+   * @param {string} contractId
+   * @param {string} groupId
+   * @param {Array<object>} ops - JSON Patch operations (paths are rooted at the rules document,
+   *   e.g. `/rules/children/-`, `/rules/variables/-`).
+   * @param {string} [etag] - the version's ETag (from getRuleTree), sent as If-Match.
+   * @param {object} [options]
+   * @param {boolean} [options.dryRun=false] - validate without saving.
+   * @returns {Promise<object>}
+   */
+  async patchRuleTree(propertyId, version, contractId, groupId, ops, etag, options = {}) {
+    requirePropertyRef(propertyId, contractId, groupId);
+    if (!Number.isInteger(version)) {
+      throw new Error('version must be an integer');
+    }
+    if (!Array.isArray(ops)) {
+      throw new Error('ops must be an array of JSON Patch operations');
+    }
+    const { dryRun = false } = options;
+    const id = encodePathSegment(propertyId);
+    const params = { contractId, groupId, validateRules: 'true' };
+    if (dryRun) {
+      params.dryRun = 'true';
+    }
+    const headers = {
+      'Content-Type': 'application/json-patch+json',
+      ...(etag ? { 'If-Match': etag } : {}),
+    };
+    this.log.info(
+      `Patching rule tree for property ${propertyId} v${version} `
+      + `(${ops.length} op(s)${dryRun ? ', dry-run' : ''})`,
+    );
+    return this.#request(
+      'PATCH',
+      `/papi/v1/properties/${id}/versions/${version}/rules`,
+      { params, body: ops, headers },
     );
   }
 

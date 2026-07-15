@@ -36,6 +36,7 @@ export interface PropertyMatch {
 export interface RuleTreeResult {
   ruleTree: object;
   ruleFormat?: string;
+  etag?: string;
 }
 
 export type Network = 'STAGING' | 'PRODUCTION';
@@ -92,6 +93,16 @@ export default class AkamaiClient {
     groupId: string,
     ruleTree: object,
     ruleFormat?: string,
+  ): Promise<object>;
+
+  patchRuleTree(
+    propertyId: string,
+    version: number,
+    contractId: string,
+    groupId: string,
+    ops: object[],
+    etag?: string,
+    options?: { dryRun?: boolean },
   ): Promise<object>;
 
   activate(

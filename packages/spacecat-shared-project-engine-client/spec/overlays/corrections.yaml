@@ -90,6 +90,10 @@ info:
 #      2026-07-14 against prod, serenity-docs#63 §2 live probe). The vendored swagger declares
 #      no 409; add it (http_server.BasicResponse) so the mock can return the live status and
 #      Counterfact response validation accepts it. Remove if Semrush declares it upstream.
+# CR18 RenamePromptRequest.new_name is nullable. Live accepts `{"new_name": null}` and applies
+#      it as the empty string — 200, prompt renamed to '' (verified 2026-07-15 against prod);
+#      the vendored plain-string type makes Counterfact's request validation 400 that input
+#      before the handler runs. Remove if Semrush marks it nullable upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -432,3 +436,13 @@ actions:
           application/json:
             schema:
               $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR18: RenamePromptRequest.new_name is nullable ────────────────────────
+  # Live accepts `{"new_name": null}` and applies it as the empty string — 200, prompt renamed
+  # to '' (verified 2026-07-15 against prod, same probe as the CR17 wording pin). The vendored
+  # plain-string type makes Counterfact's request validation reject that input with a 400
+  # before the stateful handler runs.
+  - target: "$.components.schemas['model.RenamePromptRequest'].properties.new_name"
+    description: "CR18: new_name accepts null (live applies it as the empty string)"
+    update:
+      nullable: true

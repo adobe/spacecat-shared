@@ -970,6 +970,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(omittedErr).to.equal(undefined);
     expect(omitted).to.deep.equal({ id: victim.id, name: '', is_updated: false });
 
+    // `new_name: null` coalesces the same way — live accepts null and renames to '' (pinned
+    // 2026-07-15); overlay CR18 marks the field nullable so request validation admits it.
+    const nulled = await fetch(`${promptsUrl()}/${victim.id}/rename`, {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ new_name: null }),
+    });
+    expect(nulled.status).to.equal(200);
+    expect(await nulled.json()).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
     const noBody = await fetch(`${promptsUrl()}/${victim.id}/rename`, {
       method: 'POST',
       headers: { Authorization: 'Bearer e2e-token', Accept: 'application/json' },

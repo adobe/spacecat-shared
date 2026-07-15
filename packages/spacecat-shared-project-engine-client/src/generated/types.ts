@@ -2289,7 +2289,7 @@ export interface components {
             replace?: boolean;
         };
         "model.RenamePromptRequest": {
-            new_name?: string;
+            new_name?: string | null;
         };
         "model.RenamePromptResponse": {
             id?: string;

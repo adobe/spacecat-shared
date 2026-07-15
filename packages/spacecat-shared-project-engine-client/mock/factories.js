@@ -140,7 +140,8 @@ export const createPromptMock = (overrides = {}) => ({
 /**
  * A prompt-rename result (`RenamePromptResponse`) — the `aio-rename-prompt` 200 body. The
  * prompt id is echoed UNCHANGED (rename is in-place; verified live 2026-07-14,
- * serenity-docs#63 §2); `is_updated` is `false` for a no-op rename (unchanged name).
+ * serenity-docs#63 §2); `is_updated` mirrors the live layer — `false` for a no-op rename
+ * or a draft-only prompt (the default `true` is the published-prompt-changed path).
  * @param {Partial<RenamePromptResponse>} [overrides]
  * @returns {RenamePromptResponse}
  */

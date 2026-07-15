@@ -52,7 +52,9 @@ export function POST($) {
   // The one input live rejects: no request body at all → 400 {"message":"EOF"}
   // (live-pinned 2026-07-15). Anything with a JSON body — `{}` included — is applied
   // literally below. Counterfact's parser normalizes a missing body to `{}`, so the
-  // empty request is detected via the content-length header instead.
+  // empty request is detected via the content-length header instead — assuming the
+  // header is present on body-carrying requests (a chunked request without one would
+  // false-positive; every real client here sends content-length).
   if (!Number($.headers?.['content-length'] ?? 0)) {
     return $.response[400].json(context.factories.createBasicResponseMock({ message: 'EOF' }));
   }

@@ -109,6 +109,76 @@ describe('stateful — prompts ops', () => {
   });
 });
 
+describe('stateful — prompts metadata ops (WP2, LLMO-6288)', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1' };
+  const freshPrompt = () => {
+    const ops = createStatefulOps(new InMemoryStore()).prompts;
+    const [created] = ops.createMany(scope, [{ name: 'p', tags: [] }]);
+    return { ops, id: created.id };
+  };
+
+  it('get reads a stored prompt, undefined for an unknown id', () => {
+    const { ops, id } = freshPrompt();
+    expect(ops.get(scope, id)?.name).to.equal('p');
+    expect(ops.get(scope, 'missing')).to.equal(undefined);
+  });
+
+  it('setMetadataMany overwrites metadata wholesale on known prompts', () => {
+    const { ops, id } = freshPrompt();
+    ops.setMetadataMany(scope, [{ id, metadata: { created_by: 'a@x', created_at: 't0' } }]);
+    // A second write REPLACES (not merges) the stored object.
+    const { updated, missing } = ops.setMetadataMany(scope, [{ id, metadata: { updated_by: 'b@x' } }]);
+    expect(missing).to.deep.equal([]);
+    expect(updated[0].metadata).to.deep.equal({ updated_by: 'b@x' });
+    expect(ops.get(scope, id).metadata).to.deep.equal({ updated_by: 'b@x' });
+  });
+
+  it('setMetadataMany reports unknown and id-less items as missing, writing nothing for them', () => {
+    const { ops, id } = freshPrompt();
+    const { updated, missing } = ops.setMetadataMany(scope, [
+      { id, metadata: 'opaque-text' }, // known → written (text-shaped payload is fine)
+      { id: 'missing', metadata: { x: 1 } }, // unknown id
+      { metadata: { y: 2 } }, // no id at all
+    ]);
+    expect(updated).to.have.length(1);
+    expect(updated[0].metadata).to.equal('opaque-text');
+    expect(missing).to.deep.equal(['missing', undefined]);
+  });
+
+  it('mergeMetadataMany shallow-merges two objects (incoming keys win)', () => {
+    const { ops, id } = freshPrompt();
+    ops.setMetadataMany(scope, [{ id, metadata: { created_by: 'a@x', created_at: 't0' } }]);
+    const { updated } = ops.mergeMetadataMany(scope, [{ id, metadata: { updated_by: 'b@x', created_at: 't1' } }]);
+    expect(updated[0].metadata).to.deep.equal({ created_by: 'a@x', created_at: 't1', updated_by: 'b@x' });
+  });
+
+  it('mergeMetadataMany replaces wholesale when either side is not a plain object', () => {
+    // Store `stored` metadata, merge `incoming`, and return the resulting metadata.
+    const mergeOnto = (stored, incoming) => {
+      const { ops, id } = freshPrompt();
+      ops.setMetadataMany(scope, [{ id, metadata: stored }]);
+      return ops.mergeMetadataMany(scope, [{ id, metadata: incoming }]).updated[0].metadata;
+    };
+    // incoming not a plain object → replace (isPlainObject(incoming) false: typeof / null / array)
+    expect(mergeOnto({ k: 1 }, 'text')).to.equal('text');
+    expect(mergeOnto({ k: 1 }, null)).to.equal(null);
+    expect(mergeOnto({ k: 1 }, [1, 2])).to.deep.equal([1, 2]);
+    // current not a plain object → replace (isPlainObject(current) false: text, then undefined)
+    expect(mergeOnto('old', { k: 9 })).to.deep.equal({ k: 9 });
+    expect(mergeOnto(undefined, { first: true })).to.deep.equal({ first: true });
+  });
+
+  it('mergeMetadataMany reports unknown and id-less items as missing', () => {
+    const { ops } = freshPrompt();
+    const { updated, missing } = ops.mergeMetadataMany(scope, [
+      { id: 'missing', metadata: { x: 1 } },
+      { metadata: { y: 2 } },
+    ]);
+    expect(updated).to.have.length(0);
+    expect(missing).to.deep.equal(['missing', undefined]);
+  });
+});
+
 describe('stateful — benchmarks ops', () => {
   const scope = { workspaceId: 'w1', projectId: 'p1' };
 

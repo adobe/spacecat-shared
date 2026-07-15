@@ -406,6 +406,66 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
   });
 
+  // WP2 (LLMO-6288): the Adobe-owned `*-with-metadata` surface. Create a prompt, PUT its opaque
+  // authorship metadata (whole-object overwrite), PATCH-merge a later edit, and read it back via
+  // by_tags/with-metadata. These paths are mock-only (absent from the vendored swagger), so they
+  // are driven with raw fetch + a Bearer credential rather than the generated typed client.
+  it('writes prompt metadata (PUT overwrite, PATCH merge) and reads it back with-metadata', async () => {
+    const base = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`;
+    const headers = {
+      Authorization: 'Bearer e2e-token',
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { prompts: { 'Metadata prompt?': ['brand'] } },
+      },
+    );
+    const [id] = created.ids;
+
+    // PUT — whole-object overwrite of the opaque payload.
+    const putRes = await fetch(`${base}/metadata`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ items: [{ id, metadata: { created_by: 'a@adobe.com', created_at: 't0' } }] }),
+    });
+    expect(putRes.status).to.equal(200);
+    expect((await putRes.json()).updated_count).to.equal(1);
+
+    // PATCH — merge a later edit onto the stored object (incoming keys win).
+    const patchRes = await fetch(`${base}/metadata`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ items: [{ id, metadata: { updated_by: 'b@adobe.com', updated_at: 't1' } }] }),
+    });
+    expect(patchRes.status).to.equal(200);
+
+    // Read back via the with-metadata list (draft view: the created prompt is is_new).
+    const listRes = await fetch(`${base}/by_tags/with-metadata?draft=true`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ tag_ids: [] }),
+    });
+    expect(listRes.status).to.equal(200);
+    const body = await listRes.json();
+    const mine = body.items.find((p) => p.id === id);
+    expect(mine.metadata).to.deep.equal({
+      created_by: 'a@adobe.com', created_at: 't0', updated_by: 'b@adobe.com', updated_at: 't1',
+    });
+  });
+
+  it('rejects a metadata write without a Bearer credential (401)', async () => {
+    const res = await fetch(
+      `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/metadata`,
+      { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [] }) },
+    );
+    expect(res.status).to.equal(401);
+  });
+
   // The single-serializer contract. Live returns the SAME tag object whether it is embedded on a
   // prompt or listed by the tree read — fetching one id both ways and comparing yields equality
   // (verified 2026-07-10 against prod). What varies is DEPTH: a root omits `parent_id`/`path`, a

@@ -67,6 +67,29 @@ export function collectionKey(resource, scope = {}) {
 }
 
 /**
+ * True for a mergeable JSON object — a non-null, non-array `object`. Author/timestamp metadata is
+ * carried OPAQUELY (the mock pins the endpoint + wiring, not the content-schema, until Semrush's
+ * WP0 ships the real `metadata` semantics), so this is the only structural assumption the merge
+ * path makes: shallow-merge two objects, otherwise let the incoming value replace.
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Combines a prompt's stored opaque metadata with an incoming payload for the PATCH-merge path:
+ * two plain objects shallow-merge (incoming keys win); anything else (a text-shaped payload, a
+ * first write over `undefined`, an array) means the incoming value replaces wholesale. Kept
+ * deliberately soft — see {@link isPlainObject}.
+ * @param {unknown} current the prompt's existing `metadata` (may be undefined)
+ * @param {unknown} incoming the payload's `metadata`
+ * @returns {unknown} the metadata to store
+ */
+const mergeOpaqueMetadata = (current, incoming) => (
+  isPlainObject(current) && isPlainObject(incoming) ? { ...current, ...incoming } : incoming
+);
+
+/**
  * The stateful operations, grouped by resource. Each operates on the store and returns stored
  * entities / lists / booleans — never HTTP envelopes — so the Counterfact adapter owns response
  * shaping. Pure and synchronous; the store clones on every read/write.
@@ -176,6 +199,79 @@ export function createStatefulOps(store) {
        */
       update(scope, id, patch) {
         return store.update(collectionKey('prompts', scope), id, patch);
+      },
+      /**
+       * Reads one stored prompt by id (cloned), or undefined if unknown — the metadata write paths
+       * resolve the target through this before touching it.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @returns {Entity | undefined}
+       */
+      get(scope, id) {
+        return store.get(collectionKey('prompts', scope), id);
+      },
+      /**
+       * Whole-object OVERWRITE of opaque metadata on existing prompts — the batch
+       * `PUT .../aio/prompts/metadata` (`aio-set-prompts-metadata-batch`, ADR §2.3). Each item
+       * replaces the target prompt's `metadata` wholesale (`store.update` shallow-merges at the
+       * entity's top level, so a `{ metadata }` patch swaps the whole value). The payload is
+       * OPAQUE — object or text-shaped — because the mock pins the endpoint and wiring, not the
+       * `metadata` content-schema, until Semrush's WP0 ships the real semantics. An unknown (or
+       * absent) id writes nothing and is reported in `missing`, matching live's silent skip.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<{ id?: string, metadata?: unknown }>} items
+       * @returns {{ updated: Entity[], missing: Array<string | undefined> }} `updated` are the
+       *   written prompts (cloned); `missing` the ids that matched no stored prompt
+       */
+      setMetadataMany(scope, items) {
+        const key = collectionKey('prompts', scope);
+        /** @type {Entity[]} */
+        const updated = [];
+        /** @type {Array<string | undefined>} */
+        const missing = [];
+        for (const item of items) {
+          const { id, metadata } = item;
+          const current = id === undefined ? undefined : store.get(key, id);
+          if (current === undefined) {
+            missing.push(id);
+          } else {
+            // `current` resolved ⇒ `id` is a known string; the casts are tsc no-ops.
+            const written = store.update(key, /** @type {string} */ (id), { metadata });
+            updated.push(/** @type {Entity} */ (written));
+          }
+        }
+        return { updated, missing };
+      },
+      /**
+       * MERGE opaque metadata into existing prompts — the batch `PATCH .../aio/prompts/metadata`.
+       * This verb is the mock's pinned SOFT extension over the ADR's overwrite-only PUT (the ADR
+       * documents no partial update); it exists so a consumer can exercise an incremental edit
+       * before Semrush finalizes WP0. A plain-object payload shallow-merges onto the stored object
+       * (incoming keys win); a text-shaped / array / first-write payload replaces wholesale (see
+       * {@link mergeOpaqueMetadata}). Unknown / absent ids write nothing and land in `missing`.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<{ id?: string, metadata?: unknown }>} items
+       * @returns {{ updated: Entity[], missing: Array<string | undefined> }}
+       */
+      mergeMetadataMany(scope, items) {
+        const key = collectionKey('prompts', scope);
+        /** @type {Entity[]} */
+        const updated = [];
+        /** @type {Array<string | undefined>} */
+        const missing = [];
+        for (const item of items) {
+          const { id } = item;
+          const current = id === undefined ? undefined : store.get(key, id);
+          if (current === undefined) {
+            missing.push(id);
+          } else {
+            const metadata = mergeOpaqueMetadata(current.metadata, item.metadata);
+            // `current` resolved ⇒ `id` is a known string; the casts are tsc no-ops.
+            const written = store.update(key, /** @type {string} */ (id), { metadata });
+            updated.push(/** @type {Entity} */ (written));
+          }
+        }
+        return { updated, missing };
       },
       /**
        * @param {{ workspaceId: string | number, projectId: string | number }} scope

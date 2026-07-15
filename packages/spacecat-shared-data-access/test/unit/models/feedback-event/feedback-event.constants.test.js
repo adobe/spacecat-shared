@@ -70,8 +70,10 @@ describe('feedback-event constants', () => {
     expect(Object.isFrozen(EXPORT_EXCLUDED_REJECTION_CATEGORIES)).to.equal(true);
   });
 
-  it('lists the opt-out stripped fields (snake_case, matching the JSONL/DB columns)', () => {
-    expect(OPT_OUT_STRIPPED_FIELDS).to.deep.equal(['previous_fix', 'edited_fix', 'detail_markdown']);
+  it('lists only the HUMAN-authored opt-out stripped fields (AI-generated guidance + generated patch are always exported)', () => {
+    expect(OPT_OUT_STRIPPED_FIELDS).to.deep.equal(['detail_markdown', 'edited_fix']);
+    expect(OPT_OUT_STRIPPED_FIELDS).to.not.include('previous_fix');
+    expect(OPT_OUT_STRIPPED_FIELDS).to.not.include('guidance_markdown');
     expect(Object.isFrozen(OPT_OUT_STRIPPED_FIELDS)).to.equal(true);
   });
 
@@ -119,8 +121,10 @@ describe('toReviewView', () => {
     rejection_category: 'bad_recommendation',
     state_transition: 'PENDING_VALIDATION->REJECTED',
     tier: 'paid',
+    feedback_subject_id: 'issue-42',
     previous_fix: { patch: 'before' },
     edited_fix: { patch: 'after' },
+    guidance_markdown: '# Slow hero image\n\nLCP element is a 1.2 MB PNG.',
   };
 
   it('maps a full row to the review view, omitting patches by default', () => {
@@ -136,15 +140,18 @@ describe('toReviewView', () => {
       rejectionCategory: 'bad_recommendation',
       stateTransition: 'PENDING_VALIDATION->REJECTED',
       tier: 'paid',
+      // feedbackSubjectId is in the base view (the UI filters on it)
+      feedbackSubjectId: 'issue-42',
     });
     expect(view).to.not.have.property('previousFix');
     expect(view).to.not.have.property('editedFix');
   });
 
-  it('includes patch fields when includePatches is set', () => {
+  it('includes patch fields + guidance when includePatches is set', () => {
     const view = toReviewView(fullRow, { includePatches: true });
     expect(view.previousFix).to.deep.equal({ patch: 'before' });
     expect(view.editedFix).to.deep.equal({ patch: 'after' });
+    expect(view.guidanceMarkdown).to.equal('# Slow hero image\n\nLCP element is a 1.2 MB PNG.');
   });
 
   it('defaults missing optional fields to null (incl. absent patches when requested)', () => {
@@ -162,6 +169,8 @@ describe('toReviewView', () => {
     expect(view.stateTransition).to.equal(null);
     expect(view.previousFix).to.equal(null);
     expect(view.editedFix).to.equal(null);
+    expect(view.guidanceMarkdown).to.equal(null);
+    expect(view.feedbackSubjectId).to.equal(null);
   });
 
   it('returns null when no row is given', () => {
@@ -171,16 +180,23 @@ describe('toReviewView', () => {
 });
 
 describe('shouldExport', () => {
-  it('excludes product_bug rows', () => {
-    expect(shouldExport({ rejection_category: 'product_bug' })).to.equal(false);
+  const patch = { content: 'diff --git a/x b/x' };
+
+  it('excludes product_bug rows (even with a patch)', () => {
+    expect(shouldExport({ rejection_category: 'product_bug', previous_fix: patch })).to.equal(false);
   });
 
-  it('includes bad_recommendation rows', () => {
-    expect(shouldExport({ rejection_category: 'bad_recommendation' })).to.equal(true);
+  it('includes bad_recommendation rows that have a code patch', () => {
+    expect(shouldExport({ rejection_category: 'bad_recommendation', previous_fix: patch })).to.equal(true);
   });
 
-  it('includes NULL-category rows', () => {
-    expect(shouldExport({ rejection_category: null })).to.equal(true);
+  it('includes NULL-category rows (approvals) that have a code patch', () => {
+    expect(shouldExport({ rejection_category: null, previous_fix: patch })).to.equal(true);
+  });
+
+  it('excludes rows with no code patch (text-guidance-only feedback stays in Postgres)', () => {
+    expect(shouldExport({ rejection_category: 'bad_recommendation', previous_fix: null })).to.equal(false);
+    expect(shouldExport({ rejection_category: null })).to.equal(false);
   });
 });
 
@@ -199,6 +215,7 @@ describe('toJsonlRow', () => {
     state_transition: 'PENDING_VALIDATION->REJECTED',
     tier: 'paid',
     detail_markdown: 'rationale',
+    guidance_markdown: '# Slow hero image\n\nLCP element is a 1.2 MB PNG.',
     previous_fix: { patch: 'before' },
     edited_fix: { patch: 'after' },
   };
@@ -209,15 +226,19 @@ describe('toJsonlRow', () => {
     expect(out.verdict).to.equal('down');
     expect(out.signal).to.equal('negative');
     expect(out.detail_markdown).to.equal('rationale');
+    expect(out.guidance_markdown).to.equal('# Slow hero image\n\nLCP element is a 1.2 MB PNG.');
     expect(out.previous_fix).to.deep.equal({ patch: 'before' });
     expect(out.edited_fix).to.deep.equal({ patch: 'after' });
   });
 
-  it('strips the opt-out fields when the org is opted out', () => {
+  it('strips only the human-authored fields on opt-out; guidance + generated patch still ship', () => {
     const out = toJsonlRow(fullRow, { optedIn: false });
+    // human-authored → stripped
     expect(out.detail_markdown).to.equal(null);
-    expect(out.previous_fix).to.equal(null);
     expect(out.edited_fix).to.equal(null);
+    // AI-generated → always exported (the LA needs the issue + generated patch)
+    expect(out.guidance_markdown).to.equal('# Slow hero image\n\nLCP element is a 1.2 MB PNG.');
+    expect(out.previous_fix).to.deep.equal({ patch: 'before' });
     // metadata still ships
     expect(out.signal).to.equal('negative');
     expect(out.rejection_category).to.equal('bad_recommendation');
@@ -241,6 +262,7 @@ describe('toJsonlRow', () => {
     expect(out.rejection_category).to.equal(null);
     expect(out.state_transition).to.equal(null);
     expect(out.detail_markdown).to.equal(null);
+    expect(out.guidance_markdown).to.equal(null);
     expect(out.previous_fix).to.equal(null);
     expect(out.edited_fix).to.equal(null);
   });
@@ -257,6 +279,8 @@ describe('buildJsonl', () => {
     source: 'backoffice',
     signal: 'positive',
     tier: 'free',
+    // exportable rows carry a generated code patch by default
+    previous_fix: { content: 'diff --git a/x b/x' },
     ...overrides,
   });
 
@@ -269,6 +293,15 @@ describe('buildJsonl', () => {
     const lines = jsonl.split('\n').map((l) => JSON.parse(l));
     expect(lines).to.have.length(2);
     expect(lines.map((l) => l.event_id)).to.deep.equal(['a', 'c']);
+  });
+
+  it('filters out text-guidance-only rows (no code patch)', () => {
+    const jsonl = buildJsonl([
+      row({ event_id: 'a', rejection_category: 'bad_recommendation' }),
+      row({ event_id: 'b', previous_fix: null }), // text-guidance only → not exported
+    ], { optedIn: true });
+    const lines = jsonl.split('\n').map((l) => JSON.parse(l));
+    expect(lines.map((l) => l.event_id)).to.deep.equal(['a']);
   });
 
   it('returns an empty string when every row is filtered out', () => {

@@ -21,14 +21,13 @@ use(chaiAsPromised);
 
 const IMS_HOST = 'ims.example.com';
 const API_HOST = 'https://ssg-stage.private.example.io';
-const API_BASE = `${API_HOST}/api`;
 
 const TEST_ENV = {
-  CM_API_CLIENT_ID: 'cm-client-id',
-  CM_API_CLIENT_SECRET: 'cm-client-secret',
-  CM_API_SCOPES: 'openid,AdobeID',
-  CM_API_IMS_ORG_ID: 'org@AdobeOrg',
-  CM_API_BASE: API_BASE,
+  CM_CLIENT_ID: 'cm-client-id',
+  CM_CLIENT_SECRET: 'cm-client-secret',
+  CM_SCOPES: 'openid,AdobeID',
+  CM_IMS_ORG_ID: 'org@AdobeOrg',
+  CM_PRIVATE_API_URL: API_HOST,
   IMS_HOST,
 };
 
@@ -75,8 +74,8 @@ describe('CloudManagerApiClient', () => {
       expect(client).to.be.instanceOf(CloudManagerApiClient);
     });
 
-    it('strips trailing slashes from CM_API_BASE', async () => {
-      const client = CloudManagerApiClient.createFrom(createContext({ CM_API_BASE: `${API_BASE}///` }));
+    it('strips trailing slashes from CM_PRIVATE_API_URL', async () => {
+      const client = CloudManagerApiClient.createFrom(createContext({ CM_PRIVATE_API_URL: `${API_HOST}///` }));
       const scope = nock(API_HOST)
         .get(`/api/program/${PROGRAM_ID}`)
         .reply(200, { imsOrgId: 'x@AdobeOrg' });
@@ -85,8 +84,8 @@ describe('CloudManagerApiClient', () => {
       scope.done();
     });
 
-    ['CM_API_CLIENT_ID', 'CM_API_CLIENT_SECRET', 'CM_API_SCOPES',
-      'CM_API_IMS_ORG_ID', 'CM_API_BASE', 'IMS_HOST'].forEach((key) => {
+    ['CM_CLIENT_ID', 'CM_CLIENT_SECRET', 'CM_SCOPES',
+      'CM_IMS_ORG_ID', 'CM_PRIVATE_API_URL', 'IMS_HOST'].forEach((key) => {
       it(`throws when ${key} is missing`, () => {
         expect(() => CloudManagerApiClient.createFrom(createContext({ [key]: undefined })))
           .to.throw('CloudManagerApiClient requires');
@@ -96,7 +95,7 @@ describe('CloudManagerApiClient', () => {
 
   describe('constructor', () => {
     it('defaults the logger to console when omitted', () => {
-      const client = new CloudManagerApiClient({ apiBase: API_BASE }, {});
+      const client = new CloudManagerApiClient({ baseUrl: API_HOST }, {});
       expect(client.log).to.equal(console);
     });
   });

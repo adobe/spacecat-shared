@@ -36,13 +36,15 @@ export default class CloudManagerApiClient {
   /**
    * Creates a CloudManagerApiClient from a Universal context.
    *
-   * Required `context.env`:
-   * - `CM_API_CLIENT_ID`     — CM API OAuth client id (also sent as `x-api-key`)
-   * - `CM_API_CLIENT_SECRET` — CM API OAuth client secret
-   * - `CM_API_SCOPES`        — CM API OAuth scopes (space/comma separated)
-   * - `CM_API_IMS_ORG_ID`    — IMS org id (sent as `x-gw-ims-org-id`)
-   * - `CM_API_BASE`          — CM Management API base URL incl. `/api`
-   * - `IMS_HOST`             — IMS host for the token exchange
+   * Required `context.env` (names match the CM credentials bundle in Vault):
+   * - `CM_CLIENT_ID`        — CM API OAuth client id (also sent as `x-api-key`)
+   * - `CM_CLIENT_SECRET`    — CM API OAuth client secret
+   * - `CM_SCOPES`           — CM API OAuth scopes (space/comma separated)
+   * - `CM_IMS_ORG_ID`       — IMS org id (sent as `x-gw-ims-org-id`)
+   * - `CM_PRIVATE_API_URL`  — CM Management API base URL (host only, no `/api`;
+   *                           e.g. `https://ssg-stage.private.adobe.io` for
+   *                           dev/stage, `https://ssg.private.adobe.io` for prod)
+   * - `IMS_HOST`            — IMS host for the token exchange
    *
    * @param {Object} context - Universal function context
    * @returns {CloudManagerApiClient}
@@ -50,18 +52,18 @@ export default class CloudManagerApiClient {
   static createFrom(context) {
     const { log = console } = context;
     const {
-      CM_API_CLIENT_ID: clientId,
-      CM_API_CLIENT_SECRET: clientSecret,
-      CM_API_SCOPES: scopes,
-      CM_API_IMS_ORG_ID: imsOrgId,
-      CM_API_BASE: apiBase,
+      CM_CLIENT_ID: clientId,
+      CM_CLIENT_SECRET: clientSecret,
+      CM_SCOPES: scopes,
+      CM_IMS_ORG_ID: imsOrgId,
+      CM_PRIVATE_API_URL: baseUrl,
       IMS_HOST: imsHost,
     } = context.env;
 
     if (!hasText(clientId) || !hasText(clientSecret) || !hasText(scopes)
-      || !hasText(imsOrgId) || !hasText(apiBase) || !hasText(imsHost)) {
-      throw new Error('CloudManagerApiClient requires CM_API_CLIENT_ID, CM_API_CLIENT_SECRET,'
-        + ' CM_API_SCOPES, CM_API_IMS_ORG_ID, CM_API_BASE, and IMS_HOST.');
+      || !hasText(imsOrgId) || !hasText(baseUrl) || !hasText(imsHost)) {
+      throw new Error('CloudManagerApiClient requires CM_CLIENT_ID, CM_CLIENT_SECRET,'
+        + ' CM_SCOPES, CM_IMS_ORG_ID, CM_PRIVATE_API_URL, and IMS_HOST.');
     }
 
     // Dedicated ImsClient for the CM API credentials (client_credentials grant).
@@ -77,7 +79,7 @@ export default class CloudManagerApiClient {
     return new CloudManagerApiClient({
       clientId,
       imsOrgId,
-      apiBase: apiBase.replace(/\/+$/, ''),
+      baseUrl: baseUrl.replace(/\/+$/, ''),
     }, imsClient, log);
   }
 
@@ -94,7 +96,8 @@ export default class CloudManagerApiClient {
    */
   async #get(pathSuffix) {
     const { access_token: token } = await this.imsClient.getServiceAccessTokenV3();
-    const url = `${this.config.apiBase}${pathSuffix}`;
+    // CM_PRIVATE_API_URL is the host only; the Management API lives under `/api`.
+    const url = `${this.config.baseUrl}/api${pathSuffix}`;
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,

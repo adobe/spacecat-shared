@@ -27,7 +27,6 @@ import {
 } from './utils/s3-utils.js';
 import {
   omitKeys,
-  isEdgeDeployableSuggestionStatus,
   isPatternSuggestion,
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
@@ -36,8 +35,8 @@ import {
   cleanupCoveredSuggestions,
   classifySuggestions,
   filterBatchCoveredSuggestions,
+  findCoveredSuggestions,
 } from './utils/suggestion-utils.js';
-import { buildUrlMatcher } from './utils/pattern-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
@@ -1559,41 +1558,13 @@ class TokowakaClient {
     suggestion.setUpdatedBy(updatedBy);
     // suggestion.save() is deferred — caller batches saves via saveSuggestions.
 
-    // Mark per-URL suggestions covered by this pattern.
-    const matchers = allowedRegexPatterns.flatMap((p) => {
-      const m = buildUrlMatcher(p);
-      if (!m) {
-        // eslint-disable-next-line max-len
-        this.log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${suggestion.getId()} is invalid, skipping`);
-      }
-      return m ? [m] : [];
-    });
-
-    if (matchers.length === 0) {
-      return;
-    }
-
-    const covered = allSuggestions.filter((s) => {
-      if (s.getId() === suggestion.getId()) {
-        return false;
-      }
-      if (skippedInBatchIds.has(s.getId())) {
-        return false;
-      }
-      if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
-        return false;
-      }
-      if (s.getData()?.edgeDeployed) {
-        return false;
-      }
-      // Path-level pattern suggestions (not domain-wide) are fully covered by a
-      // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
-      if (isPatternSuggestion(s)) {
-        return coverageField === 'coveredByDomainWide' && !s.getData()?.isDomainWide;
-      }
-      const url = s.getData()?.url;
-      return url && matchers.some((match) => match(url));
-    });
+    const covered = findCoveredSuggestions(
+      suggestion,
+      allowedRegexPatterns,
+      allSuggestions,
+      skippedInBatchIds,
+      this.log,
+    );
 
     // eslint-disable-next-line max-len
     this.log.info(`[edge-deploy] Pattern ${suggestion.getId()}: found ${covered.length} coverable per-URL suggestions (field=${coverageField})`);
@@ -1757,6 +1728,64 @@ class TokowakaClient {
     }
 
     return { succeededSuggestions, failedSuggestions, coveredSuggestions };
+  }
+
+  /**
+   * Finds and marks the suggestions that fall within a pattern suggestion's
+   * scope (domain-wide or segment/path) as covered and saves them.
+   *
+   * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
+   * @param {Array} allSuggestions - Full opportunity suggestion list to search for matches
+   * @param {string} siteId - Site ID
+   * @param {string} [updatedBy]
+   * @returns {Promise<Array>} the marked suggestions
+   */
+  async markPatternCoveredSuggestions(
+    patternSuggestion,
+    allSuggestions,
+    siteId,
+    updatedBy = 'edge-deploy',
+  ) {
+    const allowedRegexPatterns = patternSuggestion.getData()?.allowedRegexPatterns;
+    if (!Array.isArray(allowedRegexPatterns) || allowedRegexPatterns.length === 0) {
+      this.log.warn(`[edge-deploy] Pattern suggestion ${patternSuggestion.getId()} has `
+      + 'no allowedRegexPatterns, skipping cover-marking');
+      return [];
+    }
+    const covered = findCoveredSuggestions(
+      patternSuggestion,
+      allowedRegexPatterns,
+      allSuggestions,
+      new Set(),
+      this.log,
+    );
+    if (covered.length === 0) {
+      return [];
+    }
+    const coverageField = patternSuggestion.getData()?.isDomainWide
+      ? 'coveredByDomainWide' : 'coveredByPattern';
+    covered.forEach((s) => {
+      s.setData({ ...s.getData(), [coverageField]: patternSuggestion.getId() });
+      s.setUpdatedBy(updatedBy);
+    });
+    try {
+      await saveSuggestions(this.dataAccess, covered, {
+        sqs: this.sqs,
+        queueUrl: this.importWorkerQueueUrl,
+        siteId,
+        set: { [coverageField]: patternSuggestion.getId() },
+        updatedBy,
+        log: this.log,
+      });
+      this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${patternSuggestion.getId()}`);
+      return covered;
+    } catch (saveError) {
+      this.log.warn(
+        '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
+        + `${patternSuggestion.getId()}: ${saveError.message}`,
+      );
+      return [];
+    }
   }
 
   /**

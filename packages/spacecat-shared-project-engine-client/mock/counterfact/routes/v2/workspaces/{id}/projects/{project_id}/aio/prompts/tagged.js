@@ -20,6 +20,15 @@
  * The tag ids are minted via `context.tagId` (the shared mock/tag-id.js helper) so they match the
  * ids `POST /aio/tags` persists for the same name. Returns 201 `IDsWithStatsResponse`.
  *
+ * **This endpoint can only ever address ROOT tags.** Its request carries names and nothing else —
+ * there is no field in `AIOTaggedPromptsCreateRequest` for a `parent_id`, so a nested tag is
+ * unreachable and a name that does not exist at root level mints a NEW ROOT (live-verified:
+ * serenity-docs#24 §3.1, "name-based and root-only"). `context.tagId` is therefore called WITHOUT a
+ * parent here, deriving the root id for each name. That is a faithful model of the live contract,
+ * not a mock shortcut — do not invent a name→nested-tag lookup the real API does not have.
+ * Under the dimension-root model every value is a bare-named DESCENDANT, so this endpoint cannot
+ * express a prompt's tags at all; the id-based `POST /aio/prompts { items, tag_ids }` replaces it.
+ *
  * Writes to DRAFT only, `is_new: true` on the created prompt (live-verified 2026-07-02,
  * serenity-docs#24 §3.1 gate 2 + gate 6, same mechanism as the id-based `aio/prompts.js` create):
  * `by_tags.js`'s default (non-draft) read excludes it until the project's `publish` endpoint
@@ -63,5 +72,25 @@ export function POST($) {
   }
 
   const created = context.ops.prompts.createMany(scope, toCreate);
+
+  // A name absent from the root level mints a ROOT tag, so every tag a created prompt carries is a
+  // real row in the project's tag tree — which is what lets `by_tags` serialize an embedded tag
+  // through the same view as `GET /aio/tags` rather than echoing a bare `{ id, name }` stub.
+  // Resolve-before-create: only the absent ids are written. This is NOT redundant with the
+  // collision check inside `upsertMany`, which rejects a batch ATOMICALLY on any already-stored id.
+  // A batch naming one existing root and one new one would register NEITHER, leaving the new tag a
+  // phantom id. Filtering first is what makes a re-mentioned root a no-op instead of a poison pill.
+  // Runs after the quota gate so a 405 still creates nothing.
+  const storedTagIds = new Set(context.ops.tags.list(scope).map((t) => t.id));
+  const minted = new Map();
+  for (const tag of created.flatMap((p) => p.tags ?? [])) {
+    if (!storedTagIds.has(tag.id) && !minted.has(tag.id)) {
+      minted.set(tag.id, context.factories.createAIOTagMock({ id: tag.id, name: tag.name }));
+    }
+  }
+  if (minted.size > 0) {
+    context.ops.tags.upsertMany(scope, [...minted.values()]);
+  }
+
   return $.response[201].json({ ids: created.map((p) => p.id), existing_count: existingCount });
 }

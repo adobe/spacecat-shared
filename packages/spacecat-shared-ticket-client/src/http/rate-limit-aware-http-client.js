@@ -24,10 +24,6 @@ const MAX_WAIT_MS = 30_000;
 // until the 15-minute function timeout. AbortSignal.timeout() is available in Node 18+.
 const FETCH_TIMEOUT_MS = 30_000;
 
-// Threshold below which remaining quota triggers a warning log.
-// At ~10 k remaining, ops teams have time to react before exhaustion.
-const LOW_QUOTA_THRESHOLD = 10_000;
-
 // Quota-exhaustion reasons must fail fast — retrying wastes Lambda compute
 // because quota windows last up to one hour.
 const QUOTA_REASONS = new Set([
@@ -57,9 +53,13 @@ const QUOTA_REASONS = new Set([
  * 429 rate-limit retries apply to ALL methods since Jira rejected the request
  * outright and nothing was created.
  *
- * Additionally reads `X-RateLimit-Remaining` on every response and logs a
- * warning when remaining capacity falls below LOW_QUOTA_THRESHOLD so operators
+ * Additionally reads Atlassian's `X-RateLimit-NearLimit` signal (documented as
+ * `true` when <20% of quota capacity remains) and logs a warning so operators
  * can request a Tier 2 (per-tenant) quota upgrade before exhaustion occurs.
+ * NearLimit is used instead of a fixed numeric threshold on `X-RateLimit-Remaining`
+ * because, per the Atlassian docs, Remaining is per-second for burst/request-rate
+ * scopes (a fixed threshold would false-positive there) whereas NearLimit is only
+ * emitted for the pool/quota scopes we actually want to warn on.
  */
 export default class RateLimitAwareHttpClient {
   constructor(httpClient, log) {
@@ -182,26 +182,32 @@ export default class RateLimitAwareHttpClient {
   /**
    * Reads rate-limit observation headers from every response.
    *
-   * - `X-RateLimit-Remaining`: warns when capacity is below threshold so operators
-   *   can request a Tier 2 (per-tenant) quota upgrade before exhaustion.
-   * - `X-RateLimit-Reset`: logged at debug level for diagnostics; shows when the
-   *   current quota window resets (ISO 8601 timestamp per Atlassian docs).
+   * - `X-RateLimit-NearLimit`: Atlassian's documented near-capacity signal —
+   *   `true` when <20% of quota capacity remains. Triggers a warning so operators
+   *   can request a Tier 2 (per-tenant) quota upgrade before exhaustion. Preferred
+   *   over a fixed numeric threshold on `X-RateLimit-Remaining`, whose value is
+   *   per-second for burst scopes and would otherwise false-positive constantly.
+   * - `X-RateLimit-Remaining` / `X-RateLimit-Limit`: included in the warning for
+   *   context when available.
+   * - `X-RateLimit-Reset`: per Atlassian docs, only returned on 429 responses.
+   *   Logged at debug level when present so operators can correlate quota windows.
    *
    * @param {Headers} headers
    */
   #observeQuotaHeaders(headers) {
-    const remaining = parseInt(headers?.get?.('X-RateLimit-Remaining') ?? '', 10);
-    if (Number.isFinite(remaining) && remaining < LOW_QUOTA_THRESHOLD) {
+    // X-RateLimit-Reset is only returned on 429 responses per Atlassian docs, so
+    // this is typically undefined on success paths.
+    const resetAt = headers?.get?.('X-RateLimit-Reset') ?? undefined;
+
+    if (headers?.get?.('X-RateLimit-NearLimit') === 'true') {
+      const remaining = parseInt(headers?.get?.('X-RateLimit-Remaining') ?? '', 10);
       this.log.warn('Jira quota running low', {
-        remaining,
-        threshold: LOW_QUOTA_THRESHOLD,
-        resetAt: headers?.get?.('X-RateLimit-Reset') ?? undefined,
+        remaining: Number.isFinite(remaining) ? remaining : undefined,
+        limit: headers?.get?.('X-RateLimit-Limit') ?? undefined,
+        resetAt,
       });
     }
 
-    // Log reset timestamp at debug level on every response (not just low-quota) so
-    // operators can correlate quota windows in debug traces.
-    const resetAt = headers?.get?.('X-RateLimit-Reset');
     if (resetAt) {
       this.log.debug('Jira rate-limit window', { resetAt });
     }

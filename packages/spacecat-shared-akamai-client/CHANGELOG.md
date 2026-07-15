@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-akamai-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.0.2...@adobe/spacecat-shared-akamai-client-v1.1.0) (2026-07-15)
+
+### Features
+
+* **akamai-client:** add patchRuleTree + return etag from getRuleTree ([#1813](https://github.com/adobe/spacecat-shared/issues/1813)) ([3165116](https://github.com/adobe/spacecat-shared/commit/3165116731c59c48b67db505db041c611ecb858c))
+
 ## [@adobe/spacecat-shared-akamai-client-v1.0.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.0.1...@adobe/spacecat-shared-akamai-client-v1.0.2) (2026-07-08)
 
 ### Bug Fixes

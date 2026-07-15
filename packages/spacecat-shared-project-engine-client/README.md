@@ -154,6 +154,7 @@ Stateful endpoints (backed by the store):
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename` | in-place text edit (id stable; `409` on a sibling-text collision; `is_updated` mirrors the live layer) |
 
 ### Test control routes (not part of the Project Engine API)
 

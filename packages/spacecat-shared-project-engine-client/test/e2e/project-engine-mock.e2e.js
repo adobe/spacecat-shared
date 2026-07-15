@@ -842,6 +842,152 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.items.map((p) => p.id)).to.include(SEED_IDS.promptId);
   });
 
+  // ───────────────────────────────────────────────────────────────────────
+  // In-place prompt rename (aio-rename-prompt, serenity-docs#63): POST
+  // /aio/prompts/{prompt_id}/rename edits a prompt's text WITHOUT deleting it — the id is
+  // preserved, the count is unchanged, and a text collision with a sibling prompt is a clean
+  // 409 (live-verified 2026-07-14, declared via overlay CR17; exact bodies, is_updated
+  // semantics, empty-name literalism and the no-body 400 all live-pinned 2026-07-15).
+  // ───────────────────────────────────────────────────────────────────────
+
+  const renamePrompt = (promptId, newName) => client.POST(
+    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename',
+    {
+      params: {
+        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: promptId },
+      },
+      body: { new_name: newName },
+    },
+  );
+
+  it('renames a prompt in place — same id, count unchanged, by_tags reflects the new text', async () => {
+    const { data: renamed, error } = await renamePrompt(SEED_IDS.promptId, 'What is the best trail shoe?');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: SEED_IDS.promptId,
+      name: 'What is the best trail shoe?',
+      is_updated: true,
+    });
+
+    const { data: listed } = await listByTags([]);
+    expect(listed.total).to.equal(1); // no duplicate was minted
+    expect(listed.items[0]).to.include({
+      id: SEED_IDS.promptId,
+      name: 'What is the best trail shoe?',
+    });
+  });
+
+  // The documented no-op: renaming a prompt onto its OWN current text answers is_updated: false
+  // (not a 409 — the collision check is against SIBLING prompts only).
+  it('answers is_updated: false for a rename onto the prompt\'s own current text', async () => {
+    const { data: renamed, error } = await renamePrompt(SEED_IDS.promptId, 'What is the best running shoe?');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: SEED_IDS.promptId,
+      name: 'What is the best running shoe?',
+      is_updated: false,
+    });
+  });
+
+  // The one hazard, live-verified 2026-07-14 (serenity-docs#63 §2): renaming onto ANOTHER
+  // prompt's exact text is a 409 with NOTHING mutated — no rename, no duplicate.
+  it('409s a rename onto a sibling prompt\'s exact text, mutating nothing', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['A sibling prompt'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [sibling] } = await res.json();
+
+    const { error, response } = await renamePrompt(sibling.id, 'What is the best running shoe?');
+    expect(response.status).to.equal(409);
+    expect(error).to.deep.equal({
+      message: 'conflict\nprompt with name "What is the best running shoe?" already exists',
+    });
+
+    // Nothing mutated: the sibling keeps its text, and the seeded prompt is untouched.
+    const { data: listed } = await listByTags([], { draft: true });
+    expect(listed.items.map((p) => p.name))
+      .to.have.members(['What is the best running shoe?', 'A sibling prompt']);
+  });
+
+  it('404s a rename of an unknown prompt id', async () => {
+    const { error, response } = await renamePrompt('00000000-0000-4000-8000-000000000000', 'Whatever');
+    expect(response.status).to.equal(404);
+    expect(error).to.deep.equal({ message: 'not found' });
+  });
+
+  // `is_updated` mirrors the LIVE layer, not whether the rename landed (live-pinned 2026-07-15):
+  // a draft-only prompt (`is_new: true`) always answers false while the rename still applies.
+  it('applies the rename but answers is_updated: false for a draft-only prompt', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Draft-only rename probe'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [draft] } = await res.json();
+
+    const { data: renamed, error } = await renamePrompt(draft.id, 'Draft-only rename probe v2');
+    expect(error).to.equal(undefined);
+    expect(renamed).to.deep.equal({
+      id: draft.id,
+      name: 'Draft-only rename probe v2',
+      is_updated: false,
+    });
+
+    const { data: listed } = await listByTags([], { draft: true });
+    expect(listed.items.map((p) => p.name)).to.include('Draft-only rename probe v2');
+  });
+
+  // Live applies `new_name` literally — an empty or omitted one renames the prompt to ''
+  // with no validation error (live-pinned 2026-07-15; the request schema does not require
+  // `new_name`). Only a request with NO body at all is rejected: 400 {"message":"EOF"}.
+  it('renames to the empty string for an empty or omitted new_name; 400s EOF for no body', async () => {
+    const res = await fetch(promptsUrl(), {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ items: ['Empty-name rename probe'], tag_ids: [SEED_IDS.categoryTagId] }),
+    });
+    expect(res.status).to.equal(201);
+    const { items: [victim] } = await res.json();
+
+    const { data: emptied, error: emptyErr } = await renamePrompt(victim.id, '');
+    expect(emptyErr).to.equal(undefined);
+    expect(emptied).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
+    // Omitted `new_name` behaves identically (the `?? ''` fallback, matching live).
+    const { data: omitted, error: omittedErr } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: victim.id },
+        },
+        body: {},
+      },
+    );
+    expect(omittedErr).to.equal(undefined);
+    expect(omitted).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
+    // `new_name: null` coalesces the same way — live accepts null and renames to '' (pinned
+    // 2026-07-15); overlay CR18 marks the field nullable so request validation admits it.
+    const nulled = await fetch(`${promptsUrl()}/${victim.id}/rename`, {
+      method: 'POST',
+      headers: jsonAuth,
+      body: JSON.stringify({ new_name: null }),
+    });
+    expect(nulled.status).to.equal(200);
+    expect(await nulled.json()).to.deep.equal({ id: victim.id, name: '', is_updated: false });
+
+    const noBody = await fetch(`${promptsUrl()}/${victim.id}/rename`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer e2e-token', Accept: 'application/json' },
+    });
+    expect(noBody.status).to.equal(400);
+    expect(await noBody.json()).to.deep.equal({ message: 'EOF' });
+  });
+
   it('__reset restores the seed between mutations', async () => {
     await client.POST('/v1/workspaces/{id}/projects', {
       params: { path: { id: SEED_WORKSPACE } },

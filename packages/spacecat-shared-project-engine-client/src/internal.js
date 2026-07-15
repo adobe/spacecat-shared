@@ -130,7 +130,8 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
  * @property {number} delayMs the wait before this retry
  * @property {string} method the HTTP method
  * @property {number} [status] the retryable response status that triggered the retry, if any
- * @property {Error} [error] the network error that triggered the retry, if any
+ * @property {Error} [error] the error that triggered the retry, if any — a network error, or a
+ *   per-attempt `AbortSignal.timeout` `TimeoutError` (both are `instanceof Error`)
  */
 
 /**
@@ -188,7 +189,8 @@ export function withDeadline(init, callerSignal, requestTimeoutMs) {
 
 /**
  * Wraps a fetch with bounded exponential-backoff retries. Retryable statuses follow
- * {@link isRetryableStatus}; thrown network errors are retried only for idempotent methods.
+ * {@link isRetryableStatus}; thrown errors (a network error, or a per-attempt timeout) are
+ * retried only for idempotent methods.
  * The wait between attempts is {@link nextRetryDelayMs} — jittered exponential backoff that also
  * honours a `Retry-After` header. After exhausting retries it returns the last retryable response
  * (so the caller still sees e.g. the final 503) or rethrows the last network error.

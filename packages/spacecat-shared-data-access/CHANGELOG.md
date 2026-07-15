@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.8.0...@adobe/spacecat-shared-data-access-v4.9.0) (2026-07-15)
+
+### Features
+
+* **data-access:** guidance + feedback_subject_id + code-patch export gate for feedback ([#1809](https://github.com/adobe/spacecat-shared/issues/1809)) ([941b9f9](https://github.com/adobe/spacecat-shared/commit/941b9f92621df09a9ce887b70307f4c1261bfd37))
+
 ## [@adobe/spacecat-shared-data-access-v4.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.7.0...@adobe/spacecat-shared-data-access-v4.8.0) (2026-07-14)
 
 ### Features

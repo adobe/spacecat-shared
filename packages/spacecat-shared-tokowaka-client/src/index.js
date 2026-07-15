@@ -50,6 +50,11 @@ import {
 
 export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
+export {
+  classifyProbeResponse,
+  BOT_CHALLENGE_KEYWORDS,
+  HARD_BLOCK_STATUS_CODES,
+} from './utils/waf-probe-utils.js';
 
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;

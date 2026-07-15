@@ -4,7 +4,7 @@
 - **Ticket:** LLMO-5975
 - **Deciders:** Alicia (BP), Rainer Friederich
 - **Date:** 2026-07-06
-- **Relates to:** PR #1661 (typed client wrapper), PR #2766 (retry re-enabled in api-service), LLMO-5461/5459 (Semrush Project Engine client)
+- **Relates to:** PR #1661 (typed client wrapper), spacecat-api-service#2766 (retry re-enabled in api-service), LLMO-5461/5459 (Semrush Project Engine client)
 
 ## Scope
 
@@ -14,7 +14,7 @@ This ADR governs **REST transport to the Semrush gateway authenticated by IMS Be
 
 The Semrush Project Engine and User Manager clients exist as typed wrappers in `spacecat-shared` (`@adobe/spacecat-shared-project-engine-client`, `@adobe/spacecat-shared-user-manager-client`; PR #1661 lineage: IMS Bearer auth, retry/backoff).
 
-`spacecat-api-service` **already consumes these shared clients** for its Project Engine and User Manager call paths (`controllers/serenity.js`, `controllers/brands.js`, `support/serenity/**`) — a migration that landed in prior shipped work. That migration pinned `maxRetries: 0` to preserve the previous one-shot behaviour, which silently disabled the shared clients' retry in production. PR #2766 (open at the time of writing) removes that pin to restore retry/backoff on those paths.
+`spacecat-api-service` **already consumes these shared clients** for its Project Engine and User Manager call paths (`controllers/serenity.js`, `controllers/brands.js`, `support/serenity/**`) — a migration that landed in prior shipped work. That migration pinned `maxRetries: 0` to preserve the previous one-shot behaviour, which silently disabled the shared clients' retry in production. spacecat-api-service#2766 (open at the time of writing) removes that pin to restore retry/backoff on those paths.
 
 We need the ownership boundary stated explicitly so future consumers and future transport work don't re-litigate what belongs in the shared client versus the calling service.
 
@@ -32,7 +32,7 @@ We need the ownership boundary stated explicitly so future consumers and future 
 **Consumers own their own context:**
 
 - Translating the client's typed errors into their own HTTP responses / status codes
-- Caching
+- Caching — scope, keying, and staleness tolerance vary per consumer (e.g. api-service's workspace-layer cache), so there is no single policy to hoist into the shared client
 - Redaction of sensitive fields for their own logging and output
 
 The test for "does this go in the shared client?": *is it true for every consumer, or specific to one?* Auth and retry are true for everyone → shared. How a 404 becomes an HTTP response, what gets cached, what gets redacted → consumer.
@@ -43,8 +43,8 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 
 | Surface | On shared client? | Retry |
 |---|---|---|
-| Project Engine | Yes (`project-engine-client`) | Pending #2766 (open) |
-| User Manager | Yes (`user-manager-client`) | Pending #2766 (open) |
+| Project Engine | Yes (`project-engine-client`) | Pending spacecat-api-service#2766 (open) |
+| User Manager | Yes (`user-manager-client`) | Pending spacecat-api-service#2766 (open) |
 | **Elements API** | **No** — hand-rolled `elements-transport.js` | **None** |
 | **AI Visibility** | **No** — gRPC/OAuth2, `grpc-transport.js` | **None** |
 
@@ -62,7 +62,7 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 **Good**
 
 - One obvious home for REST/IMS-Bearer transport logic; PRs stop re-arguing the boundary.
-- The production retry gap on the migrated surfaces will be closed once #2766 merges, independent of any further work.
+- The production retry gap on the migrated surfaces will be closed once spacecat-api-service#2766 merges, independent of any further work.
 - No speculative expansion of the boundary to protocols nobody is currently working.
 
 **Costs / risks**
@@ -73,6 +73,7 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 ## Follow-on work
 
 - **LLMO-5977** — client facade in `spacecat-shared` (makes the boundary real in code). Gated on this ADR.
-- **LLMO-5978 + LLMO-5979** — typed errors + request timeouts, landing together as one hardening PR.
+- **LLMO-5979** — request timeouts. Shipped on its own in #1819 (open), not bundled with 5978.
+- **LLMO-5978** — typed errors. The remaining hardening item; gated on the facade (LLMO-5977).
 - **LLMO-5980** — close Elements (small, same-shape); AI Visibility deferred as a non-goal.
 - **LLMO-5976** — spec-verify CI gate. Independent; shipped (PR #1777).

@@ -24,6 +24,10 @@ const ACTIVATION_NETWORKS = ['STAGING', 'PRODUCTION'];
 // allowlist keeps a caller-supplied value from injecting into the Content-Type
 // header (e.g. a CR/LF-bearing string).
 const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
+// A property version's ETag is sent verbatim in the If-Match request header, so restrict it to a
+// printable-ASCII, whitespace-free token (PAPI returns a hex etag) — this stops a malformed value
+// from injecting extra headers via CR/LF, mirroring RULE_FORMAT_RE's guard for ruleFormat.
+const ETAG_RE = /^[!-~]+$/;
 
 function requireText(name, value) {
   if (!hasText(value)) {
@@ -474,6 +478,11 @@ export default class AkamaiClient {
     }
     if (!Array.isArray(ops)) {
       throw new Error('ops must be an array of JSON Patch operations');
+    }
+    // An empty ops array is forwarded as-is (PAPI treats it as a no-op); buildRuleTreePatch always
+    // emits at least the wrapper add, so an empty patch is not special-cased here.
+    if (etag && !ETAG_RE.test(etag)) {
+      throw new Error('etag must not contain whitespace or control characters');
     }
     const { dryRun = false } = options;
     const id = encodePathSegment(propertyId);

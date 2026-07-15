@@ -454,6 +454,16 @@ describe('AkamaiClient', () => {
       expect(ruleTree.rules).to.deep.equal({ name: 'default' });
     });
 
+    it('returns etag undefined when the PAPI response omits it', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .reply(200, { ruleFormat: 'v2024-01-01', rules: { name: 'default' } });
+
+      const { etag } = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
+      expect(etag).to.equal(undefined);
+    });
+
     it('throws when version is not an integer', async () => {
       await expect(client.getRuleTree(PROPERTY_ID, '5', CONTRACT_ID, GROUP_ID))
         .to.be.rejectedWith('version must be an integer');
@@ -560,7 +570,8 @@ describe('AkamaiClient', () => {
     });
 
     it('adds dryRun=true and omits If-Match when no etag is given', async () => {
-      nock(API_BASE)
+      // badheaders: nock refuses to match if the request sends If-Match, proving it is omitted.
+      nock(API_BASE, { badheaders: ['if-match'] })
         .matchHeader('content-type', 'application/json-patch+json')
         .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, OPS)
         .query({
@@ -588,6 +599,12 @@ describe('AkamaiClient', () => {
     it('throws when ops is not an array', async () => {
       await expect(client.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, { op: 'add' }))
         .to.be.rejectedWith('ops must be an array of JSON Patch operations');
+    });
+
+    it('rejects an etag that would inject into the If-Match header', async () => {
+      await expect(
+        client.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, OPS, 'etag\r\nX-Evil: 1'),
+      ).to.be.rejectedWith('etag must not contain whitespace or control characters');
     });
   });
 

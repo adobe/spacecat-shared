@@ -1768,16 +1768,24 @@ class TokowakaClient {
       s.setData({ ...s.getData(), [coverageField]: patternSuggestion.getId() });
       s.setUpdatedBy(updatedBy);
     });
-    await saveSuggestions(this.dataAccess, covered, {
-      sqs: this.sqs,
-      queueUrl: this.importWorkerQueueUrl,
-      siteId,
-      set: { [coverageField]: patternSuggestion.getId() },
-      updatedBy,
-      log: this.log,
-    });
-    this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${patternSuggestion.getId()}`);
-    return covered;
+    try {
+      await saveSuggestions(this.dataAccess, covered, {
+        sqs: this.sqs,
+        queueUrl: this.importWorkerQueueUrl,
+        siteId,
+        set: { [coverageField]: patternSuggestion.getId() },
+        updatedBy,
+        log: this.log,
+      });
+      this.log.info(`[edge-deploy] Marked ${covered.length} suggestions as ${coverageField}=${patternSuggestion.getId()}`);
+      return covered;
+    } catch (saveError) {
+      this.log.warn(
+        '[edge-deploy] Failed to mark covered suggestions for pattern suggestion '
+        + `${patternSuggestion.getId()}: ${saveError.message}`,
+      );
+      return [];
+    }
   }
 
   /**

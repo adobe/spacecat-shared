@@ -160,6 +160,7 @@ describe('TokowakaClient', () => {
       getData: () => ({ url }),
       setData: sinon.stub(),
       setUpdatedBy: sinon.stub(),
+      save: sinon.stub().resolves(),
     });
 
     it('marks all matching suggestions in the opportunity with coveredByDomainWide', async () => {
@@ -225,6 +226,16 @@ describe('TokowakaClient', () => {
       expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw-1' });
       expect(payload.updatedBy).to.equal('tester');
       expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('warns and returns [] instead of throwing when saveSuggestions fails', async () => {
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB down'));
+      const covered = [mkCovered('a')];
+
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1');
+
+      expect(result).to.deep.equal([]);
+      expect(client.log.warn.calledWithMatch(/Failed to mark covered suggestions/)).to.be.true;
     });
   });
 

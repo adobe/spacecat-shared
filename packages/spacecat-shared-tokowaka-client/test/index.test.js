@@ -147,6 +147,98 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('markPatternCoveredSuggestions', () => {
+    const mkPattern = (isDomainWide) => ({
+      getId: () => (isDomainWide ? 'dw-1' : 'path-1'),
+      getData: () => (isDomainWide
+        ? { isDomainWide: true, allowedRegexPatterns: ['/*'] }
+        : { allowedRegexPatterns: ['/foo/*'] }),
+    });
+    const mkCovered = (id, url = `https://example.com/foo/${id}`) => ({
+      getId: () => id,
+      getStatus: () => 'NEW',
+      getData: () => ({ url }),
+      setData: sinon.stub(),
+      setUpdatedBy: sinon.stub(),
+      save: sinon.stub().resolves(),
+    });
+
+    it('marks all matching suggestions in the opportunity with coveredByDomainWide', async () => {
+      const covered = [mkCovered('a'), mkCovered('b')];
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(true),
+        covered,
+        'site-1',
+        'tester',
+      );
+
+      expect(result).to.deep.equal(covered);
+      covered.forEach((s) => {
+        expect(s.setData.calledWithMatch({ coveredByDomainWide: 'dw-1' })).to.be.true;
+        expect(s.setUpdatedBy.calledOnceWith('tester')).to.be.true;
+      });
+      expect(client.dataAccess.Suggestion.saveMany.calledOnceWith(covered)).to.be.true;
+    });
+
+    it('marks only URLs matching the segment/path pattern with coveredByPattern', async () => {
+      const matching = mkCovered('a', 'https://example.com/foo/a');
+      const nonMatching = mkCovered('b', 'https://example.com/bar/b');
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(false),
+        [matching, nonMatching],
+        'site-1',
+      );
+
+      expect(result).to.deep.equal([matching]);
+      expect(matching.setData.calledWithMatch({ coveredByPattern: 'path-1' })).to.be.true;
+      expect(matching.setUpdatedBy.calledOnceWith('edge-deploy')).to.be.true;
+      expect(nonMatching.setData.called).to.be.false;
+    });
+
+    it('is a no-op when the pattern suggestion has no allowedRegexPatterns', async () => {
+      const noPattern = { getId: () => 'dw-1', getData: () => ({ isDomainWide: true }) };
+
+      expect(await client.markPatternCoveredSuggestions(noPattern, [mkCovered('a')], 'site-1'))
+        .to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('is a no-op when nothing in allSuggestions matches', async () => {
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), [], 'site-1');
+
+      expect(result).to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('enqueues a bulk-update job with the passed-in siteId when covered count is large', async () => {
+      const covered = Array.from({ length: 1701 }, (_, i) => mkCovered(`c${i}`));
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1', 'tester');
+
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-1' });
+      expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw-1' });
+      expect(payload.updatedBy).to.equal('tester');
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('warns and returns [] instead of throwing when saveSuggestions fails', async () => {
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB down'));
+      const covered = [mkCovered('a')];
+
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1');
+
+      expect(result).to.deep.equal([]);
+      expect(client.log.warn.calledWithMatch(/Failed to mark covered suggestions/)).to.be.true;
+    });
+  });
+
   describe('createFrom', () => {
     it('should create client from context', () => {
       const context = {

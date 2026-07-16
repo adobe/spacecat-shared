@@ -73,7 +73,7 @@ The original framing of LLMO-5980 — "should api-service migrate onto the share
 ## Follow-on work
 
 - **LLMO-5977** — client facade in `spacecat-shared` (makes the boundary real in code). Gated on this ADR.
-- **LLMO-5979** — request timeouts. In progress in #1819 (open), on its own PR rather than bundled with 5978.
+- **LLMO-5979** — request timeouts. Shipped in #1819, on its own PR rather than bundled with 5978.
 - **LLMO-5978** — typed errors. The remaining hardening item; gated on the facade (LLMO-5977).
 - **LLMO-5980** — close Elements (small, same-shape); AI Visibility deferred as a non-goal.
-- **LLMO-5976** — spec-verify CI gate. Independent; shipped (PR #1777).
+- **LLMO-5976** — spec-verify CI gate. Independent; shipped (PR #1811).

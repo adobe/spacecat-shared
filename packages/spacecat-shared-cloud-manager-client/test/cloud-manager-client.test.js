@@ -1811,6 +1811,72 @@ describe('CloudManagerClient', () => {
       expect(result.pullRequestUrl).to.equal('https://gitlab.corp.example.com/team/repo/-/merge_requests/3');
     });
 
+    it('constructs pullRequestUrl for Azure DevOps', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '7', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://dev.azure.com/myorg/myproject/_git/myrepo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://dev.azure.com/myorg/myproject/_git/myrepo/pullrequest/7');
+    });
+
+    it('constructs pullRequestUrl for legacy Azure DevOps (visualstudio.com)', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '9', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://myorg.visualstudio.com/myproject/_git/myrepo',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://myorg.visualstudio.com/myproject/_git/myrepo/pullrequest/9');
+    });
+
+    it('constructs pullRequestUrl for Bitbucket', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '4', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/workspace/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://bitbucket.org/workspace/repo/pull-requests/4');
+    });
+
     it('does not set pullRequestUrl for unsupported provider', async () => {
       nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
@@ -1826,7 +1892,53 @@ describe('CloudManagerClient', () => {
           sourceBranch: 'fix',
           title: 'Fix',
           description: 'desc',
-          repoUrl: 'https://bitbucket.org/owner/repo.git',
+          repoUrl: 'https://git.example.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.be.undefined;
+    });
+
+    it('classifies by hostname, not path (provider domain in the repo path does not misclassify)', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '6', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://bitbucket.org/team/github.com-mirror.git',
+        },
+      );
+
+      // Hostname is bitbucket.org, so the Bitbucket path format wins even though
+      // "github.com" appears in the repository path.
+      expect(result.pullRequestUrl).to.equal('https://bitbucket.org/team/github.com-mirror/pull-requests/6');
+    });
+
+    it('does not set pullRequestUrl when repoUrl is not a parseable URL', async () => {
+      nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '1', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'not-a-valid-url',
         },
       );
 
@@ -1876,8 +1988,10 @@ describe('CloudManagerClient', () => {
       expect(result.pullRequestUrl).to.be.undefined;
     });
 
-    it('throws on failed PR creation', async () => {
-      nock(TEST_ENV.CM_REPO_URL)
+    it('throws immediately on a permanent 4xx (no retry)', async () => {
+      // Single interceptor: if a 422 were (wrongly) retried, the 2nd POST would
+      // miss and the error would be the retry-exhausted message instead.
+      const scope = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
         .reply(422, 'Validation failed');
 
@@ -1893,7 +2007,92 @@ describe('CloudManagerClient', () => {
           title: 'Fix',
           description: 'desc',
         },
-      )).to.be.rejectedWith('Pull request creation failed');
+        // Exact permanent-failure message (NOT the "...after 2 attempts" retry
+        // message) — pins the no-retry-on-4xx contract.
+      )).to.be.rejectedWith('Pull request creation failed: HTTP 422');
+      // Exactly one request was made — a retry would have needed a 2nd interceptor.
+      expect(scope.isDone()).to.be.true;
+    });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('retries once after a transient 5xx failure and then succeeds', async function () {
+      this.timeout(5000); // real ~1.5s retry delay
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'Service Unavailable')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '8', state: 'OPEN' });
+
+      const context = createContext();
+      const client = CloudManagerClient.createFrom(context);
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/8');
+      expect(scope.isDone()).to.be.true;
+      // the transient failure is logged before retrying
+      expect(context.log.warn).to.have.been.calledWithMatch('Transient failure creating PR');
+    });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('retries once after a network error and then succeeds', async function () {
+      this.timeout(5000);
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .replyWithError('ECONNRESET')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(201, { id: 1, externalNumber: '11', state: 'OPEN' });
+
+      const client = CloudManagerClient.createFrom(createContext());
+      const result = await client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+          repoUrl: 'https://github.com/owner/repo.git',
+        },
+      );
+
+      expect(result.pullRequestUrl).to.equal('https://github.com/owner/repo/pull/11');
+      expect(scope.isDone()).to.be.true;
+    });
+
+    // eslint-disable-next-line prefer-arrow-callback
+    it('throws after two consecutive transient failures (one retry)', async function () {
+      this.timeout(5000);
+      const scope = nock(TEST_ENV.CM_REPO_URL)
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'down')
+        .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
+        .reply(503, 'still down');
+
+      const client = CloudManagerClient.createFrom(createContext());
+      await expect(client.createPullRequest(
+        TEST_PROGRAM_ID,
+        TEST_REPO_ID,
+        {
+          imsOrgId: TEST_IMS_ORG_ID,
+          destinationBranch: 'main',
+          sourceBranch: 'fix',
+          title: 'Fix',
+          description: 'desc',
+        },
+      )).to.be.rejectedWith('Pull request creation failed after 2 attempts');
+      expect(scope.isDone()).to.be.true;
     });
   });
 });

@@ -19,6 +19,7 @@ import SeoClient, {
   fetch,
   BIG_MARKETS,
   getDatabases,
+  clearSemrushTokenCache,
   ORGANIC_KEYWORDS_FIELDS,
   METRICS_BY_COUNTRY_FILTER_FIELDS,
 } from '../src/index.js';
@@ -1593,6 +1594,349 @@ describe('SeoClient', () => {
 
       const result = await client.getBrokenBacklinks('t.com', 1);
       expect(result.result.backlinks[0].title).to.equal(null);
+    });
+  });
+
+  // ===== getBrokenBacklinksV2 =====
+
+  describe('getBrokenBacklinksV2', () => {
+    const SEMRUSH_TOKEN_HOST = 'https://api.semrush.com';
+    const TOKEN_PATH = '/apis/v4-raw/auth/v0/oauth2/access_token';
+    const BROKEN_LINKS_HOST = 'https://api.semrush.com';
+    const BROKEN_LINKS_PATH = '/apis/v4/backlinks-external/v0/broken-links';
+
+    const v2Config = {
+      ...config,
+      semrushClientId: 'test-client-id',
+      semrushClientSecret: 'test-client-secret',
+      semrushScope: 'backlinks-service.internal.broken-links',
+    };
+
+    let v2Client;
+    beforeEach(() => {
+      clearSemrushTokenCache('test-client-id');
+      v2Client = new SeoClient(v2Config, fetch, console);
+    });
+
+    // 20 days ago → recency 1.0
+    const sampleRow = {
+      source_url: 'https://example.com/page',
+      target_url: 'https://adobe.com/broken',
+      source_title: 'Example Page',
+      source_domain: 'example.com',
+      domain_score: 80,
+      page_score: 60,
+      first_seen_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+      last_seen_at: '2026-06-01T00:00:00',
+      anchor: 'click here',
+      is_nofollow: false,
+      is_lost: false,
+      response_code: 200,
+    };
+
+    function nockToken(reply = { access_token: 'mock-token' }, status = 200) {
+      nock(SEMRUSH_TOKEN_HOST).post(TOKEN_PATH).reply(status, reply);
+    }
+
+    function nockBrokenLinksV2(rows, status = 200) {
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(status, { data: rows, meta: { total: rows.length } });
+    }
+
+    it('returns mapped backlinks with all SITES-46957 fields', async () => {
+      nockToken();
+      nockBrokenLinksV2([sampleRow]);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(result.result.backlinks).to.have.lengthOf(1);
+      const bl = result.result.backlinks[0];
+
+      expect(bl.title).to.equal('Example Page');
+      expect(bl.url_from).to.equal('https://example.com/page');
+      expect(bl.url_to).to.equal('https://adobe.com/broken');
+      expect(bl.page_score).to.equal(60);
+      expect(bl.domain_score).to.equal(80);
+      expect(bl.first_seen_at).to.equal(sampleRow.first_seen_at);
+      expect(bl.last_seen_at).to.equal('2026-06-01T00:00:00');
+      expect(bl.source_domain).to.equal('example.com');
+      expect(bl.anchor).to.equal('click here');
+      expect(bl.is_nofollow).to.equal(false);
+      expect(bl.is_lost).to.equal(false);
+      expect(bl.response_code).to.equal(200);
+      expect(bl.priority_score).to.be.a('number');
+      expect(bl.priority_label).to.be.oneOf(['High', 'Medium', 'Low']);
+      expect(bl.traffic_domain).to.be.a('number');
+      expect(result.fullAuditRef).to.include('api.semrush.com');
+    });
+
+    it('sorts by priority score and applies relative labels', async () => {
+      nockToken();
+      // Build 10 rows with varying scores so we can confirm sorting + label buckets
+      const rows = Array.from({ length: 10 }, (_, i) => ({
+        ...sampleRow,
+        source_url: `https://example.com/page${i}`,
+        target_url: `https://adobe.com/broken${i}`,
+        domain_score: 100 - i * 10,
+        page_score: 100 - i * 10,
+      }));
+      nockBrokenLinksV2(rows);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com', 10);
+      const { backlinks } = result.result;
+      expect(backlinks).to.have.lengthOf(10);
+
+      // First (rank 1 / 10 = 10%) → High
+      expect(backlinks[0].priority_label).to.equal('High');
+      // Third (rank 3 / 10 = 30%) → Medium
+      expect(backlinks[2].priority_label).to.equal('Medium');
+      // Eighth (rank 8 / 10 = 80%) → Low
+      expect(backlinks[7].priority_label).to.equal('Low');
+
+      // Verify descending score order
+      for (let i = 0; i < backlinks.length - 1; i += 1) {
+        expect(backlinks[i].priority_score).to.be.at.least(backlinks[i + 1].priority_score);
+      }
+    });
+
+    it('caps effectiveLimit to 100', async () => {
+      nockToken();
+      // The API should always be called with limit=100 regardless of user limit
+      let capturedLimit;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          capturedLimit = q.limit;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('adobe.com', 200);
+      // The FETCH_LIMIT is always 100 in the code
+      expect(capturedLimit).to.equal('100');
+    });
+
+    it('slices result to effectiveLimit', async () => {
+      nockToken();
+      // Return 100 rows from the API, but request only 5
+      const rows = Array.from({ length: 100 }, (_, i) => ({
+        ...sampleRow,
+        source_url: `https://example.com/page${i}`,
+        target_url: `https://adobe.com/broken${i}`,
+        domain_score: 50,
+        page_score: 50,
+      }));
+      nockBrokenLinksV2(rows);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com', 5);
+      expect(result.result.backlinks).to.have.lengthOf(5);
+    });
+
+    it('handles empty data array', async () => {
+      nockToken();
+      nockBrokenLinksV2([]);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(result.result.backlinks).to.deep.equal([]);
+    });
+
+    it('handles null data field', async () => {
+      nockToken();
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(200, { data: null, meta: {} });
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(result.result.backlinks).to.deep.equal([]);
+    });
+
+    it('throws when url is invalid', async () => {
+      await expect(v2Client.getBrokenBacklinksV2(null))
+        .to.be.rejectedWith('Invalid URL');
+    });
+
+    it('throws when OAuth2 credentials are missing', async () => {
+      const noCredsClient = new SeoClient(config, fetch, console);
+      await expect(noCredsClient.getBrokenBacklinksV2('adobe.com'))
+        .to.be.rejectedWith('Missing Semrush OAuth2 credentials');
+    });
+
+    it('throws when token request fails', async () => {
+      nockToken({ error: 'invalid_client' }, 401);
+
+      await expect(v2Client.getBrokenBacklinksV2('adobe.com'))
+        .to.be.rejectedWith('OAuth token request failed');
+    });
+
+    it('throws when token response has no access_token', async () => {
+      nockToken({});
+
+      await expect(v2Client.getBrokenBacklinksV2('adobe.com'))
+        .to.be.rejectedWith('OAuth token request failed');
+    });
+
+    it('throws when broken-links endpoint returns non-200', async () => {
+      nockToken();
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(503, 'Service Unavailable');
+
+      await expect(v2Client.getBrokenBacklinksV2('adobe.com'))
+        .to.be.rejectedWith('HTTP 503');
+    });
+
+    it('handles null source_title', async () => {
+      nockToken();
+      nockBrokenLinksV2([{ ...sampleRow, source_title: null }]);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(result.result.backlinks[0].title).to.equal(null);
+    });
+
+    it('handles missing first_seen_at (recency=0)', async () => {
+      nockToken();
+      const rowNoDate = { ...sampleRow };
+      delete rowNoDate.first_seen_at;
+      nockBrokenLinksV2([rowNoDate]);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      const bl = result.result.backlinks[0];
+      // recency=0; score = 0.50*(60/100) + 0.40*(80/100) + 0.10*0 = 0.30 + 0.32 = 0.62
+      expect(bl.priority_score).to.equal(0.62);
+    });
+
+    it('recency buckets produce correct scores', async () => {
+      // page_score=0, domain_score=0 → score = 0.10 * recency only
+      const baseRow = {
+        ...sampleRow,
+        page_score: 0,
+        domain_score: 0,
+      };
+
+      const cases = [
+        { days: 20, expectedRecency: 1.0 },
+        { days: 60, expectedRecency: 0.75 },
+        { days: 150, expectedRecency: 0.5 },
+        { days: 300, expectedRecency: 0.25 },
+        { days: 400, expectedRecency: 0.1 },
+      ];
+
+      for (const { days, expectedRecency } of cases) {
+        // eslint-disable-next-line no-await-in-loop
+        nockToken();
+        const row = {
+          ...baseRow,
+          source_url: `https://example.com/page-${days}`,
+          target_url: `https://adobe.com/broken-${days}`,
+          first_seen_at: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        };
+        nockBrokenLinksV2([row]);
+        // eslint-disable-next-line no-await-in-loop
+        const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+        const expectedScore = Math.round(0.10 * expectedRecency * 1000) / 1000;
+        expect(result.result.backlinks[0].priority_score).to.equal(expectedScore);
+      }
+    });
+
+    it('hasNewBrokenBacklinksEndpoint returns true with credentials, false without', () => {
+      expect(v2Client.hasNewBrokenBacklinksEndpoint()).to.equal(true);
+
+      const noCredsClient = new SeoClient(config, fetch, console);
+      expect(noCredsClient.hasNewBrokenBacklinksEndpoint()).to.equal(false);
+    });
+
+    it('createFrom picks up OAuth2 env vars', () => {
+      const context = {
+        env: {
+          SEO_API_BASE_URL: 'https://seo-api.example.com',
+          SEO_API_KEY: 'testApiKey',
+          SEMRUSH_CLIENT_ID: 'cid',
+          SEMRUSH_CLIENT_SECRET: 'csec',
+          SEMRUSH_BROKEN_LINKS_SCOPE: 'scope',
+        },
+        log: console,
+      };
+
+      const createdClient = SeoClient.createFrom(context);
+      expect(createdClient.hasNewBrokenBacklinksEndpoint()).to.equal(true);
+      expect(createdClient.semrushClientId).to.equal('cid');
+      expect(createdClient.semrushClientSecret).to.equal('csec');
+      expect(createdClient.semrushScope).to.equal('scope');
+    });
+
+    it('handles rows with null/undefined optional fields (covers ?? null branches)', async () => {
+      nockToken();
+      // Row with none of the optional fields set — exercises all ?? null fallbacks
+      const sparseRow = {
+        source_url: 'https://example.com/sparse',
+        target_url: 'https://adobe.com/missing',
+        // page_score, domain_score, first_seen_at, last_seen_at, source_domain,
+        // anchor, is_nofollow, is_lost, response_code all intentionally missing
+      };
+      nockBrokenLinksV2([sparseRow]);
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      const bl = result.result.backlinks[0];
+      expect(bl.title).to.equal(null);
+      expect(bl.page_score).to.equal(null);
+      expect(bl.domain_score).to.equal(null);
+      expect(bl.first_seen_at).to.equal(null);
+      expect(bl.last_seen_at).to.equal(null);
+      expect(bl.source_domain).to.equal(null);
+      expect(bl.anchor).to.equal(null);
+      expect(bl.is_nofollow).to.equal(null);
+      expect(bl.is_lost).to.equal(null);
+      expect(bl.response_code).to.equal(null);
+      // page_score ?? 0 and domain_score ?? 0 both hit 0 → priority_score = 0
+      expect(bl.priority_score).to.equal(0);
+    });
+
+    it('reuses cached token on subsequent calls without re-fetching', async () => {
+      // Token nocked exactly once — a second fetch would throw "Nock: No match"
+      nockToken({ access_token: 'cached-token', expires_in: 300 });
+      nockBrokenLinksV2([sampleRow]);
+      nockBrokenLinksV2([sampleRow]);
+
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+      const second = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(second.result.backlinks).to.have.lengthOf(1);
+      expect(nock.isDone()).to.equal(true);
+    });
+
+    it('re-fetches token when cached entry has expired', async () => {
+      // expires_in: 1 → ttlMs = max(1*1000 - 60*1000, 1000) = 1000 ms
+      nockToken({ access_token: 'first-token', expires_in: 1 });
+      nockBrokenLinksV2([]);
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+
+      // Advance the shared fake clock past the 1-second TTL
+      sandbox.clock.tick(1001);
+
+      nockToken({ access_token: 'second-token', expires_in: 300 });
+      nockBrokenLinksV2([]);
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+
+      expect(nock.isDone()).to.equal(true);
+    });
+
+    it('clearSemrushTokenCache() with no argument clears all entries', async () => {
+      // Populate the cache for this client
+      nockToken();
+      nockBrokenLinksV2([]);
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+
+      // Clear without specifying a clientId (hits the else branch)
+      clearSemrushTokenCache();
+
+      // Next call must re-fetch the token
+      nockToken();
+      nockBrokenLinksV2([]);
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+
+      expect(nock.isDone()).to.equal(true);
     });
   });
 

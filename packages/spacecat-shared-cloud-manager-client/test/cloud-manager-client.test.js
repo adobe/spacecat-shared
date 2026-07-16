@@ -1988,8 +1988,10 @@ describe('CloudManagerClient', () => {
       expect(result.pullRequestUrl).to.be.undefined;
     });
 
-    it('throws on failed PR creation', async () => {
-      nock(TEST_ENV.CM_REPO_URL)
+    it('throws immediately on a permanent 4xx (no retry)', async () => {
+      // Single interceptor: if a 422 were (wrongly) retried, the 2nd POST would
+      // miss and the error would be the retry-exhausted message instead.
+      const scope = nock(TEST_ENV.CM_REPO_URL)
         .post(`/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}/pullRequests`)
         .reply(422, 'Validation failed');
 
@@ -2005,7 +2007,11 @@ describe('CloudManagerClient', () => {
           title: 'Fix',
           description: 'desc',
         },
-      )).to.be.rejectedWith('Pull request creation failed');
+        // Exact permanent-failure message (NOT the "...after 2 attempts" retry
+        // message) — pins the no-retry-on-4xx contract.
+      )).to.be.rejectedWith('Pull request creation failed: HTTP 422');
+      // Exactly one request was made — a retry would have needed a 2nd interceptor.
+      expect(scope.isDone()).to.be.true;
     });
 
     // eslint-disable-next-line prefer-arrow-callback

@@ -483,6 +483,76 @@ describe('SuggestionModel', () => {
         });
       });
 
+      describe('SITEMAP opportunity type', () => {
+        it('passes for error-type suggestions with empty sitemapUrl (robots-level errors)', () => {
+          const data = {
+            type: 'error',
+            error: 'robots-missing-sitemap',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with sitemapUrl populated', () => {
+          const data = {
+            type: 'error',
+            error: 'sitemap-not-found',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with recommendedAction (general-error)', () => {
+          const data = {
+            type: 'error',
+            error: 'general-error',
+            sitemapUrl: '',
+            recommendedAction: 'Something went wrong during the audit.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for url-type suggestions with required sitemapUrl and pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'https://example.com/missing-page',
+            statusCode: 404,
+            urlsSuggested: '',
+            recommendedAction: 'Make sure your sitemaps only include URLs that return the 200 (OK) response code.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('rejects error-type suggestions missing the error code', () => {
+          const data = {
+            type: 'error',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions missing pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions with invalid pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'not-a-uri',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+      });
+
       describe('BROKEN_INTERNAL_LINKS opportunity type', () => {
         it('passes with malformed http/https URLs', () => {
           const data = {
@@ -534,6 +604,49 @@ describe('SuggestionModel', () => {
           expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
         });
       });
+    });
+  });
+
+  describe('setStatus / transitionStatus guard (SITES-47091)', () => {
+    const original = process.env.STATUS_TRANSITION_ENFORCEMENT;
+
+    afterEach(() => {
+      if (original === undefined) {
+        delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      } else {
+        process.env.STATUS_TRANSITION_ENFORCEMENT = original;
+      }
+    });
+
+    it('applies an allowed transition (NEW -> IN_PROGRESS) without warning', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.transitionStatus('IN_PROGRESS');
+      expect(model.record.status).to.equal('IN_PROGRESS');
+      expect(mockLogger.warn).to.not.have.been.called;
+    });
+
+    it('warns but still applies an illegal transition in warn mode (default)', () => {
+      delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.setStatus('REJECTED'); // REJECTED only legal from PENDING_VALIDATION
+      expect(model.record.status).to.equal('REJECTED');
+      expect(mockLogger.warn).to.have.been.calledOnce;
+    });
+
+    it('allows REJECTED only from PENDING_VALIDATION in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'PENDING_VALIDATION' });
+      expect(() => model.setStatus('REJECTED')).to.not.throw();
+      expect(model.record.status).to.equal('REJECTED');
+    });
+
+    it('throws on an illegal transition (NEW -> REJECTED) in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      expect(() => model.setStatus('REJECTED')).to.throw('Suggestion');
     });
   });
 });

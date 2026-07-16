@@ -174,16 +174,20 @@ describe('Config Tests', () => {
       expect(config.getHandlers()).to.be.undefined;
     });
 
-    it('logs error when validation fails and logger is available', () => {
+    it('logs a warning when validation fails and logger is available', () => {
       // Create a mock logger
       const mockLogger = {};
 
-      // Spy on the logger error method
-      let loggedError = null;
+      // Spy on the logger warn method (recoverable fallback -> warn, not error)
+      let loggedWarning = null;
       let loggedData = null;
-      mockLogger.error = (message, data) => {
-        loggedError = message;
+      let errorCalled = false;
+      mockLogger.warn = (message, data) => {
+        loggedWarning = message;
         loggedData = data;
+      };
+      mockLogger.error = () => {
+        errorCalled = true;
       };
 
       // Register the mock logger
@@ -214,8 +218,9 @@ describe('Config Tests', () => {
         },
       });
 
-      // Should have logged the error
-      expect(loggedError).to.equal('Site configuration validation failed, using provided data');
+      // Should have logged a warning (recoverable fallback), not an error
+      expect(errorCalled).to.equal(false);
+      expect(loggedWarning).to.equal('Site configuration validation failed, using provided data');
       expect(loggedData).to.have.property('error');
       expect(loggedData).to.have.property('invalidConfig');
       expect(loggedData.invalidConfig).to.deep.equal(invalidData);
@@ -3097,13 +3102,36 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
-            magentoEndpoint: 'https://magento.example.com/graphql',
-            magentoAPIKey: 'api-key-123',
           },
         },
       };
       const config = Config(data);
       expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('strips legacy magento fields from existing records', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      });
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({
+        store1: {
+          environmentId: 'env-123',
+          websiteCode: 'base',
+          storeCode: 'main_store',
+          storeViewCode: 'default',
+          hostName: 'example.com',
+        },
+      });
     });
 
     it('has undefined commerceLlmoConfig in default config', () => {
@@ -3154,7 +3182,7 @@ describe('Config Tests', () => {
         commerceLlmoConfig: {
           store1: {
             environmentId: 'env-123',
-            magentoEndpoint: 'https://magento.example.com/graphql',
+            hostName: 'example.com',
           },
         },
       });

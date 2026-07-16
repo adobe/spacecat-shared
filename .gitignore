@@ -144,3 +144,5 @@ xunit.xml
 !.cursor/rules/
 !.cursor/commands/
 .cursor/commands/speckit.*
+# Claude Code local settings
+.claude/

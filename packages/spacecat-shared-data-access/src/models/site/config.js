@@ -477,9 +477,7 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
-      magentoEndpoint: Joi.string().uri().optional(),
-      magentoAPIKey: Joi.string().optional(),
-    }),
+    }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -558,7 +556,9 @@ export const Config = (data = {}) => {
   } catch (error) {
     const logger = getLogger();
     if (logger && logger !== console) {
-      logger.error('Site configuration validation failed, using provided data', {
+      // Recoverable: validation failed but we fall back to the provided data,
+      // so this is a warning, not an error (avoids prod ERROR-severity noise).
+      logger.warn('Site configuration validation failed, using provided data', {
         error: error.message,
         invalidConfig: data,
       });

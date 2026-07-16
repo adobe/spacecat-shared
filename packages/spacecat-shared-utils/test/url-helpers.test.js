@@ -27,9 +27,16 @@ import {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from '../src/url-helpers.js';
 
 use(sinonChai);
@@ -736,6 +743,62 @@ describe('URL Utility Functions', () => {
     });
   });
 
+  describe('getBaseURLPathPrefix', () => {
+    it('returns null for a domain-root baseURL', () => {
+      expect(getBaseURLPathPrefix('https://example.com')).to.be.null;
+    });
+
+    it('returns null for a domain-root baseURL with trailing slash', () => {
+      expect(getBaseURLPathPrefix('https://example.com/')).to.be.null;
+    });
+
+    it('extracts a single-segment locale prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de')).to.equal('/de');
+    });
+
+    it('strips the trailing slash from the prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de/')).to.equal('/de');
+    });
+
+    it('extracts a multi-segment prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/de-de/shop')).to.equal('/de-de/shop');
+    });
+
+    it('prepends a schema when missing', () => {
+      expect(getBaseURLPathPrefix('example.com/fr')).to.equal('/fr');
+    });
+
+    it('returns null for an unparseable baseURL', () => {
+      expect(getBaseURLPathPrefix('https://[invalid-url]')).to.be.null;
+    });
+
+    it('returns null for non-string input', () => {
+      expect(getBaseURLPathPrefix(null)).to.be.null;
+      expect(getBaseURLPathPrefix(undefined)).to.be.null;
+    });
+
+    it('returns null when the baseURL points at a file (single-segment)', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en.html')).to.be.null;
+    });
+
+    it('returns null when the baseURL points at a file (multi-segment)', () => {
+      expect(getBaseURLPathPrefix('https://www2.example.com/us/en.html')).to.be.null;
+      expect(getBaseURLPathPrefix('https://example.com/en/home.html')).to.be.null;
+    });
+
+    it('returns null for a file baseURL with a trailing slash stripped', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/index.php')).to.be.null;
+    });
+
+    it('keeps an extensionless deep path prefix', () => {
+      expect(getBaseURLPathPrefix('https://example.com/us/en_us')).to.equal('/us/en_us');
+    });
+
+    it('does not treat a hyphenated locale as a file', () => {
+      expect(getBaseURLPathPrefix('https://example.com/en-gb')).to.equal('/en-gb');
+    });
+  });
+
   describe('hasNonWWWSubdomain', () => {
     it('should return true for URLs with non-www subdomains', () => {
       expect(hasNonWWWSubdomain('https://subdomain.domain.com')).to.equal(true);
@@ -804,6 +867,7 @@ describe('URL Utility Functions', () => {
 
       log = {
         debug: sandbox.stub(),
+        warn: sandbox.stub(),
         error: sandbox.stub(),
       };
 
@@ -817,6 +881,7 @@ describe('URL Utility Functions', () => {
 
     afterEach(() => {
       sandbox.restore();
+      nock.cleanAll();
     });
 
     it('should return overrideBaseURL when configured with https', async () => {
@@ -853,6 +918,9 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -873,6 +941,9 @@ describe('URL Utility Functions', () => {
     it('should check RUM for www subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -883,6 +954,9 @@ describe('URL Utility Functions', () => {
     it('should check RUM for no subdomain (not return early)', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -893,6 +967,9 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www added) when it has RUM data', async () => {
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -904,6 +981,9 @@ describe('URL Utility Functions', () => {
     it('should prioritize www-toggled version (www removed) when it has RUM data', async () => {
       site.getBaseURL.returns('https://www.example.com');
       rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -952,7 +1032,7 @@ describe('URL Utility Functions', () => {
 
       await wwwUrlResolver(site, rumApiClient, log);
 
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: API error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: API error');
       expect(log.error).to.have.been.calledTwice;
     });
 
@@ -963,9 +1043,42 @@ describe('URL Utility Functions', () => {
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: First error');
-      expect(log.error).to.have.been.calledWith('Could not retrieved RUM domainkey for example.com: Second error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: First error');
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: Second error');
       expect(result).to.equal('www.example.com');
+    });
+
+    it('should log a 404 domainkey miss at debug, not error (site not onboarded to RUM)', async () => {
+      site.getBaseURL.returns('https://example.com');
+      const notFound = new Error("Query '404' failed. Reason: ... Status: 404");
+      notFound.status = 404;
+      rumApiClient.retrieveDomainkey.rejects(notFound);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith(
+        `[wwwUrlResolver] No RUM domainkey for example.com (site not onboarded to RUM): ${notFound.message}`,
+      );
+      expect(log.error).to.not.have.been.called;
+    });
+
+    it('should log debug for a 404 first attempt and error for a non-404 second attempt', async () => {
+      site.getBaseURL.returns('https://example.com');
+      const notFound = new Error('No domainkey. Status: 404');
+      notFound.status = 404;
+      const serverError = new Error('upstream 500');
+      serverError.status = 500;
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').rejects(notFound);
+      rumApiClient.retrieveDomainkey.withArgs('example.com').rejects(serverError);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+      expect(log.debug).to.have.been.calledWith(
+        `[wwwUrlResolver] No RUM domainkey for example.com (site not onboarded to RUM): ${notFound.message}`,
+      );
+      expect(log.error).to.have.been.calledWith('Could not retrieve RUM domainkey for example.com: upstream 500');
     });
 
     it('should fallback to non-www when hostname already has www and both RUM checks fail', async () => {
@@ -984,6 +1097,9 @@ describe('URL Utility Functions', () => {
       });
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
@@ -994,10 +1110,79 @@ describe('URL Utility Functions', () => {
       site.getConfig.returns(null);
       site.getBaseURL.returns('https://example.com');
       rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .reply(200, { rumBundles: [{ weight: 1 }] });
 
       const result = await wwwUrlResolver(site, rumApiClient, log);
 
       expect(result).to.equal('www.example.com');
+    });
+
+    it('should fall back to original hostname when www-toggled has a key but no bundle data (ghost key)', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('ghost-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'ghost-key' })
+        .times(2)
+        .reply(200, { rumBundles: [] });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('www.example.com');
+      expect(rumApiClient.retrieveDomainkey).to.have.been.calledWith('example.com');
+      expect(log.debug).to.have.been.calledWith('Resolved URL example.com for https://example.com using RUM API Client');
+    });
+
+    it('should accept www-toggled hostname when today is empty but yesterday has bundle data', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('domain-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'domain-key' })
+        .reply(200, { rumBundles: [] })
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'domain-key' })
+        .reply(200, { rumBundles: [{ weight: 1 }] });
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('www.example.com');
+    });
+
+    it('should fall back to original hostname when bundle probe returns non-200', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('some-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'some-key' })
+        .times(2)
+        .reply(500);
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(log.debug).to.have.been.calledWith('[wwwUrlResolver] www.example.com has key but no bundle data, trying example.com');
+    });
+
+    it('should fall back to original hostname when bundle probe throws a network error', async () => {
+      site.getBaseURL.returns('https://example.com');
+      rumApiClient.retrieveDomainkey.withArgs('www.example.com').resolves('some-key');
+      rumApiClient.retrieveDomainkey.withArgs('example.com').resolves('real-key');
+      nock('https://bundles.aem.page')
+        .get(/\/bundles\/www\.example\.com\//)
+        .query({ domainkey: 'some-key' })
+        .times(2)
+        .replyWithError('network failure');
+
+      const result = await wwwUrlResolver(site, rumApiClient, log);
+
+      expect(result).to.equal('example.com');
+      expect(log.debug).to.have.been.calledWith('[wwwUrlResolver] www.example.com has key but no bundle data, trying example.com');
     });
   });
 
@@ -1059,6 +1244,294 @@ describe('URL Utility Functions', () => {
     it('handles URLs without protocol', () => {
       expect(canonicalizeUrl('example.com/path')).to.equal('example.com/path');
       expect(canonicalizeUrl('www.example.com/path')).to.equal('example.com/path');
+    });
+  });
+
+  describe('isWithinSiteScope', () => {
+    it('returns false for null or empty url', () => {
+      expect(isWithinSiteScope(null, 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when siteBaseUrl is null or empty (fails closed)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', null)).to.be.false;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '')).to.be.false;
+    });
+
+    it('returns true for all URLs when siteBaseUrl has no subpath', () => {
+      expect(isWithinSiteScope('https://bulk.com/any/path', 'bulk.com')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/', 'bulk.com')).to.be.true;
+    });
+
+    it('returns true for absolute URL within subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for absolute URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for absolute URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('https://bulk.com/de/page', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns true for relative URL within subpath scope', () => {
+      expect(isWithinSiteScope('/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/uk/', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns true for relative URL exactly matching the base path', () => {
+      expect(isWithinSiteScope('/uk', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false for relative URL outside the subpath scope', () => {
+      expect(isWithinSiteScope('/ukraine', 'bulk.com/uk')).to.be.false;
+      expect(isWithinSiteScope('/de/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('normalizes www when comparing hosts', () => {
+      expect(isWithinSiteScope('https://www.bulk.com/uk/page', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'www.bulk.com/uk')).to.be.true;
+    });
+
+    it('returns false when hosts differ', () => {
+      expect(isWithinSiteScope('https://other.com/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when ports differ', () => {
+      expect(isWithinSiteScope('https://bulk.com:8080/uk/page', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('handles siteBaseUrl with trailing slash', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/ukraine', 'bulk.com/uk/')).to.be.false;
+    });
+
+    it('returns false on malformed siteBaseUrl without throwing', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/page', '://%%%bad')).to.be.false;
+    });
+
+    it('returns false on malformed absolute URL without throwing', () => {
+      expect(isWithinSiteScope('https://%%%bad', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('handles multi-level subpath scope (e.g. bulk.com/uk/en)', () => {
+      expect(isWithinSiteScope('https://bulk.com/uk/en/page', 'bulk.com/uk/en')).to.be.true;
+      expect(isWithinSiteScope('https://bulk.com/uk/page', 'bulk.com/uk/en')).to.be.false;
+    });
+
+    it('handles relative URL with query string', () => {
+      expect(isWithinSiteScope('/uk/page?lang=en', 'bulk.com/uk')).to.be.true;
+      expect(isWithinSiteScope('/de/page?lang=en', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('blocks path traversal via .. segments in relative URLs', () => {
+      expect(isWithinSiteScope('/uk/../admin/secret', 'bulk.com/uk')).to.be.false;
+    });
+  });
+
+  describe('filterBySiteScope', () => {
+    it('returns only URLs within the site scope', () => {
+      const urls = [
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/de/page2',
+        'https://bulk.com/uk/page3',
+        'https://bulk.com/ukraine',
+      ];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([
+        'https://bulk.com/uk/page1',
+        'https://bulk.com/uk/page3',
+      ]);
+    });
+
+    it('returns all URLs when siteBaseUrl has no subpath', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, 'bulk.com')).to.deep.equal(urls);
+    });
+
+    it('returns no URLs when siteBaseUrl is null (fails closed)', () => {
+      const urls = ['https://bulk.com/a', 'https://bulk.com/b'];
+      expect(filterBySiteScope(urls, null)).to.deep.equal([]);
+    });
+
+    it('returns empty array when no URLs are in scope', () => {
+      const urls = ['https://bulk.com/de/page', 'https://other.com/uk/page'];
+      expect(filterBySiteScope(urls, 'bulk.com/uk')).to.deep.equal([]);
+    });
+
+    it('returns empty array for non-array input', () => {
+      expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
+      expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
+    });
+  });
+
+  describe('toPathname', () => {
+    it('returns the pathname of an absolute URL', () => {
+      expect(toPathname('https://example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('returns "/" for a root URL', () => {
+      expect(toPathname('https://example.com/')).to.equal('/');
+    });
+
+    it('strips trailing slash on non-root paths', () => {
+      expect(toPathname('https://example.com/path/')).to.equal('/path');
+    });
+
+    it('lowercases the pathname', () => {
+      expect(toPathname('https://example.com/PATH/Page')).to.equal('/path/page');
+    });
+
+    it('ignores query string and fragment when extracting pathname', () => {
+      expect(toPathname('https://example.com/path?q=1#section')).to.equal('/path');
+    });
+
+    it('extracts pathname from a schema-less URL', () => {
+      expect(toPathname('BULK.COM/page')).to.equal('/page');
+    });
+
+    it('extracts pathname from a schema-less URL with trailing slash', () => {
+      expect(toPathname('example.com/')).to.equal('/');
+    });
+
+    it('extracts pathname from a schema-less URL with a deep path', () => {
+      expect(toPathname('example.com/path/page')).to.equal('/path/page');
+    });
+
+    it('handles leading-slash paths as-is', () => {
+      expect(toPathname('/some/PATH')).to.equal('/some/PATH');
+    });
+
+    it('falls back to lowercased string when URL parsing fails', () => {
+      expect(toPathname('[invalid-url')).to.equal('[invalid-url');
+    });
+
+    it('returns empty string for null input', () => {
+      expect(toPathname(null)).to.equal('');
+    });
+
+    it('returns empty string for undefined input', () => {
+      expect(toPathname(undefined)).to.equal('');
+    });
+  });
+
+  describe('hasSamePathname', () => {
+    it('returns true when two URLs have the same pathname', () => {
+      expect(hasSamePathname('https://a.com/page', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns false when two URLs have different pathnames', () => {
+      expect(hasSamePathname('https://a.com/page1', 'https://b.com/page2')).to.be.false;
+    });
+
+    it('ignores trailing slashes when comparing pathnames', () => {
+      expect(hasSamePathname('https://a.com/page/', 'https://b.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive', () => {
+      expect(hasSamePathname('https://a.com/PAGE', 'https://b.com/page')).to.be.true;
+    });
+
+    it('returns true when both are root paths', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/')).to.be.true;
+    });
+
+    it('returns false when one is root and the other is not', () => {
+      expect(hasSamePathname('https://a.com/', 'https://b.com/page')).to.be.false;
+    });
+
+    it('does not crash when url is null', () => {
+      expect(hasSamePathname(null, 'https://b.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URL against an absolute URL', () => {
+      expect(hasSamePathname('a.com/page', 'https://b.com/page')).to.be.true;
+    });
+  });
+
+  describe('allHaveSamePathname', () => {
+    it('returns true when all URLs match the reference pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/page',
+        'https://c.com/page/',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false when one URL has a different pathname', () => {
+      const urls = [
+        'https://a.com/page',
+        'https://b.com/other',
+      ];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('returns true for an empty array', () => {
+      expect(allHaveSamePathname([], 'https://ref.com/page')).to.be.true;
+    });
+
+    it('is case-insensitive across all entries', () => {
+      const urls = ['https://a.com/PAGE', 'https://b.com/Page'];
+      expect(allHaveSamePathname(urls, 'https://ref.com/page')).to.be.true;
+    });
+
+    it('returns false for non-array input', () => {
+      expect(allHaveSamePathname(null, 'https://ref.com/page')).to.be.false;
+      expect(allHaveSamePathname(undefined, 'https://ref.com/page')).to.be.false;
+    });
+
+    it('does not crash when array contains null elements', () => {
+      expect(allHaveSamePathname([null], 'https://ref.com/page')).to.be.false;
+    });
+
+    it('matches schema-less URLs in the array against a reference URL', () => {
+      const urls = ['a.com/page', 'https://b.com/page'];
+      expect(allHaveSamePathname(urls, 'c.com/page')).to.be.true;
+    });
+  });
+
+  describe('isPathPatternWithinSiteScope', () => {
+    it('returns false for non-string patterns', () => {
+      expect(isPathPatternWithinSiteScope(null, 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope(undefined, 'bulk.com/uk')).to.be.false;
+    });
+
+    it('returns false when no siteBaseUrl is given (fails closed)', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*', '')).to.be.false;
+    });
+
+    it('returns true when the site is scoped to the root path', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*', 'bulk.com')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/kings/.*', 'bulk.com/')).to.be.true;
+    });
+
+    it('treats /* prefixed patterns as trusted when the prefix is or extends the base path', () => {
+      expect(isPathPatternWithinSiteScope('/uk/*', 'bulk.com/uk')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/uk/kings/*', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('rejects /* prefixed patterns whose prefix escapes the base path', () => {
+      expect(isPathPatternWithinSiteScope('/us/*', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/ukraine/*', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('fails closed for patterns containing regex metacharacters', () => {
+      expect(isPathPatternWithinSiteScope('/kings/.*|/wolves/.*', 'bulk.com/kings')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/uk/(a|b)', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/uk/[a-z]', 'bulk.com/uk')).to.be.false;
+    });
+
+    it('treats exact or extending plain-text patterns as within scope', () => {
+      expect(isPathPatternWithinSiteScope('/uk', 'bulk.com/uk')).to.be.true;
+      expect(isPathPatternWithinSiteScope('/uk/kings', 'bulk.com/uk')).to.be.true;
+    });
+
+    it('rejects plain-text patterns that escape the base path', () => {
+      expect(isPathPatternWithinSiteScope('/us', 'bulk.com/uk')).to.be.false;
+      expect(isPathPatternWithinSiteScope('/ukraine', 'bulk.com/uk')).to.be.false;
     });
   });
 });

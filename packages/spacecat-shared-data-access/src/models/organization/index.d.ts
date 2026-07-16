@@ -11,7 +11,8 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Site, Project, Entitlement, OrganizationIdentityProvider, TrialUser,
+  BaseCollection, BaseModel, Site, Project, Entitlement, OrganizationIdentityProvider,
+  TaskManagementConnection, TrialUser,
 } from '../index';
 
 export interface Organization extends BaseModel {
@@ -24,6 +25,7 @@ export interface Organization extends BaseModel {
   getProjects(): Promise<Project[]>;
   getEntitlements(): Promise<Entitlement[]>;
   getOrganizationIdentityProviders(): Promise<OrganizationIdentityProvider[]>;
+  getTaskManagementConnections(): Promise<TaskManagementConnection[]>;
   getTrialUsers(): Promise<TrialUser[]>;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;

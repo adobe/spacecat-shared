@@ -11,7 +11,7 @@
  */
 
 import { expect } from 'chai';
-import DefaultExport, { LaunchDarklyClient } from '../src/index.js';
+import DefaultExport, { LaunchDarklyClient, clearClientCache } from '../src/index.js';
 
 describe('Module Exports', () => {
   it('should export LaunchDarklyClient as named export', () => {
@@ -26,5 +26,10 @@ describe('Module Exports', () => {
 
   it('should have both exports reference the same constructor', () => {
     expect(DefaultExport).to.equal(LaunchDarklyClient);
+  });
+
+  it('should export clearClientCache as a named export', () => {
+    expect(clearClientCache).to.be.a('function');
+    expect(clearClientCache.name).to.equal('clearClientCache');
   });
 });

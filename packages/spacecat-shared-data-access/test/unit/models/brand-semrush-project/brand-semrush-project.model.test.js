@@ -98,4 +98,28 @@ describe('BrandSemrushProjectModel', () => {
       expect(instance.getLanguageCode()).to.equal('de');
     });
   });
+
+  describe('siteId', () => {
+    it('gets siteId', () => {
+      expect(instance.getSiteId()).to.equal(sampleRow.siteId);
+    });
+
+    it('sets siteId', () => {
+      const next = 'a1b2c3d4-0000-4000-8000-000000000099';
+      instance.setSiteId(next);
+      expect(instance.getSiteId()).to.equal(next);
+    });
+  });
+
+  describe('deletedAt', () => {
+    it('is undefined when live', () => {
+      expect(instance.getDeletedAt()).to.be.undefined;
+    });
+
+    it('sets deletedAt (tombstones the row)', () => {
+      const tombstonedAt = '2026-07-02T00:00:00.000Z';
+      instance.setDeletedAt(tombstonedAt);
+      expect(instance.getDeletedAt()).to.equal(tombstonedAt);
+    });
+  });
 });

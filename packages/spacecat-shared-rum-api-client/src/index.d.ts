@@ -50,6 +50,27 @@ export interface RUMAPIOptions {
   }>;
 }
 
+/**
+ * Result returned by resolveRumDomainKey.
+ */
+export interface RumDomainKeyResult {
+  /** True if a RUM domain key was found for any candidate domain. */
+  hasDomainKey: boolean;
+  /** True if the lookup was aborted due to the 3 s shared timeout. */
+  timedOut: boolean;
+}
+
+/**
+ * Checks whether a site has a RUM domain key by trying up to four candidate domains
+ * in priority order: overrideBaseURL, www.override, baseURL, www.base.
+ * Stops on the first successful lookup. The 3 s timeout is shared across all candidates.
+ *
+ * @param site - Site model instance (requires getId, getBaseURL, getConfig).
+ * @param context - Request/worker context (requires env and log).
+ * @returns { hasDomainKey, timedOut }
+ */
+export function resolveRumDomainKey(site: object, context: UniversalContext): Promise<RumDomainKeyResult>;
+
 export default class RUMAPIClient {
   /**
    * Static factory method to create an instance of RUMAPIClient.

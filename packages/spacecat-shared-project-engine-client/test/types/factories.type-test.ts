@@ -29,6 +29,7 @@ import {
   createAIOTagMock,
   createAIOTagLeafMock,
   createUrlResolveMock,
+  createRenamePromptResponseMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -103,6 +104,13 @@ void resolveFields;
 createUrlResolveMock({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
 // @ts-expect-error — is_valid is a boolean, not a string.
 createUrlResolveMock({ is_valid: 'yes' });
+
+// 1g. the rename-prompt result factory (the aio-rename-prompt 200 body).
+type RenamePromptResponse = components['schemas']['model.RenamePromptResponse'];
+const renamed: RenamePromptResponse = createRenamePromptResponseMock({ is_updated: false });
+void renamed;
+// @ts-expect-error — is_updated is a boolean, not a string.
+createRenamePromptResponseMock({ is_updated: 'yes' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

@@ -29,6 +29,7 @@
 /** @typedef {Schemas['model.AIModelResponse']} AIModel */
 /** @typedef {Schemas['model.ProjectAIModelResponse']} ProjectAIModel */
 /** @typedef {Schemas['model.AIOPromptWithStatus']} Prompt */
+/** @typedef {Schemas['model.RenamePromptResponse']} RenamePromptResponse */
 /** @typedef {Schemas['model.ProjectResponse']} Project */
 /** @typedef {Schemas['model.ProjectRequest']} ProjectRequest */
 /** @typedef {Schemas['model.AIOBenchmarkWithCounters']} Benchmark */
@@ -133,6 +134,21 @@ export const createPromptMock = (overrides = {}) => ({
   name: 'What is the best running shoe?',
   is_new: false,
   tags: [],
+  ...overrides,
+});
+
+/**
+ * A prompt-rename result (`RenamePromptResponse`) — the `aio-rename-prompt` 200 body. The
+ * prompt id is echoed UNCHANGED (rename is in-place; verified live 2026-07-14,
+ * serenity-docs#63 §2); `is_updated` mirrors the live layer — `false` for a no-op rename
+ * or a draft-only prompt (the default `true` is the published-prompt-changed path).
+ * @param {Partial<RenamePromptResponse>} [overrides]
+ * @returns {RenamePromptResponse}
+ */
+export const createRenamePromptResponseMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'What is the best running shoe?',
+  is_updated: true,
   ...overrides,
 });
 

@@ -34,6 +34,10 @@ const { data, error } = await client.GET('/v1/countries');
 - **Retries:** `429` is retried for any method; `5xx`/network errors only for idempotent methods
   (so a POST is never replayed). Backoff is exponential with jitter, honours `Retry-After`, and is
   capped at 20s/attempt. Pass `onRetry` to observe the loop.
+- **Timeouts:** pass `requestTimeoutMs` to bound each attempt — a stalled attempt is aborted via
+  `AbortSignal.timeout` (a per-attempt deadline, combined with any caller `signal`, never
+  replacing it) and, for idempotent methods, retried. Unset (default) ⇒ no client-imposed deadline,
+  so a hung socket blocks until the platform's own limit; set this to bound it.
 - **Shape:** this is a thin factory function rather than the `CLAUDE.md` "class + factory" client
   pattern — the wrapper has no per-instance state or behaviour beyond what `openapi-fetch` already
   provides, so a class would add ceremony without value. The typed surface IS the `openapi-fetch`
@@ -154,6 +158,7 @@ Stateful endpoints (backed by the store):
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename` | in-place text edit (id stable; `409` on a sibling-text collision; `is_updated` mirrors the live layer) |
 
 ### Test control routes (not part of the Project Engine API)
 

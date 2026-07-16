@@ -213,4 +213,43 @@ describe('createSerenityProjectEngineApiClient', () => {
       authToken: 42,
     })).to.throw(/must be a string or a function/);
   });
+
+  it('threads requestTimeoutMs into the fetch layer (aborts a hung attempt)', async () => {
+    // A fetch that never resolves on its own — it settles only when the per-attempt deadline
+    // aborts it. With maxRetries 0 the single attempt times out and the abort propagates.
+    const fetch = (input, init) => new Promise((_, reject) => {
+      init.signal.addEventListener('abort', () => reject(init.signal.reason));
+    });
+    const client = createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example',
+      authToken: 'raw-ims-jwt',
+      maxRetries: 0,
+      requestTimeoutMs: 10,
+      fetch,
+    });
+
+    let thrown;
+    try {
+      await client.GET('/v1/countries');
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).to.be.an.instanceOf(Error);
+    expect(thrown.name).to.equal('TimeoutError');
+  });
+
+  it('throws at construction when requestTimeoutMs is not a positive finite number', () => {
+    const make = (requestTimeoutMs) => () => createSerenityProjectEngineApiClient({
+      baseUrl: 'https://serenity.example',
+      authToken: 'raw-ims-jwt',
+      requestTimeoutMs,
+    });
+    expect(make(0)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(-5)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(NaN)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make(Infinity)).to.throw(/requestTimeoutMs must be a positive finite number/);
+    expect(make('5000')).to.throw(/requestTimeoutMs must be a positive finite number/);
+    // undefined (omitted) stays valid — the option is opt-in.
+    expect(make(undefined)).to.not.throw();
+  });
 });

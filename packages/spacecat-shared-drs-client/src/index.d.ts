@@ -141,6 +141,38 @@ interface BrandPresenceScheduleResult {
   alreadyExisted: boolean;
 }
 
+export type ScheduleCadence = typeof SCHEDULE_CADENCES[keyof typeof SCHEDULE_CADENCES];
+
+interface CreateScheduleParams {
+  /** SpaceCat site UUID (required). */
+  siteId: string;
+  /** DRS provider ids (required, non-empty). */
+  providerIds: string[];
+  /** Fixed cadence; the cron is derived from it (raw cron is not accepted). */
+  cadence: ScheduleCadence;
+  /** Schedule description (length-capped). */
+  description?: string;
+  /** Enable brand-presence detection in the job. */
+  enableBrandPresence?: boolean;
+  /** Per-provider parameters passthrough (imsOrgId rejected). */
+  providerParameters?: Record<string, unknown>;
+  priority?: 'HIGH' | 'LOW';
+  /** Extra job metadata (imsOrgId rejected). */
+  metadata?: Record<string, unknown>;
+  triggerImmediately?: boolean;
+  timeout?: number;
+}
+
+interface ScheduleCreateResult {
+  scheduleId: string;
+  /**
+   * True when DRS reported the schedule already existed (HTTP 200 `idempotent: true` on a
+   * deterministic-id collision, or HTTP 409 with `existing_schedule_id`). The create is
+   * create-only: a changed cadence/job_config is NOT applied to the existing schedule.
+   */
+  alreadyExisted: boolean;
+}
+
 interface ScheduleJobsSummary {
   total: number;
   completed: number;
@@ -181,6 +213,7 @@ declare class DrsClient {
   lookupScrapeResults(params: ScrapeLookupParams): Promise<ScrapeLookupResponse | null>;
   triggerBrandDetection(siteId: string, options?: BrandDetectionOptions): Promise<Record<string, unknown> | null>;
   createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
+  createSchedule(params: CreateScheduleParams): Promise<ScheduleCreateResult>;
   getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
   listJobs(params: ListJobsParams): Promise<Record<string, unknown>[]>;
@@ -188,6 +221,11 @@ declare class DrsClient {
     params: CreateBrandPresenceScheduleParams,
   ): Promise<BrandPresenceScheduleResult>;
 }
+
+export declare const SCHEDULE_CADENCES: Readonly<{
+  TWICE_MONTHLY: 'twice_monthly';
+  QUARTERLY: 'quarterly';
+}>;
 
 export declare const SCRAPE_DATASET_IDS: Readonly<{
   YOUTUBE_VIDEOS: 'youtube_videos';

@@ -167,8 +167,8 @@ interface ScheduleCreateResult {
   scheduleId: string;
   /**
    * True when DRS reported the schedule already existed (HTTP 200 `idempotent: true` on a
-   * deterministic-id collision). The create is create-only: a changed cadence/job_config is
-   * NOT applied to the existing schedule.
+   * deterministic-id collision, or HTTP 409 with `existing_schedule_id`). The create is
+   * create-only: a changed cadence/job_config is NOT applied to the existing schedule.
    */
   alreadyExisted: boolean;
 }

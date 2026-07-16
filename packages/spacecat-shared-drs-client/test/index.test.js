@@ -1519,6 +1519,38 @@ describe('DrsClient', () => {
       scope.done();
     });
 
+    it('treats a 409 dedup as success and returns the existing schedule id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(409, {
+          error: 'A schedule already exists for this site and provider configuration',
+          existing_schedule_id: 'sched-existing-409',
+          schedule: {},
+        });
+
+      const result = await client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+      });
+
+      expect(result).to.deep.equal({ scheduleId: 'sched-existing-409', alreadyExisted: true });
+      scope.done();
+    });
+
+    it('throws when a 409 dedup response carries no schedule id', async () => {
+      const scope = nock(DRS_API_URL)
+        .post('/schedules')
+        .reply(409, { error: 'already exists' });
+
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['prompt_generation_semrush'],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+      })).to.be.rejectedWith('DRS schedule create/dedup returned no schedule_id');
+      scope.done();
+    });
+
     it('supports the nested schedule.schedule_id response shape', async () => {
       const scope = nock(DRS_API_URL)
         .post('/schedules')
@@ -1607,6 +1639,14 @@ describe('DrsClient', () => {
         providerIds: [],
         cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
       })).to.be.rejectedWith('providerIds must be a non-empty array');
+    });
+
+    it('throws when providerIds contains a blank/empty entry', async () => {
+      await expect(client.createSchedule({
+        siteId: 'site-1',
+        providerIds: ['', null],
+        cadence: SCHEDULE_CADENCES.TWICE_MONTHLY,
+      })).to.be.rejectedWith('providerIds must all be non-empty strings');
     });
 
     it('throws when cadence is invalid', async () => {

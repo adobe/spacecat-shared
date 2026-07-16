@@ -543,12 +543,23 @@ export default class DrsClient {
     priority = 'HIGH',
     metadata,
   }) {
-    // Both callers always supply a description, so check length unconditionally.
+    // Both public callers synthesize a non-empty description, so this required-check is
+    // defensive: it gives a future caller of this shared builder a clear error instead of a
+    // `.length` TypeError. Unreachable through the current public methods, hence the ignore.
+    /* c8 ignore next 3 */
+    if (!hasText(description)) {
+      throw new Error('description is required');
+    }
     if (description.length > MAX_SCHEDULE_DESCRIPTION_LENGTH) {
       throw new Error(`description must be at most ${MAX_SCHEDULE_DESCRIPTION_LENGTH} characters`);
     }
     if (!VALID_PRIORITIES.has(priority)) {
       throw new Error(`priority must be one of: ${[...VALID_PRIORITIES].join(', ')}`);
+    }
+    // Reject blank/empty provider ids (e.g. ['', null]) at the client with a clear error
+    // rather than letting DRS reject the malformed schedule request downstream.
+    if (!providerIds.every((id) => hasText(id))) {
+      throw new Error('providerIds must all be non-empty strings');
     }
 
     const jobConfig = {
@@ -702,8 +713,9 @@ export default class DrsClient {
    *
    * Idempotent (create-only): DRS keys these schedules on a deterministic (site_id, provider)
    * id. A repeat create — an onboarding retry, the operational backfill, or a concurrent create —
-   * returns HTTP 200 with `idempotent: true` and the existing schedule, which this surfaces as
-   * `alreadyExisted: true` (so no duplicate rows). IMPORTANT: because the create is create-only, a
+   * returns HTTP 200 with `idempotent: true` (or HTTP 409 with `existing_schedule_id`) and the
+   * existing schedule, both of which this surfaces as `alreadyExisted: true` (so no duplicate
+   * rows). IMPORTANT: because the create is create-only, a
    * changed `cadence` or `job_config` on a repeat call is NOT applied to the existing schedule —
    * the original schedule is left unchanged and the call still resolves success with
    * `alreadyExisted: true`. To mutate an existing schedule use the DRS update endpoint, not a
@@ -772,17 +784,30 @@ export default class DrsClient {
       timeout ? { timeout } : {},
     );
 
-    if (!ok) {
+    // DRS reports an existing schedule two ways depending on the dedup path: HTTP 200 with
+    // `idempotent: true` (deterministic-id collision) OR HTTP 409 (a matching schedule already
+    // exists, same as createBrandPresenceSchedule). Treat BOTH as success so a duplicate
+    // create — an onboarding retry, the operational backfill, or a concurrent create — never
+    // throws.
+    let alreadyExisted = false;
+    if (ok) {
+      alreadyExisted = payload?.idempotent === true;
+    } else if (status === 409) {
+      alreadyExisted = true;
+      this.log.info(`DRS schedule already exists for site ${siteId} (409 dedup)`);
+    } else {
       const errorText = typeof payload === 'string' ? payload : JSON.stringify(payload);
       const error = new Error(`DRS POST /schedules failed: ${status} - ${errorText}`);
       error.status = status;
       throw error;
     }
 
-    // DRS returns 201 on create and 200 with `idempotent: true` on a deterministic-id
-    // collision; both carry the schedule_id top-level (or nested under `schedule`).
-    const alreadyExisted = payload?.idempotent === true;
-    const scheduleId = payload?.schedule_id || payload?.schedule?.schedule_id;
+    // The 201/200 create-shape carries the id top-level (or nested under `schedule`); the 409
+    // dedup body names it `existing_schedule_id` (matching createBrandPresenceSchedule). Read
+    // all three shapes so either path resolves the id.
+    const scheduleId = payload?.existing_schedule_id
+      || payload?.schedule_id
+      || payload?.schedule?.schedule_id;
 
     if (!hasText(scheduleId)) {
       throw new Error('DRS schedule create/dedup returned no schedule_id');

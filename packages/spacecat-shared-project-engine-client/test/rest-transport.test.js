@@ -13,6 +13,7 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 import { createSerenityProjectEngineTransport } from '../src/rest-transport.js';
+import { ProjectEngineApiError } from '../src/errors.js';
 
 const BASE = 'https://pe.example';
 const PREFIX = '/enterprise/projects/api';
@@ -123,8 +124,9 @@ describe('createSerenityProjectEngineTransport', () => {
       expect(await transport.listLanguages()).to.equal(null);
     });
 
-    it('(c) non-2xx with a JSON error body → throws with the status message', async () => {
-      const transport = make(sandbox.stub().resolves(json({ message: 'nope' }, 404)));
+    it('(c) non-2xx with a JSON error body → throws a ProjectEngineApiError carrying status/method/body', async () => {
+      const errBody = { message: 'nope' };
+      const transport = make(sandbox.stub().resolves(json(errBody, 404)));
       let thrown;
       try {
         await transport.listLanguages();
@@ -132,11 +134,16 @@ describe('createSerenityProjectEngineTransport', () => {
         thrown = e;
       }
       expect(thrown).to.be.an('error');
-      expect(thrown.constructor).to.equal(Error); // a plain Error for this ticket
-      expect(thrown.message).to.match(/^Project Engine GET failed: 404$/);
+      expect(thrown).to.be.instanceOf(Error);
+      expect(thrown).to.be.instanceOf(ProjectEngineApiError);
+      expect(thrown.name).to.equal('ProjectEngineApiError');
+      expect(thrown.status).to.equal(404);
+      expect(thrown.method).to.equal('GET');
+      expect(thrown.body).to.deep.equal(errBody);
+      expect(thrown.message).to.equal('Project Engine GET request failed with status 404');
     });
 
-    it('(d) non-2xx (5xx) with a JSON error body → throws with the status message', async () => {
+    it('(d) non-2xx (5xx) with a JSON error body → throws with status 500 and the parsed body', async () => {
       // openapi-fetch ALWAYS routes a non-ok body into `error`, never `data` — so the
       // `error ?? data` expression's `data` fallback operand is only reachable when `error`
       // is nullish, which is the empty-body non-ok path exercised by case (f) below (there
@@ -148,18 +155,18 @@ describe('createSerenityProjectEngineTransport', () => {
       } catch (e) {
         thrown = e;
       }
-      expect(thrown).to.be.an('error');
-      expect(thrown.message).to.contain('failed: 500');
+      expect(thrown).to.be.instanceOf(ProjectEngineApiError);
+      expect(thrown.status).to.equal(500);
+      expect(thrown.body).to.deep.equal({ detail: 'boom' });
     });
 
-    it('(e) non-2xx with an empty-string body → normalized to null (no throw-shape change)', async () => {
-      // Must stub (not a real Response) to reach the `error === ''` → null branch: a real
-      // `new Response('', …)` makes openapi-fetch skip the empty body and leave `error`
-      // undefined — that is case (f), not this one. Forcing a present, empty *text* body is
-      // the only way to make openapi-fetch surface `error = ''`.
+    it('(e) non-2xx with an empty-string error body → body normalized to null', async () => {
+      // A non-ok response with NO content-length and an empty text body: openapi-fetch sets
+      // `error = ''`; unwrap normalizes '' → null.
       const fetch = sandbox.stub().resolves({
         ok: false,
         status: 400,
+        url: `${BASE}${PREFIX}/v1/languages`,
         headers: new Headers(),
         clone() { return this; },
         text: async () => '',
@@ -171,17 +178,21 @@ describe('createSerenityProjectEngineTransport', () => {
       } catch (e) {
         thrown = e;
       }
-      expect(thrown).to.be.an('error');
-      expect(thrown.message).to.contain('failed: 400');
+      expect(thrown).to.be.instanceOf(ProjectEngineApiError);
+      expect(thrown.status).to.equal(400);
+      expect(thrown.body).to.equal(null);
     });
 
-    it('(f) non-2xx with neither data nor error → null body', async () => {
-      // A real non-ok Response with an explicit `content-length: 0`: openapi-fetch skips
-      // parsing (rather than reading '' from the empty body), leaving `error = undefined` — so
-      // unwrap's `error ?? data ?? null` falls through the nullish path to null.
-      const fetch = sandbox.stub().resolves(
-        new Response(null, { status: 503, headers: { 'content-length': '0' } }),
-      );
+    it('(f) non-2xx with neither data nor error → null body (both-absent fallback)', async () => {
+      // status 204-style empty on a non-ok path: openapi-fetch returns { error: undefined }.
+      const fetch = sandbox.stub().resolves({
+        ok: false,
+        status: 503,
+        url: `${BASE}${PREFIX}/v1/languages`,
+        headers: new Headers({ 'content-length': '0' }),
+        clone() { return this; },
+        text: async () => '',
+      });
       const transport = make(fetch);
       let thrown;
       try {
@@ -189,12 +200,15 @@ describe('createSerenityProjectEngineTransport', () => {
       } catch (e) {
         thrown = e;
       }
-      expect(thrown).to.be.an('error');
-      expect(thrown.message).to.contain('failed: 503');
+      expect(thrown).to.be.instanceOf(ProjectEngineApiError);
+      expect(thrown.status).to.equal(503);
+      expect(thrown.body).to.equal(null);
     });
 
-    it('(g) a rejected fetch (network error) propagates out through unwrap', async () => {
-      const boom = new Error('network down');
+    it('(g) an exhausted-network failure is wrapped: status undefined, body null, cause preserved', async () => {
+      // Injected fetch rejects for an idempotent GET with maxRetries: 0 → createRetryingFetch
+      // rethrows the last raw error; unwrap catches it and wraps it (no HTTP response).
+      const boom = new TypeError('network down');
       const transport = make(sandbox.stub().rejects(boom));
       let thrown;
       try {
@@ -202,7 +216,12 @@ describe('createSerenityProjectEngineTransport', () => {
       } catch (e) {
         thrown = e;
       }
-      expect(thrown).to.equal(boom);
+      expect(thrown).to.be.instanceOf(ProjectEngineApiError);
+      expect(thrown.status).to.equal(undefined);
+      expect(thrown.method).to.equal('GET');
+      expect(thrown.body).to.equal(null);
+      expect(thrown.cause).to.equal(boom);
+      expect(thrown.message).to.equal('Project Engine GET request failed');
     });
   });
 });

@@ -13,6 +13,7 @@
 // @ts-check
 
 import { createSerenityProjectEngineApiClient } from './client.js';
+import { ProjectEngineApiError } from './errors.js';
 
 /**
  * @typedef {import('./client.js').SerenityProjectEngineApiClientOptions}
@@ -40,14 +41,17 @@ export function createSerenityProjectEngineTransport(options) {
 
   /**
    * The SINGLE seam where a failed call becomes a throw. It awaits the openapi-fetch result
-   * promise here (so a network/timeout rejection also flows through this one point), and on a
-   * non-2xx response throws. The typed client never throws on an HTTP error — it resolves to
-   * `{ data, error, response }` with the parsed error body in `error` — so a non-2xx is turned
-   * into a throw here; a 2xx returns the parsed body (or null for an empty body).
+   * promise here (so a network/timeout rejection also flows through this one point), and turns
+   * both failure paths into a {@link ProjectEngineApiError}:
    *
-   * `status`, `method`, and the normalized `body` are computed locally at this site FIRST so the
-   * follow-up ticket LLMO-5978 can swap ONLY the `new Error(...)` line below for
-   * `new ProjectEngineApiError(status, method, body)` without reshaping anything else here.
+   * - a non-2xx HTTP response: the typed client never throws on an HTTP error — it resolves to
+   *   `{ data, error, response }` with the parsed error body in `error` — so the non-2xx is turned
+   *   into a throw here carrying `response.status` + the normalized `body`;
+   * - an exhausted-network / per-attempt-timeout failure: `createRetryingFetch` rethrew the last
+   *   raw error after the retry budget, so the awaited promise rejects. There is no HTTP response
+   *   ⇒ `status` is `undefined`; the original error is preserved as `cause`.
+   *
+   * A 2xx returns the parsed body (or null for an empty body).
    *
    * @template T
    * @param {string} method the HTTP method, for the error message
@@ -57,19 +61,22 @@ export function createSerenityProjectEngineTransport(options) {
    *   (an empty-body operation resolves with null, never undefined)
    */
   async function unwrap(method, resultPromise) {
-    const { data, error, response } = await resultPromise;
+    let result;
+    try {
+      result = await resultPromise;
+    } catch (cause) {
+      // exhausted-network / per-attempt-timeout path: createRetryingFetch rethrew the last raw
+      // error after the retry budget. No HTTP response ⇒ status undefined; preserve the original
+      // as `cause`.
+      throw new ProjectEngineApiError(undefined, method, null, { cause });
+    }
+    const { data, error, response } = result;
     if (!response.ok) {
-      const { status } = response;
-      // openapi-fetch surfaces an empty error body as '' (not undefined); normalise it to null.
+      // openapi-fetch puts the parsed error body in `error`; fall back to `data`, then null.
       const rawBody = error ?? data ?? null;
-      // `body` is computed here but not consumed by the plain Error below. LLMO-5978 swaps ONLY
-      // the `new Error(...)` line for `new ProjectEngineApiError(status, method, body)` — status,
-      // method, and this normalized body are all already in scope, so nothing else here changes.
-      // eslint-disable-next-line no-unused-vars
+      // openapi-fetch surfaces an empty error body as '' (not undefined); normalise it to null.
       const body = rawBody === '' ? null : rawBody;
-      // Message deliberately omits the request URL: it embeds path-param ids (workspace/
-      // project/etc.) that error-reporter and log consumers should not receive by default.
-      throw new Error(`Project Engine ${method} failed: ${status}`);
+      throw new ProjectEngineApiError(response.status, method, body);
     }
     return data ?? null;
   }

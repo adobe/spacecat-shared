@@ -353,5 +353,27 @@ export declare function createSerenityProjectEngineTransport(
   options: SerenityProjectEngineApiClientOptions,
 ): SerenityProjectEngineTransport;
 
+/**
+ * The single typed error the transport facade throws from its `unwrap` seam. It carries the
+ * failing HTTP `method`, the response `status` (or `undefined` when there was no HTTP response —
+ * an exhausted-network / per-attempt-timeout failure), and the normalized parsed error `body`.
+ * On the network/timeout path the original thrown error is preserved as `cause`. No error→HTTP
+ * translation or redaction — consumer-owned per ADR-0001.
+ */
+export declare class ProjectEngineApiError extends Error {
+  /** The HTTP response status, or `undefined` when there was no HTTP response. */
+  readonly status: number | undefined;
+  /** The HTTP method of the failing request. */
+  readonly method: string;
+  /** The normalized parsed error body (`null` when empty/absent). */
+  readonly body: unknown;
+  constructor(
+    status: number | undefined,
+    method: string,
+    body: unknown,
+    options?: { cause?: unknown },
+  );
+}
+
 // Re-export the generated contract types for consumers that want them directly.
 export type { paths, components };

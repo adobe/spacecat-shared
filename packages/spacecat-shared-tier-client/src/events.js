@@ -10,8 +10,16 @@
  * governing permissions and limitations under the License.
  */
 
-import TierClient from './tier-client.js';
+/**
+ * Domain event emitted when an entitlement's tier transitions (including a fresh create).
+ * See docs/adr/0002-entitlement-tier-changed-event.md for the target-architecture rationale.
+ * @type {string}
+ */
+export const ENTITLEMENT_TIER_CHANGED = 'entitlement.tier_changed';
 
-export { TierClient };
-export { ENTITLEMENT_TIER_CHANGED, ENTITLEMENT_EVENTS_QUEUE_URL_KEY } from './events.js';
-export default TierClient;
+/**
+ * Context key holding the SQS queue URL that `entitlement.tier_changed` events are published to.
+ * When this env var is absent, emission is a no-op (opt-in).
+ * @type {string}
+ */
+export const ENTITLEMENT_EVENTS_QUEUE_URL_KEY = 'ENTITLEMENT_EVENTS_QUEUE_URL';

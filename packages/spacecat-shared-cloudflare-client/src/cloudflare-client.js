@@ -214,7 +214,7 @@ export default class CloudflareClient {
    * @param {number} [options.page=1] - 1-based page number
    * @param {number} [options.perPage=50] - results per page
    * @param {string} [options.accountId] - restrict results to a specific account
-   * @returns {Promise<Array<{id: string, name: string}>>}
+   * @returns {Promise<Array<{id: string, name: string, status: string}>>}
    */
   async listZones({ page = 1, perPage = 50, accountId } = {}) {
     this.log.info('Listing Cloudflare zones');

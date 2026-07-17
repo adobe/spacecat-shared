@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import LaunchDarklyClient from './launchdarkly-client.js';
+import LaunchDarklyClient, { clearClientCache } from './launchdarkly-client.js';
 
-export { LaunchDarklyClient };
+export { LaunchDarklyClient, clearClientCache };
 export default LaunchDarklyClient;

@@ -197,6 +197,70 @@ describe('AEM Detection', () => {
         expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
       });
 
+      it('should detect AMS 6.5 with Core Components despite CS-looking patterns', () => {
+        // AEM 6.5 (AMS) can use Core Components (cmp- classes, data-cmp-),
+        // experience fragments, and lc-[timestamp]-lc clientlib format — all of which
+        // also appear on CS. The explicit ams= data-routing must win.
+        const htmlSource = `
+          <html>
+            <head>
+              <script defer src="https://rum.hlx.page/.rum/@adobe/helix-rum-js@%5E2/dist/rum-standalone.js"
+                data-routing="env=prod,tier=publish,ams=My Org Name"></script>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body data-cmp-link-accessibility-enabled data-cmp-data-layer-name="adobeDataLayer">
+              <div id="container-abc" class="cmp-container">
+                <div class="cmp-experiencefragment">
+                  <div data-cmp-is="image" class="cmp-image">
+                    <img src="/content/experience-fragments/mysite/header.svg">
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
+      it('should detect AMS 6.5 with Core Components and x-dispatcher header', () => {
+        const headers = { 'x-dispatcher': 'dispatcher3eusouth2' };
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-container">
+                <div data-cmp-is="image" class="cmp-image"></div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource, headers);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
+      it('should detect AMS with mixed-case x-dispatcher header value', () => {
+        // HTTP header values may arrive with unexpected casing — the pattern and the
+        // extra-weight check must both match case-insensitively to score consistently.
+        const headers = { 'x-dispatcher': 'Dispatcher3eusouth2' };
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-1781626636100-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-container">
+                <div data-cmp-is="image" class="cmp-image"></div>
+              </div>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource, headers);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_AMS);
+      });
+
       it('should detect AMS via foundation- pattern', () => {
         const htmlSource = `
           <html>
@@ -242,6 +306,107 @@ describe('AEM Detection', () => {
         `;
         const result = detectAEMVersion(htmlSource);
         expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT detect AEM Headless via publish-p URL alone (asset delivery is not headless)', () => {
+        // A page that only loads an image from an AEM publish tier is not headless —
+        // it is simply fetching an asset; the publish-p host is not a delivery signal.
+        const htmlSource = `
+          <html>
+            <body>
+              <img src="/content/dam/mysite/hero.jpg">
+              <script>
+                window.__AEM__ = { host: "https://publish-p128342-e1259725.adobeaemcloud.com" };
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.OTHER);
+      });
+
+      it('should detect AEM Headless via GraphQL persisted query endpoint', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="app"></div>
+              <script>
+                const GRAPHQL_ENDPOINT = "https://publish-p128342-e1259725.adobeaemcloud.com/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should detect AEM Headless via Sling Model Exporter path', () => {
+        const htmlSource = `
+          <html>
+            <body>
+              <div id="root"></div>
+              <script id="__NEXT_DATA__" type="application/json">
+                {"props":{"pageProps":{"contentPath":"/content/mysite/en/home.model.json"}}}
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when GraphQL endpoint co-exists with lc-hash clientlibs (hybrid CS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div class="cmp-text" data-cmp-is="text">Content</div>
+              <script>
+                const GRAPHQL_ENDPOINT = "/graphql/execute.json/mysite/homepage";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with lc-hash clientlibs (AEM CS SPA Editor)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/clientlibs/base.lc-abc123-lc.min.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
+      });
+
+      it('should NOT classify as headless when model.json co-exists with MD5-hash clientlibs (AEM AMS)', () => {
+        const htmlSource = `
+          <html>
+            <head>
+              <link rel="stylesheet" href="/etc.clientlibs/mysite/base.min.123456789012345678901234567890ab.css">
+            </head>
+            <body>
+              <div id="root"></div>
+              <script>
+                window.MODEL_PATH = "/content/mysite/en/home.model.json";
+              </script>
+            </body>
+          </html>
+        `;
+        const result = detectAEMVersion(htmlSource);
+        expect(result).to.not.equal(DELIVERY_TYPES.AEM_HEADLESS);
       });
     });
 

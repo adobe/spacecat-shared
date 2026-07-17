@@ -147,6 +147,98 @@ describe('TokowakaClient', () => {
     });
   });
 
+  describe('markPatternCoveredSuggestions', () => {
+    const mkPattern = (isDomainWide) => ({
+      getId: () => (isDomainWide ? 'dw-1' : 'path-1'),
+      getData: () => (isDomainWide
+        ? { isDomainWide: true, allowedRegexPatterns: ['/*'] }
+        : { allowedRegexPatterns: ['/foo/*'] }),
+    });
+    const mkCovered = (id, url = `https://example.com/foo/${id}`) => ({
+      getId: () => id,
+      getStatus: () => 'NEW',
+      getData: () => ({ url }),
+      setData: sinon.stub(),
+      setUpdatedBy: sinon.stub(),
+      save: sinon.stub().resolves(),
+    });
+
+    it('marks all matching suggestions in the opportunity with coveredByDomainWide', async () => {
+      const covered = [mkCovered('a'), mkCovered('b')];
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(true),
+        covered,
+        'site-1',
+        'tester',
+      );
+
+      expect(result).to.deep.equal(covered);
+      covered.forEach((s) => {
+        expect(s.setData.calledWithMatch({ coveredByDomainWide: 'dw-1' })).to.be.true;
+        expect(s.setUpdatedBy.calledOnceWith('tester')).to.be.true;
+      });
+      expect(client.dataAccess.Suggestion.saveMany.calledOnceWith(covered)).to.be.true;
+    });
+
+    it('marks only URLs matching the segment/path pattern with coveredByPattern', async () => {
+      const matching = mkCovered('a', 'https://example.com/foo/a');
+      const nonMatching = mkCovered('b', 'https://example.com/bar/b');
+
+      const result = await client.markPatternCoveredSuggestions(
+        mkPattern(false),
+        [matching, nonMatching],
+        'site-1',
+      );
+
+      expect(result).to.deep.equal([matching]);
+      expect(matching.setData.calledWithMatch({ coveredByPattern: 'path-1' })).to.be.true;
+      expect(matching.setUpdatedBy.calledOnceWith('edge-deploy')).to.be.true;
+      expect(nonMatching.setData.called).to.be.false;
+    });
+
+    it('is a no-op when the pattern suggestion has no allowedRegexPatterns', async () => {
+      const noPattern = { getId: () => 'dw-1', getData: () => ({ isDomainWide: true }) };
+
+      expect(await client.markPatternCoveredSuggestions(noPattern, [mkCovered('a')], 'site-1'))
+        .to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('is a no-op when nothing in allSuggestions matches', async () => {
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), [], 'site-1');
+
+      expect(result).to.deep.equal([]);
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('enqueues a bulk-update job with the passed-in siteId when covered count is large', async () => {
+      const covered = Array.from({ length: 1701 }, (_, i) => mkCovered(`c${i}`));
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1', 'tester');
+
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-1' });
+      expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw-1' });
+      expect(payload.updatedBy).to.equal('tester');
+      expect(client.dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('warns and returns [] instead of throwing when saveSuggestions fails', async () => {
+      client.dataAccess.Suggestion.saveMany.rejects(new Error('DB down'));
+      const covered = [mkCovered('a')];
+
+      const result = await client.markPatternCoveredSuggestions(mkPattern(true), covered, 'site-1');
+
+      expect(result).to.deep.equal([]);
+      expect(client.log.warn.calledWithMatch(/Failed to mark covered suggestions/)).to.be.true;
+    });
+  });
+
   describe('createFrom', () => {
     it('should create client from context', () => {
       const context = {
@@ -2495,6 +2587,37 @@ describe('TokowakaClient', () => {
       expect(updatedPatch.suggestionId).to.equal('sugg-1');
       expect(updatedPatch.lastUpdated).to.be.greaterThan(1234567890);
     });
+
+    it('should add applyStale: true to all patches when applyStale option is true', async () => {
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { applyStale: true },
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      expect(uploadedConfig.patches).to.have.length(2);
+      uploadedConfig.patches.forEach((patch) => {
+        expect(patch.applyStale).to.equal(true);
+      });
+    });
+
+    it('should not add applyStale to patches when applyStale option is false', async () => {
+      const result = await client.deploySuggestions(
+        mockSite,
+        mockOpportunity,
+        mockSuggestions,
+        { applyStale: false },
+      );
+
+      expect(result.s3Paths).to.have.length(1);
+      const uploadedConfig = JSON.parse(s3Client.send.firstCall.args[0].input.Body);
+      uploadedConfig.patches.forEach((patch) => {
+        expect(patch.applyStale).to.be.undefined;
+      });
+    });
   });
 
   describe('rollbackSuggestions', () => {
@@ -3166,6 +3289,57 @@ describe('TokowakaClient', () => {
       );
     });
 
+    it('enqueues a suggestion-bulk-update job instead of saveMany when cleaning up more than the threshold (domain-wide rollback)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-dw', getType: () => 'prerender' };
+      const dwSuggestion = {
+        getId: () => 'dw-1',
+        getData: () => ({
+          isDomainWide: true,
+          allowedRegexPatterns: ['/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const covered = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `covered-${i}`,
+        getData: () => ({ url: `https://example.com/page${i}`, coveredByDomainWide: 'dw-1' }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      }));
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [dwSuggestion],
+        { allSuggestions: [dwSuggestion, ...covered], updatedBy: 'test@example.com' },
+      );
+
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
+      expect(payload.suggestionIds).to.have.length(1701);
+      expect(payload.unset).to.deep.equal(['coveredByDomainWide']);
+      expect(payload.updatedBy).to.equal('test@example.com');
+      // Not saved directly — the enqueue replaces the saveMany call for this batch.
+      expect(client.dataAccess.Suggestion.saveMany).to.not.have.been.calledWith(
+        sinon.match((arr) => arr.length === 1701),
+        sinon.match.any,
+      );
+    });
+
     it('cleans up covered suggestions (coveredByPattern) when rolling back a path-level pattern', async () => {
       const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
       const pathSuggestion = {
@@ -3207,6 +3381,54 @@ describe('TokowakaClient', () => {
       const coveredData = coveredSuggestion.setData.firstCall.args[0];
       expect(coveredData).to.not.have.property('edgeDeployed');
       expect(coveredData).to.not.have.property('coveredByPattern');
+    });
+
+    it('enqueues a suggestion-bulk-update job instead of saveMany when cleaning up more than the threshold (path-level rollback)', async () => {
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pathSuggestion = {
+        getId: () => 'path-1',
+        getData: () => ({
+          allowedRegexPatterns: ['/products/*'],
+          edgeDeployed: Date.now(),
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+      const covered = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `covered-${i}`,
+        getData: () => ({
+          url: `https://example.com/products/item-${i}`,
+          edgeDeployed: Date.now(),
+          coveredByPattern: 'path-1',
+        }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      }));
+
+      sinon.stub(client, 'fetchMetaconfig').resolves({
+        siteId: 'site-123',
+        prerender: { allowList: ['/products/*'] },
+      });
+      sinon.stub(client, 'uploadMetaconfig').resolves();
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      await client.rollbackSuggestions(
+        mockSite,
+        prerenderOpportunity,
+        [pathSuggestion],
+        { allSuggestions: [pathSuggestion, ...covered] },
+      );
+
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
+      expect(payload.suggestionIds).to.have.length(1701);
+      expect(payload.unset).to.deep.equal(['edgeDeployed', 'tokowakaDeployed', 'coveredByPattern']);
     });
 
     it('uses domain-wide-rollback fallback for covered suggestions when updatedBy is not provided (domain-wide parent)', async () => {
@@ -5934,6 +6156,37 @@ describe('TokowakaClient', () => {
       expect(covered.getData()).to.have.property('coveredByDomainWide', 'dw1');
     });
 
+    it('enqueues a suggestion-bulk-update job instead of saveMany when covered count exceeds the threshold (domain-wide)', async () => {
+      const dw = makeSuggestion('dw1', {
+        isDomainWide: true,
+        allowedRegexPatterns: ['^https://example\\.com/.*'],
+      });
+      const covered = Array.from({ length: 1701 }, (_, i) => makeSuggestion(
+        `covered-${i}`,
+        { url: `https://example.com/page${i}` },
+      ));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [dw],
+        allSuggestions: [dw, ...covered],
+      });
+
+      expect(result.coveredSuggestions).to.have.length(1701);
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
+      expect(payload.suggestionIds).to.have.length(1701);
+      expect(payload.set).to.deep.equal({ coveredByDomainWide: 'dw1' });
+    });
+
     it('should not mark already-domain-wide suggestions as covered', async () => {
       const dw1 = makeSuggestion('dw1', {
         isDomainWide: true,
@@ -6436,6 +6689,36 @@ describe('TokowakaClient', () => {
       expect(result.coveredSuggestions).to.not.include(urlElsewhere);
     });
 
+    it('enqueues a suggestion-bulk-update job instead of saveMany when covered count exceeds the threshold (path-level)', async () => {
+      const path = makeSuggestion('p1', {
+        allowedRegexPatterns: ['/products/*'],
+      });
+      const covered = Array.from({ length: 1701 }, (_, i) => makeSuggestion(
+        `covered-${i}`,
+        { url: `https://example.com/products/item-${i}` },
+      ));
+
+      fetchMetaconfigStub.resolves({ siteId: 'site-123' });
+      client.sqs = { sendMessage: sinon.stub().resolves() };
+      client.importWorkerQueueUrl = 'https://sqs.test/import-worker-queue';
+
+      const result = await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [path],
+        allSuggestions: [path, ...covered],
+      });
+
+      expect(result.coveredSuggestions).to.have.length(1701);
+      expect(client.sqs.sendMessage).to.have.been.calledOnce;
+      const [queueUrl, payload] = client.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.test/import-worker-queue');
+      expect(payload).to.include({ type: 'suggestion-bulk-update', siteId: 'site-123' });
+      expect(payload).to.not.have.property('opportunityId');
+      expect(payload.suggestionIds).to.have.length(1701);
+      expect(payload.set).to.deep.equal({ coveredByPattern: 'p1' });
+    });
+
     it('path deploy marks as failed with statusCode 500 when metaconfig upload fails', async () => {
       const path = makeSuggestion('p1', {
         allowedRegexPatterns: ['/products/*'],
@@ -6617,6 +6900,187 @@ describe('TokowakaClient', () => {
       expect(result.failedSuggestions[0].statusCode).to.equal(500);
       expect(result.failedSuggestions[0].reason).to.equal('Internal server error');
       expect(log.error).to.have.been.called;
+    });
+
+    it('should pass applyStale: true to deploySuggestions when metadata.applyStale is true', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        metadata: { applyStale: true },
+      });
+
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({ applyStale: true });
+    });
+
+    it('should pass empty metadata to deploySuggestions when metadata is absent', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(deploySuggestionsStub).to.have.been.calledOnce;
+      const [,, , metadata] = deploySuggestionsStub.firstCall.args;
+      expect(metadata).to.deep.equal({});
+    });
+  });
+
+  describe('clearApplyStaleFromPatches', () => {
+    let fetchConfigStub;
+    let uploadConfigStub;
+    let invalidateCdnCacheStub;
+
+    function makeCompletedSuggestion(id, urlPath) {
+      return {
+        getId: () => id,
+        getData: () => ({ url: `https://example.com${urlPath}`, edgeDeployed: Date.now() }),
+      };
+    }
+
+    beforeEach(() => {
+      fetchConfigStub = sinon.stub(client, 'fetchConfig');
+      uploadConfigStub = sinon.stub(client, 'uploadConfig').resolves('s3-path');
+      invalidateCdnCacheStub = sinon.stub(client, 'invalidateCdnCache').resolves([]);
+    });
+
+    it('should strip applyStale from matching patches and invalidate CDN', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        patches: [
+          {
+            op: 'replace', selector: 'h1', value: 'New', suggestionId: 'sugg-1', applyStale: true,
+          },
+          {
+            op: 'replace', selector: 'h2', value: 'Other', suggestionId: 'sugg-2', applyStale: true,
+          },
+        ],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      const [, uploadedConfig] = uploadConfigStub.firstCall.args;
+      const patch1 = uploadedConfig.patches.find((p) => p.suggestionId === 'sugg-1');
+      expect(patch1).to.not.have.property('applyStale');
+      // sugg-2 not in suggestions list — applyStale untouched
+      const patch2 = uploadedConfig.patches.find((p) => p.suggestionId === 'sugg-2');
+      expect(patch2.applyStale).to.equal(true);
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+    });
+
+    it('should skip upload when no patches have applyStale', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        version: '1.0',
+        patches: [
+          {
+            op: 'replace', selector: 'h1', value: 'New', suggestionId: 'sugg-1',
+          },
+        ],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+    });
+
+    it('should skip URLs with no existing config', async () => {
+      fetchConfigStub.resolves(null);
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+    });
+
+    it('should silently skip pattern and domain-wide suggestions', async () => {
+      const patternSugg = {
+        getId: () => 'dw-1',
+        getData: () => ({ isDomainWide: true, allowedRegexPatterns: ['/.*'] }),
+      };
+
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [patternSugg]);
+
+      expect(fetchConfigStub).to.not.have.been.called;
+      expect(uploadConfigStub).to.not.have.been.called;
+    });
+
+    it('should handle multiple URLs, only invalidate ones that changed', async () => {
+      fetchConfigStub.onFirstCall().resolves({
+        patches: [{ suggestionId: 'sugg-1', applyStale: true }],
+      });
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2' }],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      const s2 = makeCompletedSuggestion('sugg-2', '/page2');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1, s2]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page1');
+    });
+
+    it('should do nothing when given no per-URL suggestions', async () => {
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, []);
+
+      expect(fetchConfigStub).to.not.have.been.called;
+    });
+
+    it('should log warning and return normally when CDN invalidation throws', async () => {
+      fetchConfigStub.resolves({
+        patches: [{ suggestionId: 'sugg-1', applyStale: true }],
+      });
+      invalidateCdnCacheStub.rejects(new Error('CDN rate limit'));
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+    });
+
+    it('should log error and continue processing remaining URLs when one URL throws', async () => {
+      fetchConfigStub.onFirstCall().rejects(new Error('S3 transient error'));
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2', applyStale: true }],
+      });
+
+      const s1 = makeCompletedSuggestion('sugg-1', '/page1');
+      const s2 = makeCompletedSuggestion('sugg-2', '/page2');
+      await client.clearApplyStaleFromPatches(mockSite, mockOpportunity, [s1, s2]);
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page2');
     });
   });
 });

@@ -1,0 +1,72 @@
+/*
+ * Copyright 2026 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+/* c8 ignore start */
+
+import { isValidUUID, isValidUrl } from '@adobe/spacecat-shared-utils';
+
+import SchemaBuilder from '../base/schema.builder.js';
+import Ticket from './ticket.model.js';
+import TicketCollection from './ticket.collection.js';
+
+const schema = new SchemaBuilder(Ticket, TicketCollection)
+  // tickets table has updated_at but no updated_by column. Suppress updatedBy so
+  // it is not included in INSERTs.
+  .addAttribute('updatedBy', { type: 'string', required: false, postgrestIgnore: true })
+  .addReference('belongs_to', 'Organization')
+  .addReference('belongs_to', 'TaskManagementConnection')
+  // The DB column for the TaskManagementConnection FK is `connection_id` (not
+  // `task_management_connection_id`). Override the auto-generated attribute to
+  // point to the correct column so PostgREST queries and INSERTs use the right name.
+  .addAttribute('taskManagementConnectionId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    postgrestField: 'connection_id',
+    validate: (value) => isValidUUID(value),
+  })
+  // Optional FK — a ticket may not be linked to an opportunity in future flows.
+  .addReference('belongs_to', 'Opportunity', ['ticketKey'], { required: false })
+  .addReference('has_many', 'TicketSuggestions', ['createdAt'], { removeDependents: true })
+  .addAttribute('externalTicketId', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('ticketKey', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('ticketUrl', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+    validate: (value) => isValidUrl(value),
+  })
+  .addAttribute('ticketStatus', {
+    type: 'string',
+    required: false,
+    default: null,
+  })
+  .addAttribute('ticketProvider', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  })
+  .addAttribute('createdBy', {
+    type: 'string',
+    required: true,
+    readOnly: true,
+  });
+
+export default schema.build();

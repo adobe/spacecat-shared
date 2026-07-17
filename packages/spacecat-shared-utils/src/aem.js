@@ -102,8 +102,10 @@ export function detectAEMVersion(htmlSource, headers = {}) {
     /data-routing="[^"]*ams=([^,"]*)/i,
   ];
 
+  // Case-insensitive: HTTP header values may arrive with unexpected casing.
+  // Must stay aligned with the extra-weight check below.
   const amsHeaderPatterns = [
-    /^dispatcher[0-9].*$/,
+    /^dispatcher[0-9]/i,
   ];
 
   const aemHeadlessPatterns = [
@@ -145,6 +147,13 @@ export function detectAEMVersion(htmlSource, headers = {}) {
     }
   }
 
+  // x-dispatcher is a server infrastructure header only present on AMS dispatcher nodes —
+  // give it higher weight than the MD5 fingerprint pattern to overcome accumulated
+  // CS-looking signals (cmp- classes, lc- format, experience-fragments) on AMS 6.5 sites
+  if (/^dispatcher[0-9]/i.test(headers['x-dispatcher'])) {
+    amsMatches += 6;
+  }
+
   for (const pattern of aemHeadlessPatterns) {
     if (pattern.test(normalizedHtml)) {
       aemHeadlessMatches += 1;
@@ -172,14 +181,38 @@ export function detectAEMVersion(htmlSource, headers = {}) {
     amsMatches += 5; // Increased weight since this is a very reliable AMS indicator
   }
 
-  // Give extra weight to CS clientlib format pattern as it's very distinctive
+  // lc-[timestamp]-lc format exists on AEM 6.5 (AMS) too — not CS-exclusive
   if (/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)) {
-    csMatches += 3;
+    csMatches += 1;
+  }
+
+  // AEM GraphQL persisted query — guarded against hybrid CS sites that embed GraphQL
+  // endpoints while AEM still server-renders the page (lc-hash clientlibs are proof
+  // of CS rendering pipeline). Score +2 so a single signal clears MIN_THRESHOLD alone.
+  if (
+    /\/graphql\/execute\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 2;
+  }
+
+  // Sling Model Exporter under /content/ — guarded against AEM CS SPA Editor sites
+  // (lc-hash clientlibs) and AEM AMS sites (MD5-hash clientlibs), which both embed
+  // .model.json paths without being headless. Score +2 so a single signal is sufficient.
+  if (
+    /\/content\/[^\s"']+\.model(?:\.tidy)?\.json/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.lc-[a-f0-9]+-lc\.min\.(js|css)/i.test(normalizedHtml)
+    && !/\/etc\.clientlibs\/[^"']+\.min\.[a-f0-9]{32}\.(js|css)/i.test(normalizedHtml)
+  ) {
+    aemHeadlessMatches += 2;
   }
 
   // Give significant weight to explicit RUM data-routing indicators
+  // ams= gets higher weight (+8 total) because AMS 6.5 sites running Core Components
+  // accumulate many CS-looking patterns (lc- format, cmp- classes, experience-fragments)
+  // that can overtake a lower-weighted explicit AMS declaration
   if (/data-routing="[^"]*ams=([^,"]*)/i.test(normalizedHtml)) {
-    amsMatches += 5;
+    amsMatches += 7;
   }
 
   if (/data-routing="[^"]*eds=([^,"]*)/i.test(normalizedHtml)) {

@@ -11,7 +11,7 @@
  */
 
 import { expect } from 'chai';
-import { prettifyLogForwardingConfig } from '../src/cdn-helpers.js';
+import { prettifyLogForwardingConfig, CLOUDFLARE_LOGPUSH_FIELDS } from '../src/cdn-helpers.js';
 
 const FASTLY_LOG_FORMAT = `{
     "timestamp": "%{strftime(\\{"%Y-%m-%dT%H:%M:%S%z"\\}, time.start)}V",
@@ -213,17 +213,7 @@ describe('CDN Helper Functions', () => {
           'Timestamp format': 'RFC3339',
           'Sampling rate': 'All logs',
           'Organize logs into daily subfolders': 'Yes',
-          'Logged Properties': [
-            'EdgeStartTimestamp',
-            'ClientRequestHost',
-            'ClientRequestURI',
-            'ClientRequestMethod',
-            'ClientRequestUserAgent',
-            'EdgeResponseStatus',
-            'ClientRequestReferer',
-            'EdgeResponseContentType',
-            'EdgeTimeToFirstByteMs',
-          ],
+          'Logged Properties': CLOUDFLARE_LOGPUSH_FIELDS,
           'Log format': 'JSON',
           'Ownership token': 'token-available-after-deployment',
           HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',
@@ -711,6 +701,22 @@ describe('CDN Helper Functions', () => {
         expect(result.oldCredentialsCreatedAt).to.be.undefined;
         expect(result.oldCredentialsLastUsed).to.be.undefined;
       });
+    });
+  });
+
+  describe('CLOUDFLARE_LOGPUSH_FIELDS', () => {
+    it('exports the 9 byocdn-cloudflare Logpush field names', () => {
+      expect(CLOUDFLARE_LOGPUSH_FIELDS).to.deep.equal([
+        'EdgeStartTimestamp',
+        'ClientRequestHost',
+        'ClientRequestURI',
+        'ClientRequestMethod',
+        'ClientRequestUserAgent',
+        'EdgeResponseStatus',
+        'ClientRequestReferer',
+        'EdgeResponseContentType',
+        'EdgeTimeToFirstByteMs',
+      ]);
     });
   });
 });

@@ -28,6 +28,7 @@ describe('Index Exports', () => {
     'buildSuggestionKey',
     'calculateCPCValue',
     'canonicalizeUrl',
+    'CLOUDFLARE_LOGPUSH_FIELDS',
     'composeAuditURL',
     'composeBaseURL',
     'dateAfterDays',

@@ -130,7 +130,8 @@ export function nextRetryDelayMs(completedAttempt, baseDelayMs, response) {
  * @property {number} delayMs the wait before this retry
  * @property {string} method the HTTP method
  * @property {number} [status] the retryable response status that triggered the retry, if any
- * @property {Error} [error] the network error that triggered the retry, if any
+ * @property {Error} [error] the error that triggered the retry, if any — a network error, or a
+ *   per-attempt `AbortSignal.timeout` `TimeoutError` (both are `instanceof Error`)
  */
 
 /**
@@ -165,8 +166,31 @@ function notifyRetry(onRetry, info) {
  */
 
 /**
+ * Builds the per-attempt fetch `init` for {@link createRetryingFetch}. When `requestTimeoutMs`
+ * is a positive number, each attempt gets a FRESH `AbortSignal.timeout(requestTimeoutMs)` (the
+ * retry layer calls the underlying fetch once per attempt, so this is a per-attempt deadline, not
+ * a single budget spanning the whole retry loop) — combined with, never replacing, any
+ * caller-supplied signal via `AbortSignal.any`, so a caller abort and the deadline each still
+ * cancel the request. With no timeout configured the caller's `init` is returned untouched, so a
+ * caller signal continues to flow through natively.
+ * @param {RequestInit} [init]
+ * @param {AbortSignal} [callerSignal]
+ * @param {number} [requestTimeoutMs]
+ * @returns {RequestInit | undefined}
+ */
+export function withDeadline(init, callerSignal, requestTimeoutMs) {
+  if (!requestTimeoutMs || requestTimeoutMs <= 0) {
+    return init;
+  }
+  const timeoutSignal = AbortSignal.timeout(requestTimeoutMs);
+  const signal = callerSignal ? AbortSignal.any([callerSignal, timeoutSignal]) : timeoutSignal;
+  return { ...init, signal };
+}
+
+/**
  * Wraps a fetch with bounded exponential-backoff retries. Retryable statuses follow
- * {@link isRetryableStatus}; thrown network errors are retried only for idempotent methods.
+ * {@link isRetryableStatus}; thrown errors (a network error, or a per-attempt timeout) are
+ * retried only for idempotent methods.
  * The wait between attempts is {@link nextRetryDelayMs} — jittered exponential backoff that also
  * honours a `Retry-After` header. After exhausting retries it returns the last retryable response
  * (so the caller still sees e.g. the final 503) or rethrows the last network error.
@@ -180,9 +204,12 @@ function notifyRetry(onRetry, info) {
  * @param {number} maxRetries
  * @param {number} baseDelayMs
  * @param {OnRetry} [onRetry] optional best-effort retry-observability hook
+ * @param {number} [requestTimeoutMs] optional per-attempt deadline in ms; when > 0 each attempt is
+ *   aborted via `AbortSignal.timeout` (combined with any caller signal) and, for idempotent
+ *   methods, retried under the retry budget. Unset ⇒ no client-imposed deadline.
  * @returns {typeof globalThis.fetch}
  */
-export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry) {
+export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry, requestTimeoutMs) {
   return async function retryingFetch(input, init) {
     const method = methodOf(input, init);
     // Floor at 0: a negative maxRetries would skip the loop entirely, leaving both lastResponse
@@ -196,6 +223,9 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry)
     // token is resolved per request, not per attempt; with the ceiling above the whole loop is
     // bounded well under an IMS token's lifetime, so mid-loop expiry is a non-issue.
     const forAttempt = () => (input instanceof Request ? input.clone() : input);
+    // Resolve any caller-supplied AbortSignal once. openapi-fetch calls us with a Request whose
+    // own `.signal` reflects a caller `signal` option; a bare-URL fetch may carry it on `init`.
+    const callerSignal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
     let lastResponse;
     let lastError;
     let nextDelayMs = 0;
@@ -215,8 +245,9 @@ export function createRetryingFetch(baseFetch, maxRetries, baseDelayMs, onRetry)
         await sleep(nextDelayMs);
       }
       try {
+        const attemptInit = withDeadline(init, callerSignal, requestTimeoutMs);
         // eslint-disable-next-line no-await-in-loop
-        const response = await baseFetch(forAttempt(), init);
+        const response = await baseFetch(forAttempt(), attemptInit);
         if (!isRetryableStatus(method, response.status)) {
           return response;
         }

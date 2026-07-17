@@ -2289,7 +2289,7 @@ export interface components {
             replace?: boolean;
         };
         "model.RenamePromptRequest": {
-            new_name?: string;
+            new_name?: string | null;
         };
         "model.RenamePromptResponse": {
             id?: string;
@@ -7716,6 +7716,15 @@ export interface operations {
             };
             /** @description Prompt not found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

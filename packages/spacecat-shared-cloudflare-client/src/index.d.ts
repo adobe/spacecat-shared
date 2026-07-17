@@ -113,6 +113,8 @@ export default class CloudflareClient {
 
   listZones(options?: ZoneListOptions): Promise<CloudflareZone[]>;
 
+  getZone(zoneId: string): Promise<CloudflareZone>;
+
   listRoutes(zoneId: string): Promise<WorkerRoute[]>;
 
   addRoute(zoneId: string, pattern: string, scriptName: string): Promise<WorkerRoute>;

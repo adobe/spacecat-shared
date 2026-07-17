@@ -1667,7 +1667,7 @@ describe('SeoClient', () => {
       expect(bl.response_code).to.equal(200);
       expect(bl.priority_score).to.be.a('number');
       expect(bl.priority_label).to.be.oneOf(['High', 'Medium', 'Low']);
-      expect(bl.traffic_domain).to.be.a('number');
+      expect(bl.traffic_domain).to.equal(80);
       expect(result.fullAuditRef).to.include('api.semrush.com');
     });
 

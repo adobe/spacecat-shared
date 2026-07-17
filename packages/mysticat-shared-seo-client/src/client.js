@@ -855,7 +855,7 @@ export default class SeoClient {
       title: row.source_title || null,
       url_from: row.source_url,
       url_to: row.target_url,
-      traffic_domain: Math.round(row.score * 100),
+      traffic_domain: row.domain_score ?? null,
       page_score: row.page_score ?? null,
       domain_score: row.domain_score ?? null,
       first_seen_at: row.first_seen_at ?? null,

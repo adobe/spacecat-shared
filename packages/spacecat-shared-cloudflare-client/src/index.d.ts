@@ -31,6 +31,7 @@ export interface CloudflareAccount {
 export interface CloudflareZone {
   id: string;
   name: string;
+  status: string;
 }
 
 export interface WorkerRoute {

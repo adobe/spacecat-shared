@@ -528,6 +528,26 @@ describe('AkamaiClient', () => {
       expect(result).to.deep.equal({ errors: [] });
     });
 
+    it('adds dryRun=true to the query when options.dryRun is set', async () => {
+      nock(API_BASE)
+        .put(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`)
+        .query({
+          contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true', dryRun: 'true',
+        })
+        .reply(200, { errors: [], warnings: [] });
+
+      const result = await client.updateRuleTree(
+        PROPERTY_ID,
+        6,
+        CONTRACT_ID,
+        GROUP_ID,
+        { rules: {} },
+        undefined,
+        { dryRun: true },
+      );
+      expect(result).to.deep.equal({ errors: [], warnings: [] });
+    });
+
     it('throws when version is not an integer', async () => {
       await expect(client.updateRuleTree(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, { rules: {} }))
         .to.be.rejectedWith('version must be an integer');

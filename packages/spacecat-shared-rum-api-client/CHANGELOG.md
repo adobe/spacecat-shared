@@ -1,3 +1,46 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.1...@adobe/spacecat-shared-rum-api-client-v2.44.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.43.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.0...@adobe/spacecat-shared-rum-api-client-v2.43.1) (2026-06-15)
+
+### Bug Fixes
+
+* downgrade expected RUM domainkey 404s from error to debug ([#1678](https://github.com/adobe/spacecat-shared/issues/1678)) ([86c7fdd](https://github.com/adobe/spacecat-shared/commit/86c7fdd5333e8c40b45f7375bc4321e6c36135de))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.43.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.42.0...@adobe/spacecat-shared-rum-api-client-v2.43.0) (2026-06-15)
+
+### Features
+
+* **rum-api-client:** add resolveRumDomainKey shared utility ([#1662](https://github.com/adobe/spacecat-shared/issues/1662)) ([c3249f0](https://github.com/adobe/spacecat-shared/commit/c3249f011727e9297b191bf6ca0a78d6f462942e))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.42.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.41.1...@adobe/spacecat-shared-rum-api-client-v2.42.0) (2026-06-09)
+
+### Features
+
+* Add per-field engagement metrics for forms ([#1653](https://github.com/adobe/spacecat-shared/issues/1653)) ([b6dba5b](https://github.com/adobe/spacecat-shared/commit/b6dba5bd9abb623aecf2d3f5d8e1e36bf427a919))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.41.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.41.0...@adobe/spacecat-shared-rum-api-client-v2.41.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.41.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.13...@adobe/spacecat-shared-rum-api-client-v2.41.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-rum-api-client-v2.40.13](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.12...@adobe/spacecat-shared-rum-api-client-v2.40.13) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.40.12](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.40.11...@adobe/spacecat-shared-rum-api-client-v2.40.12) (2026-04-09)
 
 ### Bug Fixes

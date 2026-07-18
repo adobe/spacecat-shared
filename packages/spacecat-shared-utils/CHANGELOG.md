@@ -1,3 +1,165 @@
+## [@adobe/spacecat-shared-utils-v1.125.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.1...@adobe/spacecat-shared-utils-v1.125.0) (2026-07-17)
+
+### Features
+
+* **cloudflare-client:** export CLOUDFLARE_LOGPUSH_FIELDS (LLMO-5869) ([#1796](https://github.com/adobe/spacecat-shared/issues/1796)) ([477a604](https://github.com/adobe/spacecat-shared/commit/477a604cdd1c89dbb3a70e33eead740a07e53adb))
+
+## [@adobe/spacecat-shared-utils-v1.124.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.0...@adobe/spacecat-shared-utils-v1.124.1) (2026-07-03)
+
+### Bug Fixes
+
+* **utils:** fail closed in site-scope checks when siteBaseUrl is missing ([#1770](https://github.com/adobe/spacecat-shared/issues/1770)) ([d0d3614](https://github.com/adobe/spacecat-shared/commit/d0d361414953b22e41e22a01c50bf9ff5c17eada))
+
+## [@adobe/spacecat-shared-utils-v1.124.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.1...@adobe/spacecat-shared-utils-v1.124.0) (2026-07-01)
+
+### Features
+
+* **utils:** add isPathPatternWithinSiteScope url helper ([#1761](https://github.com/adobe/spacecat-shared/issues/1761)) ([cefc1bd](https://github.com/adobe/spacecat-shared/commit/cefc1bd0e0ac24a5ac4e0694205589ee2c96e596))
+
+## [@adobe/spacecat-shared-utils-v1.123.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.123.0...@adobe/spacecat-shared-utils-v1.123.1) (2026-06-26)
+
+### Bug Fixes
+
+* **utils:** added some patterns for aem_headless detection ([#1716](https://github.com/adobe/spacecat-shared/issues/1716)) ([a646b2b](https://github.com/adobe/spacecat-shared/commit/a646b2bf8aeb0bb11e13e03c43f57f414af7caad))
+
+## [@adobe/spacecat-shared-utils-v1.123.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.1...@adobe/spacecat-shared-utils-v1.123.0) (2026-06-26)
+
+### Features
+
+* **rum:** scope latest-metrics RUM to locale path prefix ([#1707](https://github.com/adobe/spacecat-shared/issues/1707)) ([77cdb33](https://github.com/adobe/spacecat-shared/commit/77cdb33d7f55a9bff795b768621ec70830b2cba3))
+
+## [@adobe/spacecat-shared-utils-v1.122.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.122.0...@adobe/spacecat-shared-utils-v1.122.1) (2026-06-26)
+
+### Bug Fixes
+
+* add schema-less URL support to pathname helpers ([#1727](https://github.com/adobe/spacecat-shared/issues/1727)) ([7e875a7](https://github.com/adobe/spacecat-shared/commit/7e875a7be924257ff66285df2539e8a195e55186))
+
+## [@adobe/spacecat-shared-utils-v1.122.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.121.0...@adobe/spacecat-shared-utils-v1.122.0) (2026-06-25)
+
+### Features
+
+* **utils:** add toPathname, hasSamePathname, allHaveSamePathname URL helpers ([#1724](https://github.com/adobe/spacecat-shared/issues/1724)) ([6da512a](https://github.com/adobe/spacecat-shared/commit/6da512aebf199189eea666f6d7655878349588d0))
+
+## [@adobe/spacecat-shared-utils-v1.121.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.1...@adobe/spacecat-shared-utils-v1.121.0) (2026-06-24)
+
+### Features
+
+* **utils:** add isWithinSiteScope and filterBySiteScope URL helpers [LLMO-5748] ([#1714](https://github.com/adobe/spacecat-shared/issues/1714)) ([5511bf0](https://github.com/adobe/spacecat-shared/commit/5511bf0c389b296078642d26088091fda0f7c7d7))
+
+## [@adobe/spacecat-shared-utils-v1.120.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.120.0...@adobe/spacecat-shared-utils-v1.120.1) (2026-06-18)
+
+### Bug Fixes
+
+* **utils:** correct AMS detection for AEM 6.5 sites with Core Components ([#1688](https://github.com/adobe/spacecat-shared/issues/1688)) ([5bf320c](https://github.com/adobe/spacecat-shared/commit/5bf320cc960b91cd81fc1facf6eae08816b6dd69))
+
+## [@adobe/spacecat-shared-utils-v1.120.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.3...@adobe/spacecat-shared-utils-v1.120.0) (2026-06-16)
+
+### Features
+
+* llm error pages subtypes ([#1686](https://github.com/adobe/spacecat-shared/issues/1686)) ([2598dc8](https://github.com/adobe/spacecat-shared/commit/2598dc88303b740b2dfd6e307d4ecb71f3005156))
+
+## [@adobe/spacecat-shared-utils-v1.119.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.2...@adobe/spacecat-shared-utils-v1.119.3) (2026-06-16)
+
+### Bug Fixes
+
+* pageCitability url-upsert + metrics-store $metadata 404 detection ([#1683](https://github.com/adobe/spacecat-shared/issues/1683)) ([693a943](https://github.com/adobe/spacecat-shared/commit/693a943396fb78db3caf31fd2cb7f643f66bb0ef))
+
+## [@adobe/spacecat-shared-utils-v1.119.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.1...@adobe/spacecat-shared-utils-v1.119.2) (2026-06-15)
+
+### Bug Fixes
+
+* quiet recoverable ERROR-severity log noise (config-validation fallback + missing metrics) ([#1681](https://github.com/adobe/spacecat-shared/issues/1681)) ([27be682](https://github.com/adobe/spacecat-shared/commit/27be6824d60af52a948e168a9a288239b402cdde))
+
+## [@adobe/spacecat-shared-utils-v1.119.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.119.0...@adobe/spacecat-shared-utils-v1.119.1) (2026-06-15)
+
+### Bug Fixes
+
+* downgrade expected RUM domainkey 404s from error to debug ([#1678](https://github.com/adobe/spacecat-shared/issues/1678)) ([86c7fdd](https://github.com/adobe/spacecat-shared/commit/86c7fdd5333e8c40b45f7375bc4321e6c36135de))
+
+## [@adobe/spacecat-shared-utils-v1.119.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.118.0...@adobe/spacecat-shared-utils-v1.119.0) (2026-06-12)
+
+### Features
+
+* **utils:** add LLMO claims guidance schema ([#1671](https://github.com/adobe/spacecat-shared/issues/1671)) ([b22f501](https://github.com/adobe/spacecat-shared/commit/b22f501dc2f50713ffa01e9e8c5e2dfaacbf26ea))
+
+## [@adobe/spacecat-shared-utils-v1.118.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.117.0...@adobe/spacecat-shared-utils-v1.118.0) (2026-06-10)
+
+### Features
+
+* fix ghost RUM key false positive in wwwUrlResolver by verifying bundle data before accepting toggled hostname ([#1657](https://github.com/adobe/spacecat-shared/issues/1657)) ([dffa4aa](https://github.com/adobe/spacecat-shared/commit/dffa4aa8a858277a866bb1889668e80982adda6c))
+
+## [@adobe/spacecat-shared-utils-v1.117.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.6...@adobe/spacecat-shared-utils-v1.117.0) (2026-06-04)
+
+### Features
+
+* **utils:** accept optional headers in detectBotBlocker ([#1650](https://github.com/adobe/spacecat-shared/issues/1650)) ([e5464d3](https://github.com/adobe/spacecat-shared/commit/e5464d3d4832f685d1540c86262ce6e6f2572740))
+
+## [@adobe/spacecat-shared-utils-v1.116.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.5...@adobe/spacecat-shared-utils-v1.116.6) (2026-06-04)
+
+### Bug Fixes
+
+* tighten press/click.*hold regex to prevent false positives on normal page content ([#1649](https://github.com/adobe/spacecat-shared/issues/1649)) ([96e9c83](https://github.com/adobe/spacecat-shared/commit/96e9c835774a269a1cb120d96819dec10586f908))
+
+## [@adobe/spacecat-shared-utils-v1.116.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.4...@adobe/spacecat-shared-utils-v1.116.5) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-utils-v1.116.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.3...@adobe/spacecat-shared-utils-v1.116.4) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-utils-v1.116.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.2...@adobe/spacecat-shared-utils-v1.116.3) (2026-05-27)
+
+### Bug Fixes
+
+* **data-access:** mint UUID v7 ids to match DB schema default ([#1633](https://github.com/adobe/spacecat-shared/issues/1633)) ([5c8f6fc](https://github.com/adobe/spacecat-shared/commit/5c8f6fcd454975703b4f670c0f560f43a768736a))
+
+## [@adobe/spacecat-shared-utils-v1.116.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.1...@adobe/spacecat-shared-utils-v1.116.2) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-utils-v1.116.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.116.0...@adobe/spacecat-shared-utils-v1.116.1) (2026-05-22)
+
+### Bug Fixes
+
+* **utils:** normalize $LATEST function version in resolveSecretsName ([#1614](https://github.com/adobe/spacecat-shared/issues/1614)) ([86c55b9](https://github.com/adobe/spacecat-shared/commit/86c55b9c53faf9a3ca5cb98b7181d3ca269af238)), closes [adobe/spacecat-scrape-job-manager#177](https://github.com/adobe/spacecat-scrape-job-manager/issues/177) [adobe/spacecat-content-scraper#886](https://github.com/adobe/spacecat-content-scraper/issues/886)
+
+## [@adobe/spacecat-shared-utils-v1.116.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.4...@adobe/spacecat-shared-utils-v1.116.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-utils-v1.115.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.3...@adobe/spacecat-shared-utils-v1.115.4) (2026-05-14)
+
+### Bug Fixes
+
+* onboard flow fixes around bot detection and resolve canonical urls for some sites ([#1556](https://github.com/adobe/spacecat-shared/issues/1556)) ([6209834](https://github.com/adobe/spacecat-shared/commit/620983412260634b3ac2651d03ddb3b9ac079c01))
+
+## [@adobe/spacecat-shared-utils-v1.115.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.2...@adobe/spacecat-shared-utils-v1.115.3) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-utils-v1.115.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.1...@adobe/spacecat-shared-utils-v1.115.2) (2026-05-07)
+
+### Bug Fixes
+
+* **utils:** update calculateCPCValue S3 path from ahrefs to seo ([#1591](https://github.com/adobe/spacecat-shared/issues/1591)) ([3bf1fe5](https://github.com/adobe/spacecat-shared/commit/3bf1fe5ce9d257de5b30de4d7082f8af30035147)), closes [spacecat-shared#1499](https://github.com/adobe/spacecat-shared/issues/1499)
+
+## [@adobe/spacecat-shared-utils-v1.115.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.115.0...@adobe/spacecat-shared-utils-v1.115.1) (2026-05-06)
+
+### Bug Fixes
+
+* **utils:** include subpath in resolveCustomerSecretsName to prevent credential collisions ([#1577](https://github.com/adobe/spacecat-shared/issues/1577)) ([db95707](https://github.com/adobe/spacecat-shared/commit/db95707796c53d0fbe22c4fc40fed9ab271dd59c))
+
 ## [@adobe/spacecat-shared-utils-v1.115.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.114.0...@adobe/spacecat-shared-utils-v1.115.0) (2026-05-04)
 
 ### Features

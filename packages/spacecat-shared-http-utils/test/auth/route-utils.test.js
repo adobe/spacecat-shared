@@ -12,7 +12,13 @@
 
 import { expect } from 'chai';
 
-import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from '../../src/auth/route-utils.js';
+import {
+  extractParamNamesInOrder,
+  extractRouteParams,
+  findMatchedRouteKey,
+  guardNonEmptyRouteCapabilities,
+  resolveRouteCapability,
+} from '../../src/auth/route-utils.js';
 
 describe('route-utils', () => {
   describe('resolveRouteCapability', () => {
@@ -76,10 +82,115 @@ describe('route-utils', () => {
     });
   });
 
+  describe('extractRouteParams', () => {
+    const routeMap = {
+      'GET /sites': 'site:read',
+      'POST /sites': 'site:write',
+      'GET /sites/:siteId': 'site:read',
+      'PATCH /sites/:siteId': 'site:write',
+      'GET /sites/:siteId/audits/:auditId': 'audit:read',
+      'GET /organizations/:organizationId': 'organization:read',
+    };
+
+    it('returns empty object for an exact match (no params)', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('returns extracted params for a single-param route', () => {
+      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    });
+
+    it('returns multiple params from a nested parameterized route', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites/abc-123/audits/def-456' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123', auditId: 'def-456' });
+    });
+
+    it('returns organizationId from an org route', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/organizations/org-789' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ organizationId: 'org-789' });
+    });
+
+    it('returns empty object for an unmatched route', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/unknown' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('returns empty object when method is missing', () => {
+      const context = { pathInfo: { suffix: '/sites/abc-123' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('returns empty object when suffix is missing', () => {
+      const context = { pathInfo: { method: 'PATCH' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('returns empty object when pathInfo is missing', () => {
+      const context = {};
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('extracts :spaceCatId alias used by /v2/orgs routes', () => {
+      const map = { 'PATCH /v2/orgs/:spaceCatId': 'organization:write' };
+      const context = { pathInfo: { method: 'PATCH', suffix: '/v2/orgs/org-456' } };
+      expect(extractRouteParams(context, map)).to.deep.equal({ spaceCatId: 'org-456' });
+    });
+
+    it('returns empty object when method does not match (PATCH vs POST)', () => {
+      const context = { pathInfo: { method: 'POST', suffix: '/sites/abc-123' } };
+      // routeMap has GET and PATCH for /sites/:siteId, not POST
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('uppercases request method before matching', () => {
+      const context = { pathInfo: { method: 'patch', suffix: '/sites/abc-123' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    });
+
+    it('returns empty object when request has more segments than route pattern', () => {
+      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123/extra' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+    });
+
+    it('matches route even when suffix has a trailing slash (filter(Boolean) strips empty segments)', () => {
+      const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123/' } };
+      expect(extractRouteParams(context, routeMap)).to.deep.equal({ siteId: 'abc-123' });
+    });
+
+    describe('fallbackRoutes', () => {
+      it('extracts params from fallbackRoutes when routeMap has no entry for the method', () => {
+        // DELETE is not in routeMap; the fallback list covers it so siteId can be resolved.
+        const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+        const fallback = ['DELETE /sites/:siteId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({ siteId: 'abc-123' });
+      });
+
+      it('prefers routeMap over fallbackRoutes when both match', () => {
+        // PATCH /sites/:siteId is in routeMap; fallback should not interfere.
+        const context = { pathInfo: { method: 'PATCH', suffix: '/sites/abc-123' } };
+        const fallback = ['PATCH /sites/:otherId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({ siteId: 'abc-123' });
+      });
+
+      it('returns empty object when neither routeMap nor fallbackRoutes match', () => {
+        const context = { pathInfo: { method: 'DELETE', suffix: '/unknown/abc-123' } };
+        const fallback = ['DELETE /sites/:siteId'];
+        expect(extractRouteParams(context, routeMap, fallback)).to.deep.equal({});
+      });
+
+      it('returns empty object when fallbackRoutes is empty and routeMap has no method match', () => {
+        const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+        expect(extractRouteParams(context, routeMap)).to.deep.equal({});
+      });
+    });
+  });
+
   describe('guardNonEmptyRouteCapabilities', () => {
     it('throws when routeCapabilities is an empty object', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', {}))
-        .to.throw('testWrapper: routeCapabilities must not be an empty object');
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
     });
 
     it('does not throw when routeCapabilities is a non-empty object', () => {
@@ -87,14 +198,76 @@ describe('route-utils', () => {
         .to.not.throw();
     });
 
-    it('does not throw when routeCapabilities is undefined', () => {
+    it('throws when routeCapabilities is undefined', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', undefined))
-        .to.not.throw();
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
     });
 
-    it('does not throw when routeCapabilities is null', () => {
+    it('throws when routeCapabilities is null', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', null))
-        .to.not.throw();
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+
+    it('throws when routeCapabilities is an array', () => {
+      expect(() => guardNonEmptyRouteCapabilities('testWrapper', ['GET /sites']))
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+
+    it('throws when routeCapabilities is a string', () => {
+      expect(() => guardNonEmptyRouteCapabilities('testWrapper', 'GET /sites'))
+        .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+  });
+
+  describe('findMatchedRouteKey', () => {
+    const routeMap = {
+      'GET /sites': 'site:read',
+      'GET /sites/:siteId': 'site:read',
+      'POST /sites/:siteId/audits': 'audit:write',
+    };
+
+    it('returns the exact-match key when present', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal('GET /sites');
+    });
+
+    it('returns the matched parameterised key', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites/abc-123' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal('GET /sites/:siteId');
+    });
+
+    it('returns null when no key matches', () => {
+      const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal(null);
+    });
+
+    it('returns null when method is missing', () => {
+      expect(findMatchedRouteKey({ pathInfo: { suffix: '/sites' } }, routeMap)).to.equal(null);
+    });
+
+    it('returns null when path is missing', () => {
+      expect(findMatchedRouteKey({ pathInfo: { method: 'GET' } }, routeMap)).to.equal(null);
+    });
+  });
+
+  describe('extractParamNamesInOrder', () => {
+    it('returns param names in declaration order', () => {
+      expect(extractParamNamesInOrder('GET /v2/orgs/:spaceCatId/brands/:brandId'))
+        .to.deep.equal(['spaceCatId', 'brandId']);
+    });
+
+    it('returns an empty array when the route has no params', () => {
+      expect(extractParamNamesInOrder('GET /sites')).to.deep.equal([]);
+    });
+
+    it('returns an empty array for non-string input', () => {
+      expect(extractParamNamesInOrder(undefined)).to.deep.equal([]);
+      expect(extractParamNamesInOrder(null)).to.deep.equal([]);
+      expect(extractParamNamesInOrder(42)).to.deep.equal([]);
+    });
+
+    it('returns an empty array for a string without "METHOD /path" shape', () => {
+      expect(extractParamNamesInOrder('no-space-here')).to.deep.equal([]);
     });
   });
 });

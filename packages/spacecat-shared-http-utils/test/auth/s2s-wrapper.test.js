@@ -93,7 +93,17 @@ describe('s2sAuthWrapper', () => {
 
   it('throws at creation time when routeCapabilities is an empty object', () => {
     expect(() => s2sAuthWrapper(handler, { routeCapabilities: {} }))
-      .to.throw('routeCapabilities must not be an empty object');
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is missing', () => {
+    expect(() => s2sAuthWrapper(handler))
+      .to.throw('routeCapabilities must be a non-empty object');
+  });
+
+  it('throws at creation time when routeCapabilities is an array', () => {
+    expect(() => s2sAuthWrapper(handler, { routeCapabilities: ['GET /sites'] }))
+      .to.throw('routeCapabilities must be a non-empty object');
   });
 
   it('passes through when no bearer token is provided', async () => {
@@ -334,8 +344,89 @@ describe('s2sAuthWrapper', () => {
       const result = await wrapped({}, context);
 
       expect(result.status).to.equal(403);
-      expect(logStub.warn.calledWithMatch('missing required capability: opportunity:write')).to.be.true;
+      expect(logStub.warn.calledWithMatch('missing a required capability (one of: opportunity:write)')).to.be.true;
       expect(handler.called).to.be.false;
+    });
+
+    describe('multi-capability routes (array values)', () => {
+      // A route may map to an array of acceptable capabilities; the consumer needs
+      // to hold at least one of them (e.g. by-base-url reachable by read OR readAll).
+      const multiRouteCapabilities = {
+        'GET /sites/by-base-url/:baseURL': ['site:read', 'site:readAll'],
+      };
+      const suffix = '/sites/by-base-url/aHR0cHM6Ly9leGFtcGxlLmNvbQ==';
+
+      it('grants when consumer holds the first acceptable capability', async () => {
+        context.dataAccess = createMockDataAccess(
+          createMockConsumer({ getCapabilities: () => ['site:read'] }),
+        );
+        const token = await createToken(createTokenPayload(s2sTokenPayload));
+        context.pathInfo = { method: 'GET', suffix, headers: { authorization: `Bearer ${token}` } };
+        const wrapped = s2sAuthWrapper(handler, { routeCapabilities: multiRouteCapabilities });
+        const result = await wrapped({}, context);
+
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+      });
+
+      it('grants when consumer holds a later acceptable capability (readAll only)', async () => {
+        context.dataAccess = createMockDataAccess(
+          createMockConsumer({ getCapabilities: () => ['site:readAll'] }),
+        );
+        const token = await createToken(createTokenPayload(s2sTokenPayload));
+        context.pathInfo = { method: 'GET', suffix, headers: { authorization: `Bearer ${token}` } };
+        const wrapped = s2sAuthWrapper(handler, { routeCapabilities: multiRouteCapabilities });
+        const result = await wrapped({}, context);
+
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+      });
+
+      it('returns 403 when consumer holds none of the acceptable capabilities', async () => {
+        context.dataAccess = createMockDataAccess(
+          createMockConsumer({ getCapabilities: () => ['organization:read'] }),
+        );
+        const token = await createToken(createTokenPayload(s2sTokenPayload));
+        context.pathInfo = { method: 'GET', suffix, headers: { authorization: `Bearer ${token}` } };
+        const wrapped = s2sAuthWrapper(handler, { routeCapabilities: multiRouteCapabilities });
+        const result = await wrapped({}, context);
+
+        expect(result.status).to.equal(403);
+        expect(logStub.warn.calledWithMatch('missing a required capability (one of: site:read, site:readAll)')).to.be.true;
+        expect(handler.called).to.be.false;
+      });
+
+      it('grants when an array mixes valid and empty entries and consumer holds a valid one', async () => {
+        // Empty/null entries are silently dropped; a held valid capability still grants.
+        context.dataAccess = createMockDataAccess(
+          createMockConsumer({ getCapabilities: () => ['site:read'] }),
+        );
+        const token = await createToken(createTokenPayload(s2sTokenPayload));
+        context.pathInfo = { method: 'GET', suffix, headers: { authorization: `Bearer ${token}` } };
+        const wrapped = s2sAuthWrapper(handler, {
+          routeCapabilities: { 'GET /sites/by-base-url/:baseURL': ['site:read', '', null] },
+        });
+        const result = await wrapped({}, context);
+
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+      });
+
+      it('returns 403 when the array value has no usable (non-empty) capability', async () => {
+        context.dataAccess = createMockDataAccess(
+          createMockConsumer({ getCapabilities: () => ['site:read'] }),
+        );
+        const token = await createToken(createTokenPayload(s2sTokenPayload));
+        context.pathInfo = { method: 'GET', suffix, headers: { authorization: `Bearer ${token}` } };
+        const wrapped = s2sAuthWrapper(handler, {
+          routeCapabilities: { 'GET /sites/by-base-url/:baseURL': ['', null] },
+        });
+        const result = await wrapped({}, context);
+
+        expect(result.status).to.equal(403);
+        expect(logStub.warn.calledWithMatch('not allowed for S2S consumers')).to.be.true;
+        expect(handler.called).to.be.false;
+      });
     });
 
     it('returns 403 when route is not in the capabilities map', async () => {
@@ -353,18 +444,11 @@ describe('s2sAuthWrapper', () => {
       expect(handler.called).to.be.false;
     });
 
-    it('passes through when no routeCapabilities is provided', async () => {
-      const token = await createToken(createTokenPayload(s2sTokenPayload));
-      context.pathInfo = {
-        method: 'GET',
-        suffix: '/sites',
-        headers: { authorization: `Bearer ${token}` },
-      };
-      const wrapped = s2sAuthWrapper(handler);
-      const result = await wrapped({}, context);
-
-      expect(result).to.deep.equal({ status: 200 });
-      expect(handler.calledOnce).to.be.true;
+    it('requires routeCapabilities at construction time (no implicit pass-through)', () => {
+      // Tightened guard: passing no routeCapabilities throws immediately so a
+      // misconfigured wrapper cannot silently bypass capability checks.
+      expect(() => s2sAuthWrapper(handler))
+        .to.throw('routeCapabilities must be a non-empty object');
     });
 
     it('returns 403 when pathInfo is missing method or suffix', async () => {

@@ -10,7 +10,17 @@
  * governing permissions and limitations under the License.
  */
 
-import { AthenaClient } from '@aws-sdk/client-athena';
+import { AthenaClient, AthenaError } from '@aws-sdk/client-athena';
+
+/**
+ * Error thrown when an Athena query reaches a FAILED/CANCELLED state. Extends Error
+ * with Athena's structured error when available, so callers can branch on the
+ * authoritative `retryable` flag rather than matching the message string.
+ */
+export interface AthenaQueryError extends Error {
+  athenaError?: AthenaError;
+  retryable?: boolean;
+}
 
 export interface AthenaClientOptions {
   backoffMs?: number;

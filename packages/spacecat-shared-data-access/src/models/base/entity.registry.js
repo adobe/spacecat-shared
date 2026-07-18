@@ -35,6 +35,8 @@ import ProjectCollection from '../project/project.collection.js';
 import ScrapeJobCollection from '../scrape-job/scrape-job.collection.js';
 import ScrapeUrlCollection from '../scrape-url/scrape-url.collection.js';
 import SiteCandidateCollection from '../site-candidate/site-candidate.collection.js';
+import BrandCollection from '../brand/brand.collection.js';
+import BrandSemrushProjectCollection from '../brand-semrush-project/brand-semrush-project.collection.js';
 import SiteCollection from '../site/site.collection.js';
 import SiteEnrollmentCollection from '../site-enrollment/site-enrollment.collection.js';
 import SiteTopFormCollection from '../site-top-form/site-top-form.collection.js';
@@ -42,6 +44,7 @@ import SiteTopPageCollection from '../site-top-page/site-top-page.collection.js'
 import SuggestionCollection from '../suggestion/suggestion.collection.js';
 import SuggestionGrantCollection from '../suggestion-grant/suggestion-grant.collection.js';
 import PageIntentCollection from '../page-intent/page-intent.collection.js';
+import PreflightCollection from '../preflight/preflight.collection.js';
 import ReportCollection from '../report/report.collection.js';
 import TrialUserCollection from '../trial-user/trial-user.collection.js';
 import TrialUserActivityCollection from '../trial-user-activity/trial-user-activity.collection.js';
@@ -52,6 +55,11 @@ import SentimentGuidelineCollection from '../sentiment-guideline/sentiment-guide
 import SentimentTopicCollection from '../sentiment-topic/sentiment-topic.collection.js';
 import AccessGrantLogCollection from '../access-grant-log/access-grant-log.collection.js';
 import SiteImsOrgAccessCollection from '../site-ims-org-access/site-ims-org-access.collection.js';
+import IdempotencyKeyCollection from '../idempotency-key/idempotency-key.collection.js';
+import OAuthNonceCollection from '../oauth-nonce/oauth-nonce.collection.js';
+import TaskManagementConnectionCollection from '../task-management-connection/task-management-connection.collection.js';
+import TicketCollection from '../ticket/ticket.collection.js';
+import TicketSuggestionCollection from '../ticket-suggestion/ticket-suggestion.collection.js';
 
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
@@ -73,6 +81,8 @@ import OrganizationSchema from '../organization/organization.schema.js';
 import ProjectSchema from '../project/project.schema.js';
 import ScrapeJobSchema from '../scrape-job/scrape-job.schema.js';
 import ScrapeUrlSchema from '../scrape-url/scrape-url.schema.js';
+import BrandSchema from '../brand/brand.schema.js';
+import BrandSemrushProjectSchema from '../brand-semrush-project/brand-semrush-project.schema.js';
 import SiteSchema from '../site/site.schema.js';
 import SiteCandidateSchema from '../site-candidate/site-candidate.schema.js';
 import SiteEnrollmentSchema from '../site-enrollment/site-enrollment.schema.js';
@@ -81,6 +91,7 @@ import SiteTopPageSchema from '../site-top-page/site-top-page.schema.js';
 import SuggestionSchema from '../suggestion/suggestion.schema.js';
 import SuggestionGrantSchema from '../suggestion-grant/suggestion-grant.schema.js';
 import PageIntentSchema from '../page-intent/page-intent.schema.js';
+import PreflightSchema from '../preflight/preflight.schema.js';
 import ReportSchema from '../report/report.schema.js';
 import TrialUserSchema from '../trial-user/trial-user.schema.js';
 import TrialUserActivitySchema from '../trial-user-activity/trial-user-activity.schema.js';
@@ -91,6 +102,11 @@ import SentimentGuidelineSchema from '../sentiment-guideline/sentiment-guideline
 import SentimentTopicSchema from '../sentiment-topic/sentiment-topic.schema.js';
 import AccessGrantLogSchema from '../access-grant-log/access-grant-log.schema.js';
 import SiteImsOrgAccessSchema from '../site-ims-org-access/site-ims-org-access.schema.js';
+import IdempotencyKeySchema from '../idempotency-key/idempotency-key.schema.js';
+import OAuthNonceSchema from '../oauth-nonce/oauth-nonce.schema.js';
+import TaskManagementConnectionSchema from '../task-management-connection/task-management-connection.schema.js';
+import TicketSchema from '../ticket/ticket.schema.js';
+import TicketSuggestionSchema from '../ticket-suggestion/ticket-suggestion.schema.js';
 
 /**
  * EntityRegistry - A registry class responsible for managing entities, their schema and collection.
@@ -207,6 +223,8 @@ EntityRegistry.registerEntity(OrganizationSchema, OrganizationCollection);
 EntityRegistry.registerEntity(ProjectSchema, ProjectCollection);
 EntityRegistry.registerEntity(ScrapeJobSchema, ScrapeJobCollection);
 EntityRegistry.registerEntity(ScrapeUrlSchema, ScrapeUrlCollection);
+EntityRegistry.registerEntity(BrandSchema, BrandCollection);
+EntityRegistry.registerEntity(BrandSemrushProjectSchema, BrandSemrushProjectCollection);
 EntityRegistry.registerEntity(SiteSchema, SiteCollection);
 EntityRegistry.registerEntity(SiteCandidateSchema, SiteCandidateCollection);
 EntityRegistry.registerEntity(SiteEnrollmentSchema, SiteEnrollmentCollection);
@@ -215,6 +233,7 @@ EntityRegistry.registerEntity(SiteTopPageSchema, SiteTopPageCollection);
 EntityRegistry.registerEntity(SuggestionSchema, SuggestionCollection);
 EntityRegistry.registerEntity(SuggestionGrantSchema, SuggestionGrantCollection);
 EntityRegistry.registerEntity(PageIntentSchema, PageIntentCollection);
+EntityRegistry.registerEntity(PreflightSchema, PreflightCollection);
 EntityRegistry.registerEntity(ReportSchema, ReportCollection);
 EntityRegistry.registerEntity(TrialUserSchema, TrialUserCollection);
 EntityRegistry.registerEntity(TrialUserActivitySchema, TrialUserActivityCollection);
@@ -225,6 +244,11 @@ EntityRegistry.registerEntity(SentimentGuidelineSchema, SentimentGuidelineCollec
 EntityRegistry.registerEntity(SentimentTopicSchema, SentimentTopicCollection);
 EntityRegistry.registerEntity(AccessGrantLogSchema, AccessGrantLogCollection);
 EntityRegistry.registerEntity(SiteImsOrgAccessSchema, SiteImsOrgAccessCollection);
+EntityRegistry.registerEntity(IdempotencyKeySchema, IdempotencyKeyCollection);
+EntityRegistry.registerEntity(OAuthNonceSchema, OAuthNonceCollection);
+EntityRegistry.registerEntity(TaskManagementConnectionSchema, TaskManagementConnectionCollection);
+EntityRegistry.registerEntity(TicketSchema, TicketCollection);
+EntityRegistry.registerEntity(TicketSuggestionSchema, TicketSuggestionCollection);
 EntityRegistry.defaultEntities = { ...EntityRegistry.entities };
 
 export default EntityRegistry;

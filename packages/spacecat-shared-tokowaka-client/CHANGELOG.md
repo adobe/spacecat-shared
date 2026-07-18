@@ -1,3 +1,91 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.0...@adobe/spacecat-shared-tokowaka-client-v1.21.1) (2026-07-15)
+
+### Bug Fixes
+
+* utility for marking suggestions as covered ([#1810](https://github.com/adobe/spacecat-shared/issues/1810)) ([2709d47](https://github.com/adobe/spacecat-shared/commit/2709d4741bfe2968dfb481ceedf3e283525f5e71))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.20.0...@adobe/spacecat-shared-tokowaka-client-v1.21.0) (2026-07-14)
+
+### Features
+
+* **tokowaka-client:** offload covered-marking saves to import worker queue above threshold ([#1802](https://github.com/adobe/spacecat-shared/issues/1802)) ([ad1fe43](https://github.com/adobe/spacecat-shared/commit/ad1fe433b4628c38ef0d2d4f4008c2932b5981e0))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.1...@adobe/spacecat-shared-tokowaka-client-v1.20.0) (2026-06-27)
+
+### Features
+
+* **tokowaka-client:** add CloudFront Optimize-at-Edge control-plane ([#1722](https://github.com/adobe/spacecat-shared/issues/1722)) ([e465be0](https://github.com/adobe/spacecat-shared/commit/e465be0a21e61b13db8dd06dacbec7895cb91272))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.19.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.0...@adobe/spacecat-shared-tokowaka-client-v1.19.1) (2026-06-21)
+
+### Bug Fixes
+
+* apply stale config in IVE edge deployment flow ([#1691](https://github.com/adobe/spacecat-shared/issues/1691)) ([9f07a9c](https://github.com/adobe/spacecat-shared/commit/9f07a9ccc73140249aad16e9c9d0d7f5cededf59))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.2...@adobe/spacecat-shared-tokowaka-client-v1.19.0) (2026-06-03)
+
+### Features
+
+* **tokowaka-client:** mark path-level suggestions as coveredByDomainWide on domain-wide deploy ([#1648](https://github.com/adobe/spacecat-shared/issues/1648)) ([9cc5992](https://github.com/adobe/spacecat-shared/commit/9cc5992bb98acf9da48a432fedfbec694d30fe23))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.1...@adobe/spacecat-shared-tokowaka-client-v1.18.2) (2026-06-02)
+
+### Bug Fixes
+
+* **tokowaka-client:** use scraperConfig headers in edge optimize probe (LLMO-5280) ([#1647](https://github.com/adobe/spacecat-shared/issues/1647)) ([6be14a1](https://github.com/adobe/spacecat-shared/commit/6be14a153ea8d9de010880afaa1c3c9290a32f13))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.18.0...@adobe/spacecat-shared-tokowaka-client-v1.18.1) (2026-06-01)
+
+### Bug Fixes
+
+* tighten buildUrlMatcher boundary check and add dedicated unit tests ([#1646](https://github.com/adobe/spacecat-shared/issues/1646)) ([e24495a](https://github.com/adobe/spacecat-shared/commit/e24495af9c646700edde86cba1e85441cc07bf31)), closes [#1598](https://github.com/adobe/spacecat-shared/issues/1598)
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.3...@adobe/spacecat-shared-tokowaka-client-v1.18.0) (2026-06-01)
+
+### Features
+
+* add path-level prerender deploy support to tokowaka-client ([#1598](https://github.com/adobe/spacecat-shared/issues/1598)) ([9632f0e](https://github.com/adobe/spacecat-shared/commit/9632f0e7c9a3feef7eb6a4d013fa2047a733ff13))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.2...@adobe/spacecat-shared-tokowaka-client-v1.17.3) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.1...@adobe/spacecat-shared-tokowaka-client-v1.17.2) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.17.0...@adobe/spacecat-shared-tokowaka-client-v1.17.1) (2026-05-23)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1623](https://github.com/adobe/spacecat-shared/issues/1623)) ([19cb2a4](https://github.com/adobe/spacecat-shared/commit/19cb2a4fec00735ad4eead3030f9ea6b2573fdc3))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.2...@adobe/spacecat-shared-tokowaka-client-v1.17.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.1...@adobe/spacecat-shared-tokowaka-client-v1.16.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.16.0...@adobe/spacecat-shared-tokowaka-client-v1.16.1) (2026-05-06)
+
+### Bug Fixes
+
+* **tokowaka-client:** do not set edgeDeployed on domain-wide covered suggestions ([#1584](https://github.com/adobe/spacecat-shared/issues/1584)) ([51df852](https://github.com/adobe/spacecat-shared/commit/51df85231c74e8013e9ef7659f67584cbf239645))
+
+### Reverts
+
+* "feat: CM git clone also clones submodules ([#1583](https://github.com/adobe/spacecat-shared/issues/1583))" ([#1587](https://github.com/adobe/spacecat-shared/issues/1587)) ([2d9e34e](https://github.com/adobe/spacecat-shared/commit/2d9e34e68a0af6612891c61ec37e4304b7e9d912))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.15.0...@adobe/spacecat-shared-tokowaka-client-v1.16.0) (2026-05-05)
 
 ### Features

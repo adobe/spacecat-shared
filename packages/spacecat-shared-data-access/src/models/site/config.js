@@ -46,6 +46,28 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+// HTTP header names that must not be set via `scraperConfig.headers`
+// (case-insensitive). These are owned by the scraper, its HTTP client, or its
+// auth flow; persisting them as per-site overrides would either be stripped at
+// scrape time or open a security surface outside the per-site config contract.
+const RESERVED_SCRAPER_HEADER_NAMES = new Set([
+  // Credential / authentication headers.
+  'authorization',
+  'cookie',
+  'proxy-authorization',
+  // Routing / fingerprint headers the scraper or its environment owns.
+  'host',
+  'user-agent',
+  // Hop-by-hop / connection-management headers (RFC 7230 section 6.1).
+  'content-length',
+  'transfer-encoding',
+  'connection',
+  'keep-alive',
+  'upgrade',
+  'te',
+  'trailer',
+]);
+
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
 const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
 const LLMO_TAG = Joi.alternatives()
@@ -379,6 +401,42 @@ export const configSchema = Joi.object({
     ).optional(),
     outputLocation: Joi.string().required(),
   }).optional(),
+  /**
+   * Per-site configuration intended to be forwarded by the content scraper as
+   * HTTP headers on outbound requests. Values are bounded and restricted to
+   * printable ASCII to avoid header-injection (CR/LF) and oversized-payload
+   * hazards. Header names are restricted to RFC 7230 token characters.
+   * Reserved names (see `RESERVED_SCRAPER_HEADER_NAMES`) are rejected.
+   *
+   * Enforcement lives at the schema layer (rather than at each consumer or API
+   * boundary) so any writer using `updateScraperConfig` -- API endpoint,
+   * internal tool, Slack command -- inherits the same checks.
+   */
+  scraperConfig: Joi.object({
+    headers: Joi.object()
+      .pattern(
+        // RFC 7230 token characters for header names, 64 chars max.
+        Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
+        // Visible ASCII + tab, no CR/LF/NUL, 1 to 1024 chars (empty rejected).
+        Joi.string().pattern(/^[\t\x20-\x7E]+$/).max(1024),
+      )
+      .max(32)
+      // Case-insensitive denylist for credential / routing / hop-by-hop names.
+      // Done as an object-level custom validator (rather than on the key
+      // pattern) so the error message names the offending header instead of
+      // surfacing as Joi's generic "is not allowed" pattern-object error.
+      .custom((value, helpers) => {
+        for (const key of Object.keys(value)) {
+          if (RESERVED_SCRAPER_HEADER_NAMES.has(key.toLowerCase())) {
+            return helpers.message(
+              `"${key}" is a reserved scraper header name and cannot be set via scraperConfig.headers`,
+            );
+          }
+        }
+        return value;
+      })
+      .optional(),
+  }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().optional(),
     forwardedHost: Joi.string().optional(),
@@ -407,6 +465,10 @@ export const configSchema = Joi.object({
       startTime: Joi.number().optional(),
     })).optional(),
   }).optional(),
+  rumConfig: Joi.object({
+    hasDomainKey: Joi.boolean().required(),
+    lastCheckedAt: Joi.string().isoDate().required(),
+  }).optional(),
   commerceLlmoConfig: Joi.object().pattern(
     Joi.string(),
     Joi.object({
@@ -415,9 +477,7 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
-      magentoEndpoint: Joi.string().uri().optional(),
-      magentoAPIKey: Joi.string().optional(),
-    }),
+    }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -496,7 +556,9 @@ export const Config = (data = {}) => {
   } catch (error) {
     const logger = getLogger();
     if (logger && logger !== console) {
-      logger.error('Site configuration validation failed, using provided data', {
+      // Recoverable: validation failed but we fall back to the provided data,
+      // so this is a warning, not an error (avoids prod ERROR-severity noise).
+      logger.warn('Site configuration validation failed, using provided data', {
         error: error.message,
         invalidConfig: data,
       });
@@ -520,10 +582,12 @@ export const Config = (data = {}) => {
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
+  self.getDefaults = () => state?.defaults;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getScraperConfig = () => state?.scraperConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
   self.getLlmoBrand = () => state?.llmo?.brand;
@@ -542,6 +606,18 @@ export const Config = (data = {}) => {
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
+  /**
+   * Returns the RUM configuration for the site, or undefined if not set.
+   * Returns a shallow copy to prevent callers from mutating internal state.
+   * @returns {{ hasDomainKey: boolean, lastCheckedAt: string } | undefined}
+   */
+  self.getRumConfig = () => (state?.rumConfig ? { ...state.rumConfig } : undefined);
+
+  /**
+   * Returns true if RUM data collection is confirmed active for this site.
+   * @returns {boolean}
+   */
+  self.hasRumDomainKey = () => state?.rumConfig?.hasDomainKey === true;
   const AUDIT_TARGET_SOURCES = ['manual', 'moneyPages'];
   const auditTargetEntrySchema = Joi.object({
     url: Joi.string().uri().required(),
@@ -932,6 +1008,21 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateScraperConfig = (scraperConfig) => {
+    // Validate eagerly (unlike neighboring setters) so bad input is rejected
+    // at the setter rather than silently round-tripping through Dynamo. This
+    // eagerness is the contract every writer relies on for scraperConfig;
+    // do not "harmonize" with cdnLogs/tokowaka setters.
+    //
+    // Use the sanitized value Joi returns so any future `default()` or
+    // `lowercase()` on the schema applies here too — assigning raw input
+    // would silently drift from what validation guarantees.
+    const { scraperConfig: validated } = validateConfiguration(
+      { ...state, scraperConfig },
+    );
+    state.scraperConfig = validated;
+  };
+
   self.updateTokowakaConfig = (tokowakaConfig) => {
     state.tokowakaConfig = tokowakaConfig;
   };
@@ -955,6 +1046,22 @@ export const Config = (data = {}) => {
     state.commerceLlmoConfig = commerceLlmoConfig;
   };
 
+  /**
+   * Records the outcome of a RUM domain-key check and updates the timestamp.
+   * @param {boolean} hasDomainKey - Whether the site has an active RUM domain key.
+   * @param {Date} [now=new Date()] - Timestamp for lastCheckedAt; injectable for tests.
+   * @throws {Error} if hasDomainKey is not a boolean.
+   */
+  self.updateRumConfig = (hasDomainKey, now = new Date()) => {
+    if (typeof hasDomainKey !== 'boolean') {
+      throw new TypeError(`updateRumConfig: hasDomainKey must be a boolean, got ${typeof hasDomainKey}`);
+    }
+    state.rumConfig = {
+      hasDomainKey,
+      lastCheckedAt: now.toISOString(),
+    };
+  };
+
   return Object.freeze(self);
 };
 
@@ -963,17 +1070,20 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  defaults: config.getDefaults?.(),
   contentAiConfig: config.getContentAiConfig(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  scraperConfig: config.getScraperConfig?.(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),
   onboardConfig: config.getOnboardConfig?.(),
   commerceLlmoConfig: config.getCommerceLlmoConfig?.(),
+  rumConfig: config.getRumConfig?.(),
   enableMoneyPageUrls: config.isMoneyPageUrlsEnabled?.() === false ? false : undefined,
   auditTargetURLs: config.getAuditTargetURLsConfig?.(),
 });

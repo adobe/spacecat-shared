@@ -11,7 +11,8 @@
  */
 
 import type {
-  BaseCollection, BaseModel, Site, Project, Entitlement, OrganizationIdentityProvider, TrialUser,
+  BaseCollection, BaseModel, Site, Project, Entitlement, OrganizationIdentityProvider,
+  TaskManagementConnection, TrialUser,
 } from '../index';
 
 export interface Organization extends BaseModel {
@@ -19,18 +20,23 @@ export interface Organization extends BaseModel {
   getFulfillableItems(): object;
   getImsOrgId(): string;
   getName(): string;
+  getSemrushWorkspaceId(): string;
   getSites(): Promise<Site[]>;
   getProjects(): Promise<Project[]>;
   getEntitlements(): Promise<Entitlement[]>;
   getOrganizationIdentityProviders(): Promise<OrganizationIdentityProvider[]>;
+  getTaskManagementConnections(): Promise<TaskManagementConnection[]>;
   getTrialUsers(): Promise<TrialUser[]>;
   setConfig(config: object): Organization;
   setFulfillableItems(fulfillableItems: object): Organization;
   setImsOrgId(imsOrgId: string): Organization;
   setName(name: string): Organization;
+  setSemrushWorkspaceId(semrushWorkspaceId: string): Organization;
 }
 
 export interface OrganizationCollection extends BaseCollection<Organization> {
   allByImsOrgId(imsOrgId: string): Promise<Organization[]>;
+  allBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Organization[]>;
   findByImsOrgId(imsOrgId: string): Promise<Organization | null>;
+  findBySemrushWorkspaceId(semrushWorkspaceId: string): Promise<Organization | null>;
 }

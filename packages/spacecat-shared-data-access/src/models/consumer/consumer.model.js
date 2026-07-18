@@ -52,11 +52,11 @@ class Consumer extends BaseModel {
   }
 
   /**
-   * Valid capability actions. `readAll` is a scope+verb hybrid — it grants enumeration
-   * across all tenants and is only meaningful on routes that explicitly opt in
-   * (`site` and `organization`). Schema validity does not imply a reachable route.
+   * Valid capability actions. `readAll` grants cross-tenant enumeration on routes that
+   * explicitly opt in. `create` grants admin-gated write operations (e.g. POST /sites)
+   * on routes that explicitly opt in. Schema validity does not imply a reachable route.
    */
-  static CAPABILITIES = ['read', 'write', 'delete', 'readAll'];
+  static CAPABILITIES = ['read', 'write', 'delete', 'readAll', 'create'];
 
   static IMS_ORG_ID_REGEX = /^[a-z0-9]{24}@AdobeOrg$/i;
 

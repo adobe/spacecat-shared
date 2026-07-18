@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-example-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.3.0...@adobe/spacecat-shared-example-v1.3.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+
+## [@adobe/spacecat-shared-example-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.34...@adobe/spacecat-shared-example-v1.3.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-example-v1.2.34](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-example-v1.2.33...@adobe/spacecat-shared-example-v1.2.34) (2026-04-09)
 
 ### Bug Fixes

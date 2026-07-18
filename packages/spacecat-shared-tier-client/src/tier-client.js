@@ -297,6 +297,15 @@ class TierClient {
    * Gets the first enrollment and its site, filtered by productCode.
    * - If site is provided: finds matching enrollment and returns this.site directly
    * - If org-only: iterates enrollments, fetches sites one at a time, returns first org match
+   *
+   * Returns one of three shapes:
+   * - `{ entitlement, enrollment, site }` — full match found
+   * - `{ entitlement, enrollment: null, site: null }` — entitlement exists but no matching
+   *   enrollment/site found (org has paid access but no SiteEnrollment rows, or none match
+   *   this site/org). The PLG paywall in /sites-resolve depends on this non-null entitlement
+   *   to distinguish paid-but-unenrolled orgs from orgs with no entitlement at all.
+   * - `{ entitlement: null, enrollment: null, site: null }` — no entitlement found
+   *
    * @returns {Promise<object>} Object with entitlement, enrollment, and site.
    */
   async getFirstEnrollment() {
@@ -312,7 +321,7 @@ class TierClient {
       const allEnrollments = await this.SiteEnrollment.allByEntitlementId(entitlement.getId());
 
       if (!allEnrollments || allEnrollments.length === 0) {
-        return { entitlement: null, enrollment: null, site: null };
+        return { entitlement, enrollment: null, site: null };
       }
 
       // When a specific site is set, find its enrollment in memory — no fetch needed.
@@ -324,7 +333,7 @@ class TierClient {
         if (matchingEnrollment) {
           return { entitlement, enrollment: matchingEnrollment, site: this.site };
         }
-        return { entitlement: null, enrollment: null, site: null };
+        return { entitlement, enrollment: null, site: null };
       }
 
       // Org-only: iterate enrollments, fetch site one at a time, return first org match.
@@ -339,7 +348,7 @@ class TierClient {
         }
       }
 
-      return { entitlement: null, enrollment: null, site: null };
+      return { entitlement, enrollment: null, site: null };
     } catch (error) {
       this.log.error(`Error getting first enrollment: ${error.message}`);
       throw error;

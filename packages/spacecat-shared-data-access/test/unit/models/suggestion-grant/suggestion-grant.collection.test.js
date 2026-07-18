@@ -124,6 +124,49 @@ describe('SuggestionGrantCollection', () => {
       await expect(instance.findBySuggestionIds(['sugg-1']))
         .to.be.rejectedWith(DataAccessError, 'Failed to find grants by suggestion IDs');
     });
+
+    it('chunks the lookup and aggregates rows when given more than the chunk size', async () => {
+      const chunkSize = SuggestionGrantCollection.FIND_BY_SUGGESTION_IDS_CHUNK_SIZE;
+      const total = chunkSize * 2 + 50; // 250 -> 3 chunks: 100, 100, 50
+      const suggestionIds = Array.from({ length: total }, (_, i) => `sugg-${i}`);
+
+      // Resolve one grant row per id in the requested chunk so aggregation is verifiable.
+      const inStub = stub().callsFake((_field, chunk) => Promise.resolve({
+        data: chunk.map((id) => ({ suggestion_id: id, grant_id: `g-${id}` })),
+        error: null,
+      }));
+      instance.postgrestService = {
+        from: stub().returns({ select: stub().returns({ in: inStub }) }),
+      };
+
+      const result = await instance.findBySuggestionIds(suggestionIds);
+
+      expect(result).to.have.length(total);
+      expect(inStub.callCount).to.equal(3);
+      expect(inStub.getCall(0).args[1]).to.have.length(chunkSize);
+      expect(inStub.getCall(1).args[1]).to.have.length(chunkSize);
+      expect(inStub.getCall(2).args[1]).to.have.length(50);
+      // No chunk exceeds the limit.
+      inStub.getCalls().forEach((call) => {
+        expect(call.args[1].length).to.be.at.most(chunkSize);
+      });
+    });
+
+    it('throws DataAccessError and stops when a later chunk fails', async () => {
+      const chunkSize = SuggestionGrantCollection.FIND_BY_SUGGESTION_IDS_CHUNK_SIZE;
+      const suggestionIds = Array.from({ length: chunkSize + 10 }, (_, i) => `sugg-${i}`);
+
+      const inStub = stub();
+      inStub.onFirstCall().resolves({ data: [], error: null });
+      inStub.onSecondCall().resolves({ data: null, error: { message: 'db error' } });
+      instance.postgrestService = {
+        from: stub().returns({ select: stub().returns({ in: inStub }) }),
+      };
+
+      await expect(instance.findBySuggestionIds(suggestionIds))
+        .to.be.rejectedWith(DataAccessError, 'Failed to find grants by suggestion IDs');
+      expect(inStub.callCount).to.equal(2);
+    });
   });
 
   describe('splitSuggestionsByGrantStatus', () => {

@@ -1,3 +1,87 @@
+## [@adobe/spacecat-shared-http-utils-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.33.1...@adobe/spacecat-shared-http-utils-v1.34.0) (2026-07-10)
+
+### Features
+
+* **http-utils:** fan out payload scopes[] into AuthInfo with namespace + reserved-name guards (SITES-46454) ([#1676](https://github.com/adobe/spacecat-shared/issues/1676)) ([8b7a039](https://github.com/adobe/spacecat-shared/commit/8b7a039a08d2f292ce47a3cd6c2e703e90d89f58))
+
+## [@adobe/spacecat-shared-http-utils-v1.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.33.0...@adobe/spacecat-shared-http-utils-v1.33.1) (2026-07-02)
+
+### Bug Fixes
+
+* **facs:** bypass FACS enforcement for IMS auth channel ([#1762](https://github.com/adobe/spacecat-shared/issues/1762)) ([bc52968](https://github.com/adobe/spacecat-shared/commit/bc52968f018e6a64d8e88432aafe6298effc0048))
+
+## [@adobe/spacecat-shared-http-utils-v1.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.32.0...@adobe/spacecat-shared-http-utils-v1.33.0) (2026-06-30)
+
+### Features
+
+* **http-utils:** surface a ReBAC session flag on the no-resource defer path ([#1755](https://github.com/adobe/spacecat-shared/issues/1755)) ([e8bc8a1](https://github.com/adobe/spacecat-shared/commit/e8bc8a1a6d6e3792b338ec80543b7a414c142447))
+
+## [@adobe/spacecat-shared-http-utils-v1.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.31.0...@adobe/spacecat-shared-http-utils-v1.32.0) (2026-06-30)
+
+### Features
+
+* **http-utils:** add facsWrapper for hybrid FACS authorization ([#1717](https://github.com/adobe/spacecat-shared/issues/1717)) ([619c8c9](https://github.com/adobe/spacecat-shared/commit/619c8c94401a3af7c7121c55cab038376e46beae)), closes [#1711](https://github.com/adobe/spacecat-shared/issues/1711) [#1712](https://github.com/adobe/spacecat-shared/issues/1712) [#1712](https://github.com/adobe/spacecat-shared/issues/1712)
+
+## [@adobe/spacecat-shared-http-utils-v1.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.30.0...@adobe/spacecat-shared-http-utils-v1.31.0) (2026-06-24)
+
+### Features
+
+* **http-utils:** FACS AuthInfo accessors, constants, and IMS-handler RBAC block ([#1712](https://github.com/adobe/spacecat-shared/issues/1712)) ([ba9655b](https://github.com/adobe/spacecat-shared/commit/ba9655b6027abf3cab37162f31a942fc7e2b5262)), closes [#1711](https://github.com/adobe/spacecat-shared/issues/1711)
+
+## [@adobe/spacecat-shared-http-utils-v1.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.1...@adobe/spacecat-shared-http-utils-v1.30.0) (2026-06-22)
+
+### Features
+
+* **http-utils:** allow s2sAuthWrapper routes to accept multiple capabilities ([#1693](https://github.com/adobe/spacecat-shared/issues/1693)) ([73cd510](https://github.com/adobe/spacecat-shared/commit/73cd51088e778a444aaa524b14fb191b66c677e9))
+
+## [@adobe/spacecat-shared-http-utils-v1.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.29.0...@adobe/spacecat-shared-http-utils-v1.29.1) (2026-06-15)
+
+### Bug Fixes
+
+* **http-utils:** pin launchdarkly-client to 1.3.0 (ship Lambda log-noise fix) ([#1675](https://github.com/adobe/spacecat-shared/issues/1675)) ([da319b1](https://github.com/adobe/spacecat-shared/commit/da319b1c5ca3a6dd3f3ce5309ca25dbadfb9ef41))
+
+## [@adobe/spacecat-shared-http-utils-v1.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.2...@adobe/spacecat-shared-http-utils-v1.29.0) (2026-06-04)
+
+### Features
+
+* add llmo-admin IMS group for admin check ([#1651](https://github.com/adobe/spacecat-shared/issues/1651)) ([0cc647d](https://github.com/adobe/spacecat-shared/commit/0cc647d0a4d3b027c4d61ec80bdbabfcd8c90e06))
+
+## [@adobe/spacecat-shared-http-utils-v1.28.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.1...@adobe/spacecat-shared-http-utils-v1.28.2) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-http-utils-v1.28.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.28.0...@adobe/spacecat-shared-http-utils-v1.28.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-http-utils-v1.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.2...@adobe/spacecat-shared-http-utils-v1.28.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-http-utils-v1.27.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.1...@adobe/spacecat-shared-http-utils-v1.27.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
+## [@adobe/spacecat-shared-http-utils-v1.27.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.27.0...@adobe/spacecat-shared-http-utils-v1.27.1) (2026-05-12)
+
+### Bug Fixes
+
+* **http-utils:** address RO admin wrapper review findings ([#1599](https://github.com/adobe/spacecat-shared/issues/1599)) ([ca66903](https://github.com/adobe/spacecat-shared/commit/ca669037096a9a5e4d211276473c3dbe69f1772b))
+
+## [@adobe/spacecat-shared-http-utils-v1.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.1...@adobe/spacecat-shared-http-utils-v1.27.0) (2026-05-12)
+
+### Features
+
+* **http-utils:** allow RO admin write ops on resources they own ([#1595](https://github.com/adobe/spacecat-shared/issues/1595)) ([e0e6783](https://github.com/adobe/spacecat-shared/commit/e0e6783a24cc5138d478a45cde85a01df3b057b0))
+
 ## [@adobe/spacecat-shared-http-utils-v1.26.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.26.0...@adobe/spacecat-shared-http-utils-v1.26.1) (2026-05-05)
 
 ### Bug Fixes

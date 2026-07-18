@@ -282,6 +282,167 @@ describe('SuggestionModel', () => {
           };
           expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
         });
+
+        it('passes with null inp and null *Count fields (RUM legitimately reports these)', () => {
+          const suggestionData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            metrics: [
+              {
+                deviceType: 'mobile',
+                lcp: 3200,
+                cls: 0.15,
+                inp: 250,
+                pageviews: 6200,
+                lcpCount: 1,
+                clsCount: 1,
+                inpCount: 1,
+                ttfbCount: 1,
+              },
+              {
+                // No interaction events on this device — inp + counts come back null
+                deviceType: 'desktop',
+                lcp: 1800,
+                cls: 0.05,
+                inp: null,
+                pageviews: null,
+                lcpCount: null,
+                clsCount: null,
+                inpCount: null,
+                ttfbCount: null,
+              },
+            ],
+            issues: [],
+          };
+          expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+        });
+
+        describe('per-issue lifecycle fields', () => {
+          const baseData = {
+            type: 'url',
+            url: 'https://www.example.com/page',
+            metrics: [{ deviceType: 'mobile', lcp: 4500 }],
+          };
+
+          it('passes with fully populated per-issue lifecycle fields', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [
+                {
+                  id: 'd6b9a3c2-5e1a-4f7c-9d2e-1b3c4d5e6f7a',
+                  type: 'lcp',
+                  title: 'Optimize hero image',
+                  value: '### Optimize hero image\n\n- **Metric**: LCP\n...',
+                  cwvValue: 4500,
+                  patchContent: 'diff --git a/file.css b/file.css\n+ img { ... }',
+                  isCodeChangeAvailable: true,
+                  status: 'NEW',
+                  jiraLink: 'https://jira.example.com/browse/CWV-123',
+                  fixEntityId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+                },
+              ],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+          });
+
+          it('passes with SKIPPED status + skipReason + skipDetail', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [
+                {
+                  id: 'd6b9a3c2-5e1a-4f7c-9d2e-1b3c4d5e6f7a',
+                  type: 'cls',
+                  status: 'SKIPPED',
+                  skipReason: 'ALREADY_IMPLEMENTED',
+                  skipDetail: 'We already fixed this last sprint.',
+                },
+              ],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+          });
+
+          it('passes for backward-compat issues missing id/type/status (all fields optional)', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{ value: 'legacy markdown guidance with no structured fields' }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+          });
+
+          it('passes with unknown extra fields on the issue (unknown(true))', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [
+                {
+                  id: 'd6b9a3c2-5e1a-4f7c-9d2e-1b3c4d5e6f7a',
+                  type: 'inp',
+                  status: 'NEW',
+                  source_index: 0, // legacy mystique routing key — should still validate
+                  semantic_type: 'lcp-image', // mystique-internal metadata — should still validate
+                },
+              ],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+          });
+
+          it('rejects invalid issue type (not lcp/cls/inp)', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{ id: 'x', type: 'ttfb', status: 'NEW' }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          });
+
+          it('rejects invalid issue status (not in STATUSES enum)', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{ id: 'x', type: 'lcp', status: 'BOGUS' }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          });
+
+          it('rejects invalid skipReason (not in SKIP_REASONS enum)', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{
+                id: 'x',
+                type: 'lcp',
+                status: 'SKIPPED',
+                skipReason: 'BECAUSE_I_FEEL_LIKE_IT',
+              }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          });
+
+          it('rejects non-UUID fixEntityId', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{ id: 'x', type: 'lcp', fixEntityId: 'not-a-uuid' }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          });
+
+          it('rejects skipDetail longer than 1000 chars', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{
+                id: 'x',
+                type: 'lcp',
+                status: 'SKIPPED',
+                skipDetail: 'a'.repeat(1001),
+              }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.throw();
+          });
+
+          it('allows null jiraLink (issue cleared)', () => {
+            const suggestionData = {
+              ...baseData,
+              issues: [{ id: 'x', type: 'lcp', jiraLink: null }],
+            };
+            expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
+          });
+        });
       });
 
       describe('COLOR_CONTRAST opportunity type', () => {
@@ -319,6 +480,76 @@ describe('SuggestionModel', () => {
             }],
           };
           expect(() => Suggestion.validateData(data, 'image-alt-text')).to.not.throw();
+        });
+      });
+
+      describe('SITEMAP opportunity type', () => {
+        it('passes for error-type suggestions with empty sitemapUrl (robots-level errors)', () => {
+          const data = {
+            type: 'error',
+            error: 'robots-missing-sitemap',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with sitemapUrl populated', () => {
+          const data = {
+            type: 'error',
+            error: 'sitemap-not-found',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for error-type suggestions with recommendedAction (general-error)', () => {
+          const data = {
+            type: 'error',
+            error: 'general-error',
+            sitemapUrl: '',
+            recommendedAction: 'Something went wrong during the audit.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('passes for url-type suggestions with required sitemapUrl and pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'https://example.com/missing-page',
+            statusCode: 404,
+            urlsSuggested: '',
+            recommendedAction: 'Make sure your sitemaps only include URLs that return the 200 (OK) response code.',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.not.throw();
+        });
+
+        it('rejects error-type suggestions missing the error code', () => {
+          const data = {
+            type: 'error',
+            sitemapUrl: '',
+            recommendedAction: '',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions missing pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
+        });
+
+        it('rejects url-type suggestions with invalid pageUrl', () => {
+          const data = {
+            type: 'url',
+            sitemapUrl: 'https://example.com/sitemap.xml',
+            pageUrl: 'not-a-uri',
+          };
+          expect(() => Suggestion.validateData(data, 'sitemap')).to.throw();
         });
       });
 
@@ -373,6 +604,49 @@ describe('SuggestionModel', () => {
           expect(() => Suggestion.validateData(data, 'broken-internal-links')).to.not.throw();
         });
       });
+    });
+  });
+
+  describe('setStatus / transitionStatus guard (SITES-47091)', () => {
+    const original = process.env.STATUS_TRANSITION_ENFORCEMENT;
+
+    afterEach(() => {
+      if (original === undefined) {
+        delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      } else {
+        process.env.STATUS_TRANSITION_ENFORCEMENT = original;
+      }
+    });
+
+    it('applies an allowed transition (NEW -> IN_PROGRESS) without warning', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.transitionStatus('IN_PROGRESS');
+      expect(model.record.status).to.equal('IN_PROGRESS');
+      expect(mockLogger.warn).to.not.have.been.called;
+    });
+
+    it('warns but still applies an illegal transition in warn mode (default)', () => {
+      delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.setStatus('REJECTED'); // REJECTED only legal from PENDING_VALIDATION
+      expect(model.record.status).to.equal('REJECTED');
+      expect(mockLogger.warn).to.have.been.calledOnce;
+    });
+
+    it('allows REJECTED only from PENDING_VALIDATION in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'PENDING_VALIDATION' });
+      expect(() => model.setStatus('REJECTED')).to.not.throw();
+      expect(model.record.status).to.equal('REJECTED');
+    });
+
+    it('throws on an illegal transition (NEW -> REJECTED) in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      expect(() => model.setStatus('REJECTED')).to.throw('Suggestion');
     });
   });
 });

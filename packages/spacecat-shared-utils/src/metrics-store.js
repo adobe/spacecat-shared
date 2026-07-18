@@ -51,7 +51,15 @@ export async function getStoredMetrics(config, context) {
 
     return metrics;
   } catch (e) {
-    log.warn(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    const isMissingKey = e.name === 'NoSuchKey'
+      || e.$metadata?.httpStatusCode === 404;
+    if (isMissingKey) {
+      // Expected/recoverable: no metrics stored yet for this site/source/metric.
+      log.warn(`No stored metrics found at ${filePath}, error: ${e.message}`);
+    } else {
+      // Genuine infra error (e.g. EBUSY/EMFILE/DNS/timeout) - keep visible at error.
+      log.error(`Failed to retrieve metrics from ${filePath}, error: ${e.message}`);
+    }
     return [];
   }
 }
@@ -106,7 +114,7 @@ export async function calculateCPCValue(context, siteId) {
   }
   const { s3Client, log } = context;
   const bucketName = context.env.S3_IMPORTER_BUCKET_NAME;
-  const key = `metrics/${siteId}/ahrefs/organic-traffic.json`;
+  const key = createFilePath({ siteId, source: 'seo', metric: 'organic-traffic' });
   try {
     const organicTrafficData = await getObjectFromKey(s3Client, bucketName, key, log);
     if (!Array.isArray(organicTrafficData) || organicTrafficData.length === 0) {

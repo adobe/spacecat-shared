@@ -14,6 +14,7 @@ import { context as h2, h1 } from '@adobe/fetch';
 import URI from 'urijs';
 import { hasText, isValidUrl } from './functions.js';
 import { SPACECAT_USER_AGENT } from './tracing-fetch.js';
+import { isNonPublicHostname } from './network-policy.js';
 
 /* c8 ignore next 3 */
 export const { fetch } = process.env.HELIX_FETCH_FORCE_HTTP1
@@ -134,46 +135,88 @@ function getSpacecatRequestHeaders() {
   };
 }
 
+const RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT = 7000;
+
 /**
  * Resolve canonical URL for a given URL string by following redirect chain.
+ *
+ * The `deadline` is a shared absolute timestamp across all attempts — HEAD, GET, and every
+ * redirect hop all draw from the same budget. HEAD is tried first; on network error or non-2xx
+ * the request is retried once with GET. GET is never retried — if it fails there is no further
+ * fallback method.
+ *
+ * Redirects are followed manually (redirect: 'manual') so the SSRF guard runs on every hop
+ * before the network connection is made. Auto-follow would connect first, guard second.
+ *
+ * Non-public hostnames (private IPs, loopback, link-local, localhost, IPv6 ULA, INADDR_ANY)
+ * are rejected on every hop including redirect targets to prevent SSRF.
+ * See network-policy.js for the full list of blocked ranges.
+ *
  * @param {string} urlString - The URL string to normalize.
  * @param {string} method - HTTP method to use ('HEAD' or 'GET').
+ * @param {number} deadline - Absolute timestamp (ms) by which all attempts must finish.
+ * @param {object} [log=console] - Logger with a warn() method for observability.
  * @returns {Promise<string|null>} A Promise that resolves to the canonical URL or null if failed.
  */
-async function resolveCanonicalUrl(urlString, method = 'HEAD') {
+async function resolveCanonicalUrl(
+  urlString,
+  method = 'HEAD',
+  deadline = Date.now() + RESOLVE_CANONICAL_URL_TOTAL_TIMEOUT,
+  log = console,
+) {
+  try {
+    const { hostname } = new URL(urlString);
+    if (isNonPublicHostname(hostname)) {
+      log.warn('[resolveCanonicalUrl] private hostname rejected', { fn: 'resolveCanonicalUrl', url: urlString });
+      return null;
+    }
+  } catch (e) {
+    log.warn('[resolveCanonicalUrl] invalid URL', { fn: 'resolveCanonicalUrl', url: urlString, cause: e?.message });
+    return null;
+  }
+
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) {
+    log.warn('[resolveCanonicalUrl] deadline expired', { fn: 'resolveCanonicalUrl', url: urlString, method });
+    return null;
+  }
+
   const headers = getSpacecatRequestHeaders();
-  let resp;
 
   try {
-    const timeout = method === 'HEAD' ? 10000 : 20000; // 10s for HEAD, 20s for GET
-    resp = await fetch(urlString, {
+    const resp = await fetch(urlString, {
       headers,
       method,
-      signal: AbortSignal.timeout(timeout),
+      redirect: 'manual',
+      signal: AbortSignal.timeout(remaining),
+      decode: false,
     });
 
     if (resp.ok) {
       return ensureHttps(resp.url);
     }
 
-    // Handle redirect chains
-    if (urlString !== resp.url) {
-      return resolveCanonicalUrl(resp.url, method);
+    // Manual redirect: extract Location and recurse so the guard runs on each hop
+    if (resp.status >= 300 && resp.status < 400) {
+      const location = resp.headers.get('location');
+      if (location) {
+        const redirectUrl = new URL(location, urlString).toString();
+        return resolveCanonicalUrl(redirectUrl, method, deadline, log);
+      }
     }
 
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline, log);
     }
 
-    // If the URL is not found and we've tried both HEAD and GET, return null
     return null;
-  } catch {
-    // If HEAD failed with network error and we haven't tried GET yet, retry with GET
+  } catch (e) {
+    // HEAD retries with GET on any error; GET does not retry — there is no further fallback method.
     if (method === 'HEAD') {
-      return resolveCanonicalUrl(urlString, 'GET');
+      return resolveCanonicalUrl(urlString, 'GET', deadline, log);
     }
 
-    // For all errors (both HTTP status and network), return null
+    log.warn('[resolveCanonicalUrl] GET request failed', { fn: 'resolveCanonicalUrl', url: urlString, cause: e?.message });
     return null;
   }
 }
@@ -257,6 +300,39 @@ function urlMatchesFilter(url, filterUrls) {
 }
 
 /**
+ * Extracts the locale/section path prefix from a site's baseURL.
+ * Locale-specific sites encode the locale in the path (e.g. https://example.com/de),
+ * but RUM domain keys exist only for the main domain. This returns the path portion
+ * so RUM results fetched for the main domain can be narrowed to the locale subtree.
+ *
+ * When the baseURL points at a file (the last path segment has an extension, e.g.
+ * https://example.com/us/en.html), the locale directory cannot be reliably inferred
+ * — 'en.html' is a locale but 'home.html' in '/en/home.html' is a page, and the two
+ * are indistinguishable. In that case this returns null so the caller falls back to
+ * whole-domain metrics rather than over-filtering RUM to a single page.
+ *
+ * @param {string} baseURL - The site's baseURL.
+ * @returns {string|null} The normalized path prefix (e.g. '/de'), or null when the
+ *   baseURL is at the domain root, points at a file, or cannot be parsed.
+ */
+function getBaseURLPathPrefix(baseURL) {
+  try {
+    const { pathname } = new URL(prependSchema(normalizeUrl(baseURL)));
+    const normalized = normalizePathname(pathname);
+    if (normalized === '/') {
+      return null;
+    }
+    const lastSegment = normalized.slice(normalized.lastIndexOf('/') + 1);
+    if (/\.[a-z0-9]+$/i.test(lastSegment)) {
+      return null;
+    }
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Checks if a URL has a subdomain other than 'www'.
  * @param {string} baseUrl - The URL to check.
  * @returns {boolean} - True if the URL has a non-www subdomain, false otherwise.
@@ -283,12 +359,46 @@ function toggleWWWHostname(hostname) {
   return hostname.startsWith('www.') ? hostname.replace('www.', '') : `www.${hostname}`;
 }
 
+const RUM_BUNDLER_BASE_URL = 'https://bundles.aem.page';
+
+async function hasBundleData(hostname, domainkey, log) {
+  const now = new Date();
+  const datesToCheck = [0, 1].map((daysAgo) => {
+    const d = new Date(now);
+    d.setUTCDate(now.getUTCDate() - daysAgo);
+    return `${d.getUTCFullYear()}/${(d.getUTCMonth() + 1).toString().padStart(2, '0')}/${d.getUTCDate().toString().padStart(2, '0')}`;
+  });
+
+  for (const dateStr of datesToCheck) {
+    const url = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=${domainkey}`;
+    const safeUrl = `${RUM_BUNDLER_BASE_URL}/bundles/${hostname}/${dateStr}?domainkey=REDACTED`;
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': SPACECAT_USER_AGENT },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (resp.ok) {
+        // eslint-disable-next-line no-await-in-loop
+        const { rumBundles } = await resp.json();
+        if (Array.isArray(rumBundles) && rumBundles.length > 0) {
+          return true;
+        }
+      }
+    } catch (e) {
+      log.warn(`[wwwUrlResolver] bundle probe failed for ${hostname} (${safeUrl}): ${e.message.replace(domainkey, 'REDACTED')}`);
+    }
+  }
+  return false;
+}
+
 /**
  * Resolves the correct URL for a site by checking RUM data availability.
- * Tries www-toggled version first, then falls back to original.
+ * Tries www-toggled version first (only if actual bundle data exists there),
+ * then falls back to original hostname.
  * @param {object} site - The site object with getBaseURL() and getConfig() methods.
  * @param {object} rumApiClient - The RUM API client instance with retrieveDomainkey method.
- * @param {object} log - Logger instance with debug() and error() methods.
+ * @param {object} log - Logger instance with debug(), warn(), and error() methods.
  * @returns {Promise<string>} - The resolved hostname without protocol.
  */
 async function wwwUrlResolver(site, rumApiClient, log) {
@@ -309,11 +419,18 @@ async function wwwUrlResolver(site, rumApiClient, log) {
 
   try {
     const wwwToggledHostname = toggleWWWHostname(hostname);
-    await rumApiClient.retrieveDomainkey(wwwToggledHostname);
-    log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
-    return wwwToggledHostname;
+    const domainkey = await rumApiClient.retrieveDomainkey(wwwToggledHostname);
+    if (await hasBundleData(wwwToggledHostname, domainkey, log)) {
+      log.debug(`Resolved URL ${wwwToggledHostname} for ${baseURL} using RUM API Client`);
+      return wwwToggledHostname;
+    }
+    log.debug(`[wwwUrlResolver] ${wwwToggledHostname} has key but no bundle data, trying ${hostname}`);
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   try {
@@ -321,7 +438,11 @@ async function wwwUrlResolver(site, rumApiClient, log) {
     log.debug(`Resolved URL ${hostname} for ${baseURL} using RUM API Client`);
     return hostname;
   } catch (e) {
-    log.error(`Could not retrieved RUM domainkey for ${hostname}: ${e.message}`);
+    if (e.status === 404) {
+      log.debug(`[wwwUrlResolver] No RUM domainkey for ${hostname} (site not onboarded to RUM): ${e.message}`);
+    } else {
+      log.error(`Could not retrieve RUM domainkey for ${hostname}: ${e.message}`);
+    }
   }
 
   const fallback = hostname.startsWith('www.') ? hostname : `www.${hostname}`;
@@ -363,6 +484,155 @@ export function canonicalizeUrl(url, { stripQuery = false } = {}) {
   return canonicalized;
 }
 
+/**
+ * Checks if a URL is within the site scope defined by siteBaseUrl.
+ * For a siteBaseUrl with a subpath (e.g. bulk.com/uk), only URLs whose pathname starts with that
+ * subpath are in scope. For domain-only base URLs (no subpath), all URLs pass through.
+ *
+ * @param {string} url - The URL to check (absolute, or absolute-path reference starting with `/`).
+ * @param {string} siteBaseUrl - The site's base URL defining the scope (e.g. "bulk.com/uk").
+ * @returns {boolean}
+ */
+function isWithinSiteScope(url, siteBaseUrl) {
+  if (!url) {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return false;
+  }
+
+  try {
+    const parsedBase = new URL(prependSchema(siteBaseUrl));
+    const rawPath = parsedBase.pathname;
+    const basePath = rawPath.endsWith('/') ? rawPath.slice(0, -1) : rawPath;
+
+    if (!basePath || basePath === '/') {
+      return true;
+    }
+
+    const basePathWithSlash = `${basePath}/`;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      const normalized = new URL(url, 'https://dummy.local').pathname;
+      return normalized.startsWith(basePathWithSlash) || normalized === basePath;
+    }
+
+    const parsedUrl = new URL(prependSchema(url));
+    if (
+      stripWWW(parsedUrl.hostname) !== stripWWW(parsedBase.hostname)
+      || parsedUrl.port !== parsedBase.port
+    ) {
+      return false;
+    }
+
+    return parsedUrl.pathname.startsWith(basePathWithSlash) || parsedUrl.pathname === basePath;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Filters a list of URLs to only those within the site scope.
+ *
+ * @param {string[]} urls
+ * @param {string} siteBaseUrl
+ * @returns {string[]}
+ */
+function filterBySiteScope(urls, siteBaseUrl) {
+  if (!Array.isArray(urls)) {
+    return [];
+  }
+  return urls.filter((url) => isWithinSiteScope(url, siteBaseUrl));
+}
+
+/**
+ * Extracts the pathname from a domain-based URL string (e.g. 'https://example.com/path' or
+ * 'example.com/path'). Trailing slashes are stripped on non-root paths and the result is
+ * lowercased. Inputs that already start with '/' are passed through as-is. Returns '' for
+ * non-string or empty input.
+ *
+ * @param {string} url - Domain-based URL, with or without schema, or a leading-slash path.
+ * @returns {string} Normalized pathname, or the input unchanged for leading-slash paths.
+ */
+export function toPathname(url) {
+  if (!url || typeof url !== 'string') {
+    return '';
+  }
+  try {
+    if (url.startsWith('/')) {
+      return url;
+    }
+    const { pathname } = new URL(prependSchema(url));
+    return normalizePathname(pathname).toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Checks whether two domain-based URLs share the same normalized pathname.
+ * Both arguments must be domain-based URLs (with or without schema). Comparison is
+ * case-insensitive and ignores trailing slashes on non-root paths.
+ * @param {string} url - Domain-based URL to compare.
+ * @param {string} referenceUrl - Domain-based URL to compare against.
+ * @returns {boolean} True if both URLs resolve to the same pathname.
+ */
+export function hasSamePathname(url, referenceUrl) {
+  return toPathname(url) === toPathname(referenceUrl);
+}
+
+/**
+ * Checks whether every URL in an array shares the same normalized pathname as a reference URL.
+ * All entries and the reference must be domain-based URLs (with or without schema).
+ * @param {string[]} urls - Array of domain-based URLs to check.
+ * @param {string} referenceUrl - Domain-based URL whose pathname all entries must match.
+ * @returns {boolean} True if every URL in the array has the same pathname as referenceUrl.
+ */
+export function allHaveSamePathname(urls, referenceUrl) {
+  if (!Array.isArray(urls)) {
+    return false;
+  }
+  return urls.every((url) => hasSamePathname(url, referenceUrl));
+}
+
+/**
+ * A pattern is trusted as scoped to the site's base path only when it is a literal path
+ * (no regex metacharacters) that equals or is nested under the base path, or when it uses
+ * the `/*` pathname-prefix convention (see @adobe/spacecat-shared-tokowaka-client's
+ * buildUrlMatcher). Any other pattern is compiled as a regex and matched against the full
+ * URL downstream, so a literal `startsWith` check on the pattern text is not sound —
+ * e.g. `/kings/.*|/wolves/.*` starts with `/kings` but, once compiled, also matches
+ * `/wolves/...` via the `|` alternation. We fail closed for anything we cannot verify.
+ * @param {string} pathPattern - the pattern to check.
+ * @param {string} siteBaseUrl - the site's base URL defining the scope (e.g. "bulk.com/uk"),
+ * mirroring the siteBaseUrl argument of @adobe/spacecat-shared-utils's isWithinSiteScope.
+ * @returns {boolean} true if the pattern is confirmed to be within the site's scope.
+ */
+export function isPathPatternWithinSiteScope(pathPattern, siteBaseUrl) {
+  if (typeof pathPattern !== 'string') {
+    return false;
+  }
+  if (!siteBaseUrl) {
+    return false;
+  }
+
+  const siteBasePath = toPathname(siteBaseUrl);
+
+  if (siteBasePath === '/') {
+    return true;
+  }
+
+  if (pathPattern.endsWith('/*')) {
+    const prefix = pathPattern.slice(0, -2);
+    return prefix === siteBasePath || prefix.startsWith(`${siteBasePath}/`);
+  }
+  // eslint-disable-next-line no-useless-escape
+  if (/[|()\[\]^$+*?\\.]/.test(pathPattern)) {
+    return false;
+  }
+  return pathPattern === siteBasePath || pathPattern.startsWith(`${siteBasePath}/`);
+}
+
 export {
   ensureHttps,
   getSpacecatRequestHeaders,
@@ -375,7 +645,10 @@ export {
   stripTrailingSlash,
   stripWWW,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
 };

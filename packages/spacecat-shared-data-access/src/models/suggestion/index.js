@@ -20,3 +20,20 @@ export {
 
 // Export DATA_SCHEMAS for api-service to reference
 export const { DATA_SCHEMAS } = Suggestion;
+
+// Re-export per-issue lifecycle constants so consumers (audit-worker, autofix-worker,
+// api-service, Mystique) can validate per-issue values without duplicating enum lists.
+export {
+  CWV_METRIC_TYPES,
+  ISSUE_STATUSES,
+  ISSUE_SKIP_REASONS,
+} from './suggestion.data-schemas.js';
+
+// Suggestion status transition table + predicate, and the 1:1 bubble-up
+// (SITES-47091). CWV multi-issue bubble-up deferred (see derive-status.js).
+export {
+  SUGGESTION_TRANSITIONS,
+  SUGGESTION_CREATE,
+  isAllowedSuggestionTransition,
+} from './suggestion.transitions.js';
+export { deriveSuggestionStatus, classifyStatus } from './derive-status.js';

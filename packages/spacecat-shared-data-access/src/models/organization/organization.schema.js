@@ -12,7 +12,7 @@
 
 /* c8 ignore start */
 
-import { isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { hasText, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
 
 import { Config, DEFAULT_CONFIG, validateConfiguration } from '../site/config.js';
 import SchemaBuilder from '../base/schema.builder.js';
@@ -25,6 +25,7 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
   .addReference('has_many', 'Projects')
   .addReference('has_many', 'Entitlements')
   .addReference('has_many', 'TrialUsers')
+  .addReference('has_many', 'TaskManagementConnections')
   .addAttribute('config', {
     type: 'any',
     required: true,
@@ -40,10 +41,27 @@ const schema = new SchemaBuilder(Organization, OrganizationCollection)
     type: 'string',
     validate: (value) => !value || Organization.IMS_ORG_ID_REGEX.test(value),
   })
+  .addAttribute('llmBackend', {
+    type: Organization.LLM_BACKENDS,
+    validate: (value) => !value || Organization.LLM_BACKENDS.includes(value),
+  })
   .addAttribute('fulfillableItems', {
     type: 'any',
     validate: (value) => !value || isNonEmptyObject(value),
   })
-  .addAllIndex(['imsOrgId']);
+  .addAttribute('semrushWorkspaceId', {
+    type: 'string',
+    // Minimum guard: reject empty / whitespace-only strings. Full format
+    // validation deferred until Semrush confirms the workspace-ID format.
+    // Use value == null (loose) so undefined and null short-circuit, but
+    // empty string ('') falls through to hasText() which rejects it.
+    validate: (value) => value == null || hasText(value),
+  })
+  .addAllIndex(['imsOrgId'])
+  // Uniqueness is enforced at the DB level via the UNIQUE constraint on
+  // organizations.semrush_workspace_id (mysticat-data-service migration
+  // 20260525000000), so findBySemrushWorkspaceId is semantically guaranteed
+  // to return at most one row.
+  .addAllIndex(['semrushWorkspaceId']);
 
 export default schema.build();

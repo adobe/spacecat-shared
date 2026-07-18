@@ -10,8 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import sinonChai from 'sinon-chai';
+import esmock from 'esmock';
 import nock from 'nock';
+import sinon from 'sinon';
 
 import {
   detectBotBlocker,
@@ -19,10 +22,16 @@ import {
   getSpacecatBotIps,
   formatAllowlistMessage,
   SPACECAT_BOT_USER_AGENT,
+  BODY_READ_TIMEOUT,
 } from '../../src/bot-blocker-detect/bot-blocker-detect.js';
+
+use(sinonChai);
 
 describe('Bot Blocker Detection', () => {
   const baseUrl = 'https://www.example.com';
+
+  before(() => nock.disableNetConnect());
+  after(() => nock.enableNetConnect());
 
   afterEach(() => {
     nock.cleanAll();
@@ -37,9 +46,231 @@ describe('Bot Blocker Detection', () => {
       await expect(detectBotBlocker({ baseUrl: 'invalid-url' })).to.be.rejectedWith('Invalid baseUrl');
     });
 
+    it('blocks loopback IP (127.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://127.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('blocks private IP (10.x.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://10.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks private IP (192.168.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://192.168.1.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks link-local IP (169.254.169.254) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://169.254.169.254/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks private IP (172.16.x.x) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://172.16.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks localhost with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://localhost/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks IPv6 loopback (::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks INADDR_ANY (0.0.0.0) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://0.0.0.0/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks IPv6 INADDR_ANY (::) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks IPv6 link-local (fe80::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[fe80::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks IPv6 ULA (fc00::1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[fc00::1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks IPv4-mapped IPv6 loopback (::ffff:127.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://[::ffff:127.0.0.1]/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks localhost with trailing dot with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://localhost./' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks carrier-grade NAT IP (100.64.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://100.64.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks multicast IP (224.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://224.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('blocks reserved IP (240.0.0.1) with ssrf-redirect-blocked sentinel', async () => {
+      const result = await detectBotBlocker({ baseUrl: 'http://240.0.0.1/' });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+    });
+
+    it('does not block 172.15.255.255 (just outside private range)', async () => {
+      nock('http://172.15.255.255').get('/').reply(200, '');
+      const result = await detectBotBlocker({ baseUrl: 'http://172.15.255.255/' });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('does not block 172.32.0.1 (just outside private range)', async () => {
+      nock('http://172.32.0.1').get('/').reply(200, '');
+      const result = await detectBotBlocker({ baseUrl: 'http://172.32.0.1/' });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('blocks redirect to private IP before connecting', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(302, undefined, { location: 'http://127.0.0.1/' });
+      // the 127.0.0.1 nock is never registered — redirect is blocked before the connection
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlocker({ baseUrl, log });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('ssrf-redirect-blocked');
+      expect(log.warn).to.have.been.calledWithMatch('redirect to private hostname blocked');
+    });
+
+    it('follows a safe redirect and analyses the final response', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(301, undefined, { location: 'https://www.example.com/final' });
+      nock('https://www.example.com')
+        .get('/final')
+        .reply(200, '');
+
+      const result = await detectBotBlocker({ baseUrl });
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('returns redirect-limit-exceeded when redirect chain exceeds MAX_REDIRECTS', async () => {
+      // Register 11 hops of 302 redirects (MAX_REDIRECTS=10, loop runs 0..10 inclusive)
+      for (let i = 0; i <= 10; i += 1) {
+        nock('https://www.example.com')
+          .get(`/r${i}`)
+          .reply(302, undefined, { location: `https://www.example.com/r${i + 1}` });
+      }
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlocker({ baseUrl: 'https://www.example.com/r0', log });
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('redirect-limit-exceeded');
+      expect(result.confidence).to.equal(0.99);
+      expect(log.warn).to.have.been.calledWithMatch('redirect limit exceeded');
+    });
+
+    it('handles redirect with unparseable Location header gracefully', async () => {
+      // Stub tracingFetch to return a 302 whose Location value is invalid enough
+      // that new URL(location, currentUrl) throws — covering the catch { break } path.
+      const mockHeaders = new Headers({ location: 'http://' }); // scheme with no host — new URL() throws
+      const redirectResp = { status: 302, headers: mockHeaders, text: sinon.stub().resolves('') };
+      const finalResp = { status: 200, headers: new Headers({}), text: sinon.stub().resolves('') };
+      const fetchStub = sinon.stub();
+      fetchStub.onFirstCall().resolves(redirectResp);
+      fetchStub.onSecondCall().resolves(finalResp);
+
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: fetchStub,
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+          '../../src/network-policy.js': { isNonPublicHostname: sinon.stub().returns(false) },
+        },
+      );
+
+      const result = await detectBotBlockerMocked({ baseUrl });
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
+    });
+
+    it('handles redirect with no Location header gracefully', async () => {
+      nock('https://www.example.com')
+        .get('/')
+        .reply(302, undefined, {});
+
+      const result = await detectBotBlocker({ baseUrl });
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.5);
+    });
+
+    it('forwards caller-supplied headers on the probe request', async () => {
+      // Mirrors the scraper allowlist case (e.g. Akamai Bot Manager requiring
+      // `Accept-Language`): the probe must send the same custom headers the
+      // real scraper sends, otherwise it reports a false-positive block.
+      nock(baseUrl)
+        .matchHeader('Accept-Language', 'en-US')
+        .matchHeader('X-Foo', 'bar')
+        .get('/')
+        .reply(200, '<html></html>');
+
+      const result = await detectBotBlocker({
+        baseUrl,
+        headers: { 'Accept-Language': 'en-US', 'X-Foo': 'bar' },
+      });
+
+      expect(result.crawlable).to.be.true;
+    });
+
+    it('overrides caller-supplied User-Agent with SPACECAT_USER_AGENT', async () => {
+      // The schema in @adobe/spacecat-shared-data-access blocks User-Agent at
+      // write time, but defend in depth: if a caller somehow passes one, the
+      // probe must still identify as the scraper UA.
+      nock(baseUrl)
+        .matchHeader('User-Agent', (v) => v && v !== 'attacker-ua')
+        .get('/')
+        .reply(200, '<html></html>');
+
+      const result = await detectBotBlocker({
+        baseUrl,
+        headers: { 'User-Agent': 'attacker-ua' },
+      });
+
+      expect(result.crawlable).to.be.true;
+    });
+
     it('detects Cloudflare blocking with 403 and cf-ray header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'cf-ray': '123456789-CDG',
           server: 'cloudflare',
@@ -54,7 +285,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva blocking with 403 and x-iinfo header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-iinfo': 'some-value',
         });
@@ -68,7 +299,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva blocking with 403 and x-cdn Incapsula header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-cdn': 'Incapsula',
         });
@@ -85,7 +316,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'NGHTTP2_INTERNAL_ERROR';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -100,7 +331,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'ERR_HTTP2_STREAM_ERROR';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -112,7 +343,7 @@ describe('Bot Blocker Detection', () => {
 
     it('returns crawlable for 200 OK responses', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -127,7 +358,7 @@ describe('Bot Blocker Detection', () => {
       error.code = 'ETIMEDOUT';
 
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .replyWithError(error);
 
       const result = await detectBotBlocker({ baseUrl });
@@ -139,7 +370,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects 403 as blocked even without known CDN headers', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           server: 'nginx',
         });
@@ -155,7 +386,7 @@ describe('Bot Blocker Detection', () => {
     // New CDN detection tests
     it('detects Akamai blocking with 403 and x-akamai-request-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-akamai-request-id': 'abc123',
         });
@@ -169,7 +400,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and x-akamai-session-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-akamai-session-id': 'session-123',
         });
@@ -183,7 +414,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and AkamaiGHost server header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           server: 'AkamaiGHost',
         });
@@ -197,7 +428,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and akamai-cache-status header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'akamai-cache-status': 'Error from child',
         });
@@ -211,7 +442,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai blocking with 403 and akamai-grn header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'akamai-grn': '0.12847b5c.1775713505.2874823e',
         });
@@ -225,7 +456,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly blocking with 403 and x-served-by cache header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-served-by': 'cache-sjc10039-SJC',
         });
@@ -239,7 +470,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly blocking with 403 and fastly-io-info header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'fastly-io-info': 'some-value',
         });
@@ -253,7 +484,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and x-amz-cf-id header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-amz-cf-id': 'cf-id-123',
         });
@@ -267,7 +498,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and x-amz-cf-pop header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           'x-amz-cf-pop': 'SEA73-P1',
         });
@@ -281,7 +512,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront blocking with 403 and via CloudFront header', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(403, '', {
           via: '1.1 abc123.cloudfront.net (CloudFront)',
         });
@@ -296,7 +527,7 @@ describe('Bot Blocker Detection', () => {
     // Infrastructure detection on 200 OK responses
     it('detects Cloudflare infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'cf-ray': '123456789-CDG',
         });
@@ -310,7 +541,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Imperva infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-iinfo': 'some-value',
         });
@@ -324,7 +555,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Akamai infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-akamai-request-id': 'abc123',
         });
@@ -338,7 +569,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects Fastly infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-served-by': 'cache-sjc10039-SJC',
         });
@@ -352,7 +583,7 @@ describe('Bot Blocker Detection', () => {
 
     it('detects CloudFront infrastructure on 200 OK', async () => {
       nock(baseUrl)
-        .head('/')
+        .get('/')
         .reply(200, '', {
           'x-amz-cf-id': 'cf-id-123',
         });
@@ -361,6 +592,136 @@ describe('Bot Blocker Detection', () => {
 
       expect(result.crawlable).to.be.true;
       expect(result.type).to.equal('cloudfront-allowed');
+      expect(result.confidence).to.equal(1.0);
+    });
+
+    it('detects Cloudflare challenge page via GET body (200 + cf-ray + JS challenge)', async () => {
+      const challengeHtml = '<html><title>Just a moment...</title><body>Checking your browser before accessing the site.</body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, { 'cf-ray': '123456789-CDG' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects Imperva challenge page via GET body (200 + x-iinfo + Incapsula pattern)', async () => {
+      const challengeHtml = '<html><body>_Incapsula_Resource detected on this page</body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, { 'x-iinfo': 'some-value' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('imperva');
+      expect(result.confidence).to.equal(0.99);
+    });
+
+    it('detects generic CAPTCHA challenge via GET body (200 + no CDN headers)', async () => {
+      const challengeHtml = '<html><body><div class="g-recaptcha" data-sitekey="abc123"></div></body></html>';
+      nock(baseUrl)
+        .get('/')
+        .reply(200, challengeHtml, {});
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('unknown');
+      expect(result.confidence).to.equal(0.7);
+    });
+
+    it('returns cloudflare-allowed for 200 with cf-ray and no challenge patterns in body', async () => {
+      nock(baseUrl)
+        .get('/')
+        .reply(200, 'normal page content', { 'cf-ray': '123456789-CDG' });
+
+      const result = await detectBotBlocker({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+    });
+
+    it('skips body read and uses header-only analysis when Content-Length exceeds cap', async () => {
+      const headerMap = { 'content-length': '131072', 'cf-ray': '123-CDG' };
+      const mockHeaders = { get: (name) => headerMap[name] ?? null };
+      const textStub = sinon.stub().resolves('body content');
+      const mockResponse = { status: 200, headers: mockHeaders, text: textStub };
+
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: sinon.stub().resolves(mockResponse),
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+        },
+      );
+
+      const log = { warn: sinon.stub() };
+      const result = await detectBotBlockerMocked({ baseUrl, log });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(log.warn).to.have.been.calledWithMatch('body too large');
+      expect(textStub).not.to.have.been.called;
+    });
+
+    it('falls back to header-only analysis when body read exceeds BODY_READ_TIMEOUT', async () => {
+      const mockHeaders = { get: (name) => (name === 'cf-ray' ? '123-CDG' : null) };
+      // text() returns a promise that never resolves — simulates a slow-streaming body
+      const neverResolves = new Promise(() => {});
+      const mockResponse = {
+        status: 200, headers: mockHeaders, text: sinon.stub().returns(neverResolves),
+      };
+
+      // Resolve esmock before installing fake timers — esmock uses dynamic imports internally
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: sinon.stub().resolves(mockResponse),
+            SPACECAT_USER_AGENT: 'test-agent',
+          },
+          '../../src/functions.js': { isValidUrl: sinon.stub().returns(true) },
+        },
+      );
+
+      const clock = sinon.useFakeTimers();
+      const log = { warn: sinon.stub() };
+      const promise = detectBotBlockerMocked({ baseUrl, log });
+      await clock.tickAsync(BODY_READ_TIMEOUT + 1);
+      const result = await promise;
+      clock.restore();
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+      expect(log.warn).to.have.been.calledWithMatch('body read failed');
+    });
+
+    it('falls back to header-only analysis when response.text() throws', async () => {
+      const { detectBotBlocker: detectBotBlockerMocked } = await esmock(
+        '../../src/bot-blocker-detect/bot-blocker-detect.js',
+        {
+          '../../src/tracing-fetch.js': {
+            tracingFetch: async () => ({
+              status: 200,
+              headers: new Headers({ 'cf-ray': '123456789-CDG' }),
+              text: () => Promise.reject(new Error('body read failed')),
+            }),
+            SPACECAT_USER_AGENT: 'SpaceCat/1.0',
+          },
+        },
+      );
+
+      const result = await detectBotBlockerMocked({ baseUrl });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
       expect(result.confidence).to.equal(1.0);
     });
   });
@@ -631,6 +992,20 @@ describe('Bot Blocker Detection', () => {
       expect(result.crawlable).to.be.false;
       expect(result.type).to.equal('unknown');
       expect(result.confidence).to.equal(0.7);
+    });
+
+    it('does not false-positive on "pressure" and "placeholder" in normal page content', () => {
+      const html = '<html><body><p>Monitor your blood pressure at home.</p><input placeholder="Enter value"></body></html>';
+      const headers = {};
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('none');
     });
 
     it('detects GeeTest interactive challenge', () => {

@@ -28,7 +28,17 @@ class SuggestionGrantCollection extends BaseCollection {
   static COLLECTION_NAME = 'SuggestionGrantCollection';
 
   /**
+   * Max suggestion IDs per PostgREST request. PostgREST serializes `.in()` into the request
+   * URL (`suggestion_id=in.(<uuid>,<uuid>,...)`); each UUID costs ~39 chars, so 100 IDs keeps
+   * the query string near ~4KB — comfortably under the ~8KB limit that otherwise triggers a
+   * `414 URI Too Long` and fails the whole lookup.
+   */
+  static FIND_BY_SUGGESTION_IDS_CHUNK_SIZE = 100;
+
+  /**
    * Finds all grant rows for the given suggestion IDs (suggestion_id, grant_id only).
+   * Lookups are chunked to avoid `414 URI Too Long` from PostgREST GET URLs when many
+   * suggestion IDs are supplied.
    *
    * @async
    * @param {string[]} suggestionIds - Suggestion IDs to look up.
@@ -39,16 +49,28 @@ class SuggestionGrantCollection extends BaseCollection {
     if (!Array.isArray(suggestionIds) || suggestionIds.length === 0) {
       return [];
     }
-    const { data, error } = await this.postgrestService
-      .from(this.tableName)
-      .select('suggestion_id,grant_id')
-      .in('suggestion_id', suggestionIds);
 
-    if (error) {
-      throw new DataAccessError('Failed to find grants by suggestion IDs', this, error);
+    const chunkSize = SuggestionGrantCollection.FIND_BY_SUGGESTION_IDS_CHUNK_SIZE;
+    const rows = [];
+
+    for (let i = 0; i < suggestionIds.length; i += chunkSize) {
+      const chunk = suggestionIds.slice(i, i + chunkSize);
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await this.postgrestService
+        .from(this.tableName)
+        .select('suggestion_id,grant_id')
+        .in('suggestion_id', chunk);
+
+      if (error) {
+        throw new DataAccessError('Failed to find grants by suggestion IDs', this, error);
+      }
+
+      if (data) {
+        rows.push(...data);
+      }
     }
 
-    return data ?? [];
+    return rows;
   }
 
   /**

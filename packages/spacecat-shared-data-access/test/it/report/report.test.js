@@ -141,6 +141,7 @@ describe('Report IT', async () => {
     checkReport(report);
 
     expect(isValidUUID(report.getId())).to.be.true;
+    expect(report.getId().charAt(14)).to.equal('7');
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
@@ -182,6 +183,7 @@ describe('Report IT', async () => {
     checkReport(report);
 
     expect(isValidUUID(report.getId())).to.be.true;
+    expect(report.getId().charAt(14)).to.equal('7');
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);
@@ -219,6 +221,7 @@ describe('Report IT', async () => {
     checkReport(report);
 
     expect(isValidUUID(report.getId())).to.be.true;
+    expect(report.getId().charAt(14)).to.equal('7');
     expect(report.getSiteId()).to.equal(data.siteId);
     expect(report.getReportType()).to.equal(data.reportType);
     expect(report.getReportPeriod()).to.deep.equal(data.reportPeriod);

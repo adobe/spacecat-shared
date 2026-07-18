@@ -21,7 +21,19 @@ import BaseCollection from '../base/base.collection.js';
 class PageCitabilityCollection extends BaseCollection {
   static COLLECTION_NAME = 'PageCitabilityCollection';
 
-  // add custom collection-level methods here, if needed
+  /**
+   * Creates a PageCitability record, upserting on the globally-unique `url` column.
+   *
+   * The `url` column carries a global unique index (idx_page_citabilities_url_unique),
+   * so upserting on `url` makes create idempotent and eliminates the concurrent
+   * read-then-insert duplicate-key (Postgres 23505) race observed in production.
+   *
+   * @param {object} item - the PageCitability data to persist.
+   * @returns {Promise<PageCitability>} the created (or updated) PageCitability instance.
+   */
+  async create(item) {
+    return super.create(item, { upsert: true, onConflict: 'url' });
+  }
 }
 
 export default PageCitabilityCollection;

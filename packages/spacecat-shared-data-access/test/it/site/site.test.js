@@ -445,6 +445,7 @@ describe('Site IT', async () => {
 
     expect(newSite.getBaseURL()).to.equal(newSiteData.baseURL);
     expect(newSite.getName()).to.equal(newSiteData.name);
+    expect(newSite.getId().charAt(14)).to.equal('7');
   });
 
   it('updates a site', async () => {

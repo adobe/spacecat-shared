@@ -1,3 +1,40 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.3.0...@adobe/spacecat-shared-launchdarkly-client-v1.3.1) (2026-07-13)
+
+### Bug Fixes
+
+* **launchdarkly-client:** document fail-open contract for variation/isFlagEnabledForIMSOrg ([#1808](https://github.com/adobe/spacecat-shared/issues/1808)) ([1c37b82](https://github.com/adobe/spacecat-shared/commit/1c37b82383f49217d560e99d4b264d1f18eaf2a5)), closes [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1800](https://github.com/adobe/spacecat-shared/issues/1800) [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1803](https://github.com/adobe/spacecat-shared/issues/1803)
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.2...@adobe/spacecat-shared-launchdarkly-client-v1.3.0) (2026-06-15)
+
+### Features
+
+* **launchdarkly-client:** eliminate Lambda log noise (cache + polling + init timeout) ([#1674](https://github.com/adobe/spacecat-shared/issues/1674)) ([a673a4a](https://github.com/adobe/spacecat-shared/commit/a673a4aa443f9af69c96e5cda0503aa6db791f40))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.2.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.1...@adobe/spacecat-shared-launchdarkly-client-v1.2.2) (2026-05-30)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1641](https://github.com/adobe/spacecat-shared/issues/1641)) ([aa28a98](https://github.com/adobe/spacecat-shared/commit/aa28a9875a610fcf96efa693ba652603e12053de))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.0...@adobe/spacecat-shared-launchdarkly-client-v1.2.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.1.2...@adobe/spacecat-shared-launchdarkly-client-v1.2.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
+## [@adobe/spacecat-shared-launchdarkly-client-v1.1.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.1.1...@adobe/spacecat-shared-launchdarkly-client-v1.1.2) (2026-05-14)
+
+### Bug Fixes
+
+* **deps:** update external fixes ([#1533](https://github.com/adobe/spacecat-shared/issues/1533)) ([0a3e2ab](https://github.com/adobe/spacecat-shared/commit/0a3e2abbbc5f58b5320518f7d596d4cef6271fa0))
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.1.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.1.0...@adobe/spacecat-shared-launchdarkly-client-v1.1.1) (2026-04-09)
 
 ### Bug Fixes

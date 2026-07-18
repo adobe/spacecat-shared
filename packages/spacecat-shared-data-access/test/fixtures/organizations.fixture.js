@@ -14,6 +14,7 @@ const organizations = [
   {
     organizationId: '4854e75e-894b-4a74-92bf-d674abad1423',
     imsOrgId: '1234567890ABCDEF12345678@AdobeOrg',
+    semrushWorkspaceId: 'ws_fixture_001',
     name: '0-1234Name',
     config:
       {

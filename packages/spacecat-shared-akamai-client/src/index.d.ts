@@ -103,6 +103,7 @@ export default class AkamaiClient {
     groupId: string,
     ruleTree: object,
     ruleFormat?: string,
+    options?: { dryRun?: boolean },
   ): Promise<object>;
 
   patchRuleTree(

@@ -904,5 +904,10 @@ describe('AkamaiClient', () => {
       expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'caching' }] } })).to.be.null;
       expect(getDefaultOriginSsl(null)).to.be.null;
     });
+
+    it('returns null when the origin behavior has no options key', () => {
+      // A PAPI response can carry an origin behavior with no `options` (distinct from no origin).
+      expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'origin' }] } })).to.be.null;
+    });
   });
 });

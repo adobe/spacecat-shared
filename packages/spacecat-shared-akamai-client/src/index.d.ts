@@ -12,6 +12,16 @@
 
 export function normalizeDomain(domain: string): string;
 
+export function defaultRuleHasCaching(ruleTree: object): boolean;
+
+export interface DefaultOriginSsl {
+  verificationMode?: string;
+  originCertsToHonor?: string;
+  standardCertificateAuthorities?: string[];
+}
+
+export function getDefaultOriginSsl(ruleTree: object): DefaultOriginSsl | null;
+
 export interface AkamaiClientConfig {
   host: string;
   clientToken: string;

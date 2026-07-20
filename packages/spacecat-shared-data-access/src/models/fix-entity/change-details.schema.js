@@ -175,7 +175,11 @@ const changeKey = (change) => JSON.stringify([change.targetPath, change.property
  * rejected) so v2 writers cannot re-introduce freeform drift.
  */
 export const changeDetailsV2Schema = Joi.object({
-  schemaVersion: Joi.number().valid(CHANGE_DETAILS_SCHEMA_VERSION).required(),
+  // `.strict()` — no type coercion: writers MUST pass the integer 2, never the
+  // string '2'. A coerced-then-persisted '2' would read as legacy (!= 2) in
+  // mystique's Python runtime, the exact cross-runtime divergence this
+  // discriminator exists to prevent.
+  schemaVersion: Joi.number().valid(CHANGE_DETAILS_SCHEMA_VERSION).strict().required(),
   surface: Joi.string().valid(...enumValues(SURFACES)).required(),
   actorType: Joi.string().valid(...enumValues(ACTOR_TYPES)).required(),
   target: targetSchema.required(),
@@ -188,16 +192,21 @@ export const changeDetailsV2Schema = Joi.object({
   // rules already reject the record, so we only cross-check once both are arrays.
   const changeResults = value.result?.changeResults;
   const changes = value.target?.changes;
+  const appliedAll = value.result?.applied === APPLIED.ALL;
+  // (a) `applied: ALL` claims every proposed change landed, so it MUST carry the
+  // per-change evidence — an ALL with no changeResults is an unfalsifiable claim.
+  if (appliedAll && !Array.isArray(changeResults)) {
+    return helpers.message('result.applied is ALL but result.changeResults is missing');
+  }
   if (Array.isArray(changeResults) && Array.isArray(changes)) {
     const intentKeys = new Set(changes.map(changeKey));
-    // (a) no orphan outcome — every changeResult maps to a proposed change.
+    // (b) no orphan outcome — every changeResult maps to a proposed change.
     if (changeResults.some((r) => !intentKeys.has(changeKey(r)))) {
       return helpers.message('result.changeResults contains an entry with no matching target.changes (targetPath, property)');
     }
-    // (b) completeness for a whole-action success — `applied: ALL` claims every
-    // proposed change landed, so each MUST have a recorded outcome. PARTIAL/NONE
-    // legitimately omit entries, so they are not held to this.
-    if (value.result.applied === APPLIED.ALL) {
+    // (c) completeness for a whole-action success — every proposed change MUST
+    // have a recorded outcome. PARTIAL/NONE legitimately omit entries.
+    if (appliedAll) {
       const resultKeys = new Set(changeResults.map(changeKey));
       if (changes.some((c) => !resultKeys.has(changeKey(c)))) {
         return helpers.message('result.applied is ALL but a target.changes entry has no matching result.changeResults');

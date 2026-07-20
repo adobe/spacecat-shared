@@ -124,8 +124,13 @@ describe('FixEntity changeDetails v2 schema', () => {
       // regression: a stray '2' (int-vs-string drift) must not silently skip validation.
       expect(() => validateChangeDetails({ schemaVersion: '2', surface: 'BOGUS', junk: true }))
         .to.throw(/changeDetails \(v2\) invalid/);
-      // a well-formed record with a coercible string version still validates.
-      expect(validateChangeDetails({ ...minimal(), schemaVersion: '2' })).to.equal(true);
+    });
+
+    it('rejects a string schemaVersion "2" even on an otherwise-valid record (no coercion)', () => {
+      // strict discriminator: writers MUST persist the integer 2, never '2', or
+      // mystique's Python `== 2` int-compare would misread it as legacy.
+      expect(() => validateChangeDetails({ ...minimal(), schemaVersion: '2' }))
+        .to.throw(/schemaVersion/);
     });
 
     it('rejects an unknown future schemaVersion (e.g. 3) rather than passing it', () => {
@@ -145,9 +150,18 @@ describe('FixEntity changeDetails v2 schema', () => {
   });
 
   describe('validateChangeDetails - v2 rejections', () => {
+    // Validate once, then assert on the captured error, so a hypothetical
+    // stateful validator can't pass by only failing on the first call.
     const rejects = (record, match) => {
-      expect(() => validateChangeDetails(record)).to.throw(/changeDetails \(v2\) invalid/);
-      expect(() => validateChangeDetails(record)).to.throw(match);
+      let err;
+      try {
+        validateChangeDetails(record);
+      } catch (e) {
+        err = e;
+      }
+      expect(err, 'expected validateChangeDetails to throw').to.be.an('error');
+      expect(err.message).to.match(/changeDetails \(v2\) invalid/);
+      expect(err.message).to.match(match);
     };
 
     // Each case builds its own record so we never mutate a shared/param object.
@@ -197,7 +211,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     });
 
     it('rejects a bad result.callStatus', () => {
-      rejects(withResult({ callStatus: 'boom', applied: APPLIED.ALL }), /callStatus/);
+      rejects(withResult({ callStatus: 'boom', applied: APPLIED.NONE }), /callStatus/);
     });
 
     it('rejects a bad result.applied value', () => {
@@ -215,7 +229,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     it('rejects a malformed deployResponseSha256', () => {
       rejects(withResult({
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         deployResponseSha256: 'xyz',
       }), /deployResponseSha256/);
     });
@@ -223,7 +237,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     it('rejects a bad preVerify verdict', () => {
       rejects(withResult({
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         preVerify: { verdict: 'meh' },
       }), /verdict/);
     });
@@ -231,7 +245,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     it('rejects a non-iso postVerify timestamp', () => {
       rejects(withResult({
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         postVerify: { verdict: VERIFY_VERDICTS.VERIFIED, postVerifiedAt: 'yesterday' },
       }), /postVerifiedAt/);
     });
@@ -239,7 +253,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     it('rejects a deployResponsePayload string over the 4 KB cap', () => {
       rejects(withResult({
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         deployResponsePayload: 'x'.repeat(DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES + 1),
       }), /deployResponsePayload/);
     });
@@ -247,7 +261,7 @@ describe('FixEntity changeDetails v2 schema', () => {
     it('rejects a deployResponsePayload object over the 4 KB cap', () => {
       rejects(withResult({
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         deployResponsePayload: { blob: 'y'.repeat(DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES) },
       }), /deployResponsePayload/);
     });
@@ -313,7 +327,7 @@ describe('FixEntity changeDetails v2 schema', () => {
       const record = minimal();
       record.result = {
         callStatus: CALL_STATUSES.SUCCESS,
-        applied: APPLIED.ALL,
+        applied: APPLIED.NONE,
         deployResponsePayload: 'z'.repeat(DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES),
       };
       expect(validateChangeDetails(record)).to.equal(true);
@@ -333,6 +347,25 @@ describe('FixEntity changeDetails v2 schema', () => {
   });
 
   describe('applied roll-up completeness', () => {
+    it('rejects applied:ALL with no changeResults at all (unfalsifiable claim)', () => {
+      const record = minimal();
+      record.result = { callStatus: CALL_STATUSES.SUCCESS, applied: APPLIED.ALL };
+      expect(() => validateChangeDetails(record))
+        .to.throw(/applied is ALL but result\.changeResults is missing/);
+    });
+
+    it('accepts applied:NONE with a non-empty changeResults array (permissive by design)', () => {
+      const record = minimal();
+      record.result = {
+        callStatus: CALL_STATUSES.SERVER_ERROR,
+        applied: APPLIED.NONE,
+        changeResults: [{
+          targetPath: '/content/p', property: 'alt', status: CHANGE_RESULT_STATUSES.FAILED,
+        }],
+      };
+      expect(validateChangeDetails(record)).to.equal(true);
+    });
+
     it('accepts applied:PARTIAL that records only the changes that landed', () => {
       const record = {
         schemaVersion: 2,

@@ -449,6 +449,7 @@ export const configSchema = Joi.object({
       )
       .optional(),
     opted: Joi.number().optional(),
+    routingEnabled: Joi.boolean().optional(),
     stagingDomains: Joi.array().items(
       Joi.object({
         domain: Joi.string().required(),

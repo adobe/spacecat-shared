@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.14.0...@adobe/spacecat-shared-project-engine-client-v1.15.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** mock authorship root source→origin + legacy seed (LLMO-6273) ([3ead32b](https://github.com/adobe/spacecat-shared/commit/3ead32b1f126b3f15d1acac0f86209929b0aad73))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.13.0...@adobe/spacecat-shared-project-engine-client-v1.14.0) (2026-07-20)
 
 ### Features

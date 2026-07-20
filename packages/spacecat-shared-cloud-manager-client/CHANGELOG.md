@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.4.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.5...@adobe/spacecat-shared-cloud-manager-client-v1.4.6) (2026-07-16)
+
+### Bug Fixes
+
+* build BYOG PR URLs (Azure/Bitbucket) + hostname detection + retry-once ([#1793](https://github.com/adobe/spacecat-shared/issues/1793)) ([a6c12a2](https://github.com/adobe/spacecat-shared/commit/a6c12a2dda3595e7ef10954ff59d79ba38c7f884))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.4.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.4...@adobe/spacecat-shared-cloud-manager-client-v1.4.5) (2026-07-08)
 
 ### Bug Fixes

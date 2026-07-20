@@ -30,6 +30,19 @@ const MAX_PAID_KEYWORDS_FETCH = 10000;
 const RATE_LIMIT_BASE_DELAY_MS = 1000;
 const MAX_RETRIES = 4;
 
+const BROKEN_LINKS_URL = 'https://api.semrush.com/apis/v4/backlinks-external/v0/broken-links';
+const SEMRUSH_TOKEN_URL = 'https://api.semrush.com/apis/v4-raw/auth/v0/oauth2/access_token';
+const TOKEN_REFRESH_BUFFER_MS = 60 * 1000; // refresh 60s before expiry
+const DEFAULT_TOKEN_TTL_MS = 5 * 60 * 1000; // Semrush tokens live ~5 min
+const semrushTokenCache = new Map(); // key: clientId → { token, expiresAt }
+const LOW_VALUE_HOSTS = [
+  'search.yahoo.com', 'bing.com', 'search.brave.com', 'duckduckgo.com',
+  'yandex.com', 'yandex.ru', 'baidu.com', 'web.archive.org',
+  'webcache.googleusercontent.com', 'cache.google.com',
+  'translate.google.com', 'translate.googleusercontent.com',
+  'sites.google.com',
+];
+
 /**
  * Major SEO provider databases by search volume. Used as the default fan-out
  * set for getTopPages to aggregate traffic across top global markets.
@@ -64,8 +77,16 @@ export default class SeoClient {
   }
 
   static createFrom(context) {
-    const { SEO_API_BASE_URL: apiBaseUrl, SEO_API_KEY: apiKey } = context.env;
-    return new SeoClient({ apiBaseUrl, apiKey }, fetch, context.log);
+    const {
+      SEO_API_BASE_URL: apiBaseUrl,
+      SEO_API_KEY: apiKey,
+      SEMRUSH_CLIENT_ID: semrushClientId,
+      SEMRUSH_CLIENT_SECRET: semrushClientSecret,
+      SEMRUSH_BROKEN_LINKS_SCOPE: semrushScope,
+    } = context.env;
+    return new SeoClient({
+      apiBaseUrl, apiKey, semrushClientId, semrushClientSecret, semrushScope,
+    }, fetch, context.log);
   }
 
   constructor(config, fetchAPI, log = console) {
@@ -87,6 +108,9 @@ export default class SeoClient {
     this.apiKey = apiKey;
     this.fetchAPI = fetchAPI;
     this.log = log;
+    this.semrushClientId = config.semrushClientId || null;
+    this.semrushClientSecret = config.semrushClientSecret || null;
+    this.semrushScope = config.semrushScope || null;
   }
 
   /**
@@ -708,6 +732,148 @@ export default class SeoClient {
     };
   }
 
+  hasNewBrokenBacklinksEndpoint() {
+    return !!(this.semrushClientId && this.semrushClientSecret && this.semrushScope);
+  }
+
+  async _getSemrushToken() {
+    const cacheKey = this.semrushClientId;
+    const now = Date.now();
+    const cached = semrushTokenCache.get(cacheKey);
+    if (cached && now < cached.expiresAt) {
+      return cached.token;
+    }
+
+    const body = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: this.semrushClientId,
+      client_secret: this.semrushClientSecret,
+      scope: this.semrushScope,
+    });
+    const r = await this.fetchAPI(SEMRUSH_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const json = await r.json();
+    if (!json.access_token) {
+      throw new Error(`Semrush OAuth token request failed (HTTP ${r.status}): ${json.error || 'unknown'}`);
+    }
+
+    const ttlMs = json.expires_in
+      ? Math.max((Number(json.expires_in) * 1000) - TOKEN_REFRESH_BUFFER_MS, 1000)
+      : DEFAULT_TOKEN_TTL_MS - TOKEN_REFRESH_BUFFER_MS;
+    semrushTokenCache.set(cacheKey, { token: json.access_token, expiresAt: now + ttlMs });
+
+    return json.access_token;
+  }
+
+  static computePriorityScore(row) {
+    const pageNorm = (row.page_score ?? 0) / 100;
+    const domainNorm = (row.domain_score ?? 0) / 100;
+    let recency = 0;
+    if (row.first_seen_at) {
+      const daysSince = (Date.now() - new Date(row.first_seen_at).getTime())
+        / (1000 * 60 * 60 * 24);
+      if (daysSince <= 30) {
+        recency = 1.0;
+      } else if (daysSince <= 90) {
+        recency = 0.75;
+      } else if (daysSince <= 180) {
+        recency = 0.5;
+      } else if (daysSince <= 365) {
+        recency = 0.25;
+      } else {
+        recency = 0.1;
+      }
+    }
+    return Math.round(((0.50 * pageNorm) + (0.40 * domainNorm) + (0.10 * recency)) * 1000) / 1000;
+  }
+
+  async getBrokenBacklinksV2(url, limit = 50) {
+    if (!hasText(url)) {
+      throw new Error(`Invalid URL: ${url}`);
+    }
+    if (!this.hasNewBrokenBacklinksEndpoint()) {
+      throw new Error('Missing Semrush OAuth2 credentials (SEMRUSH_CLIENT_ID, SEMRUSH_CLIENT_SECRET, SEMRUSH_BROKEN_LINKS_SCOPE)');
+    }
+
+    const effectiveLimit = getLimit(limit, 100);
+    const FETCH_LIMIT = 100;
+
+    const token = await this._getSemrushToken();
+
+    const notLike = LOW_VALUE_HOSTS.map((h) => `AND source_url NOT LIKE '%${h}%'`).join(' ');
+    const filter = `is_nofollow=false AND is_lost=false AND response_code=200 AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}`;
+
+    const params = new URLSearchParams({
+      url,
+      scope: 'ROOT_DOMAIN',
+      limit: String(FETCH_LIMIT),
+      order_by: 'domain_score',
+      direction: 'desc',
+      filter,
+      limit_by_field: 'target_url',
+      limit_by_limit: '1',
+    });
+
+    const requestUrl = `${BROKEN_LINKS_URL}?${params}`;
+    const fullAuditRef = requestUrl;
+
+    const r = await this.fetchAPI(requestUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!r.ok) {
+      const bodyText = await r.text();
+      throw new Error(`Semrush broken-links endpoint HTTP ${r.status}: ${bodyText.slice(0, 500)}`);
+    }
+
+    const { data } = await r.json();
+
+    const scored = (data || [])
+      .map((row) => ({ ...row, score: SeoClient.computePriorityScore(row) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, effectiveLimit);
+
+    const total = scored.length;
+    scored.forEach((row, i) => {
+      const pct = (i + 1) / total;
+      let relativeLabel;
+      if (pct <= 0.20) {
+        relativeLabel = 'High';
+      } else if (pct <= 0.50) {
+        relativeLabel = 'Medium';
+      } else {
+        relativeLabel = 'Low';
+      }
+      // eslint-disable-next-line no-param-reassign
+      row.relativeLabel = relativeLabel;
+    });
+
+    const backlinks = scored.map((row) => ({
+      title: row.source_title || null,
+      url_from: row.source_url,
+      url_to: row.target_url,
+      traffic_domain: row.domain_score ?? null,
+      page_score: row.page_score ?? null,
+      domain_score: row.domain_score ?? null,
+      first_seen_at: row.first_seen_at ?? null,
+      last_seen_at: row.last_seen_at ?? null,
+      source_domain: row.source_domain ?? null,
+      anchor: row.anchor ?? null,
+      is_nofollow: row.is_nofollow ?? null,
+      is_lost: row.is_lost ?? null,
+      response_code: row.response_code ?? null,
+      priority_score: row.score,
+      priority_label: row.relativeLabel,
+    }));
+
+    this.log.info(`SEO broken-links v2: url=${url} fetched=${(data || []).length} returned=${backlinks.length}`);
+
+    return { result: { backlinks }, fullAuditRef };
+  }
+
   /**
    * Retrieves broken backlinks for a domain — links pointing to pages that return 404.
    *
@@ -839,5 +1005,13 @@ export default class SeoClient {
   // eslint-disable-next-line no-unused-vars, class-methods-use-this
   async getMetricsByCountry(url, date) {
     return STUB_RESPONSE;
+  }
+}
+
+export function clearSemrushTokenCache(clientId) {
+  if (clientId) {
+    semrushTokenCache.delete(clientId);
+  } else {
+    semrushTokenCache.clear();
   }
 }

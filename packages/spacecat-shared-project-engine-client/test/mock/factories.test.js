@@ -27,6 +27,7 @@ import {
   createInitStatusMock,
   createCiCompetitorMock,
   createUrlResolveMock,
+  createRenamePromptResponseMock,
 } from '../../mock/factories.js';
 
 // The .ts type-tests under test/types/ enforce that each factory's return is assignable to its
@@ -299,5 +300,15 @@ describe('factories — live-shaped entities', () => {
     const valid = { domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true };
     expect(createUrlResolveMock()).to.deep.equal({ domain: '', primary_url: '', is_valid: false });
     expect(createUrlResolveMock(valid)).to.deep.equal(valid);
+  });
+
+  it('createRenamePromptResponseMock yields the id-stable rename result, overridable', () => {
+    const r = createRenamePromptResponseMock();
+    expect(r.id).to.match(/^[0-9a-f-]{36}$/);
+    expect(r).to.include({ name: 'What is the best running shoe?', is_updated: true });
+    // The rename handler echoes the stored prompt's UNCHANGED id, and is_updated: false for a
+    // no-op rename (unchanged name).
+    expect(createRenamePromptResponseMock({ id: 'p1', name: 'Same text', is_updated: false }))
+      .to.deep.equal({ id: 'p1', name: 'Same text', is_updated: false });
   });
 });

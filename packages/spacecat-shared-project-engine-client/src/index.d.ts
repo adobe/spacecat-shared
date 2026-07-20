@@ -107,7 +107,7 @@ type TransportInitParam<Init> = RequiredKeysOf<Init> extends never
  * responses never resolve — they throw at the single `unwrap` error seam.
  */
 type TransportData<P extends keyof paths, M extends keyof paths[P]> =
-  | NonNullable<FetchResponse<paths[P][M], {}, MediaType>['data']>
+  | NonNullable<FetchResponse<paths[P][M], TransportInit<P, M>, MediaType>['data']>
   | null;
 
 /**

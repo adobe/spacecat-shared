@@ -10,7 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import type { Client } from 'openapi-fetch';
+import type { Client, FetchResponse, MaybeOptionalInit, MediaType } from 'openapi-fetch';
+import type { RequiredKeysOf } from 'openapi-typescript-helpers';
 import type { paths, components } from './generated/types.js';
 
 /** Supplies the caller's IMS JWT — forwarded verbatim, never minted or exchanged. */
@@ -72,6 +73,285 @@ export interface SerenityProjectEngineApiClientOptions {
 export declare function createSerenityProjectEngineApiClient(
   options: SerenityProjectEngineApiClientOptions,
 ): SerenityProjectEngineApiClient;
+
+// ───────────────────────────────────────────────────────────────────────────
+// Intent-named facade (transport) over the raw client.
+//
+// The three helpers below derive every facade method's parameter and return type
+// straight from the generated `paths` contract, so the surface stays strictly
+// in-spec and never degrades to `any`. They are internal to this declaration.
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * The openapi-fetch `init` argument (params.path/query, body) accepted for a given
+ * path `P` + HTTP method `M`, derived from the generated contract.
+ */
+type TransportInit<P extends keyof paths, M extends keyof paths[P]> = MaybeOptionalInit<
+  paths[P],
+  M
+>;
+
+/**
+ * Mirror of openapi-fetch's own (unexported) `InitParam`: the `init` argument is
+ * OPTIONAL when nothing in it is required (no path/query params, no required body),
+ * and REQUIRED otherwise — so `listLanguages()` needs no argument while
+ * `createProject({ params, body })` enforces its params + body at the call site.
+ */
+type TransportInitParam<Init> = RequiredKeysOf<Init> extends never
+  ? [init?: Init]
+  : [init: Init];
+
+/**
+ * The value a facade method resolves with: the parsed 2xx body for path `P` +
+ * method `M`, or `null` for an empty body (e.g. a 204 / empty-body ack). Non-2xx
+ * responses never resolve — they throw at the single `unwrap` error seam.
+ */
+type TransportData<P extends keyof paths, M extends keyof paths[P]> =
+  | NonNullable<FetchResponse<paths[P][M], TransportInit<P, M>, MediaType>['data']>
+  | null;
+
+/**
+ * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 28 in-spec
+ * Project Engine operations spacecat-api-service consumes behind verb+resource methods, so
+ * consumers depend on this seam rather than the raw client's literal path strings. Each method
+ * is THIN: it forwards the caller's openapi-fetch `init` to the underlying client and resolves
+ * with the unwrapped 2xx body (or throws on a non-2xx / network error at a single seam). No
+ * caching, redaction, error→HTTP translation, or composite methods — all consumer-owned per
+ * ADR-0001. The remaining generated operations stay reachable via the raw client.
+ */
+export interface SerenityProjectEngineTransport {
+  /** GET /v1/languages — projects-admin-list-languages */
+  listLanguages(
+    ...init: TransportInitParam<TransportInit<'/v1/languages', 'get'>>
+  ): Promise<TransportData<'/v1/languages', 'get'>>;
+  /** GET /v1/ai_models — ai-list-global-models */
+  listGlobalAiModels(
+    ...init: TransportInitParam<TransportInit<'/v1/ai_models', 'get'>>
+  ): Promise<TransportData<'/v1/ai_models', 'get'>>;
+
+  /** GET /v1/workspaces/{id}/projects — projects-list-projects */
+  listProjects(
+    ...init: TransportInitParam<TransportInit<'/v1/workspaces/{id}/projects', 'get'>>
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects', 'get'>>;
+  /** POST /v1/workspaces/{id}/projects — projects-post-project */
+  createProject(
+    ...init: TransportInitParam<TransportInit<'/v1/workspaces/{id}/projects', 'post'>>
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects', 'post'>>;
+  /** GET /v1/workspaces/{id}/projects/{project_id} — projects-get-project */
+  getProject(
+    ...init: TransportInitParam<TransportInit<'/v1/workspaces/{id}/projects/{project_id}', 'get'>>
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}', 'get'>>;
+  /** PATCH /v1/workspaces/{id}/projects/{project_id} — projects-patch-project */
+  updateProject(
+    ...init: TransportInitParam<TransportInit<'/v1/workspaces/{id}/projects/{project_id}', 'patch'>>
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}', 'patch'>>;
+  /** DELETE /v1/workspaces/{id}/projects/{project_id} — projects-delete-project */
+  deleteProject(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}', 'delete'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}', 'delete'>>;
+  /** POST /v1/workspaces/{id}/projects/{project_id}/publish — projects-publish-project */
+  publishProject(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/publish', 'post'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/publish', 'post'>>;
+
+  /** GET /v1/workspaces/{id}/projects/{project_id}/ai_models — ai-list-models */
+  listAiModels(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/ai_models', 'get'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/ai_models', 'get'>>;
+  /** DELETE /v1/workspaces/{id}/projects/{project_id}/ai_models — ai-delete-models */
+  deleteAiModels(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/ai_models', 'delete'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/ai_models', 'delete'>>;
+  /** GET /v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks — ai-list-benchmarks */
+  listBenchmarks(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'get'>
+    >
+  ): Promise<
+    TransportData<'/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'get'>
+  >;
+  /** DELETE /v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks — ai-delete-benchmarks */
+  deleteBenchmarks(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'delete'>
+    >
+  ): Promise<
+    TransportData<'/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'delete'>
+  >;
+  /**
+   * PUT /v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}
+   * — ai-update-benchmark
+   */
+  updateBenchmark(
+    ...init: TransportInitParam<
+      TransportInit<
+        '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}',
+        'put'
+      >
+    >
+  ): Promise<
+    TransportData<
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks/{benchmark_id}',
+      'put'
+    >
+  >;
+  /** PUT /v1/workspaces/{id}/projects/{project_id}/ci/competitors — ci-update-competitors */
+  updateCompetitors(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/ci/competitors', 'put'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/ci/competitors', 'put'>>;
+
+  /** POST /v2/workspaces/{id}/projects/{project_id}/ai_models — aio-project-create-model */
+  createAioModel(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/ai_models', 'post'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/ai_models', 'post'>>;
+  /** POST /v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks — ai-create-benchmarks-v2 */
+  createBenchmarks(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'post'>
+    >
+  ): Promise<
+    TransportData<'/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks', 'post'>
+  >;
+
+  /**
+   * GET /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls
+   * — aio-list-brand-urls
+   */
+  listBrandUrls(
+    ...init: TransportInitParam<
+      TransportInit<
+        '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+        'get'
+      >
+    >
+  ): Promise<
+    TransportData<
+      '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+      'get'
+    >
+  >;
+  /**
+   * POST /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls
+   * — aio-create-brand-urls
+   */
+  createBrandUrls(
+    ...init: TransportInitParam<
+      TransportInit<
+        '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+        'post'
+      >
+    >
+  ): Promise<
+    TransportData<
+      '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+      'post'
+    >
+  >;
+  /**
+   * DELETE /v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls
+   * — aio-delete-brand-urls
+   */
+  deleteBrandUrls(
+    ...init: TransportInitParam<
+      TransportInit<
+        '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+        'delete'
+      >
+    >
+  ): Promise<
+    TransportData<
+      '/v2/workspaces/{id}/projects/{project_id}/aio/benchmarks/{benchmark_id}/brand_urls',
+      'delete'
+    >
+  >;
+
+  /**
+   * GET /v2/workspaces/{id}/projects/{project_id}/aio/init_status
+   * — aio-get-project-init-status-v2
+   */
+  getProjectInitStatus(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/init_status', 'get'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/init_status', 'get'>>;
+  /** POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts — aio-create-prompt-v2 */
+  createPrompts(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts', 'post'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts', 'post'>>;
+  /** DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts — aio-delete-prompt-by-ids-v2 */
+  deletePromptsByIds(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts', 'delete'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts', 'delete'>>;
+  /**
+   * POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags
+   * — aio-list-prompts-by-tag-ids
+   */
+  listPromptsByTagIds(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags', 'post'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags', 'post'>>;
+  /** PUT /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags — aio-update-prompts-batch */
+  updatePromptTags(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags', 'put'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags', 'put'>>;
+  /**
+   * POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename
+   * — aio-rename-prompt
+   */
+  renamePrompt(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename', 'post'>
+    >
+  ): Promise<
+    TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename', 'post'>
+  >;
+  /** GET /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-get-project-tags */
+  listProjectTags(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'get'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'get'>>;
+  /** POST /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-create-project-tags */
+  createProjectTags(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'post'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'post'>>;
+  /** PATCH /v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id} — aio-update-tag */
+  updateProjectTag(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}', 'patch'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}', 'patch'>>;
+}
+
+/**
+ * Builds the {@link SerenityProjectEngineTransport} facade. Takes the SAME options as
+ * {@link createSerenityProjectEngineApiClient} (it builds that client internally and adds no
+ * options of its own).
+ */
+export declare function createSerenityProjectEngineTransport(
+  options: SerenityProjectEngineApiClientOptions,
+): SerenityProjectEngineTransport;
 
 // Re-export the generated contract types for consumers that want them directly.
 export type { paths, components };

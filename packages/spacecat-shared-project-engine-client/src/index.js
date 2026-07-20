@@ -13,3 +13,4 @@
 // @ts-check
 
 export { createSerenityProjectEngineApiClient } from './client.js';
+export { createSerenityProjectEngineTransport } from './rest-transport.js';

@@ -359,6 +359,9 @@ export declare function createSerenityProjectEngineTransport(
  * an exhausted-network / per-attempt-timeout failure), and the normalized parsed error `body`.
  * On the network/timeout path the original thrown error is preserved as `cause`. No error→HTTP
  * translation or redaction — consumer-owned per ADR-0001.
+ *
+ * NOTE: the `readonly` modifiers below are a type-system-only guarantee; the runtime class
+ * (`errors.js`) sets these fields with plain assignment in the constructor.
  */
 export declare class ProjectEngineApiError extends Error {
   /** The HTTP response status, or `undefined` when there was no HTTP response. */

@@ -27,7 +27,7 @@ export class ProjectEngineApiError extends Error {
    * @param {number | undefined} status the HTTP response status, or `undefined` when there was no
    *   HTTP response (network / timeout failure)
    * @param {string} method the HTTP method of the failing request
-   * @param {unknown | null} body the normalized parsed error body (`null` when empty/absent)
+   * @param {unknown} body the normalized parsed error body (`null` when empty/absent)
    * @param {{ cause?: unknown }} [options] optional `{ cause }` forwarded to `super`, so a wrapped
    *   network/timeout error keeps its original as `.cause`
    */
@@ -42,7 +42,7 @@ export class ProjectEngineApiError extends Error {
     this.status = status;
     /** @type {string} */
     this.method = method;
-    /** @type {unknown | null} */
+    /** @type {unknown} */
     this.body = body;
   }
 }

@@ -59,6 +59,8 @@ export function createSerenityProjectEngineTransport(options) {
    *   openapi-fetch result
    * @returns {Promise<NonNullable<T> | null>} the parsed success body, or null for an empty body
    *   (an empty-body operation resolves with null, never undefined)
+   * @throws {import('./errors.js').ProjectEngineApiError} on a non-2xx response or an
+   *   exhausted-network / per-attempt-timeout failure
    */
   async function unwrap(method, resultPromise) {
     let result;

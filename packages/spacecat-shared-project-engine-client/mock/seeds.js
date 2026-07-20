@@ -389,7 +389,11 @@ export const TWO_HIERARCHIES = Object.freeze({
  * tag hangs off that `source` root. This is the fixture api-service's tolerant resolver runs
  * against (origin-dimension.md §7 gate 3) — a live project that still carries a `source`-named
  * authorship root, which the resolver must accept in place and never duplicate into a second root.
- * Deleted by WP-O6 once the `source` fallback is dropped.
+ *
+ * It intentionally REUSES `workspace-with-data`'s scalar ids (workspace / project / prompt /
+ * benchmark / brand-url) — the two seeds never load together, so this is a drop-in replacement for
+ * the default, not a copy-paste slip. Only the authorship root name (and the ids derived beneath
+ * it) differ. Deleted by WP-O6 once the `source` fallback is dropped.
  */
 export const WORKSPACE_WITH_SOURCE_ROOT = Object.freeze(peHierarchy({
   childWorkspaceId: CHILD_WORKSPACE_ID,

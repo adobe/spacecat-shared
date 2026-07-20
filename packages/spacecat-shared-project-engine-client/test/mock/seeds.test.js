@@ -137,6 +137,11 @@ describe('seeds', () => {
     expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
     expect(roots.map((t) => t.name)).to.not.include('origin');
 
+    // Every tag id in the loaded seed is unique — mechanically locks down the UUID-reuse safety
+    // assumption. The legacy seed intentionally reuses `workspace-with-data`'s scalar ids, but the
+    // two never load together, so nothing beneath the renamed root should collide with anything.
+    expect(new Set(tags.map((t) => t.id)).size).to.equal(tags.length);
+
     // `ai`/`human` hang off the legacy `source` root, and the prompt's authorship tag does too.
     const childNamesOf = (parentId) => tags
       .filter((t) => t.parent_id === parentId).map((t) => t.name);

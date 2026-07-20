@@ -28,8 +28,9 @@ import {
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
-    expect(Object.keys(SEEDS))
-      .to.include.members(['empty-workspace', 'workspace-with-data', 'two-hierarchies']);
+    expect(Object.keys(SEEDS)).to.include.members([
+      'empty-workspace', 'workspace-with-data', 'two-hierarchies', 'legacy-source-workspace',
+    ]);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
 
@@ -83,7 +84,7 @@ describe('seeds', () => {
 
     // Exactly the four dimension roots sit at the root level (model spec §7 gate 2).
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'type']);
 
     // The closed dimensions carry their full fixed vocabularies as bare children.
     const childNamesOf = (parentId) => tags
@@ -91,7 +92,7 @@ describe('seeds', () => {
       .map((t) => t.name);
     expect(childNamesOf(SEED_IDS.intentRootTagId))
       .to.deep.equal(['Informational', 'Task', 'Commercial', 'Transactional', 'Navigational']);
-    expect(childNamesOf(SEED_IDS.sourceRootTagId)).to.deep.equal(['ai', 'human']);
+    expect(childNamesOf(SEED_IDS.originRootTagId)).to.deep.equal(['ai', 'human']);
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
 
     // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories.
@@ -100,14 +101,14 @@ describe('seeds', () => {
     expect(category).to.include({ name: 'Running Shoes', parent_id: SEED_IDS.categoryRootTagId });
     expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human']);
 
-    // The sub-category `human` and the source value `human` share a name and NOTHING else — the
+    // The sub-category `human` and the origin value `human` share a name and NOTHING else — the
     // cross-dimension collision the model spec §7 gate 4 requires to be survivable.
     const subcategoryHuman = tags.find((t) => t.id === SEED_IDS.childCollidingTagId);
-    const sourceHuman = tags.find((t) => t.id === SEED_IDS.sourceHumanTagId);
-    expect(subcategoryHuman.name).to.equal(sourceHuman.name);
-    expect(subcategoryHuman.id).to.not.equal(sourceHuman.id);
+    const originHuman = tags.find((t) => t.id === SEED_IDS.originHumanTagId);
+    expect(subcategoryHuman.name).to.equal(originHuman.name);
+    expect(subcategoryHuman.id).to.not.equal(originHuman.id);
     expect(subcategoryHuman.parent_id).to.equal(SEED_IDS.categoryTagId);
-    expect(sourceHuman.parent_id).to.equal(SEED_IDS.sourceRootTagId);
+    expect(originHuman.parent_id).to.equal(SEED_IDS.originRootTagId);
 
     // The seeded prompt is dual-tagged (category + sub-category) and carries one closed value per
     // dimension, reusing the ids the standalone tree registered so `by_tags` correlates.
@@ -117,10 +118,34 @@ describe('seeds', () => {
     expect(prompt.tags.map((t) => t.id)).to.deep.equal([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
-      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.typeBrandedTagId,
     ]);
+  });
+
+  it('legacy-source-workspace seeds the pre-rename shape: a `source` authorship root with ai/human', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['legacy-source-workspace']);
+    const ops = createStatefulOps(store);
+    const { workspaceId, projectId } = SEED_IDS;
+
+    const tags = ops.tags.list({ workspaceId, projectId });
+    // The authorship root is still named `source` (not `origin`) — the fixture api-service's
+    // tolerant resolver runs against (origin-dimension.md §7 gate 3), and it carries no `origin`.
+    const roots = tags.filter((t) => !t.parent_id);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.not.include('origin');
+
+    // `ai`/`human` hang off the legacy `source` root, and the prompt's authorship tag does too.
+    const childNamesOf = (parentId) => tags
+      .filter((t) => t.parent_id === parentId).map((t) => t.name);
+    expect(childNamesOf(SEED_IDS.legacySourceRootTagId)).to.deep.equal(['ai', 'human']);
+    const legacyHuman = tags.find((t) => t.id === SEED_IDS.legacySourceHumanTagId);
+    expect(legacyHuman).to.include({ name: 'human', parent_id: SEED_IDS.legacySourceRootTagId });
+
+    const [prompt] = ops.prompts.list({ workspaceId, projectId });
+    expect(prompt.tags.map((t) => t.id)).to.include(SEED_IDS.legacySourceHumanTagId);
   });
 
   it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {

@@ -73,7 +73,7 @@ const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
 const DIMENSION_ROOTS = Object.freeze({
   category: 'category',
   intent: 'intent',
-  source: 'source',
+  origin: 'origin',
   type: 'type',
 });
 
@@ -81,16 +81,23 @@ const DIMENSION_ROOTS = Object.freeze({
 const INTENT_VALUES = Object.freeze([
   'Informational', 'Task', 'Commercial', 'Transactional', 'Navigational',
 ]);
-const SOURCE_VALUES = Object.freeze(['ai', 'human']);
+const ORIGIN_VALUES = Object.freeze(['ai', 'human']);
 const TYPE_VALUES = Object.freeze(['branded', 'non-branded']);
 
 const CATEGORY_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.category);
 const INTENT_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.intent);
-const SOURCE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.source);
+const ORIGIN_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.origin);
 const TYPE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.type);
 
+// The pre-rename authorship root name, retained only for the legacy seed fixture (WP-O1 item 4):
+// a project whose authorship root is still `source`, so api-service's tolerant resolver
+// (origin-dimension.md §7 gate 3) has a fixture to run against. Removed by WP-O6.
+const LEGACY_AUTHORSHIP_ROOT_NAME = 'source';
+const LEGACY_SOURCE_ROOT_TAG_ID = tagId(LEGACY_AUTHORSHIP_ROOT_NAME);
+const LEGACY_SOURCE_HUMAN_TAG_ID = tagId('human', LEGACY_SOURCE_ROOT_TAG_ID);
+
 // H1's open taxonomy: one depth-2 category with two depth-3 sub-categories. The sub-category named
-// `human` deliberately collides by NAME with the `source` value `human` — under bare names those
+// `human` deliberately collides by NAME with the `origin` value `human` — under bare names those
 // are two distinct tags only because ids are keyed on `(parent, name)`. Seeding the collision keeps
 // the cross-dimension case (model spec §7 gate 4) exercisable end-to-end rather than hypothetical.
 const CATEGORY_NAME = 'Running Shoes';
@@ -100,9 +107,9 @@ const CATEGORY_TAG_ID = tagId(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID); // depth-2 c
 const CHILD_TAG_ID = tagId(CATEGORY_CHILD_NAME, CATEGORY_TAG_ID); // depth-3 sub-category
 const CHILD_COLLIDING_TAG_ID = tagId(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID);
 
-// The closed-dimension values H1's seeded prompt carries. `sourceHuman` shares its NAME with the
+// The closed-dimension values H1's seeded prompt carries. `originHuman` shares its NAME with the
 // sub-category above and its id with nothing.
-const SOURCE_HUMAN_TAG_ID = tagId('human', SOURCE_ROOT_TAG_ID);
+const ORIGIN_HUMAN_TAG_ID = tagId('human', ORIGIN_ROOT_TAG_ID);
 const INTENT_COMMERCIAL_TAG_ID = tagId('Commercial', INTENT_ROOT_TAG_ID);
 const TYPE_BRANDED_TAG_ID = tagId('branded', TYPE_ROOT_TAG_ID);
 
@@ -216,26 +223,32 @@ const childTag = (name, parentId) => createAIOTagMock({
  * The four dimension roots and the closed dimensions' full child vocabularies — the tree every
  * project is provisioned with, before any customer-authored category exists. Pass `categories` to
  * append the open `category` subtree: each entry is a depth-2 category and its depth-3
- * sub-categories.
+ * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
+ * `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human` vocabulary is
+ * unchanged, only the root it hangs off differs.
  * @param {Array<{ name: string, children?: string[] }>} [categories]
+ * @param {string} [authorshipRootName]
  * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
  */
-const dimensionRootTree = (categories = []) => [
-  rootTag(DIMENSION_ROOTS.category),
-  rootTag(DIMENSION_ROOTS.intent),
-  rootTag(DIMENSION_ROOTS.source),
-  rootTag(DIMENSION_ROOTS.type),
-  ...INTENT_VALUES.map((v) => childTag(v, INTENT_ROOT_TAG_ID)),
-  ...SOURCE_VALUES.map((v) => childTag(v, SOURCE_ROOT_TAG_ID)),
-  ...TYPE_VALUES.map((v) => childTag(v, TYPE_ROOT_TAG_ID)),
-  ...categories.flatMap(({ name, children = [] }) => {
-    const categoryId = tagId(name, CATEGORY_ROOT_TAG_ID);
-    return [
-      childTag(name, CATEGORY_ROOT_TAG_ID),
-      ...children.map((child) => childTag(child, categoryId)),
-    ];
-  }),
-];
+const dimensionRootTree = (categories = [], authorshipRootName = DIMENSION_ROOTS.origin) => {
+  const authorshipRootId = tagId(authorshipRootName);
+  return [
+    rootTag(DIMENSION_ROOTS.category),
+    rootTag(DIMENSION_ROOTS.intent),
+    rootTag(authorshipRootName),
+    rootTag(DIMENSION_ROOTS.type),
+    ...INTENT_VALUES.map((v) => childTag(v, INTENT_ROOT_TAG_ID)),
+    ...ORIGIN_VALUES.map((v) => childTag(v, authorshipRootId)),
+    ...TYPE_VALUES.map((v) => childTag(v, TYPE_ROOT_TAG_ID)),
+    ...categories.flatMap(({ name, children = [] }) => {
+      const categoryId = tagId(name, CATEGORY_ROOT_TAG_ID);
+      return [
+        childTag(name, CATEGORY_ROOT_TAG_ID),
+        ...children.map((child) => childTag(child, categoryId)),
+      ];
+    }),
+  ];
+};
 
 /**
  * Authors one full sub-workspace hierarchy (a live market with a model, a tagged prompt, an
@@ -303,7 +316,7 @@ export const EMPTY_WORKSPACE = Object.freeze({
  *
  * The prompt is dual-tagged (its depth-2 category AND its depth-3 sub-category, per the id-based
  * alignment spec's delete-resilience rule) and carries one closed value per dimension. Its
- * sub-category `human` and its source value `human` share a name and nothing else.
+ * sub-category `human` and its origin value `human` share a name and nothing else.
  */
 export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   childWorkspaceId: CHILD_WORKSPACE_ID,
@@ -322,7 +335,7 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   promptTags: [
     childTag(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID),
     childTag(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID),
-    childTag('human', SOURCE_ROOT_TAG_ID),
+    childTag('human', ORIGIN_ROOT_TAG_ID),
     childTag('Commercial', INTENT_ROOT_TAG_ID),
     childTag('branded', TYPE_ROOT_TAG_ID),
   ],
@@ -359,7 +372,7 @@ export const TWO_HIERARCHIES = Object.freeze({
     promptName: 'Was ist der beste Laufschuh?',
     promptTags: [
       childTag('Laufschuhe', CATEGORY_ROOT_TAG_ID),
-      childTag('ai', SOURCE_ROOT_TAG_ID),
+      childTag('ai', ORIGIN_ROOT_TAG_ID),
       childTag('Informational', INTENT_ROOT_TAG_ID),
       childTag('non-branded', TYPE_ROOT_TAG_ID),
     ],
@@ -371,6 +384,42 @@ export const TWO_HIERARCHIES = Object.freeze({
 });
 
 /**
+ * The pre-rename shape: identical to `workspace-with-data`, except the authorship root is still
+ * named `source` (with `ai` / `human` beneath it) instead of `origin`, and the prompt's authorship
+ * tag hangs off that `source` root. This is the fixture api-service's tolerant resolver runs
+ * against (origin-dimension.md §7 gate 3) — a live project that still carries a `source`-named
+ * authorship root, which the resolver must accept in place and never duplicate into a second root.
+ * Deleted by WP-O6 once the `source` fallback is dropped.
+ */
+export const WORKSPACE_WITH_SOURCE_ROOT = Object.freeze(peHierarchy({
+  childWorkspaceId: CHILD_WORKSPACE_ID,
+  projectId: PROJECT_ID,
+  aiModelAssignmentId: AI_MODEL_ASSIGNMENT_ID,
+  name: 'Seeded Project',
+  domain: 'example.com',
+  brandName: 'Seeded Brand',
+  languageId: ENGLISH_LANGUAGE_ID,
+  countryCode: 'us',
+  locationId: US_GEO_TARGET_ID,
+  locationName: 'United States',
+  modelKey: 'search-gpt',
+  promptId: PROMPT_ID,
+  promptName: 'What is the best running shoe?',
+  promptTags: [
+    childTag(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID),
+    childTag(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID),
+    childTag('human', LEGACY_SOURCE_ROOT_TAG_ID),
+    childTag('Commercial', INTENT_ROOT_TAG_ID),
+    childTag('branded', TYPE_ROOT_TAG_ID),
+  ],
+  benchmarkId: BENCHMARK_ID,
+  brandUrlId: BRAND_URL_ID,
+  projectTags: dimensionRootTree([
+    { name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] },
+  ], LEGACY_AUTHORSHIP_ROOT_NAME),
+}));
+
+/**
  * All seed sets by name, for the runner to select via env/flag. Typed as a string map so a
  * runtime `MOCK_SEED` (an arbitrary string) can index it with a fallback (see {@link Context}).
  * @type {Record<string, import('./store.js').Snapshot>}
@@ -379,6 +428,7 @@ export const SEEDS = Object.freeze({
   'empty-workspace': EMPTY_WORKSPACE,
   'workspace-with-data': WORKSPACE_WITH_DATA,
   'two-hierarchies': TWO_HIERARCHIES,
+  'legacy-source-workspace': WORKSPACE_WITH_SOURCE_ROOT,
 });
 
 /** Default seed loaded when none is specified. */
@@ -398,18 +448,23 @@ export const SEED_IDS = Object.freeze({
   // The four dimension roots — every project carries exactly these at the root level.
   categoryRootTagId: CATEGORY_ROOT_TAG_ID,
   intentRootTagId: INTENT_ROOT_TAG_ID,
-  sourceRootTagId: SOURCE_ROOT_TAG_ID,
+  originRootTagId: ORIGIN_ROOT_TAG_ID,
   typeRootTagId: TYPE_ROOT_TAG_ID,
   // H1's open taxonomy: a depth-2 category and its two depth-3 sub-categories. `childTagId` carries
   // no prompts; `childCollidingTagId` is the sub-category named `human`, whose name — and only
-  // whose name — matches the `source` value below.
+  // whose name — matches the `origin` value below.
   categoryTagId: CATEGORY_TAG_ID,
   childTagId: CHILD_TAG_ID,
   childCollidingTagId: CHILD_COLLIDING_TAG_ID,
   // H1's closed-dimension values, as carried by the seeded prompt.
-  sourceHumanTagId: SOURCE_HUMAN_TAG_ID,
+  originHumanTagId: ORIGIN_HUMAN_TAG_ID,
   intentCommercialTagId: INTENT_COMMERCIAL_TAG_ID,
   typeBrandedTagId: TYPE_BRANDED_TAG_ID,
+  // The legacy pre-rename fixture (`legacy-source-workspace`): the authorship root is still named
+  // `source`, for api-service's tolerant-resolver test (origin-dimension.md §7 gate 3). WP-O6 drops
+  // both the seed and these ids.
+  legacySourceRootTagId: LEGACY_SOURCE_ROOT_TAG_ID,
+  legacySourceHumanTagId: LEGACY_SOURCE_HUMAN_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

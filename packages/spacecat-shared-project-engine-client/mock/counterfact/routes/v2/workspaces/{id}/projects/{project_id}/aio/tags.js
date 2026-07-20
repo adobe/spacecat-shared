@@ -13,7 +13,7 @@
 /**
  * Stateful handlers for /v2/workspaces/{id}/projects/{project_id}/aio/tags — the project-level AIO
  * tag taxonomy (the Categories surface), modelled as a dimension-root tree: each DIMENSION
- * (`category`, `intent`, `source`, `type`) is a bare-named root with no `parent_id`, and every
+ * (`category`, `intent`, `origin`, `type`) is a bare-named root with no `parent_id`, and every
  * VALUE is a bare-named descendant carrying its parent's id. No tag name contains a `:`; a tag's
  * dimension is `path[0]`. Categories sit at depth 2 and sub-categories at depth 3. The per-project
  * `tags` collection (`tags:{ws}:{pid}`) is scoped so the same taxonomy registered across N market

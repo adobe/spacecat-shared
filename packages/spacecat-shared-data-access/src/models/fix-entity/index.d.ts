@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import type { ObjectSchema } from 'joi';
 import type {
   BaseCollection, BaseModel, Opportunity, Suggestion, FixEntitySuggestion,
 } from '../index';
@@ -52,3 +53,9 @@ export declare function isAllowedFixTransition(
   from: string | null | undefined,
   to: string,
 ): boolean;
+
+// Canonical v2 changeDetails shape + validator (SITES-47997, ADR
+// adobe/mysticat-architecture#200).
+export declare const CHANGE_DETAILS_SCHEMA_VERSION: number;
+export declare const changeDetailsV2Schema: ObjectSchema;
+export declare function validateChangeDetails(value: unknown): boolean;

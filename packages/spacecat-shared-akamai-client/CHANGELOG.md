@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-akamai-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.1.0...@adobe/spacecat-shared-akamai-client-v1.2.0) (2026-07-20)
+
+### Features
+
+* **akamai-client:** OAE rule-tree helpers + updateRuleTree dryRun ([#1825](https://github.com/adobe/spacecat-shared/issues/1825)) ([b043be2](https://github.com/adobe/spacecat-shared/commit/b043be2227526433abdfeb6f8a8d68d8c74255e7))
+
 ## [@adobe/spacecat-shared-akamai-client-v1.1.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.0.2...@adobe/spacecat-shared-akamai-client-v1.1.0) (2026-07-15)
 
 ### Features

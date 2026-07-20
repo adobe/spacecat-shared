@@ -157,10 +157,17 @@ const resultSchema = Joi.object({
       return helpers.error('any.invalid');
     }
     return value;
-  }).messages({
-    'any.invalid': `result.deployResponsePayload exceeds ${DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES} bytes; hash it into deployResponseSha256 and truncate at the write chokepoint`,
-  }),
-  deployResponseSha256: Joi.string().pattern(/^[a-f0-9]{64}$/i),
+  })
+    // Carried into the derived JSON Schema so the size-cap caveat travels with
+    // the field for JSON-Schema-only (mystique) consumers — the cap itself is a
+    // Joi `.custom()` rule and is NOT expressible/enforced in JSON Schema.
+    .description(`Raw deploy/apply API response (body + status + relevant headers). MUST be <= ${DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES} bytes at the write chokepoint; larger payloads must be hashed into deployResponseSha256 and truncated. Size cap enforced by the Joi validator, not by this JSON Schema.`)
+    .messages({
+      'any.invalid': `result.deployResponsePayload exceeds ${DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES} bytes; hash it into deployResponseSha256 and truncate at the write chokepoint`,
+    }),
+  // Explicit case ranges (not the /i flag) so the derived JSON Schema `pattern`
+  // stays flag-free and portable to Python's re-based validators.
+  deployResponseSha256: Joi.string().pattern(/^[a-fA-F0-9]{64}$/),
   changeResults: Joi.array().items(changeResultSchema),
   preVerify: preVerifySchema,
   postVerify: postVerifySchema,

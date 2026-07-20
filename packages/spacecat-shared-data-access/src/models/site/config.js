@@ -477,7 +477,16 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
-      maxCharacters: Joi.number().integer().min(0).optional(),
+      catalogFieldConfig: Joi.object({
+        name: Joi.object({
+          enabled: Joi.boolean().required(),
+          maxLength: Joi.number().integer().min(0).optional(),
+        }).optional(),
+        description: Joi.object({
+          enabled: Joi.boolean().required(),
+          maxLength: Joi.number().integer().min(0).optional(),
+        }).optional(),
+      }).optional(),
     }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({

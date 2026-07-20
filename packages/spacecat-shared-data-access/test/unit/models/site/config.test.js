@@ -3102,7 +3102,10 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
-            maxCharacters: 50
+            catalogFieldConfig: {
+              name: { enabled: true, maxLength: 50 },
+              description: { enabled: false },
+            },
           },
         },
       };

@@ -98,8 +98,8 @@ type TransportInit<P extends keyof paths, M extends keyof paths[P]> = MaybeOptio
  * `createProject({ params, body })` enforces its params + body at the call site.
  */
 type TransportInitParam<Init> = RequiredKeysOf<Init> extends never
-  ? [init?: Init & { [key: string]: unknown }]
-  : [init: Init & { [key: string]: unknown }];
+  ? [init?: Init]
+  : [init: Init];
 
 /**
  * The value a facade method resolves with: the parsed 2xx body for path `P` +

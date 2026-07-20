@@ -133,7 +133,7 @@ describe('createSerenityProjectEngineTransport', () => {
       }
       expect(thrown).to.be.an('error');
       expect(thrown.constructor).to.equal(Error); // a plain Error for this ticket
-      expect(thrown.message).to.match(/^Project Engine GET .* failed: 404$/);
+      expect(thrown.message).to.match(/^Project Engine GET failed: 404$/);
     });
 
     it('(d) non-2xx (5xx) with a JSON error body → throws with the status message', async () => {
@@ -153,12 +153,13 @@ describe('createSerenityProjectEngineTransport', () => {
     });
 
     it('(e) non-2xx with an empty-string body → normalized to null (no throw-shape change)', async () => {
-      // A non-ok response with NO content-length and an empty text body: openapi-fetch sets
-      // `error = ''`; unwrap normalizes '' → null.
+      // Must stub (not a real Response) to reach the `error === ''` → null branch: a real
+      // `new Response('', …)` makes openapi-fetch skip the empty body and leave `error`
+      // undefined — that is case (f), not this one. Forcing a present, empty *text* body is
+      // the only way to make openapi-fetch surface `error = ''`.
       const fetch = sandbox.stub().resolves({
         ok: false,
         status: 400,
-        url: `${BASE}${PREFIX}/v1/languages`,
         headers: new Headers(),
         clone() { return this; },
         text: async () => '',
@@ -175,15 +176,12 @@ describe('createSerenityProjectEngineTransport', () => {
     });
 
     it('(f) non-2xx with neither data nor error → null body', async () => {
-      // status 204-style empty on a non-ok path: openapi-fetch returns { error: undefined }.
-      const fetch = sandbox.stub().resolves({
-        ok: false,
-        status: 503,
-        url: `${BASE}${PREFIX}/v1/languages`,
-        headers: new Headers({ 'content-length': '0' }),
-        clone() { return this; },
-        text: async () => '',
-      });
+      // A real non-ok Response with an explicit `content-length: 0`: openapi-fetch skips
+      // parsing (rather than reading '' from the empty body), leaving `error = undefined` — so
+      // unwrap's `error ?? data ?? null` falls through the nullish path to null.
+      const fetch = sandbox.stub().resolves(
+        new Response(null, { status: 503, headers: { 'content-length': '0' } }),
+      );
       const transport = make(fetch);
       let thrown;
       try {

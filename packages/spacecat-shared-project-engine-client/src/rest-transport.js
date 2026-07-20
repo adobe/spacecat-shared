@@ -67,7 +67,9 @@ export function createSerenityProjectEngineTransport(options) {
       // method, and this normalized body are all already in scope, so nothing else here changes.
       // eslint-disable-next-line no-unused-vars
       const body = rawBody === '' ? null : rawBody;
-      throw new Error(`Project Engine ${method} ${response.url} failed: ${status}`);
+      // Message deliberately omits the request URL: it embeds path-param ids (workspace/
+      // project/etc.) that error-reporter and log consumers should not receive by default.
+      throw new Error(`Project Engine ${method} failed: ${status}`);
     }
     return data ?? null;
   }

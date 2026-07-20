@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText } from '@adobe/spacecat-shared-utils';
 import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 
@@ -57,7 +58,7 @@ class SiteEnrollmentCollection extends BaseCollection {
    * @returns {Promise<string[]>} Array of siteId strings.
    */
   async allSiteIdsByTier(tier, productCode) {
-    if (!tier) {
+    if (!hasText(tier)) {
       throw new DataAccessError('tier is required', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' });
     }
 
@@ -77,7 +78,7 @@ class SiteEnrollmentCollection extends BaseCollection {
       throw new DataAccessError('Failed to query site_enrollments by tier', { entityName: 'SiteEnrollment', tableName: 'site_enrollments' }, error);
     }
 
-    return (data || []).map((row) => row.site_id);
+    return [...new Set((data || []).map((row) => row.site_id))];
   }
 
   async create(item, options = {}) {

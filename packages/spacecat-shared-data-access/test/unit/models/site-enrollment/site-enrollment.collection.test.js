@@ -187,6 +187,24 @@ describe('SiteEnrollmentCollection', () => {
       await expect(instance.allSiteIdsByTier('')).to.be.rejectedWith('tier is required');
     });
 
+    it('deduplicates repeated site IDs from multiple matching entitlements', async () => {
+      firstEqStub.resolves({
+        data: [
+          { site_id: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' },
+          { site_id: 'd1e2f3a4-b5c6-7890-abcd-ef1234567890' },
+          { site_id: 'cfa88998-a0a0-4136-b21d-0ff2aa127443' },
+        ],
+        error: null,
+      });
+
+      const result = await instance.allSiteIdsByTier('PAID');
+
+      expect(result).to.deep.equal([
+        'cfa88998-a0a0-4136-b21d-0ff2aa127443',
+        'd1e2f3a4-b5c6-7890-abcd-ef1234567890',
+      ]);
+    });
+
     it('returns site IDs filtered by tier only when no productCode given', async () => {
       firstEqStub.resolves({
         data: [

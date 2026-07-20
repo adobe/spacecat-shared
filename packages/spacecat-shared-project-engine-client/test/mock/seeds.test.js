@@ -82,9 +82,9 @@ describe('seeds', () => {
     const tags = ops.tags.list({ workspaceId, projectId });
     expect(tags.every((t) => !t.name.includes(':'))).to.equal(true);
 
-    // Exactly the four dimension roots sit at the root level (model spec §7 gate 2).
+    // Exactly the five dimension roots sit at the root level (model spec §7 gate 2).
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'type']);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
 
     // The closed dimensions carry their full fixed vocabularies as bare children.
     const childNamesOf = (parentId) => tags
@@ -93,16 +93,22 @@ describe('seeds', () => {
     expect(childNamesOf(SEED_IDS.intentRootTagId))
       .to.deep.equal(['Informational', 'Task', 'Commercial', 'Transactional', 'Navigational']);
     expect(childNamesOf(SEED_IDS.originRootTagId)).to.deep.equal(['ai', 'human']);
+    // The open `source` dimension (producing systems) carries a representative subset of the
+    // canonical vocabulary, not an exhaustive enum.
+    expect(childNamesOf(SEED_IDS.sourceRootTagId))
+      .to.deep.equal(['config', 'gsc', 'drs', 'synthetic-personas']);
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
 
-    // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories.
+    // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories
+    // including ones that collide by name with values from other dimensions.
     expect(childNamesOf(SEED_IDS.categoryRootTagId)).to.deep.equal(['Running Shoes']);
     const category = tags.find((t) => t.id === SEED_IDS.categoryTagId);
     expect(category).to.include({ name: 'Running Shoes', parent_id: SEED_IDS.categoryRootTagId });
-    expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human']);
+    expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human', 'gsc']);
 
     // The sub-category `human` and the origin value `human` share a name and NOTHING else — the
-    // cross-dimension collision the model spec §7 gate 4 requires to be survivable.
+    // cross-dimension collision the model spec §7 gate 4 requires to be survivable. Similarly, the
+    // sub-category `gsc` and the source value `gsc` are distinct tags with the same name.
     const subcategoryHuman = tags.find((t) => t.id === SEED_IDS.childCollidingTagId);
     const originHuman = tags.find((t) => t.id === SEED_IDS.originHumanTagId);
     expect(subcategoryHuman.name).to.equal(originHuman.name);
@@ -110,16 +116,26 @@ describe('seeds', () => {
     expect(subcategoryHuman.parent_id).to.equal(SEED_IDS.categoryTagId);
     expect(originHuman.parent_id).to.equal(SEED_IDS.originRootTagId);
 
-    // The seeded prompt is dual-tagged (category + sub-category) and carries one closed value per
-    // dimension, reusing the ids the standalone tree registered so `by_tags` correlates.
+    const subcategoryGsc = tags.find((t) => t.id === SEED_IDS.childGscTagId);
+    const sourceGsc = tags.find((t) => t.id === SEED_IDS.sourceGscTagId);
+    expect(subcategoryGsc.name).to.equal(sourceGsc.name);
+    expect(subcategoryGsc.name).to.equal('gsc');
+    expect(subcategoryGsc.id).to.not.equal(sourceGsc.id);
+    expect(subcategoryGsc.parent_id).to.equal(SEED_IDS.categoryTagId);
+    expect(sourceGsc.parent_id).to.equal(SEED_IDS.sourceRootTagId);
+
+    // The seeded prompt is dual-tagged (category + sub-category) and carries one value per
+    // dimension: one closed value (origin/intent/type) and one open value (source), reusing the
+    // ids the standalone tree registered so `by_tags` correlates.
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
-      .to.deep.equal(['Running Shoes', 'human', 'human', 'Commercial', 'branded']);
+      .to.deep.equal(['Running Shoes', 'human', 'human', 'Commercial', 'config', 'branded']);
     expect(prompt.tags.map((t) => t.id)).to.deep.equal([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
+      SEED_IDS.sourceConfigTagId,
       SEED_IDS.typeBrandedTagId,
     ]);
   });

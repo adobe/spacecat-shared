@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.12.0...@adobe/spacecat-shared-project-engine-client-v1.13.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** intent-named facade over the openapi-fetch client (LLMO-5977) ([#1823](https://github.com/adobe/spacecat-shared/issues/1823)) ([eef51fd](https://github.com/adobe/spacecat-shared/commit/eef51fd950b49e6a2b5c040d544f44a7491c756d))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.11.0...@adobe/spacecat-shared-project-engine-client-v1.12.0) (2026-07-16)
 
 ### Features

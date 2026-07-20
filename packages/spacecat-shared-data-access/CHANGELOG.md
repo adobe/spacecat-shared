@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.9.0...@adobe/spacecat-shared-data-access-v4.10.0) (2026-07-20)
+
+### Features
+
+* Add allSiteIdsByTier and allByEnrollmentAndTier collection meth… ([#1569](https://github.com/adobe/spacecat-shared/issues/1569)) ([3ac585b](https://github.com/adobe/spacecat-shared/commit/3ac585bd1b3fe93d32b8d0ad027af81cf6e37830))
+
 ## [@adobe/spacecat-shared-data-access-v4.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.8.0...@adobe/spacecat-shared-data-access-v4.9.0) (2026-07-15)
 
 ### Features

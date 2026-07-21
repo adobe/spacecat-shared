@@ -1788,6 +1788,19 @@ describe('SeoClient', () => {
         .to.be.rejectedWith('HTTP 503');
     });
 
+    it('returns empty result when broken-links endpoint returns 404', async () => {
+      nockToken();
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(404, 'Not Found');
+
+      const result = await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(result.result.backlinks).to.deep.equal([]);
+      expect(result.result.totalCount).to.equal(0);
+      expect(result.fullAuditRef).to.be.a('string');
+    });
+
     it('handles null source_title', async () => {
       nockToken();
       nockBrokenLinksV2([{ ...sampleRow, source_title: null }]);

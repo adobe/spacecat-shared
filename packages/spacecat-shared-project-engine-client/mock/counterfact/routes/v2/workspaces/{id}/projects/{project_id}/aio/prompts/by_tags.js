@@ -26,6 +26,13 @@
  * (`undefined` when never written or fully wiped — `JSON.stringify` drops the key, matching the
  * optional schema field; present as an object once the v3 create/patch family stamps it).
  *
+ * The `include_metadata` query param (declared in the vendored swagger for this operation:
+ * "Include prompt metadata into response") GATES that inline metadata: the DEFAULT (absent, or any
+ * value other than the literal string `true`) omits `metadata` from every item, and
+ * `?include_metadata=true` includes it — so a consumer that never opts in sees the pre-metadata
+ * payload shape, and the mock does not silently mask a missing-flag code path (MysticatBot review,
+ * LLMO-6288 rework).
+ *
  * Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): both
  * prompt-create endpoints (`tagged.js`, id-based `aio/prompts.js`) stamp a fresh prompt
  * `is_new: true`. The `draft` query param (already declared in the vendored swagger for this
@@ -44,6 +51,7 @@ export function POST($) {
   } = $;
   const scope = { workspaceId: path.id, projectId: path.project_id };
   const draft = String(query?.draft ?? '') === 'true';
+  const includeMetadata = String(query?.include_metadata ?? '') === 'true';
   const all = context.ops.prompts.list(scope).filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];
   const matched = tagIds.length === 0
@@ -64,11 +72,17 @@ export function POST($) {
   // to: the raw `{ id, name }` stub, missing `children_count`, `prompts_count` and `path`. That
   // degraded shape is not what live returns, so seed prompts only with tags the seed registers too.
   const { byId } = context.buildTagView(context.ops.tags.list(scope), context.factories);
-  const items = matched.map((p) => ({
-    ...p,
-    tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t),
-    metadata: p.metadata,
-  }));
+  // `metadata` is pulled out of the spread so it is only re-attached when `include_metadata=true`;
+  // when omitted the item carries no `metadata` key at all (not `undefined`), matching the flag-off
+  // payload shape. Every other stored field flows through `...rest` unchanged.
+  const items = matched.map((p) => {
+    const { metadata, ...rest } = p;
+    const item = { ...rest, tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t) };
+    if (includeMetadata && metadata !== undefined) {
+      item.metadata = metadata;
+    }
+    return item;
+  });
 
   return $.response[200].json({
     items, page: body?.page ?? 1, total: items.length, unassigned: 0,

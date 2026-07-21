@@ -64,15 +64,8 @@ export function POST($) {
     }));
   }
 
-  // Quota metered on NEW items only, same dedupe-aware accounting as the plain v3 create.
-  const seenNames = new Set(context.ops.prompts.list(scope).map((p) => p.name));
-  let newCount = 0;
-  for (const item of items) {
-    if (!seenNames.has(item.name)) {
-      seenNames.add(item.name);
-      newCount += 1;
-    }
-  }
+  // Quota metered on NEW items only, via the shared `countNewPrompts` the plain v3 create uses too.
+  const newCount = context.ops.prompts.countNewPrompts(scope, items.map((item) => item.name));
   if (!context.quota.canCreatePrompts(path.id, newCount)) {
     return {
       status: 405,

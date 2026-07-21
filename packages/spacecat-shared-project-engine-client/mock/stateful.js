@@ -250,6 +250,29 @@ export function createStatefulOps(store) {
         return items.some((item) => violatesAuthorLengthCheck(item.metadata));
       },
       /**
+       * Counts how many of `names` would be GENUINELY NEW prompts — a name is free only if it is
+       * neither already present in the project NOR a repeat earlier in the same list. This is the
+       * dedupe-aware quota unit both v3 create routes meter on (a dedupe hit costs no quota), so it
+       * matches `createManyWithMetadata`'s own in-store + in-batch dedupe. Extracted here so
+       * the two create handlers (`aio/prompts.js`, `aio/prompts/tagged.js`) — and any future create
+       * route — share ONE counter rather than each re-deriving the name-scan, which could drift
+       * apart from the real dedupe (MysticatBot review, LLMO-6288 rework).
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<string>} names the requested prompt names, in request order
+       * @returns {number}
+       */
+      countNewPrompts(scope, names) {
+        const seen = new Set(store.list(collectionKey('prompts', scope)).map((p) => p.name));
+        let count = 0;
+        for (const name of names) {
+          if (!seen.has(name)) {
+            seen.add(name);
+            count += 1;
+          }
+        }
+        return count;
+      },
+      /**
        * The v3 CREATE contract (`aio-create-prompts` / `aio-create-tagged-prompts`, LLMO-6288 WP2
        * rework — supersedes the ADR's dropped `*-with-metadata` PUT family this mock previously
        * modelled): each item is either a DEDUPE hit — an existing prompt already carries this exact
@@ -368,12 +391,16 @@ export function createStatefulOps(store) {
        * The v3 BATCH metadata PATCH (`aio-patch-prompts-metadata-batch`, LLMO-6288 WP2 rework) —
        * `{ id, metadata }` per item, run as ONE transaction: an unknown `id`, or any item's
        * `metadata` violating the author-length CHECK, aborts the WHOLE batch (`not-found` /
-       * `bad-request` respectively) with NOTHING written — the delivered contract's "a
+       * `check-violation` respectively) with NOTHING written — the delivered contract's "a
        * CHECK-constraint violation on any item rolls the batch back". Every item is resolved AND
-       * validated before any merge is applied.
+       * validated before any merge is applied. The author-length failure reuses the SAME
+       * `check-violation` status {@link patchOne} returns for the identical condition, so the two
+       * metadata-write ops share one internal status vocabulary (MysticatBot review, LLMO-6288
+       * rework) — a future handler dispatching on status can't hit a `bad-request` vs
+       * `check-violation` split for what is one cause.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<{ id: string, metadata: unknown }>} items
-       * @returns {{ status: 'ok' } | { status: 'not-found' | 'bad-request' }}
+       * @returns {{ status: 'ok' } | { status: 'not-found' | 'check-violation' }}
        */
       patchMetadataBatch(scope, items) {
         const key = collectionKey('prompts', scope);
@@ -387,7 +414,7 @@ export function createStatefulOps(store) {
           resolved.push({ id, current, metadata });
         }
         if (resolved.some(({ metadata }) => violatesAuthorLengthCheck(metadata))) {
-          return { status: 'bad-request' };
+          return { status: 'check-violation' };
         }
         for (const { id, current, metadata } of resolved) {
           store.update(key, id, {

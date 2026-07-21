@@ -124,16 +124,22 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     'content-type': 'application/json',
     Accept: 'application/json',
   };
-  const listByTags = (tagIds, { draft } = {}) => client.POST(
-    '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
-    {
-      params: {
-        path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
-        ...(draft ? { query: { draft: true } } : {}),
+  const listByTags = (tagIds, { draft, includeMetadata } = {}) => {
+    const query = {
+      ...(draft ? { draft: true } : {}),
+      ...(includeMetadata ? { include_metadata: true } : {}),
+    };
+    return client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          ...(Object.keys(query).length > 0 ? { query } : {}),
+        },
+        body: { tag_ids: tagIds },
       },
-      body: { tag_ids: tagIds },
-    },
-  );
+    );
+  };
   // One level of the tag tree: `parentId: ''` lists the dimension roots, an id lists that tag's
   // direct children. `parent_id` and `search` are both spec-required query params.
   const listTags = (parentId, search = '') => client.GET(
@@ -411,6 +417,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // v2 `by_tags` list now carrying `metadata` inline. All real, spec-vendored paths, so every case
   // below drives the generated typed client — nothing here is a mock-owned bypass any more.
   const V3_CREATE = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts';
+  const V3_CREATE_TAGGED = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/tagged';
   const V3_PATCH_ONE = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}';
   const V3_PATCH_ONE_METADATA = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata';
   const V3_PATCH_BATCH = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata';
@@ -426,10 +433,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(item).to.include({ name: 'v3 metadata prompt?', is_new: true });
     expect(item.metadata).to.deep.equal({ created_by: 'a@adobe.com', created_at: 't0' });
 
-    // by_tags (v2, draft view) now carries the same metadata inline — no separate read endpoint.
-    const { data: listed } = await listByTags([], { draft: true });
+    // by_tags (v2, draft view) now carries the same metadata inline — no separate read endpoint —
+    // but only when the caller opts in via `include_metadata` (the declared query param).
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
     const mine = listed.items.find((p) => p.id === item.id);
     expect(mine.metadata).to.deep.equal({ created_by: 'a@adobe.com', created_at: 't0' });
+
+    // Without `include_metadata`, the same list omits the `metadata` key entirely (default shape).
+    const { data: bare } = await listByTags([], { draft: true });
+    expect(bare.items.find((p) => p.id === item.id)).to.not.have.property('metadata');
   });
 
   it('v3 create dedupe hit PRESERVES the existing stored metadata and reports is_new: false', async () => {
@@ -449,6 +461,45 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
   });
 
+  // MysticatBot review (LLMO-6288 rework): the v3 `tagged` create has its OWN per-item tag-minting
+  // + register-after-write chain (distinct from the shared-`tag_ids` plain v3 create), so it earns
+  // a functional round-trip beyond the 401 guard case — proving the minted ROOT tag is readable,
+  // metadata reads back inline, and the shared dedupe/quota counter (`countNewPrompts`) holds here.
+  it('v3 tagged create mints per-item root tags, stamps metadata, and dedupes on re-create', async () => {
+    const { data: created, error } = await client.POST(V3_CREATE_TAGGED, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        prompts: [{
+          name: 'v3 tagged prompt?',
+          tags: ['freshly-minted-root'],
+          metadata: { created_by: 'tag@adobe.com' },
+        }],
+      },
+    });
+    expect(error).to.equal(undefined);
+    expect(created.existing_count).to.equal(0);
+    const [item] = created.items;
+    expect(item).to.include({ name: 'v3 tagged prompt?', is_new: true });
+    expect(item.metadata).to.deep.equal({ created_by: 'tag@adobe.com' });
+
+    // The absent tag name was minted as a ROOT tag, readable via GET /aio/tags (parent_id='').
+    const { data: roots } = await listTags('');
+    expect(roots.items.map((t) => t.name)).to.include('freshly-minted-root');
+
+    // Metadata reads back inline (opt-in), and a re-create dedupes (is_new:false, no quota cost).
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
+    expect(listed.items.find((p) => p.id === item.id).metadata)
+      .to.deep.equal({ created_by: 'tag@adobe.com' });
+
+    const { data: again } = await client.POST(V3_CREATE_TAGGED, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { prompts: [{ name: 'v3 tagged prompt?', metadata: { created_by: 'ignored@adobe.com' } }] },
+    });
+    expect(again.existing_count).to.equal(1);
+    expect(again.items[0]).to.include({ id: item.id, is_new: false });
+    expect(again.items[0].metadata).to.deep.equal({ created_by: 'tag@adobe.com' });
+  });
+
   it('single-prompt metadata PATCH merges (RFC 7396): absent keeps, string sets, null deletes', async () => {
     const { data: created } = await client.POST(V3_CREATE, {
       params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
@@ -463,7 +514,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(error).to.equal(undefined);
     expect(response.status).to.equal(204);
 
-    const { data: listed } = await listByTags([], { draft: true });
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
     const mine = listed.items.find((p) => p.id === id);
     // created_by deleted, created_at kept (absent from the patch), updated_by set.
     expect(mine.metadata).to.deep.equal({ created_at: 't0', updated_by: 'b@adobe.com' });
@@ -482,9 +533,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(response.status).to.equal(204);
 
-    const { data: listed } = await listByTags([], { draft: true });
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
     const mine = listed.items.find((p) => p.id === id);
     expect(mine.name).to.equal('wiped and renamed');
+    // Even with include_metadata=true, a wiped block leaves no `metadata` key.
     expect(mine).to.not.have.property('metadata');
   });
 
@@ -533,7 +585,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(badRes.status).to.equal(400);
 
     // Nothing landed — a's metadata is unchanged by the rolled-back batch.
-    const { data: listed } = await listByTags([], { draft: true });
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
     const mineA = listed.items.find((p) => p.id === a.id);
     expect(mineA.metadata).to.deep.equal({ created_by: 'a@adobe.com' });
 
@@ -548,7 +600,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     });
     expect(okRes.status).to.equal(204);
-    const { data: listedAfter } = await listByTags([], { draft: true });
+    const { data: listedAfter } = await listByTags([], { draft: true, includeMetadata: true });
     expect(listedAfter.items.find((p) => p.id === a.id).metadata)
       .to.deep.equal({ created_by: 'a@adobe.com', updated_by: 'edit@adobe.com' });
     expect(listedAfter.items.find((p) => p.id === b.id).metadata)
@@ -573,7 +625,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(response.status).to.equal(404);
 
-    const { data: listed } = await listByTags([], { draft: true });
+    const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });
     expect(listed.items.find((p) => p.id === id).metadata).to.deep.equal({ created_by: 'a@adobe.com' });
   });
 

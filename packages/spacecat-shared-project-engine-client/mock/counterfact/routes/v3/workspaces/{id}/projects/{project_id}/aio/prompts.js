@@ -71,15 +71,9 @@ export function POST($) {
   }
 
   // Quota is metered on NEW items only — a dedupe hit costs nothing (mirrors the v2 create paths'
-  // existing_count accounting, computed here since the actual dedupe lives in stateful.js).
-  const seenNames = new Set(context.ops.prompts.list(scope).map((p) => p.name));
-  let newCount = 0;
-  for (const item of items) {
-    if (!seenNames.has(item.name)) {
-      seenNames.add(item.name);
-      newCount += 1;
-    }
-  }
+  // existing_count accounting). The dedupe-aware count lives in stateful.js's `countNewPrompts`,
+  // shared with the tagged v3 create so the two can't drift from each other or the real dedupe.
+  const newCount = context.ops.prompts.countNewPrompts(scope, items.map((item) => item.name));
   if (!context.quota.canCreatePrompts(path.id, newCount)) {
     // 405 is not a declared response for this operation (only 201/400/403/500) — the disguised
     // quota 405 the live API returns (mock/quota.js), so this is a raw bypass like every other

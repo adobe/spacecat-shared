@@ -325,8 +325,25 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
         { id: a.id, metadata: { created_by: 'fine@x' } },
         { id: b.id, metadata: { updated_by: long } },
       ]);
-      expect(result).to.deep.equal({ status: 'bad-request' });
+      // Reuses `patchOne`'s `check-violation` status for the identical author-length CHECK, so the
+      // two metadata-write ops share one status vocabulary (MysticatBot review, LLMO-6288 rework).
+      expect(result).to.deep.equal({ status: 'check-violation' });
       expect(ops.get(scope, a.id).metadata).to.equal(undefined); // rolled back too
+    });
+  });
+
+  describe('countNewPrompts', () => {
+    it('counts only genuinely new names — store dedupes and in-list repeats cost nothing', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      ops.createMany(scope, [{ name: 'existing', tags: [] }]);
+      // 'existing' is already stored (dedupe hit), 'fresh' is new, the second 'dup' repeats the
+      // first within the same list — so only 'fresh' + one 'dup' count => 2.
+      expect(ops.countNewPrompts(scope, ['existing', 'fresh', 'dup', 'dup'])).to.equal(2);
+    });
+
+    it('counts every name when the project is empty', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.countNewPrompts(scope, ['a', 'b'])).to.equal(2);
     });
   });
 });

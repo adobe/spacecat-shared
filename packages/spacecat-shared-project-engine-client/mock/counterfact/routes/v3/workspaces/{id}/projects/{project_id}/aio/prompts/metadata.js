@@ -40,7 +40,7 @@ export function PATCH($) {
   if (outcome.status === 'not-found') {
     return $.response[404].json(context.factories.createBasicResponseMock({ message: 'not found' }));
   }
-  if (outcome.status === 'bad-request') {
+  if (outcome.status === 'check-violation') {
     return $.response[400].json(context.factories.createBasicResponseMock({
       message: 'created_by/updated_by must be at most 100 characters',
     }));

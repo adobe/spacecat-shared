@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.0...@adobe/spacecat-shared-data-access-v4.10.1) (2026-07-21)
+
+### Bug Fixes
+
+* add routingEnabled (timestamp) to edgeOptimizeConfig schema ([#1835](https://github.com/adobe/spacecat-shared/issues/1835)) ([bfc17da](https://github.com/adobe/spacecat-shared/commit/bfc17daaeb628d8abaf5c211bbf7aee1b35ed3be))
+
 ## [@adobe/spacecat-shared-data-access-v4.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.9.0...@adobe/spacecat-shared-data-access-v4.10.0) (2026-07-20)
 
 ### Features

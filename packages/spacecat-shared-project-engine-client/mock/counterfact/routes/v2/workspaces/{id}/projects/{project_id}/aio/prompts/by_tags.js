@@ -16,9 +16,15 @@
  * (spacecat-api-service `listPromptsByTags`). Request is `AIOPromptsListRequest`; an empty
  * `tag_ids` lists every prompt, otherwise prompts carrying any of the supplied tag ids match
  * (Semrush OR semantics). Returns 200 `AIOPromptsWithStatusListResponse` whose `items` are the
- * stored prompts (`AIOPromptWithStatus`: id, name, is_new, tags) — so a list reflects prior
- * `tagged` writes. Materialized into `.counterfact/routes/` by the mock runner; excluded from
- * coverage.
+ * stored prompts (`AIOPromptWithStatus`: id, name, is_new, tags, metadata) — so a list reflects
+ * prior `tagged`/v3-create writes AND their authorship metadata. Materialized into
+ * `.counterfact/routes/` by the mock runner; excluded from coverage.
+ *
+ * LLMO-6288 WP2 rework: the delivered swagger carries `metadata` inline on THIS existing list —
+ * there is no separate `by_tags/with-metadata` endpoint (the mock previously invented one against
+ * the pre-delivery ADR guess; it is dropped). `metadata` is echoed verbatim from the stored prompt
+ * (`undefined` when never written or fully wiped — `JSON.stringify` drops the key, matching the
+ * optional schema field; present as an object once the v3 create/patch family stamps it).
  *
  * Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): both
  * prompt-create endpoints (`tagged.js`, id-based `aio/prompts.js`) stamp a fresh prompt
@@ -61,6 +67,7 @@ export function POST($) {
   const items = matched.map((p) => ({
     ...p,
     tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t),
+    metadata: p.metadata,
   }));
 
   return $.response[200].json({

@@ -406,62 +406,188 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
   });
 
-  // WP2 (LLMO-6288): the Adobe-owned `*-with-metadata` surface. Create a prompt, PUT its opaque
-  // authorship metadata (whole-object overwrite), PATCH-merge a later edit, and read it back via
-  // by_tags/with-metadata. These paths are mock-only (absent from the vendored swagger), so they
-  // are driven with raw fetch + a Bearer credential rather than the generated typed client.
-  it('writes prompt metadata (PUT overwrite, PATCH merge) and reads it back with-metadata', async () => {
-    const base = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`;
-    const headers = {
-      Authorization: 'Bearer e2e-token',
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    };
+  // WP2 (LLMO-6288 v3 rework): the DELIVERED Semrush metadata contract — v3 create-with-metadata,
+  // RFC 7396 merge-patch (single + batch + combined), dedupe-preserves-metadata, and the existing
+  // v2 `by_tags` list now carrying `metadata` inline. All real, spec-vendored paths, so every case
+  // below drives the generated typed client — nothing here is a mock-owned bypass any more.
+  const V3_CREATE = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts';
+  const V3_PATCH_ONE = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}';
+  const V3_PATCH_ONE_METADATA = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata';
+  const V3_PATCH_BATCH = '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata';
 
-    const { data: created } = await client.POST(
-      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged',
-      {
-        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
-        body: { prompts: { 'Metadata prompt?': ['brand'] } },
-      },
-    );
-    const [id] = created.ids;
-
-    // PUT — whole-object overwrite of the opaque payload.
-    const putRes = await fetch(`${base}/metadata`, {
-      method: 'PUT',
-      headers,
-      body: JSON.stringify({ items: [{ id, metadata: { created_by: 'a@adobe.com', created_at: 't0' } }] }),
+  it('v3 create stamps metadata on a new prompt and reads it back inline via by_tags', async () => {
+    const { data: created, error } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'v3 metadata prompt?', metadata: { created_by: 'a@adobe.com', created_at: 't0' } }] },
     });
-    expect(putRes.status).to.equal(200);
-    expect((await putRes.json()).updated_count).to.equal(1);
+    expect(error).to.equal(undefined);
+    expect(created.existing_count).to.equal(0);
+    const [item] = created.items;
+    expect(item).to.include({ name: 'v3 metadata prompt?', is_new: true });
+    expect(item.metadata).to.deep.equal({ created_by: 'a@adobe.com', created_at: 't0' });
 
-    // PATCH — merge a later edit onto the stored object (incoming keys win).
-    const patchRes = await fetch(`${base}/metadata`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({ items: [{ id, metadata: { updated_by: 'b@adobe.com', updated_at: 't1' } }] }),
-    });
-    expect(patchRes.status).to.equal(200);
+    // by_tags (v2, draft view) now carries the same metadata inline — no separate read endpoint.
+    const { data: listed } = await listByTags([], { draft: true });
+    const mine = listed.items.find((p) => p.id === item.id);
+    expect(mine.metadata).to.deep.equal({ created_by: 'a@adobe.com', created_at: 't0' });
+  });
 
-    // Read back via the with-metadata list (draft view: the created prompt is is_new).
-    const listRes = await fetch(`${base}/by_tags/with-metadata?draft=true`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ tag_ids: [] }),
+  it('v3 create dedupe hit PRESERVES the existing stored metadata and reports is_new: false', async () => {
+    const { data: first } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'dedupe target?', metadata: { created_by: 'orig@adobe.com' } }] },
     });
-    expect(listRes.status).to.equal(200);
-    const body = await listRes.json();
-    const mine = body.items.find((p) => p.id === id);
-    expect(mine.metadata).to.deep.equal({
-      created_by: 'a@adobe.com', created_at: 't0', updated_by: 'b@adobe.com', updated_at: 't1',
+    const [{ id }] = first.items;
+
+    const { data: second } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'dedupe target?', metadata: { created_by: 'ignored@adobe.com' } }] },
+    });
+    expect(second.existing_count).to.equal(1);
+    expect(second.items[0]).to.deep.equal({
+      id, name: 'dedupe target?', is_new: false, metadata: { created_by: 'orig@adobe.com' },
     });
   });
 
-  it('rejects a metadata write without a Bearer credential (401)', async () => {
+  it('single-prompt metadata PATCH merges (RFC 7396): absent keeps, string sets, null deletes', async () => {
+    const { data: created } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'merge target?', metadata: { created_by: 'a@adobe.com', created_at: 't0' } }] },
+    });
+    const [{ id }] = created.items;
+
+    const { response, error } = await client.PATCH(V3_PATCH_ONE_METADATA, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: id } },
+      body: { updated_by: 'b@adobe.com', created_by: null },
+    });
+    expect(error).to.equal(undefined);
+    expect(response.status).to.equal(204);
+
+    const { data: listed } = await listByTags([], { draft: true });
+    const mine = listed.items.find((p) => p.id === id);
+    // created_by deleted, created_at kept (absent from the patch), updated_by set.
+    expect(mine.metadata).to.deep.equal({ created_at: 't0', updated_by: 'b@adobe.com' });
+  });
+
+  it('combined PATCH .../{prompt_id}: metadata: null WIPES the whole block; name renames too', async () => {
+    const { data: created } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'wipe target?', metadata: { created_by: 'a@adobe.com' } }] },
+    });
+    const [{ id }] = created.items;
+
+    const { response } = await client.PATCH(V3_PATCH_ONE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: id } },
+      body: { name: 'wiped and renamed', metadata: null },
+    });
+    expect(response.status).to.equal(204);
+
+    const { data: listed } = await listByTags([], { draft: true });
+    const mine = listed.items.find((p) => p.id === id);
+    expect(mine.name).to.equal('wiped and renamed');
+    expect(mine).to.not.have.property('metadata');
+  });
+
+  it('combined PATCH 409s on a sibling-name conflict, 400 when neither field is supplied', async () => {
+    const { data: created } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        items: [{ name: 'conflict a?' }, { name: 'conflict b?' }],
+      },
+    });
+    const [a, b] = created.items;
+
+    const { response: conflictRes, error: conflictErr } = await client.PATCH(V3_PATCH_ONE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: b.id } },
+      body: { name: a.name },
+    });
+    expect(conflictRes.status).to.equal(409);
+    expect(conflictErr).to.not.equal(undefined);
+
+    const { response: emptyRes } = await client.PATCH(V3_PATCH_ONE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: a.id } },
+      body: {},
+    });
+    expect(emptyRes.status).to.equal(400);
+  });
+
+  it('batch metadata PATCH is atomic: a CHECK violation (>100 chars) rolls back the WHOLE batch', async () => {
+    const { data: created } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        items: [{ name: 'batch a?', metadata: { created_by: 'a@adobe.com' } }, { name: 'batch b?' }],
+      },
+    });
+    const [a, b] = created.items;
+    const tooLong = 'x'.repeat(101);
+
+    const { response: badRes } = await client.PATCH(V3_PATCH_BATCH, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        items: [
+          { prompt_id: a.id, metadata: { updated_by: 'edit@adobe.com' } },
+          { prompt_id: b.id, metadata: { created_by: tooLong } },
+        ],
+      },
+    });
+    expect(badRes.status).to.equal(400);
+
+    // Nothing landed — a's metadata is unchanged by the rolled-back batch.
+    const { data: listed } = await listByTags([], { draft: true });
+    const mineA = listed.items.find((p) => p.id === a.id);
+    expect(mineA.metadata).to.deep.equal({ created_by: 'a@adobe.com' });
+
+    // A clean batch (no violation) DOES apply to both items.
+    const { response: okRes } = await client.PATCH(V3_PATCH_BATCH, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        items: [
+          { prompt_id: a.id, metadata: { updated_by: 'edit@adobe.com' } },
+          { prompt_id: b.id, metadata: { created_by: 'b@adobe.com' } },
+        ],
+      },
+    });
+    expect(okRes.status).to.equal(204);
+    const { data: listedAfter } = await listByTags([], { draft: true });
+    expect(listedAfter.items.find((p) => p.id === a.id).metadata)
+      .to.deep.equal({ created_by: 'a@adobe.com', updated_by: 'edit@adobe.com' });
+    expect(listedAfter.items.find((p) => p.id === b.id).metadata)
+      .to.deep.equal({ created_by: 'b@adobe.com' });
+  });
+
+  it('batch metadata PATCH 404s on an unknown prompt_id, rolling back the whole batch', async () => {
+    const { data: created } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: '404 target?', metadata: { created_by: 'a@adobe.com' } }] },
+    });
+    const [{ id }] = created.items;
+
+    const { response } = await client.PATCH(V3_PATCH_BATCH, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: {
+        items: [
+          { prompt_id: id, metadata: { updated_by: 'edit@adobe.com' } },
+          { prompt_id: 'not-a-real-prompt-id', metadata: { created_by: 'x@adobe.com' } },
+        ],
+      },
+    });
+    expect(response.status).to.equal(404);
+
+    const { data: listed } = await listByTags([], { draft: true });
+    expect(listed.items.find((p) => p.id === id).metadata).to.deep.equal({ created_by: 'a@adobe.com' });
+  });
+
+  it('rejects a v3 metadata write without a Bearer credential (401)', async () => {
     const res = await fetch(
-      `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/metadata`,
-      { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [] }) },
+      `${baseUrl}/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/metadata`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        // A schema-valid (minItems: 1) body, so this exercises the BEARER gate specifically —
+        // not request-shape validation, which Counterfact enforces before any handler (and
+        // therefore before our auth guard) runs.
+        body: JSON.stringify({ items: [{ prompt_id: 'x', metadata: {} }] }),
+      },
     );
     expect(res.status).to.equal(401);
   });

@@ -67,27 +67,53 @@ export function collectionKey(resource, scope = {}) {
 }
 
 /**
- * True for a mergeable JSON object — a non-null, non-array `object`. Author/timestamp metadata is
- * carried OPAQUELY (the mock pins the endpoint + wiring, not the content-schema, until Semrush's
- * WP0 ships the real `metadata` semantics), so this is the only structural assumption the merge
- * path makes: shallow-merge two objects, otherwise let the incoming value replace.
- * @param {unknown} value
- * @returns {value is Record<string, unknown>}
+ * The four keys `model.AIOPromptMetadata` / `model.AIOPromptMetadataPatch` carry (LLMO-6288 WP2
+ * rework, delivered swagger 2026-07-20 — the v3 `/aio/prompts` metadata family). Iterated by
+ * {@link mergeMetadataPatch} so a merge only ever touches these, never an arbitrary caller-supplied
+ * key.
  */
-const isPlainObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+const METADATA_KEYS = ['created_at', 'created_by', 'updated_at', 'updated_by'];
+
+/** The live CHECK constraint on `created_by` / `updated_by` (LLMO-6288 WP2, delivered contract). */
+const AUTHOR_KEYS = ['created_by', 'updated_by'];
+const MAX_AUTHOR_LENGTH = 100;
 
 /**
- * Combines a prompt's stored opaque metadata with an incoming payload for the PATCH-merge path:
- * two plain objects shallow-merge (incoming keys win); anything else (a text-shaped payload, a
- * first write over `undefined`, an array) means the incoming value replaces wholesale. Kept
- * deliberately soft — see {@link isPlainObject}.
- * @param {unknown} current the prompt's existing `metadata` (may be undefined)
- * @param {unknown} incoming the payload's `metadata`
- * @returns {unknown} the metadata to store
+ * True when a metadata-shaped object's `created_by` / `updated_by` would violate the live
+ * `maxLength: 100` CHECK constraint — a violation 400s (and, for the batch metadata PATCH, rolls
+ * back the WHOLE batch) rather than partially applying. Only a STRING value being SET can
+ * overflow; an absent key or an explicit `null` (delete) never does, so a merge-patch's `null`
+ * entries are exempt by construction.
+ * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
+ * @returns {boolean}
  */
-const mergeOpaqueMetadata = (current, incoming) => (
-  isPlainObject(current) && isPlainObject(incoming) ? { ...current, ...incoming } : incoming
-);
+const violatesAuthorLengthCheck = (metadataLike) => AUTHOR_KEYS.some((k) => {
+  const value = /** @type {Record<string, unknown> | undefined} */ (metadataLike)?.[k];
+  return typeof value === 'string' && value.length > MAX_AUTHOR_LENGTH;
+});
+
+/**
+ * RFC 7396 JSON Merge Patch, scoped to the four {@link METADATA_KEYS}: a key ABSENT from `patch`
+ * is kept unchanged, a STRING value sets/overwrites it, and an explicit `null` DELETES it. When
+ * the merge leaves no surviving key, the result collapses to `undefined` — the mock's "no
+ * metadata" state, matching the delivered contract's "the row's metadata collapses to null."
+ * @param {Record<string, unknown> | undefined} current the prompt's existing `metadata`
+ * @param {Record<string, unknown>} patch the merge-patch object (`AIOPromptMetadataPatch`-shaped)
+ * @returns {Record<string, unknown> | undefined}
+ */
+const mergeMetadataPatch = (current, patch) => {
+  const next = { ...(current ?? {}) };
+  for (const key of METADATA_KEYS) {
+    if (key in patch) {
+      if (patch[key] === null) {
+        delete next[key];
+      } else {
+        next[key] = patch[key];
+      }
+    }
+  }
+  return Object.keys(next).length === 0 ? undefined : next;
+};
 
 /**
  * The stateful operations, grouped by resource. Each operates on the store and returns stored
@@ -211,69 +237,163 @@ export function createStatefulOps(store) {
         return store.get(collectionKey('prompts', scope), id);
       },
       /**
-       * Whole-object OVERWRITE of opaque metadata on existing prompts — the batch
-       * `PUT .../aio/prompts/metadata` (`aio-set-prompts-metadata-batch`, ADR §2.3). Each item
-       * replaces the target prompt's `metadata` wholesale (`store.update` shallow-merges at the
-       * entity's top level, so a `{ metadata }` patch swaps the whole value). The payload is
-       * OPAQUE — object or text-shaped — because the mock pins the endpoint and wiring, not the
-       * `metadata` content-schema, until Semrush's WP0 ships the real semantics. An unknown (or
-       * absent) id writes nothing and is reported in `missing`, matching live's silent skip. An
-       * item that carries an id but OMITS `metadata` clears the field (writes `undefined`) — the
-       * overwrite is unconditional, it does not treat a missing key as a no-op.
-       * @param {{ workspaceId: string | number, projectId: string | number }} scope
-       * @param {Array<{ id?: string, metadata?: unknown }>} items
-       * @returns {{ updated: Entity[], missing: Array<string | undefined> }} `updated` are the
-       *   written prompts (cloned); `missing` the ids that matched no stored prompt
+       * True when ANY item in a metadata-bearing batch would violate the live `created_by` /
+       * `updated_by` `maxLength: 100` CHECK (LLMO-6288 WP2 rework, delivered swagger 2026-07-20).
+       * Callers check this BEFORE resolving tag ids / metering quota / writing anything, so the
+       * create and patch routes 400 first — matching the delivered contract's "a CHECK violation
+       * rolls the WHOLE batch back" atomicity (the same validate-before-write discipline this mock
+       * already applies to tag_id resolution).
+       * @param {Array<{ metadata?: unknown }>} items each carrying a full or per-key `metadata`
+       * @returns {boolean}
        */
-      setMetadataMany(scope, items) {
-        const key = collectionKey('prompts', scope);
-        /** @type {Entity[]} */
-        const updated = [];
-        /** @type {Array<string | undefined>} */
-        const missing = [];
-        for (const item of items) {
-          const { id, metadata } = item;
-          const current = id === undefined ? undefined : store.get(key, id);
-          if (current === undefined) {
-            missing.push(id);
-          } else {
-            // `current` resolved ⇒ `id` is a known string; the casts are tsc no-ops.
-            const written = store.update(key, /** @type {string} */ (id), { metadata });
-            updated.push(/** @type {Entity} */ (written));
-          }
-        }
-        return { updated, missing };
+      hasOversizedAuthor(items) {
+        return items.some((item) => violatesAuthorLengthCheck(item.metadata));
       },
       /**
-       * MERGE opaque metadata into existing prompts — the batch `PATCH .../aio/prompts/metadata`.
-       * This verb is the mock's pinned SOFT extension over the ADR's overwrite-only PUT (the ADR
-       * documents no partial update); it exists so a consumer can exercise an incremental edit
-       * before Semrush finalizes WP0. A plain-object payload shallow-merges onto the stored object
-       * (incoming keys win); a text-shaped / array / first-write payload replaces wholesale (see
-       * {@link mergeOpaqueMetadata}). Unknown / absent ids write nothing and land in `missing`.
+       * The v3 CREATE contract (`aio-create-prompts` / `aio-create-tagged-prompts`, LLMO-6288 WP2
+       * rework — supersedes the ADR's dropped `*-with-metadata` PUT family this mock previously
+       * modelled): each item is either a DEDUPE hit — an existing prompt already carries this exact
+       * `name` (in the store, or earlier in this same batch) — or a genuinely new prompt.
+       * - A dedupe hit is left COMPLETELY untouched: its id, its PRESERVED stored `metadata`, and
+       *   `is_new: false` are echoed back — live-documented ("Dedupe hits preserve the previously
+       *   stored metadata and report is_new = false"). Any `tags`/`metadata` the request carried
+       *   for that item are discarded; only a genuinely new prompt is written with them.
+       * - A new item is created with its supplied `tags` (already resolved by the caller — this
+       *   function is tag-id-agnostic) and `metadata` (may be absent), `is_new: true`.
+       * Response order mirrors the request 1:1 — one result PER INPUT ITEM, not just the
+       * newly-created subset (the delivered swagger: "Response returns per-item {id, name,
+       * is_new, metadata}"). ATOMIC on the author-length CHECK ({@link hasOversizedAuthor}): if
+       * the caller did not already gate on it, this re-checks and refuses to write anything.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
-       * @param {Array<{ id?: string, metadata?: unknown }>} items
-       * @returns {{ updated: Entity[], missing: Array<string | undefined> }}
+       * @param {Array<{ name: string, metadata?: unknown,
+       *   tags?: Array<{id: string, name: string}> }>} items
+       * @returns {{ ok: true, results: Array<{ id: string, name: string, is_new: boolean,
+       *   metadata: unknown }>, existingCount: number } | { ok: false }}
        */
-      mergeMetadataMany(scope, items) {
+      createManyWithMetadata(scope, items) {
+        if (items.some((item) => violatesAuthorLengthCheck(item.metadata))) {
+          return { ok: false };
+        }
         const key = collectionKey('prompts', scope);
-        /** @type {Entity[]} */
-        const updated = [];
-        /** @type {Array<string | undefined>} */
-        const missing = [];
+        const byName = new Map(store.list(key).map((p) => [p.name, p]));
+        /** @type {Array<{ id: string, name: string, is_new: boolean, metadata: unknown }>} */
+        const results = [];
+        let existingCount = 0;
         for (const item of items) {
-          const { id } = item;
-          const current = id === undefined ? undefined : store.get(key, id);
-          if (current === undefined) {
-            missing.push(id);
+          const existing = byName.get(item.name);
+          if (existing) {
+            existingCount += 1;
+            results.push({
+              id: existing.id,
+              name: String(existing.name),
+              is_new: false,
+              metadata: existing.metadata,
+            });
           } else {
-            const metadata = mergeOpaqueMetadata(current.metadata, item.metadata);
-            // `current` resolved ⇒ `id` is a known string; the casts are tsc no-ops.
-            const written = store.update(key, /** @type {string} */ (id), { metadata });
-            updated.push(/** @type {Entity} */ (written));
+            const created = store.create(key, {
+              name: item.name,
+              is_new: true,
+              tags: item.tags ?? [],
+              metadata: item.metadata,
+            });
+            // Guards against a repeated name WITHIN this same batch (mirrors the v2 create paths'
+            // in-batch dedupe): the second occurrence sees this fresh entity as "existing" too.
+            byName.set(created.name, created);
+            results.push({
+              id: created.id, name: String(created.name), is_new: true, metadata: created.metadata,
+            });
           }
         }
-        return { updated, missing };
+        return { ok: true, results, existingCount };
+      },
+      /**
+       * The v3 combined PATCH (`aio-patch-prompt`, LLMO-6288 WP2 rework) — `name` and/or
+       * `metadata`, at least one required (the schema marks neither required, so the "≥1" rule is
+       * enforced here, not by request validation). `metadata: null` WIPES the whole block
+       * (collapses to `undefined`, the mock's "no metadata" state); a `metadata` OBJECT is an
+       * RFC 7396 merge via {@link mergeMetadataPatch} (absent key = keep, string = set, explicit
+       * null = delete); an ABSENT `metadata` key leaves it untouched. `name` may not be `null` —
+       * the spec keeps it a plain, non-nullable string, so that case 400s at REQUEST VALIDATION
+       * before this ever runs. A `name` equal to a SIBLING prompt's exact text conflicts (409),
+       * same rule as the dedicated `/rename` endpoint; nothing is mutated. An over-length
+       * `created_by`/`updated_by` in the metadata patch 400s, nothing mutated.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {string} id
+       * @param {{ name?: string, metadata?: unknown }} patch `metadata: null` wipes;
+       *   `metadata: {...}` merges; an absent key of either leaves it untouched
+       * @returns {{ status: 'ok', entity: Entity }
+       *   | { status: 'not-found' | 'conflict' | 'bad-request' }}
+       */
+      patchOne(scope, id, { name, metadata } = {}) {
+        const hasName = name !== undefined;
+        const hasMetadata = metadata !== undefined;
+        if (!hasName && !hasMetadata) {
+          return { status: 'bad-request' };
+        }
+        const key = collectionKey('prompts', scope);
+        const current = store.get(key, id);
+        if (!current) {
+          return { status: 'not-found' };
+        }
+        if (hasName && store.list(key).some((p) => p.id !== id && p.name === name)) {
+          return { status: 'conflict' };
+        }
+        let nextMetadata = current.metadata;
+        if (hasMetadata) {
+          if (metadata === null) {
+            nextMetadata = undefined;
+          } else {
+            if (violatesAuthorLengthCheck(metadata)) {
+              return { status: 'bad-request' };
+            }
+            nextMetadata = mergeMetadataPatch(
+              /** @type {Record<string, unknown> | undefined} */ (current.metadata),
+              /** @type {Record<string, unknown>} */ (metadata),
+            );
+          }
+        }
+        /** @type {Record<string, unknown>} */
+        const write = { metadata: nextMetadata };
+        if (hasName) {
+          write.name = name;
+        }
+        const updated = store.update(key, id, write);
+        return { status: 'ok', entity: /** @type {Entity} */ (updated) };
+      },
+      /**
+       * The v3 BATCH metadata PATCH (`aio-patch-prompts-metadata-batch`, LLMO-6288 WP2 rework) —
+       * `{ id, metadata }` per item, run as ONE transaction: an unknown `id`, or any item's
+       * `metadata` violating the author-length CHECK, aborts the WHOLE batch (`not-found` /
+       * `bad-request` respectively) with NOTHING written — the delivered contract's "a
+       * CHECK-constraint violation on any item rolls the batch back". Every item is resolved AND
+       * validated before any merge is applied.
+       * @param {{ workspaceId: string | number, projectId: string | number }} scope
+       * @param {Array<{ id: string, metadata: unknown }>} items
+       * @returns {{ status: 'ok' } | { status: 'not-found' | 'bad-request' }}
+       */
+      patchMetadataBatch(scope, items) {
+        const key = collectionKey('prompts', scope);
+        /** @type {Array<{ id: string, current: Entity, metadata: unknown }>} */
+        const resolved = [];
+        for (const { id, metadata } of items) {
+          const current = store.get(key, id);
+          if (!current) {
+            return { status: 'not-found' };
+          }
+          resolved.push({ id, current, metadata });
+        }
+        if (resolved.some(({ metadata }) => violatesAuthorLengthCheck(metadata))) {
+          return { status: 'bad-request' };
+        }
+        for (const { id, current, metadata } of resolved) {
+          store.update(key, id, {
+            metadata: mergeMetadataPatch(
+              /** @type {Record<string, unknown> | undefined} */ (current.metadata),
+              /** @type {Record<string, unknown>} */ (metadata),
+            ),
+          });
+        }
+        return { status: 'ok' };
       },
       /**
        * @param {{ workspaceId: string | number, projectId: string | number }} scope

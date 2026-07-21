@@ -94,6 +94,29 @@ info:
 #      it as the empty string — 200, prompt renamed to '' (verified 2026-07-15 against prod);
 #      the vendored plain-string type makes Counterfact's request validation 400 that input
 #      before the handler runs. Remove if Semrush marks it nullable upstream.
+# CR19 model.AIOPromptMetadataPatch's four keys are nullable. The v3 metadata write family is an
+#      RFC 7396 JSON Merge Patch (LLMO-6288 WP2 rework, delivered swagger 2026-07-20): per key,
+#      absent = keep, a string = set, an explicit JSON `null` = DELETE that key. The vendored
+#      schema types all four as plain (non-nullable) strings, so Counterfact's request validation
+#      would reject the delete case's literal `null` before any handler ran. Remove if Semrush
+#      marks them nullable upstream.
+# CR20 model.PatchAIOPromptRequest.metadata is nullable. The combined `PATCH .../aio/prompts/
+#      {prompt_id}` accepts `{ metadata: null }` to WIPE the prompt's entire metadata block (the
+#      row's `metadata` column → NULL) — a distinct, coarser operation than the per-key deletes
+#      CR19 enables. The vendored schema types `metadata` as a bare (non-nullable) `$ref`, so the
+#      wipe request would 400 at request validation before the handler runs. Expressed as
+#      `oneOf: [{type: null}, {$ref}]` rather than a `nullable` sibling of the `$ref`: Counterfact's
+#      validator is plain ajv, which has no notion of OAS `nullable` on a `$ref` — an `allOf`
+#      wrapper (the CR6/CR14 remove-then-add pattern) does not work either, because `allOf` demands
+#      EVERY branch validate, and the referenced `AIOPromptMetadataPatch` schema's own (non-null)
+#      `type: object` then rejects the very `null` the wrapper was meant to allow. `oneOf` avoids
+#      that: a `null` payload matches only the `type: null` branch, an object payload only the
+#      `$ref` branch. Remove if Semrush marks it nullable upstream.
+# CR21 model.AIOPromptCreateResult always carries id + name + is_new (`metadata` stays optional —
+#      present only when the prompt actually carries one). Both v3 create endpoints
+#      (`aio-create-prompts`, `aio-create-tagged-prompts`) always populate the three (verified
+#      against the delivered swagger's own description: "Response returns per-item {id, name,
+#      is_new, metadata}"), so this is the CR5 philosophy applied to the new response shape.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -446,3 +469,32 @@ actions:
     description: "CR18: new_name accepts null (live applies it as the empty string)"
     update:
       nullable: true
+
+  # ── CR19: AIOPromptMetadataPatch's four keys are nullable (RFC 7396 per-key delete) ───────
+  - target: "$.components.schemas['model.AIOPromptMetadataPatch']"
+    description: "CR19: metadata-patch keys accept null (RFC 7396 delete semantics)"
+    update:
+      properties:
+        created_at: { type: string, nullable: true }
+        created_by: { type: string, nullable: true }
+        updated_at: { type: string, nullable: true }
+        updated_by: { type: string, nullable: true }
+
+  # ── CR20: PatchAIOPromptRequest.metadata is nullable (an explicit null wipes the block) ────
+  # Two actions (remove-then-add, like CR6/CR14): a bare $ref cannot take a `nullable` sibling in
+  # OAS3, so the $ref is dropped and re-expressed under `allOf`.
+  - target: "$.components.schemas['model.PatchAIOPromptRequest'].properties.metadata.$ref"
+    description: "CR20a: drop the bare $ref on PatchAIOPromptRequest.metadata"
+    remove: true
+  - target: "$.components.schemas['model.PatchAIOPromptRequest'].properties.metadata"
+    description: "CR20b: metadata accepts null (oneOf null / the patch schema) to wipe the block"
+    update:
+      oneOf:
+        - type: "null"
+        - $ref: "#/components/schemas/model.AIOPromptMetadataPatch"
+
+  # ── CR21: AIOPromptCreateResult always carries id + name + is_new ─────────────────────────
+  - target: "$.components.schemas['model.AIOPromptCreateResult']"
+    description: "CR21: a create result always carries id + name + is_new (metadata is optional)"
+    update:
+      required: [id, name, is_new]

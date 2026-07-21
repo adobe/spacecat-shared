@@ -1623,6 +1623,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v3/workspaces/{id}/projects/{project_id}/aio/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create prompts
+         * @description Create prompts. Response returns per-item `{id, name, is_new, metadata}`. Dedupe hits preserve the previously stored metadata and report `is_new = false`.
+         */
+        post: operations["aio-create-prompts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a single prompt
+         * @description RFC 7396 JSON Merge Patch. Both `name` and `metadata` are optional; the request must include at least one. `name: null` is rejected (400). `metadata: null` wipes the entire metadata block (row.metadata → NULL). `metadata: {...}` applies an RFC 7396 merge to the four metadata keys (absent = keep, string = set, null = delete). When a merge removes the last surviving metadata key, the row's metadata collapses to `null`.
+         */
+        patch: operations["aio-patch-prompt"];
+        trace?: never;
+    };
+    "/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update single prompt metadata (merge)
+         * @description RFC 7396 JSON Merge Patch for a single prompt: string values set/overwrite the stored key, absent keys keep the stored value, explicit JSON `null` deletes the key. When a patch removes the last surviving key, the row's metadata collapses to `null`. Thin adapter over the batch service method.
+         */
+        patch: operations["aio-patch-prompt-metadata"];
+        trace?: never;
+    };
+    "/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Batch update prompt metadata (merge)
+         * @description RFC 7396 JSON Merge Patch: for each item, string values set/overwrite the stored key, absent keys keep the stored value, and explicit JSON `null` deletes the key from stored metadata. When a patch removes the last surviving key, the row's metadata collapses to `null`. The whole batch runs in one transaction — a CHECK-constraint violation on any item rolls the batch back and returns 400.
+         */
+        patch: operations["aio-patch-prompts-metadata-batch"];
+        trace?: never;
+    };
+    "/v3/workspaces/{id}/projects/{project_id}/aio/prompts/tagged": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create tagged AIO prompts
+         * @description Create prompts with per-item tags and metadata. Response returns per-item `{id, name, is_new, metadata}`.
+         */
+        post: operations["aio-create-tagged-prompts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ai_models": {
         parameters: {
             query?: never;
@@ -1722,9 +1822,36 @@ export interface components {
         "model.AIOProjectInitializedResponse": {
             initialized?: boolean;
         };
+        "model.AIOPromptCreateItem": {
+            metadata?: components["schemas"]["model.AIOPromptMetadata"];
+            name: string;
+        };
+        "model.AIOPromptCreateResult": {
+            id: string;
+            is_new: boolean;
+            metadata?: components["schemas"]["model.AIOPromptMetadata"];
+            name: string;
+        };
+        "model.AIOPromptCreateWithMetadataResponse": {
+            existing_count?: number;
+            items?: components["schemas"]["model.AIOPromptCreateResult"][];
+        };
+        "model.AIOPromptMetadata": {
+            created_at?: string;
+            created_by?: string;
+            updated_at?: string;
+            updated_by?: string;
+        };
+        "model.AIOPromptMetadataPatch": {
+            created_at?: string | null;
+            created_by?: string | null;
+            updated_at?: string | null;
+            updated_by?: string | null;
+        };
         "model.AIOPromptWithStatus": {
             id: string;
             is_new?: boolean;
+            metadata?: components["schemas"]["model.AIOPromptMetadata"];
             name: string;
             tags: components["schemas"]["model.AIOTag"][];
         };
@@ -2035,8 +2162,15 @@ export interface components {
         "model.CreateAIOProductsResponse": {
             products?: components["schemas"]["model.AIOProductEntity"][];
         };
+        "model.CreateAIOPromptsRequest": {
+            items: components["schemas"]["model.AIOPromptCreateItem"][];
+            tag_ids?: string[];
+        };
         "model.CreateProjectAIModelRequest": {
             model_id: string;
+        };
+        "model.CreateTaggedAIOPromptsRequest": {
+            prompts: components["schemas"]["model.TaggedAIOPromptCreateItem"][];
         };
         "model.CustomExtractionRequest": {
             additional_info?: string;
@@ -2169,6 +2303,17 @@ export interface components {
             managed_ai_models?: {
                 [key: string]: boolean;
             };
+        };
+        "model.PatchAIOPromptRequest": {
+            metadata?: null | components["schemas"]["model.AIOPromptMetadataPatch"];
+            name?: string;
+        };
+        "model.PatchAIOPromptsBatchItem": {
+            metadata: components["schemas"]["model.AIOPromptMetadataPatch"];
+            prompt_id: string;
+        };
+        "model.PatchAIOPromptsBatchRequest": {
+            items: components["schemas"]["model.PatchAIOPromptsBatchItem"][];
         };
         "model.ProjectAIModelListResponse": {
             items?: components["schemas"]["model.ProjectAIModelResponse"][];
@@ -2377,6 +2522,11 @@ export interface components {
             page?: number;
             total?: number;
             existing_count?: number;
+        };
+        "model.TaggedAIOPromptCreateItem": {
+            metadata?: components["schemas"]["model.AIOPromptMetadata"];
+            name: string;
+            tags?: string[];
         };
         "model.TreeNodeListRequest": {
             names: string[];
@@ -7798,6 +7948,8 @@ export interface operations {
             query?: {
                 /** @description Get draft project data */
                 draft?: boolean;
+                /** @description Include prompt metadata into response */
+                include_metadata?: boolean;
             };
             header?: never;
             path: {
@@ -8540,6 +8692,325 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-create-prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+                /** @description Project UUID */
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Prompt items with optional metadata + optional shared tag_ids */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.CreateAIOPromptsRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.AIOPromptCreateWithMetadataResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-patch-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+                /** @description Project UUID */
+                project_id: string;
+                /** @description Prompt UUID */
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Optional name and/or metadata merge patch */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.PatchAIOPromptRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-patch-prompt-metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+                /** @description Project UUID */
+                project_id: string;
+                /** @description Prompt UUID */
+                prompt_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Metadata merge patch */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.AIOPromptMetadataPatch"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-patch-prompts-metadata-batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+                /** @description Project UUID */
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Batch of {prompt_id, metadata} patches */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.PatchAIOPromptsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+        };
+    };
+    "aio-create-tagged-prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Workspace UUID */
+                id: string;
+                /** @description Project UUID */
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Prompts with per-item tags and metadata */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["model.CreateTaggedAIOPromptsRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["model.AIOPromptCreateWithMetadataResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };

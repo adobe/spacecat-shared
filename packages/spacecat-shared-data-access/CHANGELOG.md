@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.1...@adobe/spacecat-shared-data-access-v4.11.0) (2026-07-21)
+
+### Features
+
+* add weekly-offsite job interval (LLMO-6401) ([#1834](https://github.com/adobe/spacecat-shared/issues/1834)) ([95afbc7](https://github.com/adobe/spacecat-shared/commit/95afbc70e641d2399bcdc1367cd62a86ed78e756))
+
 ## [@adobe/spacecat-shared-data-access-v4.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.0...@adobe/spacecat-shared-data-access-v4.10.1) (2026-07-21)
 
 ### Bug Fixes

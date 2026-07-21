@@ -577,19 +577,55 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.items.find((p) => p.id === id).metadata).to.deep.equal({ created_by: 'a@adobe.com' });
   });
 
-  it('rejects a v3 metadata write without a Bearer credential (401)', async () => {
-    const res = await fetch(
-      `${baseUrl}/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/metadata`,
-      {
-        method: 'PATCH',
+  // MysticatBot review (LLMO-6288 rework): the 401 guard was only exercised on ONE of the five new
+  // v3 write routes (the batch PATCH). If the auth-guard injection or route materialization had a
+  // path-specific bug, only hitting one route would leave it invisible. Every request body below
+  // is schema-valid (satisfies `minItems`/required fields) so each case exercises the BEARER gate
+  // specifically — Counterfact enforces request-shape validation before any handler (and
+  // therefore before our auth guard) runs, so an invalid body would 400 there instead of 401.
+  const A_PROMPT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  const V3_UNAUTHED_ROUTES = [
+    {
+      label: 'POST .../aio/prompts',
+      path: `/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts`,
+      method: 'POST',
+      body: { items: [{ name: 'unauthed create?' }] },
+    },
+    {
+      label: 'POST .../aio/prompts/tagged',
+      path: `/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/tagged`,
+      method: 'POST',
+      body: { prompts: [{ name: 'unauthed tagged create?' }] },
+    },
+    {
+      label: 'PATCH .../aio/prompts/{prompt_id}',
+      path: `/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/${A_PROMPT_ID}`,
+      method: 'PATCH',
+      body: { name: 'unauthed rename' },
+    },
+    {
+      label: 'PATCH .../aio/prompts/{prompt_id}/metadata',
+      path: `/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/${A_PROMPT_ID}/metadata`,
+      method: 'PATCH',
+      body: { created_by: 'unauthed@adobe.com' },
+    },
+    {
+      label: 'PATCH .../aio/prompts/metadata (batch)',
+      path: `/v3/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/prompts/metadata`,
+      method: 'PATCH',
+      body: { items: [{ prompt_id: A_PROMPT_ID, metadata: {} }] },
+    },
+  ];
+
+  V3_UNAUTHED_ROUTES.forEach((route) => {
+    it(`rejects ${route.label} without a Bearer credential (401)`, async () => {
+      const res = await fetch(`${baseUrl}${route.path}`, {
+        method: route.method,
         headers: { 'Content-Type': 'application/json' },
-        // A schema-valid (minItems: 1) body, so this exercises the BEARER gate specifically —
-        // not request-shape validation, which Counterfact enforces before any handler (and
-        // therefore before our auth guard) runs.
-        body: JSON.stringify({ items: [{ prompt_id: 'x', metadata: {} }] }),
-      },
-    );
-    expect(res.status).to.equal(401);
+        body: JSON.stringify(route.body),
+      });
+      expect(res.status, `${route.label} should 401 without a bearer token`).to.equal(401);
+    });
   });
 
   // The single-serializer contract. Live returns the SAME tag object whether it is embedded on a

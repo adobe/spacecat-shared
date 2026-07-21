@@ -316,19 +316,23 @@ export function createStatefulOps(store) {
        * the spec keeps it a plain, non-nullable string, so that case 400s at REQUEST VALIDATION
        * before this ever runs. A `name` equal to a SIBLING prompt's exact text conflicts (409),
        * same rule as the dedicated `/rename` endpoint; nothing is mutated. An over-length
-       * `created_by`/`updated_by` in the metadata patch 400s, nothing mutated.
+       * `created_by`/`updated_by` in the metadata patch 400s, nothing mutated. The two 400 causes
+       * are reported as DISTINCT statuses (`empty-request` vs `check-violation`) rather than a
+       * single `bad-request` — MysticatBot review (LLMO-6288 rework): a caller who supplied an
+       * oversized author field was otherwise told "request must include at least one of name or
+       * metadata", a misleading message for a well-formed-but-rejected request.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {string} id
        * @param {{ name?: string, metadata?: unknown }} patch `metadata: null` wipes;
        *   `metadata: {...}` merges; an absent key of either leaves it untouched
        * @returns {{ status: 'ok', entity: Entity }
-       *   | { status: 'not-found' | 'conflict' | 'bad-request' }}
+       *   | { status: 'not-found' | 'conflict' | 'empty-request' | 'check-violation' }}
        */
       patchOne(scope, id, { name, metadata } = {}) {
         const hasName = name !== undefined;
         const hasMetadata = metadata !== undefined;
         if (!hasName && !hasMetadata) {
-          return { status: 'bad-request' };
+          return { status: 'empty-request' };
         }
         const key = collectionKey('prompts', scope);
         const current = store.get(key, id);
@@ -344,7 +348,7 @@ export function createStatefulOps(store) {
             nextMetadata = undefined;
           } else {
             if (violatesAuthorLengthCheck(metadata)) {
-              return { status: 'bad-request' };
+              return { status: 'check-violation' };
             }
             nextMetadata = mergeMetadataPatch(
               /** @type {Record<string, unknown> | undefined} */ (current.metadata),

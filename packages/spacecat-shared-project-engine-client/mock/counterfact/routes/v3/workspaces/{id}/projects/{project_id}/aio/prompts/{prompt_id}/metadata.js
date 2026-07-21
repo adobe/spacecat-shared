@@ -19,9 +19,10 @@
  * `{ metadata }` wrapper, unlike the combined `PATCH .../{prompt_id}`), so it is passed straight
  * through `stateful.js`'s `patchOne` core as `{ metadata: body }` — the same RFC 7396 merge
  * (absent key = keep, string = set, explicit null = delete a key) `patchMetadataBatch` applies per
- * item. Response 204 No Content. 404 for an unknown prompt id; 400 on the author-length CHECK
- * (`created_by`/`updated_by` > 100 chars). Materialized into `.counterfact/routes/` by the mock
- * runner; excluded from coverage.
+ * item. Response 204 No Content. 404 for an unknown prompt id; 400 (`check-violation`) on the
+ * author-length CHECK (`created_by`/`updated_by` > 100 chars) — `patchOne`'s OTHER 400 cause
+ * (`empty-request`) cannot happen here since `metadata` is always passed. Materialized into
+ * `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
 /** PATCH — single-prompt RFC-7396 metadata merge → 204; 404 unknown id; 400 CHECK violation. */
@@ -33,12 +34,13 @@ export function PATCH($) {
   if (result.status === 'not-found') {
     return $.response[404].json(context.factories.createBasicResponseMock({ message: 'not found' }));
   }
-  if (result.status === 'bad-request') {
+  if (result.status === 'check-violation') {
     return $.response[400].json(context.factories.createBasicResponseMock({
       message: 'created_by/updated_by must be at most 100 characters',
     }));
   }
-  // 'conflict' is unreachable here: patchOne only checks a name collision when `name` is supplied,
-  // and this endpoint never passes one.
+  // 'empty-request' / 'conflict' are unreachable here: `metadata` is always passed (never
+  // `undefined`, so patchOne never sees "neither field"), and a name collision is only checked
+  // when `name` is supplied, which this endpoint never does.
   return { status: 204 };
 }

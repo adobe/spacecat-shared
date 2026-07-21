@@ -482,7 +482,8 @@ actions:
 
   # ── CR20: PatchAIOPromptRequest.metadata is nullable (an explicit null wipes the block) ────
   # Two actions (remove-then-add, like CR6/CR14): a bare $ref cannot take a `nullable` sibling in
-  # OAS3, so the $ref is dropped and re-expressed under `allOf`.
+  # OAS3, so the $ref is dropped and re-expressed under `oneOf` (see the detailed comment above
+  # CR19/CR20 for why `oneOf`, not `allOf`, is the shape that actually works under plain ajv).
   - target: "$.components.schemas['model.PatchAIOPromptRequest'].properties.metadata.$ref"
     description: "CR20a: drop the bare $ref on PatchAIOPromptRequest.metadata"
     remove: true

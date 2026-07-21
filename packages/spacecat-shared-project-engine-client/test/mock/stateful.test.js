@@ -202,11 +202,11 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
   });
 
   describe('patchOne (combined name/metadata PATCH)', () => {
-    it('400s when neither name nor metadata is supplied', () => {
+    it('400s (empty-request) when neither name nor metadata is supplied', () => {
       const { ops, id } = freshPrompt();
-      expect(ops.patchOne(scope, id, {})).to.deep.equal({ status: 'bad-request' });
+      expect(ops.patchOne(scope, id, {})).to.deep.equal({ status: 'empty-request' });
       expect(ops.patchOne(scope, id, { name: undefined, metadata: undefined }))
-        .to.deep.equal({ status: 'bad-request' });
+        .to.deep.equal({ status: 'empty-request' });
     });
 
     it('404s for an unknown prompt id', () => {
@@ -268,12 +268,26 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       expect(result.entity.name).to.equal('renamed only');
     });
 
-    it('400s (nothing mutated) when the metadata merge violates the 100-char author CHECK', () => {
+    it('400s (check-violation) — nothing mutated — when the metadata merge violates the '
+      + '100-char author CHECK', () => {
       const { ops, id } = freshPrompt();
       const long = 'x'.repeat(101);
       const result = ops.patchOne(scope, id, { metadata: { created_by: long } });
-      expect(result).to.deep.equal({ status: 'bad-request' });
+      expect(result).to.deep.equal({ status: 'check-violation' });
       expect(ops.get(scope, id).metadata).to.equal(undefined);
+    });
+
+    // MysticatBot review (LLMO-6288 rework): the two 400 causes must stay DISTINGUISHABLE — a
+    // caller who supplied a well-formed-but-oversized metadata patch must never be told to
+    // "supply a field", the empty-request message.
+    it('distinguishes the two 400 causes: empty-request vs check-violation', () => {
+      const { ops, id } = freshPrompt();
+      const long = 'x'.repeat(101);
+      const empty = ops.patchOne(scope, id, {});
+      const oversized = ops.patchOne(scope, id, { metadata: { updated_by: long } });
+      expect(empty.status).to.equal('empty-request');
+      expect(oversized.status).to.equal('check-violation');
+      expect(empty.status).to.not.equal(oversized.status);
     });
   });
 

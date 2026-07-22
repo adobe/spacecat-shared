@@ -10,6 +10,41 @@
  * governing permissions and limitations under the License.
  */
 
+/**
+ * Domain event name emitted when an entitlement's tier transitions
+ * (including a fresh create). See the ADR for the target-architecture rationale.
+ */
+export declare const ENTITLEMENT_TIER_CHANGED: 'entitlement.tier_changed';
+
+/**
+ * Env key holding the SQS queue URL that `entitlement.tier_changed` events are
+ * published to. When absent, emission is a no-op (opt-in).
+ */
+export declare const ENTITLEMENT_EVENTS_QUEUE_URL_KEY: 'ENTITLEMENT_EVENTS_QUEUE_URL';
+
+/**
+ * Payload published for the `entitlement.tier_changed` event.
+ * `from` is null on a fresh create; `siteId`/`enrollmentId` are null for org-only scope.
+ */
+export interface EntitlementTierChangedEvent {
+  type: typeof ENTITLEMENT_TIER_CHANGED;
+  entitlementId: string;
+  organizationId: string;
+  productCode: string;
+  siteId: string | null;
+  enrollmentId: string | null;
+  from: string | null;
+  to: string;
+  occurredAt: string;
+}
+
+/**
+ * Minimal shape of the shared SQS helper (`context.sqs`) used to publish events.
+ */
+export interface TierClientSqs {
+  sendMessage(queueUrl: string, message: object): Promise<void>;
+}
+
 export interface TierClientContext {
   dataAccess: {
     Entitlement: any;
@@ -21,7 +56,16 @@ export interface TierClientContext {
   log: {
     info: (message: string) => void;
     error: (message: string) => void;
+    warn?: (message: string) => void;
   };
+  /**
+   * Optional shared SQS helper. When present together with the
+   * `ENTITLEMENT_EVENTS_QUEUE_URL` env var, `entitlement.tier_changed` events are published
+   * best-effort. Absent → emission is a no-op.
+   */
+  sqs?: TierClientSqs;
+  /** Optional env bag; `ENTITLEMENT_EVENTS_QUEUE_URL` opts into event emission. */
+  env?: Record<string, string | undefined>;
 }
 
 export interface TierClientResult {

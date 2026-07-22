@@ -413,6 +413,19 @@ describe('Config Tests', () => {
       expect(config.getAutofixExcludedURLs('non-existent-handler')).to.be.undefined;
     });
 
+    it('correctly updates the excluded path prefixes', () => {
+      const config = Config();
+      config.updateExcludedPathPrefixes('prerender', ['/jp/ja', '/de/de']);
+
+      const excludedPathPrefixes = config.getExcludedPathPrefixes('prerender');
+      expect(excludedPathPrefixes).to.deep.equal(['/jp/ja', '/de/de']);
+    });
+
+    it('returns undefined for excluded path prefixes when handler is not present', () => {
+      const config = Config();
+      expect(config.getExcludedPathPrefixes('non-existent-handler')).to.be.undefined;
+    });
+
     it('correctly updates the manual overrides', () => {
       const config = Config();
       const manualOverwrites = [
@@ -476,6 +489,7 @@ describe('Config Tests', () => {
       expect(config.getHandlerConfig('404')).to.be.undefined;
       expect(config.getExcludedURLs('404')).to.be.undefined;
       expect(config.getAutofixExcludedURLs('404')).to.be.undefined;
+      expect(config.getExcludedPathPrefixes('404')).to.be.undefined;
       expect(config.getManualOverwrites('404')).to.be.undefined;
       expect(config.getFixedURLs('404')).to.be.undefined;
       expect(config.getIncludedURLs('404')).to.be.undefined;

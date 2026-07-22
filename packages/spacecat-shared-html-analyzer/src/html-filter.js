@@ -98,6 +98,7 @@ const VIDEO_PLAYER_SELECTORS = [
   '.jwplayer', // JW Player
   '.mejs-container', // MediaElement.js
   '.flowplayer', // Flowplayer
+  '.playkit-player', // Kaltura PlayKit
 ].join(', ');
 
 /**

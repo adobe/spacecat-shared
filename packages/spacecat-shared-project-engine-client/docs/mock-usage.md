@@ -94,7 +94,7 @@ method that calls it.
 | --- | --- | --- |
 | `GET /v1/workspaces/{id}/projects/{project_id}/ai_models` | `listAiModels` | list → `{ items, page, total }` |
 | `DELETE /v1/workspaces/{id}/projects/{project_id}/ai_models` | `deleteAiModelsByIds` | batch-delete (body `{ ids }`) → `204` |
-| `POST /v2/workspaces/{id}/projects/{project_id}/ai_models` | `addAiModel` | add (body `{ model_id }`) → `201`; writes the same store collection the v1 list/delete read |
+| `POST /v2/workspaces/{id}/projects/{project_id}/ai_models` | `addAiModel` | add (body `{ model_id }`) → `201`; writes the same store collection the v1 list/delete read; **metered** (405 when re-metering the project's existing texts — `texts × models` — would exceed the `prompts` allocation) |
 | `GET /v1/ai_models` | `listGlobalAiModels` | global catalog → `{ page, total, items }` |
 
 ### Benchmarks & brand URLs
@@ -227,9 +227,14 @@ provisioning reports "Quota exceeded"). The mock models this:
   never 405s. The existing seeds therefore behave normally.
 - **Grant an allocation** via `POST /__quota` (mirrors a user-manager resource transfer) or a
   `quota` row in a seed `Snapshot`. Usage is derived **live** from the store, so deleting a
-  project/prompt frees its unit.
-- **Metered ops:** project create (`projects` limit), prompt write (`prompts` limit, all-or-nothing
-  per batch), and publish (405 for an `prompts: 0` empty-units workspace).
+  project/prompt (or removing a model) frees its unit(s).
+- **The prompt UNIT is `texts × models` per project** (live-verified): `prompts.used =
+  Σ_project (prompt texts × attached models)`. A project with zero models consumes zero prompt units;
+  attaching a model re-meters that project's existing texts, and removing one frees them.
+- **Metered ops:** project create (`projects` limit); prompt write (`prompts` limit, all-or-nothing
+  per batch, each new text costing `models` units); **model attach** (`POST …/ai_models` — a new
+  model re-meters the project's existing texts, so it 405s when that would exceed the `prompts`
+  allocation); and publish (405 for a `prompts: 0` empty-units workspace).
 
 ```bash
 # grant 1 project + 2 prompts

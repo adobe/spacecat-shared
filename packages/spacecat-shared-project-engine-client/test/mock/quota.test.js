@@ -16,14 +16,23 @@ import { createQuota, QUOTA_COLLECTION } from '../../mock/quota.js';
 
 const WS = 'ws-1';
 
-/** Seeds projects into the workspace + prompts per project id (ids are unique per row). */
-function seedUsage(store, { projects = 0, promptsByProject = {} } = {}) {
+/**
+ * Seeds projects into the workspace + prompts and attached models per project id (ids unique per
+ * row). Prompt UNITS are `texts × models` per project, so a project needs BOTH prompts and models
+ * seeded to consume units.
+ */
+function seedUsage(store, { projects = 0, promptsByProject = {}, modelsByProject = {} } = {}) {
   for (let i = 0; i < projects; i += 1) {
     store.create(`projects:${WS}`, { id: globalThis.crypto.randomUUID() });
   }
   for (const [pid, count] of Object.entries(promptsByProject)) {
     for (let i = 0; i < count; i += 1) {
       store.create(`prompts:${WS}:${pid}`, { id: globalThis.crypto.randomUUID() });
+    }
+  }
+  for (const [pid, count] of Object.entries(modelsByProject)) {
+    for (let i = 0; i < count; i += 1) {
+      store.create(`ai_models:${WS}:${pid}`, { id: globalThis.crypto.randomUUID() });
     }
   }
 }
@@ -56,14 +65,27 @@ describe('quota — allocation set/get', () => {
 });
 
 describe('quota — usage derived from the store', () => {
-  it('counts projects and prompts across the workspace projects only', () => {
+  it('prompt usage is Σ_project (texts × models), summed across the workspace projects only', () => {
     const store = new InMemoryStore();
     const quota = createQuota(store);
-    seedUsage(store, { projects: 2, promptsByProject: { p0: 3, p1: 1 } });
+    // p0: 3 texts × 2 models = 6; p1: 1 text × 3 models = 3 → total 9.
+    seedUsage(store, {
+      projects: 2, promptsByProject: { p0: 3, p1: 1 }, modelsByProject: { p0: 2, p1: 3 },
+    });
     // a prompt under a DIFFERENT workspace must not count
     store.create('prompts:other-ws:p0', { id: 'x' });
     expect(quota.projectsUsed(WS)).to.equal(2);
-    expect(quota.promptsUsed(WS)).to.equal(4);
+    expect(quota.modelsUsed(WS, 'p0')).to.equal(2);
+    expect(quota.promptsUsed(WS)).to.equal(9);
+  });
+
+  it('a project with texts but ZERO models consumes zero prompt units', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    // p0: 5 texts, 0 models → 0 units; p1: 2 texts × 1 model → 2 units.
+    seedUsage(store, { promptsByProject: { p0: 5, p1: 2 }, modelsByProject: { p1: 1 } });
+    expect(quota.modelsUsed(WS, 'p0')).to.equal(0);
+    expect(quota.promptsUsed(WS)).to.equal(2);
   });
 });
 
@@ -89,22 +111,66 @@ describe('quota — canCreateProject', () => {
   });
 });
 
-describe('quota — canCreatePrompts (all-or-nothing)', () => {
+describe('quota — canCreatePrompts (all-or-nothing, texts × models)', () => {
   it('is unlimited without an allocation or with a null prompts limit', () => {
     const store = new InMemoryStore();
     const quota = createQuota(store);
-    expect(quota.canCreatePrompts(WS, 1000)).to.equal(true);
+    expect(quota.canCreatePrompts(WS, 'p0', 1000)).to.equal(true);
     quota.set(WS, { projects: 1 }); // prompts null
-    expect(quota.canCreatePrompts(WS, 1000)).to.equal(true);
+    expect(quota.canCreatePrompts(WS, 'p0', 1000)).to.equal(true);
   });
 
-  it('allows a batch that fits, rejects one that would exceed', () => {
+  it('sizes the batch by the project model count: allows what fits, rejects what exceeds', () => {
     const store = new InMemoryStore();
     const quota = createQuota(store);
-    quota.set(WS, { prompts: 3 });
-    seedUsage(store, { promptsByProject: { p0: 2 } });
-    expect(quota.canCreatePrompts(WS, 1)).to.equal(true); // 2 + 1 = 3 <= 3
-    expect(quota.canCreatePrompts(WS, 2)).to.equal(false); // 2 + 2 = 4 > 3
+    quota.set(WS, { prompts: 10 });
+    // p0: 2 texts × 2 models = 4 used. Each NEW text costs 2 units (2 models).
+    seedUsage(store, { promptsByProject: { p0: 2 }, modelsByProject: { p0: 2 } });
+    expect(quota.canCreatePrompts(WS, 'p0', 3)).to.equal(true); // 4 + 3×2 = 10 <= 10
+    expect(quota.canCreatePrompts(WS, 'p0', 4)).to.equal(false); // 4 + 4×2 = 12 > 10
+  });
+
+  it('texts on a project with zero models are free (never rejected)', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    quota.set(WS, { prompts: 1 });
+    // p0 has no models → each text costs 0 units.
+    expect(quota.canCreatePrompts(WS, 'p0', 1000)).to.equal(true);
+  });
+});
+
+describe('quota — canAddModel (attach re-meters existing texts)', () => {
+  it('is unlimited without an allocation or with a null prompts limit', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    expect(quota.canAddModel(WS, 'p0')).to.equal(true);
+    quota.set(WS, { projects: 1 }); // prompts null
+    expect(quota.canAddModel(WS, 'p0')).to.equal(true);
+  });
+
+  it('a new model costs the project its text count; 405s when that exceeds the allocation', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    // p0: 3 texts × 1 model = 3 used. Adding a 2nd model re-meters the 3 texts → +3 → 6.
+    seedUsage(store, { promptsByProject: { p0: 3 }, modelsByProject: { p0: 1 } });
+    quota.set(WS, { prompts: 5 });
+    expect(quota.canAddModel(WS, 'p0')).to.equal(false); // 3 + 3 = 6 > 5
+    quota.set(WS, { prompts: 6 });
+    expect(quota.canAddModel(WS, 'p0')).to.equal(true); // 3 + 3 = 6 <= 6
+  });
+
+  it('the add cost is the TARGET project text count (not another project\'s)', () => {
+    const store = new InMemoryStore();
+    const quota = createQuota(store);
+    // pA: 2 texts × 1 model = 2; pB: 5 texts × 1 model = 5 → workspace used 7.
+    seedUsage(store, {
+      promptsByProject: { pA: 2, pB: 5 }, modelsByProject: { pA: 1, pB: 1 },
+    });
+    quota.set(WS, { prompts: 9 });
+    // Adding a model to pA costs pA's 2 texts (7 + 2 = 9 <= 9) — NOT pB's 5 (which would be 12).
+    expect(quota.canAddModel(WS, 'pA')).to.equal(true);
+    // Adding a model to pB costs pB's 5 texts (7 + 5 = 12 > 9).
+    expect(quota.canAddModel(WS, 'pB')).to.equal(false);
   });
 });
 
@@ -124,7 +190,8 @@ describe('quota — usage()', () => {
   it('reports limits + live usage (and nulls when unallocated)', () => {
     const store = new InMemoryStore();
     const quota = createQuota(store);
-    seedUsage(store, { projects: 1, promptsByProject: { p0: 2 } });
+    // p0: 2 texts × 1 model = 2 prompt units.
+    seedUsage(store, { projects: 1, promptsByProject: { p0: 2 }, modelsByProject: { p0: 1 } });
     expect(quota.usage(WS)).to.deep.equal({
       workspaceId: WS,
       projects: { limit: null, used: 1 },

@@ -63,7 +63,7 @@ export function POST($) {
       tags: (tags ?? []).map((name) => ({ id: context.tagId(name), name })),
     }));
 
-  if (!context.quota.canCreatePrompts(path.id, toCreate.length)) {
+  if (!context.quota.canCreatePrompts(path.id, path.project_id, toCreate.length)) {
     return {
       status: 405,
       body: { message: 'Quota exceeded: prompt allocation exhausted' },

@@ -84,3 +84,25 @@ export default class CloudManagerClient {
     config: PullRequestConfig,
   ): Promise<object>;
 }
+
+export interface CodeConfig {
+  owner: string;
+  repo: string;
+  type: string;
+  url: string;
+  ref: string;
+}
+
+/**
+ * Read-only client for the Cloud Manager (SSG) Management API. Resolves a
+ * program's source-code coordinates and IMS org during onboarding. Auth is
+ * OAuth Server-to-Server (client_credentials) via IMS.
+ */
+export class CloudManagerApiClient {
+  static createFrom(context: UniversalContext): CloudManagerApiClient;
+
+  getProductionPipeline(programId: string): Promise<{ repositoryId: string; branch: string }>;
+  getRepository(programId: string, repositoryId: string): Promise<{ url: string; type: string }>;
+  getProgram(programId: string): Promise<{ imsOrgId: string }>;
+  resolveCodeConfig(programId: string): Promise<CodeConfig>;
+}

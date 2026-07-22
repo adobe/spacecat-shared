@@ -101,9 +101,9 @@ describe('ImsPromiseClient', () => {
       nock(`https://${DUMMY_HOST}`)
         .post(
           IMS_TOKEN_ENDPOINT,
-          (body) => body.match('name="grant_type"\r\n\r\npromise')
-            && body.match('name="promise_definition_id"\r\n\r\npromiseDefinitionIdExample')
-            && body.match(`name="authenticating_token"\r\n\r\n${testAccessToken}`),
+          (body) => body.grant_type === 'promise'
+            && body.promise_definition_id === 'promiseDefinitionIdExample'
+            && body.authenticating_token === testAccessToken,
         )
         .reply(200, {
           scope: 'AdobeID,openid,read_organizations,additional_info.projectedProductContext',
@@ -113,9 +113,9 @@ describe('ImsPromiseClient', () => {
         })
         .post(
           IMS_TOKEN_ENDPOINT,
-          (body) => body.match('name="grant_type"\r\n\r\npromise')
-            && body.match('name="promise_definition_id"\r\n\r\npromiseDefinitionIdExample')
-            && !body.match(`name="authenticating_token"\r\n\r\n${testAccessToken}`),
+          (body) => body.grant_type === 'promise'
+            && body.promise_definition_id === 'promiseDefinitionIdExample'
+            && body.authenticating_token !== testAccessToken,
         )
         .reply(401, {
           error: 'invalid_authenticating_token',
@@ -179,8 +179,8 @@ describe('ImsPromiseClient', () => {
       nock(`https://${DUMMY_HOST}`)
         .post(
           IMS_TOKEN_ENDPOINT,
-          (body) => body.match('name="grant_type"\r\n\r\npromise_exchange')
-            && body.match(`name="promise_token"\r\n\r\n${testToken}`),
+          (body) => body.grant_type === 'promise_exchange'
+            && body.promise_token === testToken,
         )
         .reply(200, {
           scope: 'AdobeID,openid,read_organizations,additional_info.projectedProductContext',
@@ -193,8 +193,8 @@ describe('ImsPromiseClient', () => {
         })
         .post(
           IMS_TOKEN_ENDPOINT,
-          (body) => body.match('name="grant_type"\r\n\r\npromise_exchange')
-            && !body.match(`name="authenticating_token"\r\n\r\n${testToken}`),
+          (body) => body.grant_type === 'promise_exchange'
+            && body.authenticating_token !== testToken,
         )
         .reply(401, {
           error: 'invalid_promise_token',
@@ -267,14 +267,14 @@ describe('ImsPromiseClient', () => {
       nock(`https://${DUMMY_HOST}`)
         .post(
           IMS_INVALIDATE_TOKEN_ENDPOINT,
-          (body) => body.match('name="token_type"\r\n\r\npromise_token')
-            && body.match(`name="token"\r\n\r\n${testToken}`),
+          (body) => body.token_type === 'promise_token'
+            && body.token === testToken,
         )
         .reply(200)
         .post(
           IMS_INVALIDATE_TOKEN_ENDPOINT,
-          (body) => body.match('name="token_type"\r\n\r\npromise_token')
-            && !body.match(`name="token"\r\n\r\n${testToken}`),
+          (body) => body.token_type === 'promise_token'
+            && body.token !== testToken,
         )
         .reply(400, {
           error: 'invalid_parameter_value',

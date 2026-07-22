@@ -16,7 +16,11 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
 
-import AkamaiClient, { normalizeDomain } from '../src/index.js';
+import AkamaiClient, {
+  normalizeDomain,
+  defaultRuleHasCaching,
+  getDefaultOriginSsl,
+} from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -524,6 +528,26 @@ describe('AkamaiClient', () => {
       expect(result).to.deep.equal({ errors: [] });
     });
 
+    it('adds dryRun=true to the query when options.dryRun is set', async () => {
+      nock(API_BASE)
+        .put(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`)
+        .query({
+          contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true', dryRun: 'true',
+        })
+        .reply(200, { errors: [], warnings: [] });
+
+      const result = await client.updateRuleTree(
+        PROPERTY_ID,
+        6,
+        CONTRACT_ID,
+        GROUP_ID,
+        { rules: {} },
+        undefined,
+        { dryRun: true },
+      );
+      expect(result).to.deep.equal({ errors: [], warnings: [] });
+    });
+
     it('throws when version is not an integer', async () => {
       await expect(client.updateRuleTree(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, { rules: {} }))
         .to.be.rejectedWith('version must be an integer');
@@ -830,6 +854,60 @@ describe('AkamaiClient', () => {
 
     it('returns an empty string for a falsy input', () => {
       expect(normalizeDomain(undefined)).to.equal('');
+    });
+  });
+
+  // ─── defaultRuleHasCaching ──────────────────────────────────────────────
+
+  describe('defaultRuleHasCaching', () => {
+    it('is true when the default rule has a caching behavior', () => {
+      const tree = { rules: { behaviors: [{ name: 'origin' }, { name: 'caching' }] } };
+      expect(defaultRuleHasCaching(tree)).to.be.true;
+    });
+
+    it('is false when the default rule has no caching behavior', () => {
+      const tree = { rules: { behaviors: [{ name: 'origin' }] } };
+      expect(defaultRuleHasCaching(tree)).to.be.false;
+    });
+
+    it('is false for a malformed or empty tree', () => {
+      expect(defaultRuleHasCaching(null)).to.be.false;
+      expect(defaultRuleHasCaching({})).to.be.false;
+      expect(defaultRuleHasCaching({ rules: {} })).to.be.false;
+    });
+  });
+
+  // ─── getDefaultOriginSsl ────────────────────────────────────────────────
+
+  describe('getDefaultOriginSsl', () => {
+    it('returns the default origin SSL verification settings', () => {
+      const tree = {
+        rules: {
+          behaviors: [{
+            name: 'origin',
+            options: {
+              verificationMode: 'CUSTOM',
+              originCertsToHonor: 'STANDARD_CERTIFICATE_AUTHORITIES',
+              standardCertificateAuthorities: ['akamai-permissive', 'THIRD_PARTY_AMAZON'],
+            },
+          }],
+        },
+      };
+      expect(getDefaultOriginSsl(tree)).to.deep.equal({
+        verificationMode: 'CUSTOM',
+        originCertsToHonor: 'STANDARD_CERTIFICATE_AUTHORITIES',
+        standardCertificateAuthorities: ['akamai-permissive', 'THIRD_PARTY_AMAZON'],
+      });
+    });
+
+    it('returns null when there is no origin behavior or the tree is malformed', () => {
+      expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'caching' }] } })).to.be.null;
+      expect(getDefaultOriginSsl(null)).to.be.null;
+    });
+
+    it('returns null when the origin behavior has no options key', () => {
+      // A PAPI response can carry an origin behavior with no `options` (distinct from no origin).
+      expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'origin' }] } })).to.be.null;
     });
   });
 });

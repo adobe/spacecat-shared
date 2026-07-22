@@ -361,7 +361,7 @@ export const createTagNodeMock = (overrides = {}) => ({
  * the shape the mock persists in the per-project `tags` collection.
  *
  * The tag taxonomy is a dimension-root tree (see the dimension-root tag model): each **dimension**
- * — `category`, `intent`, `source`, `type` — is a bare-named ROOT with no `parent_id`, and every
+ * — `category`, `intent`, `origin`, `type` — is a bare-named ROOT with no `parent_id`, and every
  * **value** is a bare-named descendant carrying its parent's id. No name ever contains a `:`. A
  * category sits at depth 2 and a sub-category at depth 3; the API caps no depth. Because roots
  * legitimately have no parent, `parent_id` is left OUT of the defaults (optional, supplied via

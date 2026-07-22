@@ -174,6 +174,38 @@ class SiteCollection extends BaseCollection {
     return sites;
   }
 
+  /**
+   * Returns all sites enrolled at a given entitlement tier (e.g. 'PAID',
+   * 'FREE_TRIAL', 'PLG'). Optionally narrows the result to a single product
+   * code (e.g. 'LLMO').
+   *
+   * Uses entityRegistry to chain through SiteEnrollmentCollection, then
+   * batch-fetches full Site objects.
+   *
+   * @param {string} tier - Entitlement tier to filter by.
+   * @param {string} [productCode] - Optional product code to further filter by.
+   * @param {object} [options] - batchGetByKeys options (e.g. attribute projection).
+   * @returns {Promise<Site[]>}
+   */
+  async allByEnrollmentAndTier(tier, productCode, options = {}) {
+    if (!hasText(tier)) {
+      throw new DataAccessError('tier is required', this);
+    }
+
+    const siteEnrollmentCollection = this.entityRegistry.getCollection('SiteEnrollmentCollection');
+
+    const siteIds = await siteEnrollmentCollection.allSiteIdsByTier(tier, productCode);
+    if (siteIds.length === 0) {
+      return [];
+    }
+
+    const { data: sites } = await this.batchGetByKeys(
+      siteIds.map((siteId) => ({ siteId })),
+      options,
+    );
+    return sites;
+  }
+
   async allByOrganizationIdAndProjectName(organizationId, projectName) {
     if (!hasText(organizationId)) {
       throw new DataAccessError('organizationId is required', this);

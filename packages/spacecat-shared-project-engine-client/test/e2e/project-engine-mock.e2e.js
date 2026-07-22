@@ -41,7 +41,7 @@ const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = SEED_IDS.workspaceId;
 const SEED_PROJECT = SEED_IDS.projectId;
 // Every project's root level holds exactly these four dimension roots and nothing else.
-const DIMENSION_ROOT_NAMES = ['category', 'intent', 'source', 'type'];
+const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'type'];
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -482,7 +482,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       if (t.path === undefined) {
         expect(t).to.not.have.property('parent_id');
       } else {
-        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'source', 'type']);
+        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'origin', 'type']);
         expect(t.parent_id).to.be.a('string');
       }
     });
@@ -617,7 +617,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // filter branch (OR semantics), not just the list-all branch. `tagged` is name-keyed and
   // ROOT-only: it derives `tagId(name)` with no parent, so a prompt tagged 'brand' is found via
   // tag_ids: [tagId('brand')]. Neither probe name is a dimension root — a bare name that IS one
-  // (`category`, `intent`, `source`, `type`) would resolve to that real root's id, which is exactly
+  // (`category`, `intent`, `origin`, `type`) would resolve to that real root's id, which is exactly
   // why no caller may reach this endpoint with dimension-root data.
   // Fresh creates are draft-gated (see the dedicated gating test above), so this read passes
   // draft:true — it's exercising the filter branch, not the publish gate.
@@ -1206,18 +1206,18 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // A sub-category and a closed-dimension value may share a bare NAME and must stay distinct tags —
   // ids are keyed on (parent, name). This is the cross-dimension collision case the dimension-root
   // model must survive; the seed bakes it so it is exercised rather than assumed.
-  it('keeps a sub-category and a same-named source value as distinct tags', async () => {
+  it('keeps a sub-category and a same-named origin value as distinct tags', async () => {
     const { data: subcategories } = await listTags(SEED_IDS.categoryTagId);
-    const { data: sources } = await listTags(SEED_IDS.sourceRootTagId);
+    const { data: origins } = await listTags(SEED_IDS.originRootTagId);
 
     const subHuman = subcategories.items.find((t) => t.name === 'human');
-    const srcHuman = sources.items.find((t) => t.name === 'human');
+    const originHuman = origins.items.find((t) => t.name === 'human');
 
     expect(subHuman.id).to.equal(SEED_IDS.childCollidingTagId);
-    expect(srcHuman.id).to.equal(SEED_IDS.sourceHumanTagId);
-    expect(subHuman.id).to.not.equal(srcHuman.id);
+    expect(originHuman.id).to.equal(SEED_IDS.originHumanTagId);
+    expect(subHuman.id).to.not.equal(originHuman.id);
     expect(subHuman.path[0].name).to.equal('category');
-    expect(srcHuman.path[0].name).to.equal('source');
+    expect(originHuman.path[0].name).to.equal('origin');
   });
 
   // __reset restores the boot seed (the four dimension roots, no ad-hoc tags), so a created
@@ -1544,11 +1544,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(prompt.tags.map((t) => t.id)).to.have.members([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
-      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
     ]);
 
-    // … and the same-named `human` sub-category is untouched by the source value's deletion.
+    // … and the same-named `human` sub-category is untouched by the origin value's deletion.
     const { data: subcategories } = await listTags(SEED_IDS.categoryTagId);
     expect(subcategories.items.map((t) => t.id)).to.include(SEED_IDS.childCollidingTagId);
   });
@@ -1565,7 +1565,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { response } = await delTags([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
-      SEED_IDS.sourceHumanTagId,
+      SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.typeBrandedTagId,
     ]);

@@ -361,15 +361,17 @@ export const createTagNodeMock = (overrides = {}) => ({
  * the shape the mock persists in the per-project `tags` collection.
  *
  * The tag taxonomy is a dimension-root tree (see the dimension-root tag model): each **dimension**
- * — `category`, `intent`, `origin`, `type` — is a bare-named ROOT with no `parent_id`, and every
- * **value** is a bare-named descendant carrying its parent's id. No name ever contains a `:`. A
- * category sits at depth 2 and a sub-category at depth 3; the API caps no depth. Because roots
- * legitimately have no parent, `parent_id` is left OUT of the defaults (optional, supplied via
- * override on a descendant) — a plain `createAIOTagMock()` is a root. `children_count` and `path`
- * are DERIVED at read time by the `GET /aio/tags` handler from the stored collection (count of
- * children; the root-first ancestor breadcrumb), never stored — so they stay consistent as children
- * are added; the `children_count: 0` default is only the empty baseline a childless root carries in
- * the store.
+
+ * — `category`, `intent`, `origin`, `type`, and `tag` (serenity-docs#26, the fifth, open,
+ * user-authored dimension — same open/lazily-created treatment as `category`) — is a bare-named
+ * ROOT with no `parent_id`, and every **value** is a bare-named descendant carrying its parent's
+ * id. No name ever contains a `:`. A category (or tag) sits at depth 2 and a sub-category (or
+ * tag child) at depth 3; the API caps no depth. Because roots legitimately have no parent,
+ * `parent_id` is left OUT of the defaults (optional, supplied via override on a descendant) — a
+ * plain `createAIOTagMock()` is a root. `children_count` and `path` are DERIVED at read time by the
+ * `GET /aio/tags` handler from the stored collection (count of children; the root-first
+ * ancestor breadcrumb), never stored — so they stay consistent as children are added; the
+ * `children_count: 0` default is only the empty baseline a childless root carries in the store.
  *
  * Distinct from {@link createTagNodeMock}: the create path returns a `TreeNodeResponse`
  * (`keyword_count`) while the list/store shape is an `AIOTag` (`prompts_count`) — two genuinely

@@ -75,6 +75,7 @@ const DIMENSION_ROOTS = Object.freeze({
   intent: 'intent',
   origin: 'origin',
   type: 'type',
+  tag: 'tag', // serenity-docs#26 — fifth, open, user-authored dimension (same shape as `category`)
 });
 
 /** The closed dimensions' fixed vocabularies — provisioned server-side, never client-minted. */
@@ -88,6 +89,7 @@ const CATEGORY_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.category);
 const INTENT_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.intent);
 const ORIGIN_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.origin);
 const TYPE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.type);
+const TAG_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.tag);
 
 // The pre-rename authorship root name, retained only for the legacy seed fixture (WP-O1 item 4):
 // a project whose authorship root is still `source`, so api-service's tolerant resolver
@@ -112,6 +114,17 @@ const CHILD_COLLIDING_TAG_ID = tagId(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG
 const ORIGIN_HUMAN_TAG_ID = tagId('human', ORIGIN_ROOT_TAG_ID);
 const INTENT_COMMERCIAL_TAG_ID = tagId('Commercial', INTENT_ROOT_TAG_ID);
 const TYPE_BRANDED_TAG_ID = tagId('branded', TYPE_ROOT_TAG_ID);
+
+// The `tag` open dimension (serenity-docs#26): a fifth dimension root with the SAME bare-named,
+// depth-2/3 shape as `category` — a depth-2 tag owning a depth-3 child, both keyed on
+// `(parent, name)` like every other dimension (see DIMENSION_ROOTS.tag above). The child name is
+// deliberately distinct from the category child (`Trail`) purely for seed readability, not because
+// of any id-collision risk — `(parent, name)` keying makes same-named children under different
+// parents distinct tags by construction (gate 4 confirmed this live; see tag-id.js).
+const TAG_NAME = 'Trail Running';
+const TAG_CHILD_NAME = 'Ultra';
+const TAG_TAG_ID = tagId(TAG_NAME, TAG_ROOT_TAG_ID); // depth-2 tag
+const TAG_CHILD_TAG_ID = tagId(TAG_CHILD_NAME, TAG_TAG_ID); // depth-3 child under the tag
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -145,9 +158,10 @@ const DE_GEO_TARGET_ID = 2276; // Google geoTargetId (Germany)
  *   {@link createPromptMock} so the shape is checked
  * @property {Array<Schemas['model.AIOBenchmarkWithCounters']>} [benchmarks] build with
  *   {@link createBenchmarkMock} (the competitor + own-brand benchmarks the consumer syncs)
- * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags (the dimension-root
- *   taxonomy); build with {@link createAIOTagMock} so the shape is checked. Order matters only for
- *   readability — the tree is reconstructed from `parent_id`, not from position.
+ * @property {Array<Schemas['model.AIOTag']>} [tags] standalone project tags across all dimension
+ *   roots — including the open `tag` dimension (serenity-docs#26), which shares this same
+ *   per-project collection; build with {@link createAIOTagMock} so the shape is checked. Order
+ *   matters only for readability — the tree is reconstructed from `parent_id`, not from position.
  * @property {Array<{ benchmarkId: string, urls: Array<Schemas['model.BrandURL']> }>} [brandUrls]
  *   brand URLs grouped by their benchmark id; build each url with {@link createBrandUrlMock}
  */
@@ -220,23 +234,30 @@ const childTag = (name, parentId) => createAIOTagMock({
 });
 
 /**
- * The four dimension roots and the closed dimensions' full child vocabularies — the tree every
- * project is provisioned with, before any customer-authored category exists. Pass `categories` to
- * append the open `category` subtree: each entry is a depth-2 category and its depth-3
- * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
- * `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human` vocabulary is
- * unchanged, only the root it hangs off differs.
+ * The five dimension roots (the four closed/structural roots plus the open `tag` root,
+ * serenity-docs#26) and the closed dimensions' full child vocabularies — the tree every project is
+ * provisioned with, before any customer-authored category/tag exists. Pass `categories` to append
+ * the open `category` subtree, and `tags` to append the open `tag` subtree: each entry is a depth-2
+ * node and its depth-3 children. `authorshipRootName` defaults to the current `origin` root; pass
+ * the pre-rename `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human`
+ * vocabulary is unchanged, only the root it hangs off differs.
  * @param {Array<{ name: string, children?: string[] }>} [categories]
+ * @param {Array<{ name: string, children?: string[] }>} [tags]
  * @param {string} [authorshipRootName]
  * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
  */
-const dimensionRootTree = (categories = [], authorshipRootName = DIMENSION_ROOTS.origin) => {
+const dimensionRootTree = (
+  categories = [],
+  tags = [],
+  authorshipRootName = DIMENSION_ROOTS.origin,
+) => {
   const authorshipRootId = tagId(authorshipRootName);
   return [
     rootTag(DIMENSION_ROOTS.category),
     rootTag(DIMENSION_ROOTS.intent),
     rootTag(authorshipRootName),
     rootTag(DIMENSION_ROOTS.type),
+    rootTag(DIMENSION_ROOTS.tag),
     ...INTENT_VALUES.map((v) => childTag(v, INTENT_ROOT_TAG_ID)),
     ...ORIGIN_VALUES.map((v) => childTag(v, authorshipRootId)),
     ...TYPE_VALUES.map((v) => childTag(v, TYPE_ROOT_TAG_ID)),
@@ -247,14 +268,21 @@ const dimensionRootTree = (categories = [], authorshipRootName = DIMENSION_ROOTS
         ...children.map((child) => childTag(child, categoryId)),
       ];
     }),
+    ...tags.flatMap(({ name, children = [] }) => {
+      const tagNodeId = tagId(name, TAG_ROOT_TAG_ID);
+      return [
+        childTag(name, TAG_ROOT_TAG_ID),
+        ...children.map((child) => childTag(child, tagNodeId)),
+      ];
+    }),
   ];
 };
 
 /**
  * Authors one full sub-workspace hierarchy (a live market with a model, a tagged prompt, an
- * own-brand benchmark + URL, and the standalone dimension-root tag tree) under a CHILD workspace,
- * via the public {@link buildSeed} recipe. Both seeded hierarchies go through here so they stay
- * identical in shape.
+ * own-brand benchmark + URL, and the standalone dimension-root tag tree — including the open `tag`
+ * dimension, serenity-docs#26) under a CHILD workspace, via the public {@link buildSeed} recipe.
+ * Both seeded hierarchies go through here so they stay identical in shape.
  *
  * `projectTags` and `promptTags` are passed PRE-BUILT (not as names) because a tag's id depends on
  * its parent: only the caller, which knows the tree it is seeding, can derive the right ids. A
@@ -342,9 +370,11 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
   // `Trail` carries no prompts, so a 0-prompt sub-category is exercised by the tree read.
-  projectTags: dimensionRootTree([
-    { name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] },
-  ]),
+  // The `tag` dimension's depth-3 child (`TAG_CHILD_NAME`) likewise carries no prompts.
+  projectTags: dimensionRootTree(
+    [{ name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] }],
+    [{ name: TAG_NAME, children: [TAG_CHILD_NAME] }],
+  ),
 }));
 
 /**
@@ -378,8 +408,12 @@ export const TWO_HIERARCHIES = Object.freeze({
     ],
     benchmarkId: 'e7f8a9b0-c1d2-4e3f-8a4b-6c7d8e9f0112',
     brandUrlId: 'f8a9b0c1-d2e3-4f4a-8b5c-7d8e9f011223',
-    // Two depth-2 categories, no sub-categories — a prompt tagged only at the category level.
-    projectTags: dimensionRootTree([{ name: 'Laufschuhe' }, { name: 'Trailrunning' }]),
+    // Two depth-2 categories and two depth-2 tags, no sub-categories/children — tagged only at the
+    // depth-2 level.
+    projectTags: dimensionRootTree(
+      [{ name: 'Laufschuhe' }, { name: 'Trailrunning' }],
+      [{ name: 'Laufschuhe' }, { name: 'Trailrunning' }],
+    ),
   }),
 });
 
@@ -418,9 +452,11 @@ export const WORKSPACE_WITH_SOURCE_ROOT = Object.freeze(peHierarchy({
   ],
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
-  projectTags: dimensionRootTree([
-    { name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] },
-  ], LEGACY_AUTHORSHIP_ROOT_NAME),
+  projectTags: dimensionRootTree(
+    [{ name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] }],
+    [{ name: TAG_NAME, children: [TAG_CHILD_NAME] }],
+    LEGACY_AUTHORSHIP_ROOT_NAME,
+  ),
 }));
 
 /**
@@ -469,6 +505,11 @@ export const SEED_IDS = Object.freeze({
   // both the seed and these ids.
   legacySourceRootTagId: LEGACY_SOURCE_ROOT_TAG_ID,
   legacySourceHumanTagId: LEGACY_SOURCE_HUMAN_TAG_ID,
+  // The H1 project's `tag` dimension taxonomy: the root + its depth-2 tag + depth-3 child
+  // (serenity-docs#26).
+  tagRootTagId: TAG_ROOT_TAG_ID,
+  tagTagId: TAG_TAG_ID,
+  tagChildTagId: TAG_CHILD_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

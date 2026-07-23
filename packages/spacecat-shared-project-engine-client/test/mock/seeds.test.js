@@ -82,9 +82,10 @@ describe('seeds', () => {
     const tags = ops.tags.list({ workspaceId, projectId });
     expect(tags.every((t) => !t.name.includes(':'))).to.equal(true);
 
-    // Exactly the four dimension roots sit at the root level (model spec §7 gate 2).
+    // Exactly the five dimension roots sit at the root level (model spec §7 gate 2, plus the open
+    // `tag` root, serenity-docs#26).
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'type']);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'type', 'tag']);
 
     // The closed dimensions carry their full fixed vocabularies as bare children.
     const childNamesOf = (parentId) => tags
@@ -95,11 +96,21 @@ describe('seeds', () => {
     expect(childNamesOf(SEED_IDS.originRootTagId)).to.deep.equal(['ai', 'human']);
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
 
-    // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories.
+    // The open `category` dimension: a depth-2 category under `category`, with depth-3
+    // sub-categories.
     expect(childNamesOf(SEED_IDS.categoryRootTagId)).to.deep.equal(['Running Shoes']);
     const category = tags.find((t) => t.id === SEED_IDS.categoryTagId);
     expect(category).to.include({ name: 'Running Shoes', parent_id: SEED_IDS.categoryRootTagId });
     expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human']);
+
+    // The open `tag` dimension (serenity-docs#26): the SAME depth-2/3 shape as `category`, a
+    // distinct root/child pair keyed on `(parent, name)` like every other dimension.
+    expect(childNamesOf(SEED_IDS.tagRootTagId)).to.deep.equal(['Trail Running']);
+    const tagNode = tags.find((t) => t.id === SEED_IDS.tagTagId);
+    expect(tagNode).to.include({ name: 'Trail Running', parent_id: SEED_IDS.tagRootTagId });
+    expect(childNamesOf(SEED_IDS.tagTagId)).to.deep.equal(['Ultra']);
+    const tagChild = tags.find((t) => t.id === SEED_IDS.tagChildTagId);
+    expect(tagChild).to.include({ name: 'Ultra', parent_id: SEED_IDS.tagTagId });
 
     // The sub-category `human` and the origin value `human` share a name and NOTHING else — the
     // cross-dimension collision the model spec §7 gate 4 requires to be survivable.
@@ -111,7 +122,8 @@ describe('seeds', () => {
     expect(originHuman.parent_id).to.equal(SEED_IDS.originRootTagId);
 
     // The seeded prompt is dual-tagged (category + sub-category) and carries one closed value per
-    // dimension, reusing the ids the standalone tree registered so `by_tags` correlates.
+    // dimension, reusing the ids the standalone tree registered so `by_tags` correlates. The `tag`
+    // dimension isn't among the prompt's inline tags — only the standalone tree carries it here.
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
       .to.deep.equal(['Running Shoes', 'human', 'human', 'Commercial', 'branded']);
@@ -133,8 +145,9 @@ describe('seeds', () => {
     const tags = ops.tags.list({ workspaceId, projectId });
     // The authorship root is still named `source` (not `origin`) — the fixture api-service's
     // tolerant resolver runs against (origin-dimension.md §7 gate 3), and it carries no `origin`.
+    // The open `tag` root (serenity-docs#26) is still provisioned like any other dimension root.
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type', 'tag']);
     expect(roots.map((t) => t.name)).to.not.include('origin');
 
     // Every tag id in the loaded seed is unique — mechanically locks down the UUID-reuse safety
@@ -168,6 +181,25 @@ describe('seeds', () => {
     expect(secondProject.settings.ai.language.name).to.equal('de');
     // distinct workspace ids (the DB enforces unique semrush_workspace_id per org/brand).
     expect(secondWs).to.not.equal(SEED_IDS.workspaceId);
+
+    // the second hierarchy carries BOTH open dimensions in its one tags collection: the
+    // `category` subtree and the sibling `tag` subtree (serenity-docs#26), each a flat list of
+    // depth-2 nodes (no depth-3 children in this hierarchy).
+    const secondTags = ops.tags
+      .list({ workspaceId: secondWs, projectId: SEED_IDS.secondProjectId });
+    const catNamesOf = (parentId) => secondTags
+      .filter((t) => t.parent_id === parentId)
+      .map((t) => t.name);
+    expect(catNamesOf(SEED_IDS.categoryRootTagId)).to.deep.equal(['Laufschuhe', 'Trailrunning']);
+    expect(catNamesOf(SEED_IDS.tagRootTagId)).to.deep.equal(['Laufschuhe', 'Trailrunning']);
+
+    // same bare name under the two different dimension roots ⇒ two distinct tags, because ids are
+    // keyed on `(parent, name)`, not name alone.
+    const categoryLaufschuhe = secondTags
+      .find((t) => t.parent_id === SEED_IDS.categoryRootTagId && t.name === 'Laufschuhe');
+    const tagLaufschuhe = secondTags
+      .find((t) => t.parent_id === SEED_IDS.tagRootTagId && t.name === 'Laufschuhe');
+    expect(categoryLaufschuhe.id).to.not.equal(tagLaufschuhe.id);
   });
 
   it('reset restores a seed after mutation', () => {

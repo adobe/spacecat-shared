@@ -109,6 +109,245 @@ describe('stateful — prompts ops', () => {
   });
 });
 
+describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
+  const scope = { workspaceId: 'w1', projectId: 'p1' };
+  const freshPrompt = () => {
+    const ops = createStatefulOps(new InMemoryStore()).prompts;
+    const [created] = ops.createMany(scope, [{ name: 'p', tags: [] }]);
+    return { ops, id: created.id };
+  };
+
+  it('get reads a stored prompt, undefined for an unknown id', () => {
+    const { ops, id } = freshPrompt();
+    expect(ops.get(scope, id)?.name).to.equal('p');
+    expect(ops.get(scope, 'missing')).to.equal(undefined);
+  });
+
+  describe('hasOversizedAuthor', () => {
+    it('is false when every item is absent metadata / within the 100-char limit', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.hasOversizedAuthor([{}, { metadata: undefined }, { metadata: { created_by: 'a@x' } }]))
+        .to.equal(false);
+    });
+
+    it('is true when any item\'s created_by or updated_by exceeds 100 chars', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const long = 'x'.repeat(101);
+      expect(ops.hasOversizedAuthor([{ metadata: { created_by: long } }])).to.equal(true);
+      expect(ops.hasOversizedAuthor([{ metadata: { updated_by: long } }])).to.equal(true);
+      // exactly 100 chars is within the limit
+      expect(ops.hasOversizedAuthor([{ metadata: { created_by: 'x'.repeat(100) } }])).to.equal(false);
+    });
+  });
+
+  describe('createManyWithMetadata', () => {
+    it('creates new prompts with supplied metadata + tags, is_new: true', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const tags = [{ id: 'tag-a', name: 'A' }];
+      const { ok, results, existingCount } = ops.createManyWithMetadata(scope, [
+        { name: 'What is X?', metadata: { created_by: 'a@x', created_at: 't0' }, tags },
+      ]);
+      expect(ok).to.equal(true);
+      expect(existingCount).to.equal(0);
+      expect(results).to.have.length(1);
+      expect(results[0]).to.include({ name: 'What is X?', is_new: true });
+      expect(results[0].metadata).to.deep.equal({ created_by: 'a@x', created_at: 't0' });
+      expect(ops.get(scope, results[0].id).tags).to.deep.equal(tags);
+    });
+
+    it('creates a prompt with no metadata at all (metadata stays undefined)', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const { results } = ops.createManyWithMetadata(scope, [{ name: 'No metadata' }]);
+      expect(results[0].metadata).to.equal(undefined);
+    });
+
+    it('a dedupe hit (existing stored name) preserves stored metadata, is_new: false', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, { metadata: { created_by: 'orig@x' } });
+      const { results, existingCount } = ops.createManyWithMetadata(scope, [
+        { name: 'p', metadata: { created_by: 'ignored@x' }, tags: [{ id: 'tag-z', name: 'Z' }] },
+      ]);
+      expect(existingCount).to.equal(1);
+      expect(results[0]).to.deep.equal({
+        id, name: 'p', is_new: false, metadata: { created_by: 'orig@x' },
+      });
+      // the existing prompt's tags are untouched by the dedupe hit's (discarded) request tags
+      expect(ops.get(scope, id).tags).to.deep.equal([]);
+    });
+
+    it('dedupes a repeated name WITHIN the same batch (second occurrence is a hit too)', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const { results, existingCount } = ops.createManyWithMetadata(scope, [
+        { name: 'dup', metadata: { created_by: 'first@x' } },
+        { name: 'dup', metadata: { created_by: 'second@x' } },
+      ]);
+      expect(existingCount).to.equal(1);
+      expect(results[0].is_new).to.equal(true);
+      expect(results[1]).to.deep.equal({
+        id: results[0].id, name: 'dup', is_new: false, metadata: { created_by: 'first@x' },
+      });
+      expect(ops.list(scope)).to.have.length(1);
+    });
+
+    it('is atomic on the author-length CHECK: nothing is created when any item violates it', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const long = 'x'.repeat(101);
+      const { ok } = ops.createManyWithMetadata(scope, [
+        { name: 'fine' },
+        { name: 'bad', metadata: { updated_by: long } },
+      ]);
+      expect(ok).to.equal(false);
+      expect(ops.list(scope)).to.have.length(0);
+    });
+  });
+
+  describe('patchOne (combined name/metadata PATCH)', () => {
+    it('400s (empty-request) when neither name nor metadata is supplied', () => {
+      const { ops, id } = freshPrompt();
+      expect(ops.patchOne(scope, id, {})).to.deep.equal({ status: 'empty-request' });
+      expect(ops.patchOne(scope, id, { name: undefined, metadata: undefined }))
+        .to.deep.equal({ status: 'empty-request' });
+    });
+
+    it('404s for an unknown prompt id', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.patchOne(scope, 'missing', { name: 'x' })).to.deep.equal({ status: 'not-found' });
+    });
+
+    it('renames in place; a name equal to a sibling prompt 409s with nothing mutated', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [a, b] = ops.createMany(scope, [{ name: 'a', tags: [] }, { name: 'b', tags: [] }]);
+      const ok = ops.patchOne(scope, a.id, { name: 'renamed' });
+      expect(ok.status).to.equal('ok');
+      expect(ok.entity.name).to.equal('renamed');
+
+      const conflict = ops.patchOne(scope, b.id, { name: 'renamed' });
+      expect(conflict).to.deep.equal({ status: 'conflict' });
+      expect(ops.get(scope, b.id).name).to.equal('b'); // nothing mutated
+    });
+
+    it('renaming a prompt onto its OWN current name is not a conflict', () => {
+      const { ops, id } = freshPrompt();
+      const result = ops.patchOne(scope, id, { name: 'p' });
+      expect(result.status).to.equal('ok');
+    });
+
+    it('metadata: null WIPES the whole block (collapses to undefined)', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, { metadata: { created_by: 'a@x' } });
+      const result = ops.patchOne(scope, id, { metadata: null });
+      expect(result.status).to.equal('ok');
+      expect(result.entity.metadata).to.equal(undefined);
+    });
+
+    it('metadata object merges via RFC 7396 (absent = keep, string = set, null = delete)', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, {
+        metadata: { created_by: 'a@x', created_at: 't0', updated_by: 'a@x' },
+      });
+      const result = ops.patchOne(scope, id, {
+        metadata: { updated_by: 'b@x', updated_at: 't1', created_by: null },
+      });
+      expect(result.entity.metadata).to.deep.equal({
+        created_at: 't0', updated_by: 'b@x', updated_at: 't1',
+      });
+    });
+
+    it('a merge that removes the LAST surviving key collapses metadata to undefined', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, { metadata: { created_by: 'a@x' } });
+      const result = ops.patchOne(scope, id, { metadata: { created_by: null } });
+      expect(result.entity.metadata).to.equal(undefined);
+    });
+
+    it('name-only patch leaves metadata untouched (absent metadata key)', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, { metadata: { created_by: 'a@x' } });
+      const result = ops.patchOne(scope, id, { name: 'renamed only' });
+      expect(result.entity.metadata).to.deep.equal({ created_by: 'a@x' });
+      expect(result.entity.name).to.equal('renamed only');
+    });
+
+    it('400s (check-violation) — nothing mutated — when the metadata merge violates the '
+      + '100-char author CHECK', () => {
+      const { ops, id } = freshPrompt();
+      const long = 'x'.repeat(101);
+      const result = ops.patchOne(scope, id, { metadata: { created_by: long } });
+      expect(result).to.deep.equal({ status: 'check-violation' });
+      expect(ops.get(scope, id).metadata).to.equal(undefined);
+    });
+
+    // MysticatBot review (LLMO-6288 rework): the two 400 causes must stay DISTINGUISHABLE — a
+    // caller who supplied a well-formed-but-oversized metadata patch must never be told to
+    // "supply a field", the empty-request message.
+    it('distinguishes the two 400 causes: empty-request vs check-violation', () => {
+      const { ops, id } = freshPrompt();
+      const long = 'x'.repeat(101);
+      const empty = ops.patchOne(scope, id, {});
+      const oversized = ops.patchOne(scope, id, { metadata: { updated_by: long } });
+      expect(empty.status).to.equal('empty-request');
+      expect(oversized.status).to.equal('check-violation');
+      expect(empty.status).to.not.equal(oversized.status);
+    });
+  });
+
+  describe('patchMetadataBatch', () => {
+    it('applies an RFC 7396 merge to every item, one transaction', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [a, b] = ops.createMany(scope, [{ name: 'a', tags: [] }, { name: 'b', tags: [] }]);
+      ops.patchOne(scope, a.id, { metadata: { created_by: 'a@x' } });
+
+      const result = ops.patchMetadataBatch(scope, [
+        { id: a.id, metadata: { updated_by: 'edit@x' } },
+        { id: b.id, metadata: { created_by: 'b@x' } },
+      ]);
+      expect(result).to.deep.equal({ status: 'ok' });
+      expect(ops.get(scope, a.id).metadata).to.deep.equal({ created_by: 'a@x', updated_by: 'edit@x' });
+      expect(ops.get(scope, b.id).metadata).to.deep.equal({ created_by: 'b@x' });
+    });
+
+    it('is atomic on an unknown prompt id: 404s and writes NOTHING in the batch', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [a] = ops.createMany(scope, [{ name: 'a', tags: [] }]);
+      const result = ops.patchMetadataBatch(scope, [
+        { id: a.id, metadata: { created_by: 'a@x' } },
+        { id: 'missing', metadata: { created_by: 'b@x' } },
+      ]);
+      expect(result).to.deep.equal({ status: 'not-found' });
+      expect(ops.get(scope, a.id).metadata).to.equal(undefined); // untouched
+    });
+
+    it('is atomic on the author-length CHECK: 400s and writes NOTHING in the batch', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [a, b] = ops.createMany(scope, [{ name: 'a', tags: [] }, { name: 'b', tags: [] }]);
+      const long = 'x'.repeat(101);
+      const result = ops.patchMetadataBatch(scope, [
+        { id: a.id, metadata: { created_by: 'fine@x' } },
+        { id: b.id, metadata: { updated_by: long } },
+      ]);
+      // Reuses `patchOne`'s `check-violation` status for the identical author-length CHECK, so the
+      // two metadata-write ops share one status vocabulary (MysticatBot review, LLMO-6288 rework).
+      expect(result).to.deep.equal({ status: 'check-violation' });
+      expect(ops.get(scope, a.id).metadata).to.equal(undefined); // rolled back too
+    });
+  });
+
+  describe('countNewPrompts', () => {
+    it('counts only genuinely new names — store dedupes and in-list repeats cost nothing', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      ops.createMany(scope, [{ name: 'existing', tags: [] }]);
+      // 'existing' is already stored (dedupe hit), 'fresh' is new, the second 'dup' repeats the
+      // first within the same list — so only 'fresh' + one 'dup' count => 2.
+      expect(ops.countNewPrompts(scope, ['existing', 'fresh', 'dup', 'dup'])).to.equal(2);
+    });
+
+    it('counts every name when the project is empty', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.countNewPrompts(scope, ['a', 'b'])).to.equal(2);
+    });
+  });
+});
+
 describe('stateful — benchmarks ops', () => {
   const scope = { workspaceId: 'w1', projectId: 'p1' };
 

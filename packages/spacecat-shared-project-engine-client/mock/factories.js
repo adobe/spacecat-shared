@@ -29,6 +29,7 @@
 /** @typedef {Schemas['model.AIModelResponse']} AIModel */
 /** @typedef {Schemas['model.ProjectAIModelResponse']} ProjectAIModel */
 /** @typedef {Schemas['model.AIOPromptWithStatus']} Prompt */
+/** @typedef {Schemas['model.AIOPromptCreateResult']} PromptCreateResult */
 /** @typedef {Schemas['model.RenamePromptResponse']} RenamePromptResponse */
 /** @typedef {Schemas['model.ProjectResponse']} Project */
 /** @typedef {Schemas['model.ProjectRequest']} ProjectRequest */
@@ -134,6 +135,23 @@ export const createPromptMock = (overrides = {}) => ({
   name: 'What is the best running shoe?',
   is_new: false,
   tags: [],
+  ...overrides,
+});
+
+/**
+ * A v3 create-prompt result (`AIOPromptCreateResult`) — one entry of the `aio-create-prompts` /
+ * `aio-create-tagged-prompts` 201 `items[]` (LLMO-6288 WP2 rework, delivered swagger 2026-07-20).
+ * `metadata` is left OUT of the defaults (overlay CR21 requires only `id`/`name`/`is_new`): a
+ * dedupe hit echoes whatever the stored prompt already carries (possibly none), and a genuinely
+ * new prompt echoes whatever the create request supplied (possibly none) — there is no fixed
+ * default shape for it, so a caller always passes it explicitly when the prompt has one.
+ * @param {Partial<PromptCreateResult>} [overrides]
+ * @returns {PromptCreateResult}
+ */
+export const createPromptCreateResultMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'What is the best running shoe?',
+  is_new: true,
   ...overrides,
 });
 

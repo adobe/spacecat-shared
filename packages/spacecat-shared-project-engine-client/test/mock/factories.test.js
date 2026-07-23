@@ -28,6 +28,7 @@ import {
   createCiCompetitorMock,
   createUrlResolveMock,
   createRenamePromptResponseMock,
+  createPromptCreateResultMock,
 } from '../../mock/factories.js';
 
 // The .ts type-tests under test/types/ enforce that each factory's return is assignable to its
@@ -310,5 +311,19 @@ describe('factories — live-shaped entities', () => {
     // no-op rename (unchanged name).
     expect(createRenamePromptResponseMock({ id: 'p1', name: 'Same text', is_updated: false }))
       .to.deep.equal({ id: 'p1', name: 'Same text', is_updated: false });
+  });
+
+  it('createPromptCreateResultMock defaults id/name/is_new; metadata is absent unless supplied', () => {
+    const r = createPromptCreateResultMock();
+    expect(r.id).to.match(/^[0-9a-f-]{36}$/);
+    expect(r).to.include({ name: 'What is the best running shoe?', is_new: true });
+    expect(r).to.not.have.property('metadata');
+    // A dedupe hit (is_new: false) echoes the stored prompt's preserved metadata.
+    const withMetadata = createPromptCreateResultMock({
+      id: 'p1', name: 'X', is_new: false, metadata: { created_by: 'a@x' },
+    });
+    expect(withMetadata).to.deep.equal({
+      id: 'p1', name: 'X', is_new: false, metadata: { created_by: 'a@x' },
+    });
   });
 });

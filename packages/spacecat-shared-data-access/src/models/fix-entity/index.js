@@ -24,3 +24,12 @@ export {
   FIX_ENTITY_CREATE,
   isAllowedFixTransition,
 } from './fix-entity.transitions.js';
+
+// Canonical v2 changeDetails shape + validator (SITES-47997, ADR
+// adobe/mysticat-architecture#200). The generic enum names live on
+// FixEntity.CHANGE_DETAILS to keep them off the package-root barrel.
+export {
+  CHANGE_DETAILS_SCHEMA_VERSION,
+  changeDetailsV2Schema,
+  validateChangeDetails,
+} from './change-details.schema.js';

@@ -96,18 +96,46 @@ describe('S3 Utils', () => {
   });
 
   describe('getTokowakaMetaconfigS3Path', () => {
-    it('should generate correct metaconfig S3 path for deploy', () => {
-      const url = 'https://example.com/page1';
+    it('should generate correct metaconfig S3 path for root site', () => {
+      const url = 'https://example.com';
       const logger = { error: () => {} };
       const result = getTokowakaMetaconfigS3Path(url, logger, false);
       expect(result).to.equal('opportunities/example.com/config');
     });
 
-    it('should generate correct metaconfig S3 path for preview', () => {
-      const url = 'https://example.com/page1';
+    it('should generate correct metaconfig S3 path for root site with trailing slash', () => {
+      const url = 'https://example.com/';
+      const logger = { error: () => {} };
+      const result = getTokowakaMetaconfigS3Path(url, logger, false);
+      expect(result).to.equal('opportunities/example.com/config');
+    });
+
+    it('should generate subpath-scoped metaconfig S3 path for subpath site', () => {
+      const url = 'https://example.com/subsite';
+      const logger = { error: () => {} };
+      const result = getTokowakaMetaconfigS3Path(url, logger, false);
+      expect(result).to.equal('opportunities/example.com/subsite/config');
+    });
+
+    it('should strip trailing slash from subpath site URL', () => {
+      const url = 'https://example.com/subsite/';
+      const logger = { error: () => {} };
+      const result = getTokowakaMetaconfigS3Path(url, logger, false);
+      expect(result).to.equal('opportunities/example.com/subsite/config');
+    });
+
+    it('should generate correct preview metaconfig S3 path for root site', () => {
+      const url = 'https://example.com';
       const logger = { error: () => {} };
       const result = getTokowakaMetaconfigS3Path(url, logger, true);
       expect(result).to.equal('preview/opportunities/example.com/config');
+    });
+
+    it('should generate correct preview metaconfig S3 path for subpath site', () => {
+      const url = 'https://example.com/subsite';
+      const logger = { error: () => {} };
+      const result = getTokowakaMetaconfigS3Path(url, logger, true);
+      expect(result).to.equal('preview/opportunities/example.com/subsite/config');
     });
 
     it('should throw error on invalid URL', () => {

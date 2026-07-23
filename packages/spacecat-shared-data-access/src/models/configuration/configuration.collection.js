@@ -24,6 +24,12 @@ import { checkConfiguration } from './configuration.schema.js';
 
 const S3_CONFIG_KEY = 'config/spacecat/global-config.json';
 
+// Cap on concurrent HeadObject calls during version enrichment. Bounds the
+// fan-out regardless of page size so a large `listVersions({ detail: true })`
+// can't fire hundreds of concurrent requests in one tick (socket-pool
+// exhaustion / S3 503 SlowDown in Lambda).
+const ENRICH_CONCURRENCY = 25;
+
 /**
  * ConfigurationCollection - A standalone collection class for managing Configuration entities.
  * Unlike other collections, this uses S3 instead of PostgREST.
@@ -112,10 +118,14 @@ class ConfigurationCollection {
         ContentType: 'application/json',
         // Stamp the audit fields into S3 user-metadata so `listVersions` can
         // surface who/when for each version via a cheap metadata-only HeadObject
-        // (no full-body download). Keys are lowercased by S3.
+        // (no full-body download). Keys are lowercased by S3. We stamp the
+        // already-normalized `configData` values (updatedBy defaults to 'system'
+        // above, updatedAt is the ISO `now`) — both are guaranteed non-empty
+        // strings, so no literal "undefined"/"null" can ever be persisted into
+        // the immutable per-version metadata.
         Metadata: {
-          updatedby: String(configData.updatedBy),
-          updatedat: String(configData.updatedAt),
+          updatedby: configData.updatedBy,
+          updatedat: configData.updatedAt,
         },
       });
 
@@ -259,6 +269,25 @@ class ConfigurationCollection {
   }
 
   /**
+   * Enriches version rows in bounded-concurrency batches of `ENRICH_CONCURRENCY`
+   * so the HeadObject fan-out stays capped regardless of page size.
+   * @private
+   * @param {Array<Object>} rawVersions - The base version rows.
+   * @returns {Promise<Array<Object>>} The enriched rows, in order.
+   */
+  async #enrichVersions(rawVersions) {
+    const enriched = [];
+    for (let i = 0; i < rawVersions.length; i += ENRICH_CONCURRENCY) {
+      const batch = rawVersions.slice(i, i + ENRICH_CONCURRENCY);
+      // Serialize batches to bound concurrency; within a batch calls run in parallel.
+      // eslint-disable-next-line no-await-in-loop
+      const results = await Promise.all(batch.map((version) => this.#enrichVersion(version)));
+      enriched.push(...results);
+    }
+    return enriched;
+  }
+
+  /**
    * Lists configuration versions from S3 object versioning, newest first.
    *
    * S3 `ListObjectVersions` returns version-level metadata only (VersionId,
@@ -276,7 +305,8 @@ class ConfigurationCollection {
    *
    * @param {Object} [options] - Listing options.
    * @param {number} [options.limit=25] - Max versions to return (coerced to an
-   *   integer and clamped to [1, 1000]; also bounds the enrichment fan-out).
+   *   integer and clamped to [1, 1000]). Enrichment concurrency is bounded
+   *   separately by `ENRICH_CONCURRENCY`, independent of this page size.
    * @param {string} [options.keyMarker] - S3 KeyMarker for pagination.
    * @param {string} [options.versionIdMarker] - S3 VersionIdMarker for pagination.
    * @param {boolean} [options.detail=true] - Enrich rows with updatedBy/updatedAt.
@@ -293,8 +323,8 @@ class ConfigurationCollection {
     this.#requireS3();
 
     // Coerce + clamp: an unvalidated limit (NaN/negative/huge from a query
-    // string) would otherwise flow straight to S3 MaxKeys and unbound the
-    // per-row HeadObject fan-out below.
+    // string) would otherwise flow straight to S3 MaxKeys. (The HeadObject
+    // fan-out is bounded separately by #enrichVersions.)
     const parsedLimit = Number.parseInt(limit, 10);
     const maxKeys = Number.isInteger(parsedLimit)
       ? Math.min(Math.max(parsedLimit, 1), 1000)
@@ -325,7 +355,7 @@ class ConfigurationCollection {
         }));
 
       const versions = detail
-        ? await Promise.all(rawVersions.map((version) => this.#enrichVersion(version)))
+        ? await this.#enrichVersions(rawVersions)
         : rawVersions;
 
       return {

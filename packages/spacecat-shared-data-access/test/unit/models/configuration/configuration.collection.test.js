@@ -285,6 +285,17 @@ describe('ConfigurationCollection', () => {
       expect(command.input.Metadata).to.have.property('updatedby', 'alice@adobe.com');
       expect(command.input.Metadata.updatedat).to.be.a('string');
     });
+
+    it("stamps the default 'system' updatedBy (never a literal 'undefined'/'null')", async () => {
+      mockS3Client.send.resolves({ VersionId: 'v-meta-default' });
+
+      await instance.create(mockRecord); // no updatedBy provided
+
+      const [command] = mockS3Client.send.firstCall.args;
+      expect(command.input.Metadata.updatedby).to.equal('system');
+      expect(command.input.Metadata.updatedby).to.not.match(/undefined|null/);
+      expect(command.input.Metadata.updatedat).to.be.a('string').and.not.match(/undefined|null/);
+    });
   });
 
   describe('listVersions', () => {
@@ -357,6 +368,39 @@ describe('ConfigurationCollection', () => {
       expect(result.versions[1].updatedBy).to.equal('alice@adobe.com');
       // 1 list + 2 heads
       expect(mockS3Client.send.callCount).to.equal(3);
+    });
+
+    it('enriches in bounded batches when the page exceeds ENRICH_CONCURRENCY', async () => {
+      // 60 versions > the batch size (25) → exercises the multi-batch loop.
+      const many = Array.from({ length: 60 }, (_, i) => ({
+        Key: 'config/spacecat/global-config.json',
+        VersionId: `v${i}`,
+        LastModified: new Date('2026-07-23T10:00:00.000Z'),
+        IsLatest: i === 0,
+        Size: 100,
+      }));
+      let concurrent = 0;
+      let peak = 0;
+      mockS3Client.send.callsFake((command) => {
+        if (command.constructor.name === 'ListObjectVersionsCommand') {
+          return Promise.resolve({ Versions: many, IsTruncated: false });
+        }
+        concurrent += 1;
+        peak = Math.max(peak, concurrent);
+        return new Promise((resolve) => {
+          setImmediate(() => {
+            concurrent -= 1;
+            resolve({ Metadata: { updatedby: 'x', updatedat: 'y' } });
+          });
+        });
+      });
+
+      const result = await instance.listVersions({ limit: 100 });
+
+      expect(result.versions).to.have.length(60);
+      expect(result.versions.every((v) => v.updatedBy === 'x')).to.be.true;
+      // Fan-out never exceeds the batch cap, regardless of page size.
+      expect(peak).to.be.at.most(25);
     });
 
     it('falls back to null when a version has no user-metadata', async () => {

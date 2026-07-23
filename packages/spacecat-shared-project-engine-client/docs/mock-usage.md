@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -161,18 +161,24 @@ Three named seeds ship in `mock/seeds.js`:
 - **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
   sub-workspace (`SEED_IDS.workspaceId`, the id a correctly-anchored brand resolves to — NOT the org
   parent), with a catalog-valid AI model (`search-gpt`), the four bare dimension roots (`category`,
-  `intent`, `source`, `type`) carrying the closed vocabularies as children plus a depth-2 category
+  `intent`, `origin`, `type`) carrying the closed vocabularies as children plus a depth-2 category
   with two depth-3 sub-categories, a prompt dual-tagged with its category and sub-category plus one
   closed value per dimension, an own-brand benchmark, and a brand URL. The sub-category `human` and
-  the `source` value `human` deliberately share a name and differ only by parent, so the
+  the `origin` value `human` deliberately share a name and differ only by parent, so the
   cross-dimension collision case stays exercised. Canonical ids are exported as `SEED_IDS`
   (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`,
   `brandUrlId`, the four `*RootTagId`s, `categoryTagId`, `childTagId`, `childCollidingTagId`,
-  `sourceHumanTagId`, `intentCommercialTagId`, `typeBrandedTagId`).
+  `originHumanTagId`, `intentCommercialTagId`, `typeBrandedTagId`).
 - **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
   independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
   `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct
   `semrush_workspace_id`.
+- **`legacy-source-workspace`** — the same shape as `workspace-with-data`, except the authorship
+  root is still named `source` (with `ai` / `human` beneath it) rather than `origin`. This is the
+  **pre-rename** fixture the authorship rename's tolerant resolver is tested against
+  (origin-dimension.md §7 gate 3): a live project still carrying a `source` root, which the resolver
+  must accept in place and never duplicate. Its ids are `SEED_IDS.legacySourceRootTagId` /
+  `legacySourceHumanTagId`. Removed by WP-O6 once the `source` fallback is dropped.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:

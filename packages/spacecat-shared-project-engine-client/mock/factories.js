@@ -361,6 +361,7 @@ export const createTagNodeMock = (overrides = {}) => ({
  * the shape the mock persists in the per-project `tags` collection.
  *
  * The tag taxonomy is a dimension-root tree (see the dimension-root tag model): each **dimension**
+
  * — `category`, `intent`, `origin`, `type`, and `tag` (serenity-docs#26, the fifth, open,
  * user-authored dimension — same open/lazily-created treatment as `category`) — is a bare-named
  * ROOT with no `parent_id`, and every **value** is a bare-named descendant carrying its parent's

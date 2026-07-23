@@ -62,10 +62,10 @@ describe('tag-id', () => {
     expect(tagId('Pricing', 'tag-electronics')).to.not.equal(tagId('Pricing', 'tag-furniture'));
   });
 
-  // A sub-category named `human` and the `source` value `human` must coexist on one prompt
+  // A sub-category named `human` and the `origin` value `human` must coexist on one prompt
   // (model spec §7 gate 4). They share a bare name and differ only by parent.
   it('separates a sub-category from a same-named closed-dimension value', () => {
-    expect(tagId('human', 'tag-running-shoes')).to.not.equal(tagId('human', 'tag-source'));
+    expect(tagId('human', 'tag-running-shoes')).to.not.equal(tagId('human', 'tag-origin'));
   });
 
   // Omitting the parent is how a ROOT id is derived — and it is what `POST /aio/prompts/tagged`
@@ -75,7 +75,7 @@ describe('tag-id', () => {
   });
 
   it('distinguishes a root from a child of the same name', () => {
-    expect(tagId('human')).to.not.equal(tagId('human', 'tag-source'));
+    expect(tagId('human')).to.not.equal(tagId('human', 'tag-origin'));
   });
 
   // The separator makes the preimage unambiguous: without it, the category `ab` under parent `c`

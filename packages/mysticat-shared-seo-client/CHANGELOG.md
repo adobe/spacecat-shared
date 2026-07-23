@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.7.0...@adobe/mysticat-shared-seo-client-v1.8.0) (2026-07-22)
+
+### Features
+
+* **seo-client:** add getBrokenBacklinksV2 with priority scoring and fix 404 handling (SITES-46957, SITES-47209) ([#1837](https://github.com/adobe/spacecat-shared/issues/1837)) ([1bfebc5](https://github.com/adobe/spacecat-shared/commit/1bfebc50b715fdecccfc5e4919eac36d38049176))
+
 ## [@adobe/mysticat-shared-seo-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.6.0...@adobe/mysticat-shared-seo-client-v1.7.0) (2026-07-17)
 
 ### Features

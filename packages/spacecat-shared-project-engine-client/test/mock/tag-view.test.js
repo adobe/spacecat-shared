@@ -15,22 +15,22 @@ import { expect } from 'chai';
 import { buildTagView } from '../../mock/tag-view.js';
 import * as factories from '../../mock/factories.js';
 
-// A dimension-root tree: `category` → `Running Shoes` → `human`, plus the `source` value `human`.
+// A dimension-root tree: `category` → `Running Shoes` → `human`, plus the `origin` value `human`.
 // The two `human` tags share a bare name and differ only by parent, which is the collision the
 // whole dimension-root model exists to survive.
 const CATEGORY_ROOT = 'root-category';
-const SOURCE_ROOT = 'root-source';
+const ORIGIN_ROOT = 'root-origin';
 const RUNNING_SHOES = 'cat-running-shoes';
 const SUB_HUMAN = 'sub-human';
-const SOURCE_HUMAN = 'source-human';
+const ORIGIN_HUMAN = 'origin-human';
 
 const tree = () => [
   { id: CATEGORY_ROOT, name: 'category' },
-  { id: SOURCE_ROOT, name: 'source' },
+  { id: ORIGIN_ROOT, name: 'origin' },
   { id: RUNNING_SHOES, name: 'Running Shoes', parent_id: CATEGORY_ROOT },
   { id: SUB_HUMAN, name: 'human', parent_id: RUNNING_SHOES },
   {
-    id: SOURCE_HUMAN, name: 'human', parent_id: SOURCE_ROOT, prompts_count: 3,
+    id: ORIGIN_HUMAN, name: 'human', parent_id: ORIGIN_ROOT, prompts_count: 3,
   },
 ];
 
@@ -89,7 +89,7 @@ describe('tag-view', () => {
 
     it('preserves the stored prompts_count, defaulting to 0', () => {
       const { byId } = buildTagView(tree(), factories);
-      expect(byId.get(SOURCE_HUMAN).prompts_count).to.equal(3);
+      expect(byId.get(ORIGIN_HUMAN).prompts_count).to.equal(3);
       expect(byId.get(SUB_HUMAN).prompts_count).to.equal(0);
     });
   });
@@ -97,9 +97,9 @@ describe('tag-view', () => {
   it('distinguishes two same-named tags by their dimension root', () => {
     const { byId } = buildTagView(tree(), factories);
 
-    expect(byId.get(SUB_HUMAN).name).to.equal(byId.get(SOURCE_HUMAN).name);
+    expect(byId.get(SUB_HUMAN).name).to.equal(byId.get(ORIGIN_HUMAN).name);
     expect(byId.get(SUB_HUMAN).path[0].name).to.equal('category');
-    expect(byId.get(SOURCE_HUMAN).path[0].name).to.equal('source');
+    expect(byId.get(ORIGIN_HUMAN).path[0].name).to.equal('origin');
   });
 
   it('serialize() answers the same object the byId index holds', () => {

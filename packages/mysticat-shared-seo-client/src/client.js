@@ -825,6 +825,10 @@ export default class SeoClient {
     });
 
     if (!r.ok) {
+      if (r.status === 404) {
+        this.log.info(`Semrush broken-links returned 404 for ${url} — no data found, returning empty result`);
+        return { result: { backlinks: [], totalCount: 0 }, fullAuditRef };
+      }
       const bodyText = await r.text();
       throw new Error(`Semrush broken-links endpoint HTTP ${r.status}: ${bodyText.slice(0, 500)}`);
     }

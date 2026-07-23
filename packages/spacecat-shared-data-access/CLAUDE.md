@@ -213,6 +213,76 @@ const liveSites = await dataAccess.Site.all(
 | `POSTGREST_API_KEY` | No | JWT for `postgrest_writer` role (enables UPDATE/DELETE) |
 | `S3_CONFIG_BUCKET` | No | Only for `Configuration` entity |
 | `AWS_REGION` | No | Only for `Configuration` entity |
+| `STATUS_TRANSITION_ENFORCEMENT` | No | Status-transition guard mode: `off` \| `warn` \| `enforce`. Default `warn`. See "Status Transition Lifecycle". |
+
+## Status Transition Lifecycle (SITES-47091)
+
+`Suggestion.status` and `FixEntity.status` are governed by a transition guard
+(canonical design: ADR [adobe/mysticat-architecture#174]). The guard runs on the
+`setStatus` override of both models — so **every** writer (api-service single
+PATCH, `SuggestionCollection.bulkUpdateStatus`, autofix-worker) is checked at one
+chokepoint.
+
+**Enforcement is env-controlled** via `STATUS_TRANSITION_ENFORCEMENT`, read at call time:
+
+| Mode | Behavior |
+|------|----------|
+| `off` | no check |
+| `warn` (**default**) | logs a violation (`<Entity> <id> <from> -> <to>`) and **still applies** the change — byte-equivalent to the old setter |
+| `enforce` | throws `ValidationError` on a disallowed transition |
+
+Rollout intent: ship `warn` to surface today's illegal transitions in logs for
+~1–2 weeks, then flip to `enforce`. A no-op (`from === to`) always passes.
+
+**APIs** (exported from the package root):
+- `setStatus(value)` / `transitionStatus(to)` on `Suggestion` and `FixEntity` — both guard the transition; `transitionStatus` is the intention-revealing alias for new code.
+- `isAllowedFixTransition(from, to)` / `isAllowedSuggestionTransition(from, to)` + the `FIX_ENTITY_TRANSITIONS` / `SUGGESTION_TRANSITIONS` tables (a null/undefined `from` means entity creation).
+- `deriveSuggestionStatus(outcomes, issues = [], currentStatus = null)` — derives a Suggestion status from a per-suggestion list of **outcome signals**. Each entry is a FixEntity, `{status}`, or a status string from **either** vocabulary: FixEntity statuses (`DEPLOYED`/`PUBLISHED`→FIXED, `FAILED`→ERROR, `PENDING`→IN_PROGRESS, `ROLLED_BACK`/`REJECTED`→SKIPPED) **or** explicit Suggestion-status outcomes a handler asserts for no-fix cases (e.g. consciously skipped → `'SKIPPED'`, not-actionable → `'NEW'`). Signals are classified via `classifyStatus` and collapsed **first-match-wins by severity: ERROR > IN_PROGRESS > FIXED > SKIPPED**; all-NEUTRAL (e.g. only `NEW`) → `NEW`; no recognized signals → `currentStatus` (default null, so a derive call never clobbers a status set elsewhere). **Throws** if a non-empty `issues` array is passed — the CWV multi-issue bubble-up is deferred (SITES-47285): the per-issue codefix vocabulary (`PATCH_*`/`GUIDANCE_GENERATED`, written by mystique into the overloaded `issue.status` field) is not yet reconciled with the JS layer.
+- `classifyStatus(token)` — maps a fix- or suggestion-status token to its severity class (`ERROR`/`IN_PROGRESS`/`FIXED`/`SKIPPED`/`NEUTRAL`) or `null`. The shared building block behind the bubble-up; consumers building custom collapses should reuse it rather than re-encode the mapping.
+
+Notes: the `FixEntity` table is the canonical one from the ADR; the `Suggestion`
+table is intentionally **permissive in V1** (tune it from the warn-log findings
+before enforcing). `FixEntity.REJECTED` is omitted (not in `FixEntity.STATUSES`).
+Consumer adoption (bump + route writes + warn→enforce) is tracked in SITES-47286.
+
+[adobe/mysticat-architecture#174]: https://github.com/adobe/mysticat-architecture/blob/main/platform/decisions/design-suggestion-fix-entity-status-lifecycle.md
+
+## Deploy-action `changeDetails` v2 (SITES-47997)
+
+`FixEntity.changeDetails` has a canonical **v2 shape** — the structured,
+validated "deploy action" record (who/when/what/which-pages/result) from ADR
+[adobe/mysticat-architecture#200]. It is defined in
+`src/models/fix-entity/change-details.schema.js` (Joi) and wired into the
+`changeDetails` attribute validator.
+
+- **Reader-tolerant / additive.** The DB column stays `type: 'any'` — no
+  migration. Records **without `schemaVersion: 2`** are legacy freeform (v1) and
+  keep the old non-empty-object guard; only `schemaVersion: 2` records are
+  schema-validated. This runs on the **create** path (`#validateItem` →
+  `collection.create`), not on `save()` updates.
+- **Shape.** `{ schemaVersion: 2, surface, actorType, target, result? }`.
+  `target` = the proposal (intent): `changeType` + `changes[{ targetPath,
+  property, intendedValue }]`. `result` = the outcome: `callStatus`
+  (`success|no_op|client_error|server_error|timeout`), `applied`
+  (**enum `ALL|PARTIAL|NONE`, not a boolean**), `changeResults[]` (key-matched to
+  `target.changes` by `(targetPath, property)`), `pre/postVerify` verdicts, and
+  `deployResponsePayload` (**≤ 4 KB cap**) + `deployResponseSha256` (hex).
+- **APIs** (exported from the package root):
+  - `validateChangeDetails(value)` — the attribute validator; `false` on a
+    non-object, `true` for legacy/valid-v2, **throws** with a descriptive message
+    on an invalid v2 record.
+  - `changeDetailsV2Schema` — the raw Joi `ObjectSchema` (strict; unknown keys
+    rejected) for consumers that want to validate directly.
+  - `FixEntity.CHANGE_DETAILS` — the enum bundle (`SURFACES`, `ACTOR_TYPES`,
+    `CALL_STATUSES`, `APPLIED`, `CHANGE_RESULT_STATUSES`, `VERIFY_VERDICTS`,
+    `SCHEMA_VERSION`, `DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES`). Kept on the model
+    (not the barrel) to avoid collisions on these generic names.
+- **Not yet done** (tracked on SITES-47997): the `publishedBy` column +
+  `executedBy/At` → `deployedBy/At` rename (dual-write, needs a companion
+  mysticat-data-service migration), and gating the `DEPLOYED`/`PUBLISHED`
+  transition on `result` presence (extends the SITES-47091 guard).
+
+[adobe/mysticat-architecture#200]: https://github.com/adobe/mysticat-architecture/blob/main/platform/decisions/deploy-action-provenance-and-verify.md
 
 ## Site Config: Import Types
 

@@ -1,3 +1,81 @@
+## [@adobe/spacecat-shared-data-access-v4.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.12.0...@adobe/spacecat-shared-data-access-v4.13.0) (2026-07-23)
+
+### Features
+
+* **data-access:** list configuration versions via S3 object versioning ([#1839](https://github.com/adobe/spacecat-shared/issues/1839)) ([5dd66fc](https://github.com/adobe/spacecat-shared/commit/5dd66fc9aee60215ea4355395e280c66ae44dcb9))
+
+## [@adobe/spacecat-shared-data-access-v4.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.11.0...@adobe/spacecat-shared-data-access-v4.12.0) (2026-07-23)
+
+### Features
+
+* **data-access:** canonical v2 changeDetails schema + validator for FixEntity (SITES-47997) ([#1828](https://github.com/adobe/spacecat-shared/issues/1828)) ([afdb546](https://github.com/adobe/spacecat-shared/commit/afdb5464d6af6ac6ea9f6f0075d798feb38a5699))
+
+## [@adobe/spacecat-shared-data-access-v4.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.1...@adobe/spacecat-shared-data-access-v4.11.0) (2026-07-21)
+
+### Features
+
+* add weekly-offsite job interval (LLMO-6401) ([#1834](https://github.com/adobe/spacecat-shared/issues/1834)) ([95afbc7](https://github.com/adobe/spacecat-shared/commit/95afbc70e641d2399bcdc1367cd62a86ed78e756))
+
+## [@adobe/spacecat-shared-data-access-v4.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.0...@adobe/spacecat-shared-data-access-v4.10.1) (2026-07-21)
+
+### Bug Fixes
+
+* add routingEnabled (timestamp) to edgeOptimizeConfig schema ([#1835](https://github.com/adobe/spacecat-shared/issues/1835)) ([bfc17da](https://github.com/adobe/spacecat-shared/commit/bfc17daaeb628d8abaf5c211bbf7aee1b35ed3be))
+
+## [@adobe/spacecat-shared-data-access-v4.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.9.0...@adobe/spacecat-shared-data-access-v4.10.0) (2026-07-20)
+
+### Features
+
+* Add allSiteIdsByTier and allByEnrollmentAndTier collection meth… ([#1569](https://github.com/adobe/spacecat-shared/issues/1569)) ([3ac585b](https://github.com/adobe/spacecat-shared/commit/3ac585bd1b3fe93d32b8d0ad027af81cf6e37830))
+
+## [@adobe/spacecat-shared-data-access-v4.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.8.0...@adobe/spacecat-shared-data-access-v4.9.0) (2026-07-15)
+
+### Features
+
+* **data-access:** guidance + feedback_subject_id + code-patch export gate for feedback ([#1809](https://github.com/adobe/spacecat-shared/issues/1809)) ([941b9f9](https://github.com/adobe/spacecat-shared/commit/941b9f92621df09a9ce887b70307f4c1261bfd37))
+
+## [@adobe/spacecat-shared-data-access-v4.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.7.0...@adobe/spacecat-shared-data-access-v4.8.0) (2026-07-14)
+
+### Features
+
+* add temporary replaceHandlerEnabledDisabled method for cleanup. ([#1328](https://github.com/adobe/spacecat-shared/issues/1328)) ([be9234f](https://github.com/adobe/spacecat-shared/commit/be9234fa67dc9960d4abbb0b0425e621b7ad33c7))
+
+## [@adobe/spacecat-shared-data-access-v4.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.6.0...@adobe/spacecat-shared-data-access-v4.7.0) (2026-07-13)
+
+### Features
+
+* **data-access:** add TicketSuggestion bulk accessors allBySuggestionIds and allByTicketIds (SITES-44690) ([#1804](https://github.com/adobe/spacecat-shared/issues/1804)) ([99387f6](https://github.com/adobe/spacecat-shared/commit/99387f64423c822c0f377014d245549bed68cd40))
+
+## [@adobe/spacecat-shared-data-access-v4.6.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.5.0...@adobe/spacecat-shared-data-access-v4.6.0) (2026-07-12)
+
+### Features
+
+* added non prod domain in plg onboarding steps ([#1750](https://github.com/adobe/spacecat-shared/issues/1750)) ([3f56508](https://github.com/adobe/spacecat-shared/commit/3f56508a47ffd4b92584c424fcb7876bddd48838))
+
+## [@adobe/spacecat-shared-data-access-v4.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.4.0...@adobe/spacecat-shared-data-access-v4.5.0) (2026-07-10)
+
+### Features
+
+* **data-access:** generalize deriveSuggestionStatus bubble-up + classifyStatus (SITES-47285) ([#1797](https://github.com/adobe/spacecat-shared/issues/1797)) ([732f647](https://github.com/adobe/spacecat-shared/commit/732f647724d1922f70d32b42fedd46824b0c1bde))
+
+## [@adobe/spacecat-shared-data-access-v4.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.1...@adobe/spacecat-shared-data-access-v4.4.0) (2026-07-09)
+
+### Features
+
+* **fix-entity:** add allByOpportunityIds for site-wide fix queries ([#1792](https://github.com/adobe/spacecat-shared/issues/1792)) ([25309bf](https://github.com/adobe/spacecat-shared/commit/25309bff4be7d90c0f7cdbf854c48a20adfd3e57))
+
+## [@adobe/spacecat-shared-data-access-v4.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.3.0...@adobe/spacecat-shared-data-access-v4.3.1) (2026-07-09)
+
+### Bug Fixes
+
+* **ticket-suggestion:** use createdAt as belongs_to sort key instead of updatedAt ([#1798](https://github.com/adobe/spacecat-shared/issues/1798)) ([711eecd](https://github.com/adobe/spacecat-shared/commit/711eecdc187ec9a21a79dedca808e6622bd18933)), closes [#2661](https://github.com/adobe/spacecat-shared/issues/2661)
+
+## [@adobe/spacecat-shared-data-access-v4.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.2.0...@adobe/spacecat-shared-data-access-v4.3.0) (2026-07-09)
+
+### Features
+
+* **data-access:** status transition guard + deriveSuggestionStatus (SITES-47091) ([#1748](https://github.com/adobe/spacecat-shared/issues/1748)) ([0888866](https://github.com/adobe/spacecat-shared/commit/0888866df45778a8e28a86ce2b11c721b81cf0c0))
+
 ## [@adobe/spacecat-shared-data-access-v4.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.1.1...@adobe/spacecat-shared-data-access-v4.2.0) (2026-07-07)
 
 ### Features

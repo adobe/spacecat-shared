@@ -10,6 +10,9 @@
  * governing permissions and limitations under the License.
  */
 import BaseModel from '../base/base.model.js';
+import { guardTransition } from '../../util/status-transition-guard.js';
+import { isAllowedFixTransition } from './fix-entity.transitions.js';
+import { CHANGE_DETAILS } from './change-details.schema.js';
 
 /**
  * FixEntity - A class representing a FixEntity for a Suggestion.
@@ -38,6 +41,44 @@ class FixEntity extends BaseModel {
     ASO: 'aso',
     REPORTING: 'reporting',
   };
+
+  // Canonical v2 changeDetails enums + limits (SITES-47997, ADR
+  // adobe/mysticat-architecture#200). e.g. FixEntity.CHANGE_DETAILS.SURFACES.ASO.
+  static CHANGE_DETAILS = CHANGE_DETAILS;
+
+  /**
+   * Sets the fix status, guarding the transition against the canonical table
+   * (fix-entity.transitions.js). Overrides the auto-generated setter so EVERY
+   * writer is checked at one chokepoint. Behavior is governed by
+   * STATUS_TRANSITION_ENFORCEMENT (default `warn` — logs violations, still
+   * applies; `enforce` — throws ValidationError; `off` — no check).
+   *
+   * @param {string} value - target status
+   * @returns {this}
+   */
+  setStatus(value) {
+    guardTransition({
+      entityName: FixEntity.ENTITY_NAME,
+      entityId: this.getId(),
+      from: this.getStatus(),
+      to: value,
+      isAllowed: isAllowedFixTransition,
+      log: this.log,
+    });
+    this.patcher.patchValue('status', value, false);
+    return this;
+  }
+
+  /**
+   * Explicit, intention-revealing alias for setStatus for new callers that want
+   * to signal a guarded lifecycle transition. Same behavior as setStatus.
+   *
+   * @param {string} to - target status
+   * @returns {this}
+   */
+  transitionStatus(to) {
+    return this.setStatus(to);
+  }
 
   async getSuggestions() {
     const fixEntityCollection = this.entityRegistry.getCollection('FixEntityCollection');

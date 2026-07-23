@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-project-engine-client",
-  "version": "1.9.0",
+  "version": "1.15.0",
   "description": "Shared modules of the Spacecat Services - Semrush Project Engine client and generated types",
   "type": "module",
   "main": "src/index.js",
@@ -20,12 +20,15 @@
     "npm": ">=10.9.0 <12.0.0"
   },
   "scripts": {
+    "pretest": "npm run spec:verify",
     "test": "c8 mocha",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
     "clean": "rm -rf node_modules build .counterfact",
     "spec:convert": "mkdir -p build && swagger2openapi spec/projectengine_swagger_public.yaml --patch --outfile build/openapi3.json",
     "spec:overlay": "node scripts/apply-overlay.mjs",
+    "spec:verify": "shasum -a 256 -c spec/projectengine_swagger_public.yaml.sha256",
+    "spec:lock": "shasum -a 256 spec/projectengine_swagger_public.yaml > spec/projectengine_swagger_public.yaml.sha256",
     "generate:ts": "openapi-typescript build/openapi3.json --output src/generated/types.ts",
     "generate:pydantic": "datamodel-codegen --input build/openapi3.json --input-file-type openapi --output python/serenity_project_engine/ --output-model-type pydantic_v2.BaseModel",
     "generate": "npm run spec:convert && npm run spec:overlay && npm run generate:ts && npm run generate:pydantic",
@@ -60,7 +63,7 @@
     "c8": "11.0.0",
     "chai": "6.2.2",
     "counterfact": "2.14.0",
-    "js-yaml": "4.2.0",
+    "js-yaml": "4.3.0",
     "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "openapi-typescript": "7.13.0",

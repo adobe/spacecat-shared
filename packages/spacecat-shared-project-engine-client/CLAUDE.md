@@ -3,9 +3,12 @@
 Typed client + generated types for the Semrush **Project Engine** API, plus a stateful
 Counterfact **mock** used by local dev and the cross-repo e2e harness.
 
-- `src/` — the published client (`createSerenityProjectEngineApiClient`, an `openapi-fetch`
-  client) + generated types (`src/generated/types.ts`). This is the ONLY thing that ships
-  (`files: ["src"]`).
+- `src/` — the published surface: the raw `createSerenityProjectEngineApiClient` (an
+  `openapi-fetch` client over every generated operation) **and** `createSerenityProjectEngineTransport`,
+  an intent-named facade that wraps the 28 in-spec operations spacecat-api-service consumes behind
+  verb+resource methods with a single error seam. Consumers depend on the facade; the raw client
+  stays available for the remaining operations. Plus generated types (`src/generated/types.ts`).
+  This is the ONLY thing that ships (`files: ["src"]`).
 - `mock/` — the stateful mock (store, factories, seeds, quota metering, bearer auth, Counterfact
   handlers, runner). NOT published (`files: ["src"]` ships only `src/`, so the `./mock/*` subpath
   export resolves via the in-workspace symlink only, never the published registry tarball —

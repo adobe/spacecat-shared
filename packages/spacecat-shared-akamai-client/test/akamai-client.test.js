@@ -16,7 +16,11 @@ import sinon from 'sinon';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
 
-import AkamaiClient, { normalizeDomain } from '../src/index.js';
+import AkamaiClient, {
+  normalizeDomain,
+  defaultRuleHasCaching,
+  getDefaultOriginSsl,
+} from '../src/index.js';
 
 use(chaiAsPromised);
 use(sinonChai);
@@ -441,16 +445,27 @@ describe('AkamaiClient', () => {
   // ─── version + rule-tree operations ─────────────────────────────────────
 
   describe('getRuleTree', () => {
-    it('returns the rule tree and its ruleFormat', async () => {
+    it('returns the rule tree, its ruleFormat, and the version etag', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
+        .reply(200, { ruleFormat: 'v2024-01-01', etag: 'abc123', rules: { name: 'default' } });
+
+      const result = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
+      const { ruleTree, ruleFormat, etag } = result;
+      expect(ruleFormat).to.equal('v2024-01-01');
+      expect(etag).to.equal('abc123');
+      expect(ruleTree.rules).to.deep.equal({ name: 'default' });
+    });
+
+    it('returns etag undefined when the PAPI response omits it', async () => {
       nock(API_BASE)
         .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
         .query({ contractId: CONTRACT_ID, groupId: GROUP_ID })
         .reply(200, { ruleFormat: 'v2024-01-01', rules: { name: 'default' } });
 
-      const result = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
-      const { ruleTree, ruleFormat } = result;
-      expect(ruleFormat).to.equal('v2024-01-01');
-      expect(ruleTree.rules).to.deep.equal({ name: 'default' });
+      const { etag } = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
+      expect(etag).to.equal(undefined);
     });
 
     it('throws when version is not an integer', async () => {
@@ -513,6 +528,26 @@ describe('AkamaiClient', () => {
       expect(result).to.deep.equal({ errors: [] });
     });
 
+    it('adds dryRun=true to the query when options.dryRun is set', async () => {
+      nock(API_BASE)
+        .put(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`)
+        .query({
+          contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true', dryRun: 'true',
+        })
+        .reply(200, { errors: [], warnings: [] });
+
+      const result = await client.updateRuleTree(
+        PROPERTY_ID,
+        6,
+        CONTRACT_ID,
+        GROUP_ID,
+        { rules: {} },
+        undefined,
+        { dryRun: true },
+      );
+      expect(result).to.deep.equal({ errors: [], warnings: [] });
+    });
+
     it('throws when version is not an integer', async () => {
       await expect(client.updateRuleTree(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, { rules: {} }))
         .to.be.rejectedWith('version must be an integer');
@@ -540,6 +575,60 @@ describe('AkamaiClient', () => {
       );
       await expect(attempt)
         .to.be.rejectedWith('ruleFormat must contain only letters, digits, and hyphens');
+    });
+  });
+
+  describe('patchRuleTree', () => {
+    const OPS = [{ op: 'add', path: '/rules/children/-', value: { name: 'X' } }];
+
+    it('sends the json-patch content-type, If-Match etag, and validateRules; returns body', async () => {
+      nock(API_BASE)
+        .matchHeader('content-type', 'application/json-patch+json')
+        .matchHeader('if-match', 'etag123')
+        .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, OPS)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true' })
+        .reply(200, { errors: [], warnings: [{ detail: 'w' }] });
+
+      const result = await client.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, OPS, 'etag123');
+      expect(result).to.deep.equal({ errors: [], warnings: [{ detail: 'w' }] });
+    });
+
+    it('adds dryRun=true and omits If-Match when no etag is given', async () => {
+      // badheaders: nock refuses to match if the request sends If-Match, proving it is omitted.
+      nock(API_BASE, { badheaders: ['if-match'] })
+        .matchHeader('content-type', 'application/json-patch+json')
+        .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, OPS)
+        .query({
+          contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true', dryRun: 'true',
+        })
+        .reply(200, { errors: [{ detail: 'e' }], warnings: [] });
+
+      const result = await client.patchRuleTree(
+        PROPERTY_ID,
+        6,
+        CONTRACT_ID,
+        GROUP_ID,
+        OPS,
+        undefined,
+        { dryRun: true },
+      );
+      expect(result.errors).to.deep.equal([{ detail: 'e' }]);
+    });
+
+    it('throws when version is not an integer', async () => {
+      await expect(client.patchRuleTree(PROPERTY_ID, '6', CONTRACT_ID, GROUP_ID, OPS))
+        .to.be.rejectedWith('version must be an integer');
+    });
+
+    it('throws when ops is not an array', async () => {
+      await expect(client.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, { op: 'add' }))
+        .to.be.rejectedWith('ops must be an array of JSON Patch operations');
+    });
+
+    it('rejects an etag that would inject into the If-Match header', async () => {
+      await expect(
+        client.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, OPS, 'etag\r\nX-Evil: 1'),
+      ).to.be.rejectedWith('etag must not contain whitespace or control characters');
     });
   });
 
@@ -765,6 +854,60 @@ describe('AkamaiClient', () => {
 
     it('returns an empty string for a falsy input', () => {
       expect(normalizeDomain(undefined)).to.equal('');
+    });
+  });
+
+  // ─── defaultRuleHasCaching ──────────────────────────────────────────────
+
+  describe('defaultRuleHasCaching', () => {
+    it('is true when the default rule has a caching behavior', () => {
+      const tree = { rules: { behaviors: [{ name: 'origin' }, { name: 'caching' }] } };
+      expect(defaultRuleHasCaching(tree)).to.be.true;
+    });
+
+    it('is false when the default rule has no caching behavior', () => {
+      const tree = { rules: { behaviors: [{ name: 'origin' }] } };
+      expect(defaultRuleHasCaching(tree)).to.be.false;
+    });
+
+    it('is false for a malformed or empty tree', () => {
+      expect(defaultRuleHasCaching(null)).to.be.false;
+      expect(defaultRuleHasCaching({})).to.be.false;
+      expect(defaultRuleHasCaching({ rules: {} })).to.be.false;
+    });
+  });
+
+  // ─── getDefaultOriginSsl ────────────────────────────────────────────────
+
+  describe('getDefaultOriginSsl', () => {
+    it('returns the default origin SSL verification settings', () => {
+      const tree = {
+        rules: {
+          behaviors: [{
+            name: 'origin',
+            options: {
+              verificationMode: 'CUSTOM',
+              originCertsToHonor: 'STANDARD_CERTIFICATE_AUTHORITIES',
+              standardCertificateAuthorities: ['akamai-permissive', 'THIRD_PARTY_AMAZON'],
+            },
+          }],
+        },
+      };
+      expect(getDefaultOriginSsl(tree)).to.deep.equal({
+        verificationMode: 'CUSTOM',
+        originCertsToHonor: 'STANDARD_CERTIFICATE_AUTHORITIES',
+        standardCertificateAuthorities: ['akamai-permissive', 'THIRD_PARTY_AMAZON'],
+      });
+    });
+
+    it('returns null when there is no origin behavior or the tree is malformed', () => {
+      expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'caching' }] } })).to.be.null;
+      expect(getDefaultOriginSsl(null)).to.be.null;
+    });
+
+    it('returns null when the origin behavior has no options key', () => {
+      // A PAPI response can carry an origin behavior with no `options` (distinct from no origin).
+      expect(getDefaultOriginSsl({ rules: { behaviors: [{ name: 'origin' }] } })).to.be.null;
     });
   });
 });

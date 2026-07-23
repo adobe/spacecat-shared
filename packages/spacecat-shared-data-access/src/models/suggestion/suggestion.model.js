@@ -13,6 +13,8 @@
 import BaseModel from '../base/base.model.js';
 import { DATA_SCHEMAS } from './suggestion.data-schemas.js';
 import { FIELD_TRANSFORMERS, FALLBACK_PROJECTION } from './suggestion.projection-utils.js';
+import { guardTransition } from '../../util/status-transition-guard.js';
+import { isAllowedSuggestionTransition } from './suggestion.transitions.js';
 
 /**
  * Suggestion - A class representing a Suggestion entity.
@@ -118,6 +120,40 @@ class Suggestion extends BaseModel {
     if (error) {
       throw new Error(`Invalid data for opportunity type ${opportunityType}: ${error.message}`);
     }
+  }
+
+  /**
+   * Sets the suggestion status, guarding the transition against the (V1
+   * permissive) table in suggestion.transitions.js. Overrides the auto-generated
+   * setter so every writer — single PATCH, bulkUpdateStatus, autofix-worker —
+   * is checked at one chokepoint. Behavior is governed by
+   * STATUS_TRANSITION_ENFORCEMENT (default `warn`; `enforce` throws; `off` skips).
+   *
+   * @param {string} value - target status
+   * @returns {this}
+   */
+  setStatus(value) {
+    guardTransition({
+      entityName: Suggestion.ENTITY_NAME,
+      entityId: this.getId(),
+      from: this.getStatus(),
+      to: value,
+      isAllowed: isAllowedSuggestionTransition,
+      log: this.log,
+    });
+    this.patcher.patchValue('status', value, false);
+    return this;
+  }
+
+  /**
+   * Explicit, intention-revealing alias for setStatus for new callers that want
+   * to signal a guarded lifecycle transition. Same behavior as setStatus.
+   *
+   * @param {string} to - target status
+   * @returns {this}
+   */
+  transitionStatus(to) {
+    return this.setStatus(to);
   }
 
   // add your customized method here

@@ -12,60 +12,57 @@
 
 /**
  * Stateful handlers for /v2/workspaces/{id}/projects/{project_id}/aio/tags — the project-level AIO
- * tag taxonomy (the Categories surface), modelled as a 1-level tree (see serenity-docs#21): a root
- * category (`category:<name>`, no `parent_id`) can own bare-named children (sub-categories /
- * migrated topics) whose `parent_id` is the root's id. The per-project `tags` collection
- * (`tags:{ws}:{pid}`) is scoped so the same category registered across N market projects keeps N
- * independent collections. Materialized into `.counterfact/routes/` by the mock runner; excluded
- * from coverage.
+ * tag taxonomy (the Categories surface), modelled as a dimension-root tree: each DIMENSION
+ * (`category`, `intent`, `origin`, `type`) is a bare-named root with no `parent_id`, and every
+ * VALUE is a bare-named descendant carrying its parent's id. No tag name contains a `:`; a tag's
+ * dimension is `path[0]`. Categories sit at depth 2 and sub-categories at depth 3. The per-project
+ * `tags` collection (`tags:{ws}:{pid}`) is scoped so the same taxonomy registered across N market
+ * projects keeps N independent collections. Materialized into `.counterfact/routes/` by the mock
+ * runner; excluded from coverage.
  *
  * - POST (`createProjectTags`): request `TreeNodeListRequest` `{ names, parent_id? }`; persists
- *   each tag (deterministic opaque `tag-<sha256(name) prefix>` id — see tag-id.js / #1760) under
+ *   each tag (deterministic opaque `tag-<sha256(parent, name) prefix>` id — see tag-id.js) under
  *   the given `parent_id` (absent/empty ⇒ a root). The endpoint does NOT dedupe: a create of a
  *   name that already exists at the same parent is a same-name/same-parent COLLISION that live
  *   answers with a hard 500 (gate 7, verified 2026-07-02) — resolve-before-create is MANDATORY
  *   discipline, so `ops.tags.upsertMany` rejects such a batch atomically and the handler 500s
  *   (`http_server.BasicResponse`); a clean batch returns the live shape — a TOP-LEVEL ARRAY of
  *   `TreeNodeResponse` `[{ id, name, parent_id?, children_count, keyword_count }]` (verified
- *   2026-06-25; overlay CR6 retypes the 201 as an array). NB the tag id is derived from the name
- *   ALONE (shared with `POST /aio/prompts/tagged`, which only knows names), so two same-named
- *   children under DIFFERENT parents still collapse to one id — a documented mock limitation
- *   (reused, not a collision) while the live prompt→child-tag reference contract stays unverified
- *   (serenity-docs#21 §7-Q1). PENDING LIVE-PROBE CONFIRMATION (serenity-docs#26 §9 G1): whether
- *   real Semrush keys a child tag by `(parent_id, name)` or by `name` alone is the open G1
- *   question; the mock keeps the `name`-alone derivation AS-IS until that probe lands (see
- *   `mock/tag-id.js` and `mock/stateful.js` `ops.tags.upsertMany` — the two other spots this same
- *   limitation lives).
+ *   2026-06-25; overlay CR6 retypes the 201 as an array). Because the id is keyed on
+ *   `(parent, name)`, two same-named children under DIFFERENT parents are two distinct tags — as
+ *   live, and as the dimension-root model requires (a sub-category `human` and the source value
+ *   `human` must coexist).
  * - GET (`aio-get-project-tags`): returns the project's stored tags as `AIOTagsListResponse`
- *   `{ items, page, total }`, so a 0-prompt category created via POST reads back. The spec marks
+ *   `{ items, page, total }`, so a 0-prompt tag created via POST reads back. The spec marks
  *   `parent_id` + `search` as required query params (request validation 400s a request missing
  *   either, matching live). The mock is tree-aware: `parent_id=''` (empty) returns ROOTS, a
- *   non-empty `parent_id` returns that category's CHILDREN; a non-empty `search` additionally
- *   filters by case-insensitive name substring. Each returned tag carries a DERIVED
- *   `children_count` (stored tags whose `parent_id` is this tag's id) and, for a child, a `path[]`
- *   breadcrumb (a single leaf: its root category); a root's `parent_id` and `path` are `null`.
+ *   non-empty `parent_id` returns that tag's CHILDREN; a non-empty `search` additionally filters by
+ *   case-insensitive name substring WITHIN that one level and never descends (verified live) — so a
+ *   nested tag is unfindable from the root level, exactly as on the real API. Each returned tag
+ *   carries a DERIVED `children_count` (stored tags whose `parent_id` is this tag's id) and a
+ *   root-first `path[]` ancestry breadcrumb excluding itself (a depth-2 tag: one leaf, its
+ *   dimension root; a depth-3 tag: two leaves); a root omits `parent_id` and `path` entirely.
  * - DELETE (`aio-delete-tags`): removes the body's tag ids (`BatchDeleteRequest` `{ ids }`) from
- *   the standalone tag collection → 204. Prompts that carry a removed tag are a separate
- *   collection and stay intact (the spec's `prompt_id` query param is accepted but not load-bearing
- *   here — the mock's project-tag delete targets the standalone collection, never cascading to
- *   prompts).
+ *   the standalone tag collection AND detaches each id from every prompt carrying it → 204. A
+ *   prompt whose only tag was deleted becomes fully unassigned (gate 4, verified 2026-07-02); it is
+ *   not orphaned, and it stops matching `by_tags` on the removed id. The prompts themselves are
+ *   never deleted. (The spec's `prompt_id` query param is accepted but not load-bearing here.)
  *
- * The "1-level" tree is a PRODUCT convention, not an API constraint: a live probe (2026-07-01,
- * prod) confirmed Semrush accepts a grandchild (`parent_id` pointing at a child), returning 201 —
- * there is no depth cap on the wire. The mock likewise does not cap depth; keeping the taxonomy to
- * one level is the onboarding writer's job, not this endpoint's.
+ * There is no depth cap on the wire: a live probe (2026-07-01, prod) confirmed Semrush accepts a
+ * grandchild and a great-grandchild, returning 201 at each level with `parent_id` set at create
+ * time. The mock likewise does not cap depth.
  *
- * Known limitations (edges whose LIVE behaviour is NOT yet verified — serenity-docs#21 §7 — so the
- * mock deliberately does not invent a resolution):
- * - DELETE of a parent category does NOT cascade to, or re-parent, its children: a child left
- *   behind keeps a `parent_id` pointing at the removed root, so it drops out of the roots listing
- *   (`parent_id` is truthy) and is only reachable by querying the now-deleted parent's id. Whether
- *   live Semrush cascades, promotes-to-root, or blocks the delete is unconfirmed (§7).
- * - The tag id is derived from the name (an opaque `tag-<sha256(name) prefix>`, see tag-id.js /
- *   #1760) but PATCH keeps the id stable on rename, so after a rename the stored id no longer
- *   equals `tagId(currentName)`; a later create or prompt-tag by the NEW name mints a fresh id and
- *   thus a duplicate tag. Faithfully modelling this needs the live prompt→child-tag reference
- *   contract (id vs name), still open (§7-Q1).
+ * Known limitations (edges whose LIVE behaviour is NOT yet verified, so the mock deliberately does
+ * not invent a resolution):
+ * - DELETE of a parent does NOT cascade to, or re-parent, its children: a child left behind keeps a
+ *   `parent_id` pointing at the removed tag, so it drops out of the roots listing (`parent_id` is
+ *   truthy) and is only reachable by querying the now-deleted parent's id. Whether live Semrush
+ *   cascades, promotes-to-root, or blocks the delete is unconfirmed.
+ * - The tag id is derived from `(parent, name)` but PATCH keeps the id stable across a rename or a
+ *   re-parent, so afterwards the stored id no longer equals `tagId(name, parent_id)`. Re-creating
+ *   the tag's original `(parent, name)` therefore collides in the mock where live would mint a
+ *   fresh opaque id — see `ops.tags.upsertMany`, which fails loudly rather than adopting the moved
+ *   tag.
  */
 
 /** POST — create project tags → 201 array of TreeNodeResponse; 500 on same-name/same-parent. */
@@ -79,7 +76,7 @@ export function POST($) {
   const { tags: stored, collision } = context.ops.tags.upsertMany(
     scope,
     names.map((name) => context.factories.createAIOTagMock({
-      id: context.tagId(name),
+      id: context.tagId(name, parentField.parent_id),
       name,
       ...parentField,
     })),
@@ -107,15 +104,6 @@ export function GET($) {
   const parentId = String(query?.parent_id ?? '');
   const search = String(query?.search ?? '').toLowerCase();
   const stored = context.ops.tags.list(scope);
-  const byId = new Map(stored.map((t) => [t.id, t]));
-  // Pre-count children per parent in one O(n) pass, so the per-item map below is O(n) overall
-  // (not an O(n^2) re-scan of `stored` inside every iteration).
-  const childCounts = new Map();
-  for (const t of stored) {
-    if (t.parent_id) {
-      childCounts.set(t.parent_id, (childCounts.get(t.parent_id) ?? 0) + 1);
-    }
-  }
 
   // `parent_id=''` ⇒ roots (no parent); a non-empty `parent_id` ⇒ that category's children.
   const scoped = parentId
@@ -125,27 +113,17 @@ export function GET($) {
     ? scoped.filter((t) => String(t.name).toLowerCase().includes(search))
     : scoped;
 
-  const items = matched.map((t) => {
-    const parent = t.parent_id ? byId.get(t.parent_id) : undefined;
-    return context.factories.createAIOTagMock({
-      ...t,
-      // Derived, never stored: the live tree carries these on every read. Live returns `null`
-      // (not an omitted field / an empty array) for a flat root's parent_id + path, and a child's
-      // path leaf is `{ id, name }` — no parent_id (all verified 2026-07-01 against prod; CR13
-      // makes parent_id/path nullable).
-      children_count: childCounts.get(t.id) ?? 0,
-      parent_id: t.parent_id || null,
-      path: parent
-        ? [context.factories.createAIOTagLeafMock({ id: parent.id, name: parent.name })]
-        : null,
-    });
-  });
+  // The one serializer every tag endpoint shares (see mock/tag-view.js): derives `children_count`
+  // and the root-first `path[]` from the stored collection, and leaves `parent_id`/`path` OFF a
+  // root entirely — exactly as live does.
+  const { serialize } = context.buildTagView(stored, context.factories);
+  const items = matched.map(serialize);
   // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric
   // type AIOTagsListResponse declares, regardless of whether the param was passed.
   return $.response[200].json({ items, page: Number(query?.page ?? 1), total: items.length });
 }
 
-/** DELETE — remove standalone project tags by id (prompts are untouched) → 204 No Content. */
+/** DELETE — remove standalone project tags by id, detaching them from prompts → 204 No Content. */
 export function DELETE($) {
   const { path, body, context } = $;
   context.ops.tags.removeMany(

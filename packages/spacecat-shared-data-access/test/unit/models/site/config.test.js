@@ -2856,6 +2856,18 @@ describe('Config Tests', () => {
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
     });
 
+    it('creates a Config with edgeOptimizeConfig routingEnabled property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          opted: 1,
+          routingEnabled: 1700000000000,
+          enabled: 1700000000000,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
     it('has undefined edgeOptimizeConfig in default config', () => {
       const config = Config();
       expect(config.getEdgeOptimizeConfig()).to.be.undefined;
@@ -3102,13 +3114,40 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
-            magentoEndpoint: 'https://magento.example.com/graphql',
-            magentoAPIKey: 'api-key-123',
+            catalogFieldConfig: {
+              name: { enabled: true, maxLength: 50 },
+              description: { enabled: false },
+            },
           },
         },
       };
       const config = Config(data);
       expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('strips legacy magento fields from existing records', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      });
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({
+        store1: {
+          environmentId: 'env-123',
+          websiteCode: 'base',
+          storeCode: 'main_store',
+          storeViewCode: 'default',
+          hostName: 'example.com',
+        },
+      });
     });
 
     it('has undefined commerceLlmoConfig in default config', () => {
@@ -3159,7 +3198,7 @@ describe('Config Tests', () => {
         commerceLlmoConfig: {
           store1: {
             environmentId: 'env-123',
-            magentoEndpoint: 'https://magento.example.com/graphql',
+            hostName: 'example.com',
           },
         },
       });

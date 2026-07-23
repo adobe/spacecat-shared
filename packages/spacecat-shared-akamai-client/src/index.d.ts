@@ -12,6 +12,16 @@
 
 export function normalizeDomain(domain: string): string;
 
+export function defaultRuleHasCaching(ruleTree: object): boolean;
+
+export interface DefaultOriginSsl {
+  verificationMode?: string;
+  originCertsToHonor?: string;
+  standardCertificateAuthorities?: string[];
+}
+
+export function getDefaultOriginSsl(ruleTree: object): DefaultOriginSsl | null;
+
 export interface AkamaiClientConfig {
   host: string;
   clientToken: string;
@@ -36,6 +46,7 @@ export interface PropertyMatch {
 export interface RuleTreeResult {
   ruleTree: object;
   ruleFormat?: string;
+  etag?: string;
 }
 
 export type Network = 'STAGING' | 'PRODUCTION';
@@ -92,6 +103,17 @@ export default class AkamaiClient {
     groupId: string,
     ruleTree: object,
     ruleFormat?: string,
+    options?: { dryRun?: boolean },
+  ): Promise<object>;
+
+  patchRuleTree(
+    propertyId: string,
+    version: number,
+    contractId: string,
+    groupId: string,
+    ops: object[],
+    etag?: string,
+    options?: { dryRun?: boolean },
   ): Promise<object>;
 
   activate(

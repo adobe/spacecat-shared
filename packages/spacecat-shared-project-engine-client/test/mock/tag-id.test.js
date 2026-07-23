@@ -16,28 +16,71 @@ import { tagId } from '../../mock/tag-id.js';
 describe('tag-id', () => {
   it('derives an opaque `tag-<16 hex>` id from a tag name', () => {
     // Shape only — the id is an opaque sha256-derived token, not a readable encoding of the name.
-    expect(tagId('brand')).to.match(/^tag-[0-9a-f]{16}$/);
-    expect(tagId('category:Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
+    expect(tagId('category')).to.match(/^tag-[0-9a-f]{16}$/);
+    expect(tagId('Running Shoes', 'tag-0123456789abcdef')).to.match(/^tag-[0-9a-f]{16}$/);
   });
 
   it('is URL-safe: no encoding needed for a path segment or query value', () => {
-    // A `category:<name>` with a colon + spaces must not need percent-encoding — the whole point of
-    // #1760 (the old `tag-${encodeURIComponent(name)}` leaked `%3A`/`%20` into the id). Assert the
-    // id is drawn from the URL-safe unreserved set and is a fixed point of encodeURIComponent.
-    const id = tagId('category:Running Shoes');
+    // A name with spaces must not need percent-encoding — the whole point of #1760 (the old
+    // `tag-${encodeURIComponent(name)}` leaked `%3A`/`%20` into the id). Assert the id is drawn
+    // from the URL-safe unreserved set and is a fixed point of encodeURIComponent.
+    const id = tagId('Running Shoes', 'tag-0123456789abcdef');
     expect(id).to.match(/^[A-Za-z0-9_-]+$/);
     expect(encodeURIComponent(id)).to.equal(id);
   });
 
-  it('is deterministic: the same name always yields the same id', () => {
-    // Relied on for `ops.tags.upsertMany` idempotency-by-name and for correlating a standalone tag
-    // with the same tag embedded on a prompt (so `by_tags` matches across both).
-    expect(tagId('type:branded')).to.equal(tagId('type:branded'));
-    expect(tagId('category:Running Shoes')).to.equal(tagId('category:Running Shoes'));
+  it('is deterministic: the same (parent, name) always yields the same id', () => {
+    // Relied on for correlating a standalone tag with the same tag embedded on a prompt (so
+    // `by_tags` matches across both).
+    expect(tagId('branded', 'tag-type')).to.equal(tagId('branded', 'tag-type'));
+    expect(tagId('category')).to.equal(tagId('category'));
   });
 
-  it('maps distinct names to distinct ids', () => {
-    expect(tagId('category:A')).to.not.equal(tagId('category:B'));
+  // The derivation is a PUBLISHED contract, not an implementation detail. Consumers pin the mock by
+  // the client's version (the GHCR image tag is the installed version, with no `latest` and no
+  // fallback), and their fixtures carry these ids. Changing the hash preimage — the separator, the
+  // field order, the digest, the truncation width — silently reshuffles every id in every seed and
+  // breaks those repos at a distance, with no local signal. These golden values make that a red
+  // test here instead. Do not "fix" them to match a new derivation: change them only in a commit
+  // that deliberately reissues the ids and that says so.
+  it('pins the exact derived id for a root and for a child (cross-repo contract)', () => {
+    const categoryRoot = tagId('category');
+    expect(categoryRoot).to.equal('tag-c6782d4af8e0befb');
+    expect(tagId('Running Shoes', categoryRoot)).to.equal('tag-0e00813e37484864');
+  });
+
+  it('maps distinct names under one parent to distinct ids', () => {
+    expect(tagId('A', 'tag-root')).to.not.equal(tagId('B', 'tag-root'));
     expect(tagId('brand')).to.not.equal(tagId('Brand'));
+  });
+
+  // The reason the id is keyed on the parent at all. Live tag uniqueness is per (project, parent),
+  // so two sub-categories named `Pricing` under different categories are two tags. Keying on the
+  // name alone would collapse them onto one row and silently corrupt any consumer that trusts the
+  // mock — the api-service integration suite among them.
+  it('maps the same name under different parents to different ids', () => {
+    expect(tagId('Pricing', 'tag-electronics')).to.not.equal(tagId('Pricing', 'tag-furniture'));
+  });
+
+  // A sub-category named `human` and the `origin` value `human` must coexist on one prompt
+  // (model spec §7 gate 4). They share a bare name and differ only by parent.
+  it('separates a sub-category from a same-named closed-dimension value', () => {
+    expect(tagId('human', 'tag-running-shoes')).to.not.equal(tagId('human', 'tag-origin'));
+  });
+
+  // Omitting the parent is how a ROOT id is derived — and it is what `POST /aio/prompts/tagged`
+  // does, since that endpoint carries names and no parent. An explicit empty parent means the same.
+  it('treats an omitted and an empty parent as the same root', () => {
+    expect(tagId('category')).to.equal(tagId('category', ''));
+  });
+
+  it('distinguishes a root from a child of the same name', () => {
+    expect(tagId('human')).to.not.equal(tagId('human', 'tag-origin'));
+  });
+
+  // The separator makes the preimage unambiguous: without it, the category `ab` under parent `c`
+  // and the category `b` under parent `ca` both concatenate to `cab` and would share an id.
+  it('does not let a parent/name boundary shift produce the same id', () => {
+    expect(tagId('ab', 'c')).to.not.equal(tagId('b', 'ca'));
   });
 });

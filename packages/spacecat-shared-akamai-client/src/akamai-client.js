@@ -24,6 +24,10 @@ const ACTIVATION_NETWORKS = ['STAGING', 'PRODUCTION'];
 // allowlist keeps a caller-supplied value from injecting into the Content-Type
 // header (e.g. a CR/LF-bearing string).
 const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
+// A property version's ETag is sent verbatim in the If-Match request header, so restrict it to a
+// printable-ASCII, whitespace-free token (PAPI returns a hex etag) — this stops a malformed value
+// from injecting extra headers via CR/LF, mirroring RULE_FORMAT_RE's guard for ruleFormat.
+const ETAG_RE = /^[!-~]+$/;
 
 function requireText(name, value) {
   if (!hasText(value)) {
@@ -72,6 +76,42 @@ export function normalizeDomain(domain) {
   [d] = d.split('/');
   [d] = d.split(':');
   return d.replace(/\.$/, '');
+}
+
+/**
+ * True if the property's default (top-level) rule already has a Caching behavior.
+ *
+ * Cache ID Modification requires a Caching behavior to be in scope. When the default rule
+ * provides one, an Optimize-at-Edge rule must NOT add its own — an OAE-rule Caching would
+ * override the property's HTML no-store and make the optimized path cacheable. When the default
+ * rule has none, the OAE rule must add a Caching behavior so Cache ID Modification validates.
+ *
+ * @param {object} ruleTree - a PAPI rule tree ({ rules: { behaviors: [...] } })
+ * @returns {boolean}
+ */
+export function defaultRuleHasCaching(ruleTree) {
+  const behaviors = ruleTree?.rules?.behaviors;
+  return Array.isArray(behaviors) && behaviors.some((b) => b?.name === 'caching');
+}
+
+/**
+ * The default rule's Origin Server SSL verification settings.
+ *
+ * An Optimize-at-Edge origin's verificationMode must match the default rule's, otherwise PAPI
+ * rejects the tree ("Use Platform Settings ... not compatible with the custom settings"). Callers
+ * mirror these onto the OAE origin, and can gate onboarding on the mode (e.g. CUSTOM only).
+ *
+ * @param {object} ruleTree - a PAPI rule tree ({ rules: { behaviors: [...] } })
+ * @returns {{verificationMode: (string|undefined), originCertsToHonor: (string|undefined),
+ *   standardCertificateAuthorities: (string[]|undefined)}|null} null when no origin behavior exists
+ */
+export function getDefaultOriginSsl(ruleTree) {
+  const origin = (ruleTree?.rules?.behaviors || []).find((b) => b?.name === 'origin');
+  if (!origin || !origin.options) {
+    return null;
+  }
+  const { verificationMode, originCertsToHonor, standardCertificateAuthorities } = origin.options;
+  return { verificationMode, originCertsToHonor, standardCertificateAuthorities };
 }
 
 /**
@@ -363,7 +403,7 @@ export default class AkamaiClient {
    * @param {number} version
    * @param {string} contractId
    * @param {string} groupId
-   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined}>}
+   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined, etag: string|undefined}>}
    */
   async getRuleTree(propertyId, version, contractId, groupId) {
     requirePropertyRef(propertyId, contractId, groupId);
@@ -377,7 +417,9 @@ export default class AkamaiClient {
       `/papi/v1/properties/${id}/versions/${version}/rules`,
       { params: { contractId, groupId } },
     );
-    return { ruleTree: data, ruleFormat: data.ruleFormat };
+    // `etag` is the version's optimistic-concurrency token; patchRuleTree passes it back as
+    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering.
+    return { ruleTree: data, ruleFormat: data.ruleFormat, etag: data.etag };
   }
 
   /**
@@ -416,9 +458,21 @@ export default class AkamaiClient {
    * @param {string} groupId
    * @param {object} ruleTree
    * @param {string} [ruleFormat]
+   * @param {object} [options]
+   * @param {boolean} [options.dryRun] - validate the submitted tree without persisting it. PAPI
+   *   still requires an EDITABLE (inactive) version — an activation-locked version returns 403
+   *   "already-activated" even for a dry run.
    * @returns {Promise<object>}
    */
-  async updateRuleTree(propertyId, version, contractId, groupId, ruleTree, ruleFormat) {
+  async updateRuleTree(
+    propertyId,
+    version,
+    contractId,
+    groupId,
+    ruleTree,
+    ruleFormat,
+    options = {},
+  ) {
     requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
@@ -433,15 +487,69 @@ export default class AkamaiClient {
     const headers = ruleFormat
       ? { 'Content-Type': `application/vnd.akamai.papirules.${ruleFormat}+json` }
       : undefined;
-    this.log.info(`Updating rule tree for property ${propertyId} v${version}`);
+    const params = { contractId, groupId, validateRules: 'true' };
+    if (options.dryRun) {
+      params.dryRun = 'true';
+    }
+    this.log.info(`Updating rule tree for property ${propertyId} v${version}${options.dryRun ? ' (dry run)' : ''}`);
     return this.#request(
       'PUT',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      {
-        params: { contractId, groupId, validateRules: 'true' },
-        body: ruleTree,
-        headers,
-      },
+      { params, body: ruleTree, headers },
+    );
+  }
+
+  /**
+   * Applies a JSON Patch (RFC 6902) to a rule tree, with PAPI-side validation enabled. Unlike
+   * updateRuleTree (a full-tree PUT), PATCH applies the deltas to the STORED tree server-side, so
+   * behaviors we don't name in an op are never re-serialized by us — this avoids re-storing PAPI's
+   * GET-expanded projection of untouched behaviors, which is what made validateRules reject an
+   * existing "Use Platform Settings" origin. Errors/warnings, if any, come back in the response
+   * body rather than as an HTTP error (same shape as updateRuleTree).
+   *
+   * @param {string} propertyId
+   * @param {number} version - must be an editable (inactive) version for a real patch; a dry-run
+   *   only validates and never persists.
+   * @param {string} contractId
+   * @param {string} groupId
+   * @param {Array<object>} ops - JSON Patch operations (paths are rooted at the rules document,
+   *   e.g. `/rules/children/-`, `/rules/variables/-`).
+   * @param {string} [etag] - the version's ETag (from getRuleTree), sent as If-Match.
+   * @param {object} [options]
+   * @param {boolean} [options.dryRun=false] - validate without saving.
+   * @returns {Promise<object>}
+   */
+  async patchRuleTree(propertyId, version, contractId, groupId, ops, etag, options = {}) {
+    requirePropertyRef(propertyId, contractId, groupId);
+    if (!Number.isInteger(version)) {
+      throw new Error('version must be an integer');
+    }
+    if (!Array.isArray(ops)) {
+      throw new Error('ops must be an array of JSON Patch operations');
+    }
+    // An empty ops array is forwarded as-is (PAPI treats it as a no-op); buildRuleTreePatch always
+    // emits at least the wrapper add, so an empty patch is not special-cased here.
+    if (etag && !ETAG_RE.test(etag)) {
+      throw new Error('etag must not contain whitespace or control characters');
+    }
+    const { dryRun = false } = options;
+    const id = encodePathSegment(propertyId);
+    const params = { contractId, groupId, validateRules: 'true' };
+    if (dryRun) {
+      params.dryRun = 'true';
+    }
+    const headers = {
+      'Content-Type': 'application/json-patch+json',
+      ...(etag ? { 'If-Match': etag } : {}),
+    };
+    this.log.info(
+      `Patching rule tree for property ${propertyId} v${version} `
+      + `(${ops.length} op(s)${dryRun ? ', dry-run' : ''})`,
+    );
+    return this.#request(
+      'PATCH',
+      `/papi/v1/properties/${id}/versions/${version}/rules`,
+      { params, body: ops, headers },
     );
   }
 

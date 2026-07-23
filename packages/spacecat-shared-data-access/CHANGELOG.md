@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.11.0...@adobe/spacecat-shared-data-access-v4.12.0) (2026-07-23)
+
+### Features
+
+* **data-access:** canonical v2 changeDetails schema + validator for FixEntity (SITES-47997) ([#1828](https://github.com/adobe/spacecat-shared/issues/1828)) ([afdb546](https://github.com/adobe/spacecat-shared/commit/afdb5464d6af6ac6ea9f6f0075d798feb38a5699))
+
 ## [@adobe/spacecat-shared-data-access-v4.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.1...@adobe/spacecat-shared-data-access-v4.11.0) (2026-07-21)
 
 ### Features

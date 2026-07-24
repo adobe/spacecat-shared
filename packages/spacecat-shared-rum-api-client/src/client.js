@@ -176,6 +176,7 @@ export default class RUMAPIClient {
         ...opts,
         domainkey,
         checkpoints: [...allCheckpoints],
+        queryType: queries.join(','),
       }, this.log);
 
       const results = {};

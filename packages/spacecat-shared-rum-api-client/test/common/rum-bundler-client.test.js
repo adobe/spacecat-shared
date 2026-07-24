@@ -233,6 +233,7 @@ describe('Rum bundler client', () => {
     expect(bundles.length).to.equal(2);
     expect(opts.failedUrls.length).to.equal(2);
     expect(opts.failedUrls[0]).to.include(`/bundles/${domain}/`);
+    expect(log.warn.calledWithMatch(`bundle requests failed for domain: ${domain}`)).to.be.true;
   });
 
   // Start and End Date Tests

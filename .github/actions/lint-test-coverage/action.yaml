@@ -56,6 +56,6 @@ runs:
 
     - name: Upload coverage to Codecov
       if: ${{ inputs.upload_coverage == 'true' }}
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         token: ${{ inputs.codecov_token }}

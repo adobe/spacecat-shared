@@ -5,7 +5,7 @@
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
-    "npm": ">=10.9.0 <12.0.0"
+    "npm": ">=10.9.0 <13.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -39,13 +39,13 @@
     "@mysticat/data-service-types": "git+https://github.com/adobe/mysticat-data-service.git#types-ts-v1.53.0"
   },
   "devDependencies": {
-    "c8": "11.0.0",
+    "c8": "12.0.0",
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
     "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "sinon": "22.0.0",
     "sinon-chai": "4.0.1",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }

@@ -17,7 +17,7 @@
   ],
   "engines": {
     "node": ">=22.0.0 <25.0.0",
-    "npm": ">=10.9.0 <12.0.0"
+    "npm": ">=10.9.0 <13.0.0"
   },
   "scripts": {
     "test": "c8 mocha",
@@ -57,15 +57,15 @@
     "openapi-fetch": "0.17.0"
   },
   "devDependencies": {
-    "c8": "11.0.0",
+    "c8": "12.0.0",
     "chai": "6.2.2",
     "counterfact": "2.14.0",
-    "js-yaml": "4.3.0",
+    "js-yaml": "5.2.2",
     "mocha": "11.7.6",
     "mocha-multi-reporters": "1.5.1",
     "openapi-typescript": "7.13.0",
     "sinon": "22.0.0",
     "swagger2openapi": "7.0.8",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }

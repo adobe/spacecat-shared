@@ -46,7 +46,7 @@ jobs:
       issues: read
     steps:
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: 'false'
 
@@ -197,12 +197,12 @@ jobs:
       NPM_CONFIG_PROVENANCE: 'true'
     steps:
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           persist-credentials: 'false'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # Single source of truth — keeps the release job's Node version in
           # lockstep with the test job's (which pulls from .nvmrc via the

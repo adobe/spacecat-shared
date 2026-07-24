@@ -32,7 +32,7 @@
     "./packages/*"
   ],
   "devDependencies": {
-    "@adobe/eslint-config-helix": "3.0.28",
+    "@adobe/eslint-config-helix": "3.0.29",
     "@babel/core": "7.29.7",
     "@babel/eslint-parser": "7.29.7",
     "@babel/plugin-syntax-import-assertions": "7.29.7",

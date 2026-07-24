@@ -262,6 +262,7 @@ async function fetchBundles(opts, log) {
     filterBotTraffic = true,
     startTime,
     endTime,
+    queryType,
   } = opts;
 
   if (!hasText(domain) || !hasText(domainkey)) {
@@ -316,7 +317,7 @@ async function fetchBundles(opts, log) {
 
   // Add failedUrls to opts object for access by callers
   if (failedUrls.length > 0) {
-    log.warn(`[RUM] ${failedUrls.length}/${urls.length} bundle requests failed for domain: ${domain}`);
+    log.warn(`[RUM] ${failedUrls.length}/${urls.length} bundle requests failed for domain: ${domain}${queryType ? ` (query: ${queryType})` : ''}`);
     // eslint-disable-next-line no-param-reassign
     opts.failedUrls = failedUrls;
   }

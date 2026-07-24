@@ -140,6 +140,7 @@ export default class RUMAPIClient {
         ...opts,
         domainkey,
         checkpoints,
+        queryType: query,
       }, this.log);
 
       this.log.debug(`Query "${query}" fetched ${bundles.length} bundles`); // maybe even remove?
@@ -175,6 +176,7 @@ export default class RUMAPIClient {
         ...opts,
         domainkey,
         checkpoints: [...allCheckpoints],
+        queryType: queries.join(','),
       }, this.log);
 
       const results = {};

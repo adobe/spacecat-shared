@@ -36,6 +36,7 @@ import {
   classifySuggestions,
   filterBatchCoveredSuggestions,
   findCoveredSuggestions,
+  CLEARABLE_EDGE_OPTIMIZE_STATUSES,
 } from './utils/suggestion-utils.js';
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
@@ -1483,7 +1484,7 @@ class TokowakaClient {
       const succeeded = result.succeededSuggestions.map((s) => {
         const currentData = s.getData();
         const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
-        if (updated.edgeOptimizeStatus === 'STALE' || updated.edgeOptimizeStatus === 'LAST_MOD_MISSING') {
+        if (CLEARABLE_EDGE_OPTIMIZE_STATUSES.has(updated.edgeOptimizeStatus)) {
           delete updated.edgeOptimizeStatus;
         }
         s.setData(updated);

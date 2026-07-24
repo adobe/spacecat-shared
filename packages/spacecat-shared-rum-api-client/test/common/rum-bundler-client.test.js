@@ -236,6 +236,45 @@ describe('Rum bundler client', () => {
     expect(log.warn.calledWithMatch(`bundle requests failed for domain: ${domain}`)).to.be.true;
   });
 
+  it('should include queryType in summary warn when provided', async () => {
+    const domain = 'some-domain.com';
+    const domainkey = 'testkey';
+    const granularity = 'DAILY';
+    const interval = 3;
+    const allCheckpoints = ['good', 'bad'];
+    const queryType = 'user-engagement';
+
+    const dates = generateDailyDates(interval);
+    const rumBundles = generateRumBundles(dates, allCheckpoints);
+
+    for (let i = 0; i < dates.length; i += 1) {
+      const date = dates[i];
+      if (i < 2) {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(200, rumBundles[date.join()]);
+      } else {
+        nock(BASE_URL)
+          .get(`/bundles/${domain}/${date[0]}/${date[1]}/${date[2]}?domainkey=${domainkey}`)
+          .reply(500, 'Internal Server Error');
+      }
+    }
+
+    const log = { warn: sinon.spy(), info: sinon.spy() };
+    const opts = {
+      domain,
+      domainkey,
+      granularity,
+      interval,
+      checkpoints: ['good'],
+      queryType,
+    };
+
+    await fetchBundles(opts, log);
+
+    expect(log.warn.calledWithMatch(`bundle requests failed for domain: ${domain} (query: ${queryType})`)).to.be.true;
+  });
+
   // Start and End Date Tests
   describe('startTime and endTime functionality', () => {
     it('should fetch bundles for specific date range with daily granularity', async () => {

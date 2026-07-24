@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.12.0...@adobe/spacecat-shared-data-access-v4.13.0) (2026-07-23)
+
+### Features
+
+* **data-access:** list configuration versions via S3 object versioning ([#1839](https://github.com/adobe/spacecat-shared/issues/1839)) ([5dd66fc](https://github.com/adobe/spacecat-shared/commit/5dd66fc9aee60215ea4355395e280c66ae44dcb9))
+
 ## [@adobe/spacecat-shared-data-access-v4.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.11.0...@adobe/spacecat-shared-data-access-v4.12.0) (2026-07-23)
 
 ### Features

@@ -167,8 +167,15 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 25 });
 }
 
+/** edgeOptimizeStatus values that reflect edge-deploy-time KV markers and should be
+ * cleared on rollback/revert. EXPERIMENT_IN_PROGRESS is a separate blocking contract
+ * owned by the experimentation engine's own unblock path and must not be cleared here. */
+const CLEARABLE_EDGE_OPTIMIZE_STATUSES = new Set(['STALE', 'LAST_MOD_MISSING']);
+
 /**
  * Strips deployment markers from a suggestion's data and sets updatedBy.
+ * Also clears a lingering STALE/LAST_MOD_MISSING edgeOptimizeStatus so a rolled-back
+ * suggestion doesn't keep showing a deploy-time KV marker after it's no longer deployed.
  * Does not save — caller is responsible for batching saves via saveSuggestions.
  * @param {Object} suggestion - Suggestion entity
  * @param {string} actorFallback - Fallback string when updatedBy is undefined
@@ -176,7 +183,12 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
  * @returns {Object} The mutated suggestion (not yet persisted)
  */
 export function stripSuggestion(suggestion, actorFallback, updatedBy) {
-  suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
+  const currentData = suggestion.getData();
+  const keysToOmit = ['edgeDeployed', 'tokowakaDeployed'];
+  if (CLEARABLE_EDGE_OPTIMIZE_STATUSES.has(currentData?.edgeOptimizeStatus)) {
+    keysToOmit.push('edgeOptimizeStatus');
+  }
+  suggestion.setData(omitKeys(currentData, keysToOmit));
   suggestion.setUpdatedBy(updatedBy ?? actorFallback);
   return suggestion;
 }

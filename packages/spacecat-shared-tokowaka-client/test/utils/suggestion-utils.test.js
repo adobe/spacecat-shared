@@ -16,8 +16,20 @@ import {
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
   saveSuggestions,
+  stripSuggestion,
   SUGGESTION_BULK_UPDATE_TYPE,
 } from '../../src/utils/suggestion-utils.js';
+
+function makeSuggestion(data) {
+  let storedData = { ...data };
+  let storedUpdatedBy;
+  return {
+    getData: () => storedData,
+    setData: (d) => { storedData = d; },
+    setUpdatedBy: (v) => { storedUpdatedBy = v; },
+    getUpdatedBy: () => storedUpdatedBy,
+  };
+}
 
 describe('Suggestion Utils', () => {
   describe('groupSuggestionsByUrlPath', () => {
@@ -375,6 +387,65 @@ describe('Suggestion Utils', () => {
         expect(error.message).to.include('1 of 1701 suggestions failed');
         expect(error.message).to.include('DB error');
       }
+    });
+  });
+
+  describe('stripSuggestion', () => {
+    it('strips edgeDeployed and tokowakaDeployed', () => {
+      const suggestion = makeSuggestion({
+        url: 'https://example.com/page1',
+        edgeDeployed: 1234567890,
+        tokowakaDeployed: true,
+      });
+
+      stripSuggestion(suggestion, 'fallback-actor');
+
+      expect(suggestion.getData()).to.deep.equal({ url: 'https://example.com/page1' });
+      expect(suggestion.getUpdatedBy()).to.equal('fallback-actor');
+    });
+
+    it('clears a STALE edgeOptimizeStatus', () => {
+      const suggestion = makeSuggestion({
+        url: 'https://example.com/page1',
+        edgeDeployed: 1234567890,
+        edgeOptimizeStatus: 'STALE',
+      });
+
+      stripSuggestion(suggestion, 'fallback-actor');
+
+      expect(suggestion.getData()).to.not.have.property('edgeOptimizeStatus');
+    });
+
+    it('clears a LAST_MOD_MISSING edgeOptimizeStatus', () => {
+      const suggestion = makeSuggestion({
+        url: 'https://example.com/page1',
+        edgeDeployed: 1234567890,
+        edgeOptimizeStatus: 'LAST_MOD_MISSING',
+      });
+
+      stripSuggestion(suggestion, 'fallback-actor');
+
+      expect(suggestion.getData()).to.not.have.property('edgeOptimizeStatus');
+    });
+
+    it('preserves an EXPERIMENT_IN_PROGRESS edgeOptimizeStatus', () => {
+      const suggestion = makeSuggestion({
+        url: 'https://example.com/page1',
+        edgeDeployed: 1234567890,
+        edgeOptimizeStatus: 'EXPERIMENT_IN_PROGRESS',
+      });
+
+      stripSuggestion(suggestion, 'fallback-actor');
+
+      expect(suggestion.getData().edgeOptimizeStatus).to.equal('EXPERIMENT_IN_PROGRESS');
+    });
+
+    it('uses the explicit updatedBy over the fallback when provided', () => {
+      const suggestion = makeSuggestion({ url: 'https://example.com/page1' });
+
+      stripSuggestion(suggestion, 'fallback-actor', 'explicit-actor');
+
+      expect(suggestion.getUpdatedBy()).to.equal('explicit-actor');
     });
   });
 });

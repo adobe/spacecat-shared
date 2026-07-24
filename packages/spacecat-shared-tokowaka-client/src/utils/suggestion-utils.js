@@ -167,11 +167,6 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   await dataAccess.Suggestion.saveMany(suggestions, { chunkSize: 25 });
 }
 
-/** edgeOptimizeStatus values that reflect edge-deploy-time KV markers and should be
- * cleared on a successful redeploy. EXPERIMENT_IN_PROGRESS is a separate blocking contract
- * owned by the experimentation engine's own unblock path and must not be cleared here. */
-export const CLEARABLE_EDGE_OPTIMIZE_STATUSES = new Set(['STALE', 'LAST_MOD_MISSING']);
-
 /**
  * Strips deployment markers from a suggestion's data and sets updatedBy.
  * Does not save — caller is responsible for batching saves via saveSuggestions.

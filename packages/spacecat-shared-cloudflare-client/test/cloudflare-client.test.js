@@ -496,6 +496,33 @@ describe('CloudflareClient', () => {
     });
   });
 
+  // ─── getZone ─────────────────────────────────────────────────────────────
+
+  describe('getZone', () => {
+    it('returns the zone for a valid zoneId', async () => {
+      const result = { id: ZONE_ID, name: 'example.com', status: 'active' };
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}`)
+        .reply(200, { success: true, result });
+
+      const zone = await client.getZone(ZONE_ID);
+      expect(zone).to.deep.equal(result);
+      expect(log.info).to.have.been.calledWith(`Fetching Cloudflare zone ${ZONE_ID}`);
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.getZone('')).to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when the API returns an error', async () => {
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}`)
+        .reply(200, { success: false, errors: [{ message: 'Zone not found' }] });
+
+      await expect(client.getZone(ZONE_ID)).to.be.rejectedWith('Zone not found');
+    });
+  });
+
   // ─── listRoutes ──────────────────────────────────────────────────────────
 
   describe('listRoutes', () => {
@@ -594,6 +621,143 @@ describe('CloudflareClient', () => {
         .reply(200, { success: false, errors: [{ message: 'Route not found' }] });
 
       await expect(client.deleteRoute(ZONE_ID, ROUTE_ID)).to.be.rejectedWith('Route not found');
+    });
+  });
+
+  // ─── requestLogpushOwnership ────────────────────────────────────────────
+
+  describe('requestLogpushOwnership', () => {
+    const DESTINATION_CONF = 's3://bucket/org/raw/byocdn-cloudflare/{DATE}?region=us-east-1';
+
+    it('requests an ownership challenge and returns the result', async () => {
+      const result = { filename: 'ownership-challenge-abc123.txt', valid: true };
+      nock(CF_API_BASE)
+        .post(`/zones/${ZONE_ID}/logpush/ownership`, { destination_conf: DESTINATION_CONF })
+        .reply(200, { success: true, result });
+
+      const res = await client.requestLogpushOwnership(ZONE_ID, DESTINATION_CONF);
+      expect(res).to.deep.equal(result);
+      expect(log.info).to.have.been.calledWith(
+        `Requesting Logpush ownership challenge for zone ${ZONE_ID}`,
+      );
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.requestLogpushOwnership('', DESTINATION_CONF))
+        .to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when destinationConf is missing', async () => {
+      await expect(client.requestLogpushOwnership(ZONE_ID, ''))
+        .to.be.rejectedWith('destinationConf is required');
+    });
+
+    it('throws when the API returns an error', async () => {
+      nock(CF_API_BASE)
+        .post(`/zones/${ZONE_ID}/logpush/ownership`)
+        .reply(200, { success: false, errors: [{ message: 'Invalid destination' }] });
+
+      await expect(client.requestLogpushOwnership(ZONE_ID, DESTINATION_CONF))
+        .to.be.rejectedWith('Invalid destination');
+    });
+  });
+
+  // ─── listLogpushJobs ─────────────────────────────────────────────────────
+
+  describe('listLogpushJobs', () => {
+    const DATASET = 'http_requests';
+
+    it('returns Logpush jobs for a zone/dataset', async () => {
+      const result = [{
+        id: 1, dataset: DATASET, enabled: true, destination_conf: 's3://bucket/path/{DATE}',
+      }];
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}/logpush/datasets/${DATASET}/jobs`)
+        .reply(200, { success: true, result });
+
+      const jobs = await client.listLogpushJobs(ZONE_ID, DATASET);
+      expect(jobs).to.deep.equal(result);
+      expect(log.info).to.have.been.calledWith(
+        `Listing Logpush jobs for zone ${ZONE_ID}, dataset ${DATASET}`,
+      );
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.listLogpushJobs('', DATASET))
+        .to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when dataset is missing', async () => {
+      await expect(client.listLogpushJobs(ZONE_ID, ''))
+        .to.be.rejectedWith('dataset is required');
+    });
+
+    it('throws when the API returns an error', async () => {
+      nock(CF_API_BASE)
+        .get(`/zones/${ZONE_ID}/logpush/datasets/${DATASET}/jobs`)
+        .reply(200, { success: false, errors: [{ message: 'Zone not found' }] });
+
+      await expect(client.listLogpushJobs(ZONE_ID, DATASET))
+        .to.be.rejectedWith('Zone not found');
+    });
+  });
+
+  // ─── createLogpushJob ────────────────────────────────────────────────────
+
+  describe('createLogpushJob', () => {
+    const DATASET = 'http_requests';
+    const DESTINATION_CONF = 's3://bucket/org/raw/byocdn-cloudflare/{DATE}?region=us-east-1';
+    const BASE_PAYLOAD = {
+      dataset: DATASET,
+      destination_conf: DESTINATION_CONF,
+      ownership_challenge: 'test-ownership-token',
+      name: 'example.com',
+      output_options: { field_names: ['EdgeStartTimestamp'], timestamp_format: 'rfc3339' },
+    };
+
+    it('creates a Logpush job and returns the result', async () => {
+      const result = { id: 42, ...BASE_PAYLOAD, enabled: true };
+      nock(CF_API_BASE)
+        .post(`/zones/${ZONE_ID}/logpush/jobs`, BASE_PAYLOAD)
+        .reply(200, { success: true, result });
+
+      const res = await client.createLogpushJob(ZONE_ID, BASE_PAYLOAD);
+      expect(res).to.deep.equal(result);
+      expect(log.info).to.have.been.calledWith(
+        `Creating Logpush job on zone ${ZONE_ID} for dataset ${DATASET}`,
+      );
+    });
+
+    it('throws when zoneId is missing', async () => {
+      await expect(client.createLogpushJob('', BASE_PAYLOAD))
+        .to.be.rejectedWith('zoneId is required');
+    });
+
+    it('throws when payload.dataset is missing', async () => {
+      const { dataset: _, ...rest } = BASE_PAYLOAD;
+      await expect(client.createLogpushJob(ZONE_ID, rest))
+        .to.be.rejectedWith('payload.dataset is required');
+    });
+
+    it('throws when payload.destination_conf is missing', async () => {
+      const { destination_conf: _, ...rest } = BASE_PAYLOAD;
+      await expect(client.createLogpushJob(ZONE_ID, rest))
+        .to.be.rejectedWith('payload.destination_conf is required');
+    });
+
+    it('throws when payload.ownership_challenge is missing', async () => {
+      const { ownership_challenge: _, ...rest } = BASE_PAYLOAD;
+      await expect(client.createLogpushJob(ZONE_ID, rest))
+        .to.be.rejectedWith('payload.ownership_challenge is required');
+    });
+
+    it('throws when the API returns an error', async () => {
+      nock(CF_API_BASE)
+        .post(`/zones/${ZONE_ID}/logpush/jobs`)
+        .reply(200, { success: false, errors: [{ message: 'Invalid ownership challenge' }] });
+
+      await expect(client.createLogpushJob(ZONE_ID, BASE_PAYLOAD))
+        .to.be.rejectedWith('Invalid ownership challenge');
     });
   });
 });

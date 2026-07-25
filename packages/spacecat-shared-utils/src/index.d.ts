@@ -359,6 +359,8 @@ export const SPACECAT_USER_AGENT: string;
 
 export function prettifyLogForwardingConfig(payload: object): object;
 
+export const CLOUDFLARE_LOGPUSH_FIELDS: readonly string[];
+
 export function isoCalendarWeek(date: Date): ISOCalendarWeek;
 
 export function isoCalendarWeekSunday(date: Date): Date;

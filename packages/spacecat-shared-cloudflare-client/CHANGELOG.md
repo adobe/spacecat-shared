@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloudflare-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.2.1...@adobe/spacecat-shared-cloudflare-client-v1.3.0) (2026-07-17)
+
+### Features
+
+* **cloudflare-client:** export CLOUDFLARE_LOGPUSH_FIELDS (LLMO-5869) ([#1796](https://github.com/adobe/spacecat-shared/issues/1796)) ([477a604](https://github.com/adobe/spacecat-shared/commit/477a604cdd1c89dbb3a70e33eead740a07e53adb))
+
 ## [@adobe/spacecat-shared-cloudflare-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloudflare-client-v1.2.0...@adobe/spacecat-shared-cloudflare-client-v1.2.1) (2026-06-26)
 
 ### Bug Fixes

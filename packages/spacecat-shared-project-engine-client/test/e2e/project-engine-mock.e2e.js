@@ -41,7 +41,7 @@ const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = SEED_IDS.workspaceId;
 const SEED_PROJECT = SEED_IDS.projectId;
 // Every project's root level holds exactly these four dimension roots and nothing else.
-const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'type'];
+const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'type', 'tag'];
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -1124,7 +1124,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     const { data: listed, error: listError } = await listTags(SEED_IDS.categoryRootTagId);
     expect(listError).to.equal(undefined);
-    // Categories: the baked `Running Shoes` + the just-created `Hydration`.
+    // Categories: the baked `Running Shoes` + the just-created `Hydration`. Scoped under the
+    // `category` root, so the sibling `tag` dimension (serenity-docs#26) is out of view here.
     expect(listed.total).to.equal(2);
     expect(listed.items.map((t) => t.name)).to.have.members(['Running Shoes', 'Hydration']);
     // The stored/listed shape is an AIOTag (prompts_count), not a TreeNodeResponse (keyword_count).
@@ -1161,7 +1162,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(dupRes.status).to.equal(500);
 
     // categories: the baked `Running Shoes` + Alpha + Beta. The collided batch created neither a
-    // duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent.
+    // duplicate Alpha nor the co-batched Gamma (atomic), so Gamma is absent. Scoped under the
+    // `category` root, so the sibling `tag` dimension (serenity-docs#26) is out of view here.
     const { data: all } = await listTags(SEED_IDS.categoryRootTagId);
     expect(all.total).to.equal(3);
     expect(all.items.map((t) => t.name)).to.have.members(['Running Shoes', 'Alpha', 'Beta']);
@@ -1230,9 +1232,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
 
-    // back to the baked baseline: the four dimension roots, and `Ephemeral` is gone
+    // back to the baked baseline: the five dimension roots (including the open `tag` root,
+    // serenity-docs#26), and `Ephemeral` is gone
     const { data: roots } = await listTags('');
-    expect(roots.total).to.equal(4);
+    expect(roots.total).to.equal(5);
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
     const { data: categories } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categories.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
@@ -1301,6 +1304,36 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     ]);
   });
 
+  // The boot seed also bakes the sibling open `tag` dimension (serenity-docs#26): a bare-named
+  // depth-2 tag `Trail Running` under the `tag` root, owning a bare depth-3 child `Ultra` — the
+  // SAME shape as the `category` tree above, coexisting with it in one tags collection, so a
+  // consumer reads both open dimensions off the same project out of the box.
+  it('reads the baked tag nested taxonomy from the boot seed', async () => {
+    // depth-2: the `tag` root's only child is the bare-named `Trail Running`.
+    const { data: depthTwo } = await listTags(SEED_IDS.tagRootTagId);
+    expect(depthTwo.items.map((t) => t.name)).to.deep.equal(['Trail Running']);
+    expect(depthTwo.items[0]).to.include({
+      id: SEED_IDS.tagTagId, parent_id: SEED_IDS.tagRootTagId,
+    });
+
+    // depth-3: `Trail Running`'s only child is the bare-named `Ultra`, with a root-first path.
+    const { data: children } = await client.GET(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/tags',
+      {
+        params: {
+          path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
+          query: { parent_id: SEED_IDS.tagTagId, search: '' },
+        },
+      },
+    );
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Ultra']);
+    expect(children.items[0].id).to.equal(SEED_IDS.tagChildTagId);
+    expect(children.items[0].path).to.deep.equal([
+      { id: SEED_IDS.tagRootTagId, name: 'tag' },
+      { id: SEED_IDS.tagTagId, name: 'Trail Running', parent_id: SEED_IDS.tagRootTagId },
+    ]);
+  });
+
   // PATCH (aio-update-tag) re-parents / promotes a tag in place. Promoting the baked child `Trail`
   // to a root clears its parent_id, so it leaves the parent's children and appears among the roots.
   it('re-parents a tag via PATCH (promote a child to a root)', async () => {
@@ -1320,8 +1353,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patched).to.include({ id: SEED_IDS.childTagId, name: 'Trail' });
 
     // the promoted tag now sits alongside the dimension roots — a stranded tag, exactly the failure
-    // mode the reshape's post-condition ("the root listing is exactly the four dimension roots")
-    // exists to catch
+    // mode the reshape's post-condition ("the root listing is exactly the five dimension roots,
+    // including the open `tag` root, serenity-docs#26") exists to catch
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name))
       .to.have.members([...DIMENSION_ROOT_NAMES, 'Trail']);

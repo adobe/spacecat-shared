@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.44.0...@adobe/spacecat-shared-rum-api-client-v2.44.1) (2026-07-24)
+
+### Bug Fixes
+
+* add domain and summary to RUM bundle failure logs (rum-api-client) ([#1841](https://github.com/adobe/spacecat-shared/issues/1841)) ([d70bfa5](https://github.com/adobe/spacecat-shared/commit/d70bfa584d035f5234b5abb276c842af10848a46))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.44.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.43.1...@adobe/spacecat-shared-rum-api-client-v2.44.0) (2026-06-26)
 
 ### Features

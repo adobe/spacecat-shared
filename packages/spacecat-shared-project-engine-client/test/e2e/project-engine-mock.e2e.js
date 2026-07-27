@@ -501,7 +501,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(res.status).to.equal(201);
 
-    // The minted name is now a root in the tag tree, alongside the four dimension roots.
+    // The minted name is now a root in the tag tree, alongside the five dimension roots.
     const { data: roots } = await listTags('');
     const minted = roots.items.find((t) => t.name === 'Freshly Minted');
     expect(minted, 'the minted root is registered in the tag tree').to.not.equal(undefined);
@@ -1134,7 +1134,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.parent_id).to.equal(SEED_IDS.categoryRootTagId);
     expect(created.path.map((leaf) => leaf.name)).to.deep.equal(['category']);
 
-    // The root level is untouched: still exactly the four dimension roots.
+    // The root level is untouched: still exactly the five dimension roots.
     const { data: roots } = await listTags('');
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
   });
@@ -1241,7 +1241,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(gsc.id).to.not.equal(SEED_IDS.childGscTagId);
   });
 
-  // __reset restores the boot seed (the four dimension roots, no ad-hoc tags), so a created
+  // __reset restores the boot seed (the five dimension roots, no ad-hoc tags), so a created
   // standalone tag is cleared — proving the tags collection rides the seed/reset lifecycle like
   // every other stateful resource.
   it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
@@ -1342,7 +1342,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patched).to.include({ id: SEED_IDS.childTagId, name: 'Trail' });
 
     // the promoted tag now sits alongside the dimension roots — a stranded tag, exactly the failure
-    // mode the reshape's post-condition ("the root listing is exactly the four dimension roots")
+    // mode the reshape's post-condition ("the root listing is exactly the five dimension roots")
     // exists to catch
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name))
@@ -1522,7 +1522,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // `Doomed` is gone; the baked category survives (delete targets only the id sent) …
     const { data: categoriesAfter } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categoriesAfter.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
-    // … and the four dimension roots are untouched.
+    // … and the five dimension roots are untouched.
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
 

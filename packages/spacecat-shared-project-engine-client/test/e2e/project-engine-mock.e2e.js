@@ -1220,6 +1220,27 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(originHuman.path[0].name).to.equal('origin');
   });
 
+  // The producing-system `source` dimension (H1) is an open root seeded with a representative
+  // subset of canonical values and no grandchildren. Exercise the full HTTP path to its children
+  // — parallel to the category-subtree read above — so the new dimension is verified over the
+  // wire, not only in the seed unit tests. The seeded `source` value `gsc` is also a distinct
+  // tag from the same-named `category` sub-category (ids key on (parent,name)) — confirm over HTTP.
+  it('lists the source dimension root\'s seeded children over HTTP', async () => {
+    const { data: sources } = await listTags(SEED_IDS.sourceRootTagId);
+
+    // the representative SOURCE_VALUES subset: default + acronym + bare slug + hyphenated
+    expect(sources.items.map((t) => t.name))
+      .to.have.members(['config', 'gsc', 'drs', 'synthetic-personas']);
+    sources.items.forEach((t) => {
+      expect(t.path[0]).to.include({ id: SEED_IDS.sourceRootTagId, name: 'source' });
+      expect(t).to.have.property('children_count', 0);
+    });
+
+    const gsc = sources.items.find((t) => t.name === 'gsc');
+    expect(gsc.id).to.equal(SEED_IDS.sourceGscTagId);
+    expect(gsc.id).to.not.equal(SEED_IDS.childGscTagId);
+  });
+
   // __reset restores the boot seed (the four dimension roots, no ad-hoc tags), so a created
   // standalone tag is cleared — proving the tags collection rides the seed/reset lifecycle like
   // every other stateful resource.

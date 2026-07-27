@@ -241,20 +241,22 @@ const childTag = (name, parentId) => createAIOTagMock({
  * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
  * `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human` vocabulary is
  * unchanged, only the root it hangs off differs. The open `source` dimension (producing systems)
- * is seeded with a representative subset of canonical values and no children. Pass
- * `includeSource: false` to skip the source root when building the legacy fixture (they would
- * collide by name when the authorship root is 'source').
+ * is seeded with a representative subset of canonical values and no children. The source root is
+ * skipped automatically when `authorshipRootName` is the pre-rename `source` name (the two would
+ * collide by name/id) — derived internally, so callers never coordinate it. WP-O6 removes the
+ * legacy fixture, retiring this guard.
  * @param {Array<{ name: string, children?: string[] }>} [categories]
  * @param {string} [authorshipRootName]
- * @param {boolean} [includeSource]
  * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
  */
 const dimensionRootTree = (
   categories = [],
   authorshipRootName = DIMENSION_ROOTS.origin,
-  includeSource = true,
 ) => {
   const authorshipRootId = tagId(authorshipRootName);
+  // Include the producing-system `source` root unless the authorship root IS `source` (the
+  // pre-rename legacy fixture) — else the two collide by name/id.
+  const includeSource = authorshipRootName !== DIMENSION_ROOTS.source;
   return [
     rootTag(DIMENSION_ROOTS.category),
     rootTag(DIMENSION_ROOTS.intent),
@@ -452,7 +454,7 @@ export const WORKSPACE_WITH_SOURCE_ROOT = Object.freeze(peHierarchy({
   // producing-system `source` root is omitted to avoid a collision (they would have the same id).
   projectTags: dimensionRootTree([
     { name: CATEGORY_NAME, children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME] },
-  ], LEGACY_AUTHORSHIP_ROOT_NAME, false),
+  ], LEGACY_AUTHORSHIP_ROOT_NAME),
 }));
 
 /**

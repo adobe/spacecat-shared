@@ -13,7 +13,9 @@
 import SeoClient from './client.js';
 
 export default SeoClient;
-export { fetch, BIG_MARKETS, getDatabases } from './client.js';
+export {
+  fetch, BIG_MARKETS, getDatabases, clearSemrushTokenCache,
+} from './client.js';
 export { ENDPOINTS } from './endpoints.js';
 export {
   buildQueryParams, parseCsvResponse, coerceValue, getLimit,

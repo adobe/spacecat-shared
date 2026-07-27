@@ -247,6 +247,54 @@ Consumer adoption (bump + route writes + warn→enforce) is tracked in SITES-472
 
 [adobe/mysticat-architecture#174]: https://github.com/adobe/mysticat-architecture/blob/main/platform/decisions/design-suggestion-fix-entity-status-lifecycle.md
 
+## Deploy-action `changeDetails` v2 (SITES-47997)
+
+`FixEntity.changeDetails` has a canonical **v2 shape** — the structured,
+validated "deploy action" record (who/when/what/which-pages/result) from ADR
+[adobe/mysticat-architecture#200]. It is defined in
+`src/models/fix-entity/change-details.schema.js` (Joi) and wired into the
+`changeDetails` attribute validator.
+
+- **Reader-tolerant / additive.** The DB column stays `type: 'any'` — no
+  migration. Records **without `schemaVersion: 2`** are legacy freeform (v1) and
+  keep the old non-empty-object guard; only `schemaVersion: 2` records are
+  schema-validated. This runs on the **create** path (`#validateItem` →
+  `collection.create`), not on `save()` updates.
+- **Shape.** `{ schemaVersion: 2, surface, actorType, target, result? }`.
+  `target` = the proposal (intent): `changeType` + `changes[{ targetPath,
+  property, intendedValue }]`. `result` = the outcome: `callStatus`
+  (`success|no_op|client_error|server_error|timeout`), `applied`
+  (**enum `ALL|PARTIAL|NONE`, not a boolean**), `changeResults[]` (key-matched to
+  `target.changes` by `(targetPath, property)`), `pre/postVerify` verdicts, and
+  `deployResponsePayload` (**≤ 4 KB cap**) + `deployResponseSha256` (hex).
+- **APIs** (exported from the package root):
+  - `validateChangeDetails(value)` — the attribute validator; `false` on a
+    non-object, `true` for legacy/valid-v2, **throws** with a descriptive message
+    on an invalid v2 record.
+  - `changeDetailsV2Schema` — the raw Joi `ObjectSchema` (strict; unknown keys
+    rejected) for consumers that want to validate directly.
+  - `FixEntity.CHANGE_DETAILS` — the enum bundle (`SURFACES`, `ACTOR_TYPES`,
+    `CALL_STATUSES`, `APPLIED`, `CHANGE_RESULT_STATUSES`, `VERIFY_VERDICTS`,
+    `SCHEMA_VERSION`, `DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES`). Kept on the model
+    (not the barrel) to avoid collisions on these generic names.
+- **Portable JSON Schema artifact** (for the Python runtime, mystique). The Joi
+  schema is the single source of truth; a **JSON Schema is derived from it** and
+  shipped at `schemas/fix-entity-change-details.v2.schema.json` (draft-2019-09).
+  Regenerate with `npm run generate:schemas` (script:
+  `scripts/generate-change-details-schema.js`, uses `joi-to-json`); a unit test
+  fails CI if the committed artifact drifts from the Joi schema. mystique vendors
+  this file and validates against it. **Caveat:** JSON Schema captures
+  structure/enums/required/patterns only — the cross-field invariants
+  (`changeResults`↔`target.changes` key-match, `applied:ALL` completeness,
+  `deployResponsePayload` 4 KB cap) are Joi `.custom()` rules and are NOT in the
+  artifact; a consumer needing them must port those checks.
+- **Not yet done** (tracked on SITES-47997): the `publishedBy` column +
+  `executedBy/At` → `deployedBy/At` rename (dual-write, needs a companion
+  mysticat-data-service migration), and gating the `DEPLOYED`/`PUBLISHED`
+  transition on `result` presence (extends the SITES-47091 guard).
+
+[adobe/mysticat-architecture#200]: https://github.com/adobe/mysticat-architecture/blob/main/platform/decisions/deploy-action-provenance-and-verify.md
+
 ## Site Config: Import Types
 
 Site configuration lives in `src/models/site/config.js` and defines the available import types, their validation schemas, and default configs. This is one of the most frequently changed files in the package.

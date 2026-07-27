@@ -10,7 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
-import AkamaiClient, { normalizeDomain } from './akamai-client.js';
+import AkamaiClient, {
+  normalizeDomain,
+  defaultRuleHasCaching,
+  getDefaultOriginSsl,
+} from './akamai-client.js';
 
-export { normalizeDomain };
+export { normalizeDomain, defaultRuleHasCaching, getDefaultOriginSsl };
 export default AkamaiClient;

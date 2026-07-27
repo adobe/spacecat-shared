@@ -2856,6 +2856,18 @@ describe('Config Tests', () => {
       expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
     });
 
+    it('creates a Config with edgeOptimizeConfig routingEnabled property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          opted: 1,
+          routingEnabled: 1700000000000,
+          enabled: 1700000000000,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
     it('has undefined edgeOptimizeConfig in default config', () => {
       const config = Config();
       expect(config.getEdgeOptimizeConfig()).to.be.undefined;
@@ -3102,6 +3114,10 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
+            catalogFieldConfig: {
+              name: { enabled: true, maxLength: 50 },
+              description: { enabled: false },
+            },
           },
         },
       };

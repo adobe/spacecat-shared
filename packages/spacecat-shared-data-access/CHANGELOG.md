@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-data-access-v4.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.13.0...@adobe/spacecat-shared-data-access-v4.14.0) (2026-07-27)
+
+### Features
+
+* **data-access:** derive portable JSON Schema artifact for changeDetails v2 (SITES-47997) ([#1830](https://github.com/adobe/spacecat-shared/issues/1830)) ([02163de](https://github.com/adobe/spacecat-shared/commit/02163dea72d007678777b8341d0ded2b97fb56cf)), closes [#1828](https://github.com/adobe/spacecat-shared/issues/1828) [blocking-#4](https://github.com/adobe/blocking-/issues/4)
+
+## [@adobe/spacecat-shared-data-access-v4.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.12.0...@adobe/spacecat-shared-data-access-v4.13.0) (2026-07-23)
+
+### Features
+
+* **data-access:** list configuration versions via S3 object versioning ([#1839](https://github.com/adobe/spacecat-shared/issues/1839)) ([5dd66fc](https://github.com/adobe/spacecat-shared/commit/5dd66fc9aee60215ea4355395e280c66ae44dcb9))
+
+## [@adobe/spacecat-shared-data-access-v4.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.11.0...@adobe/spacecat-shared-data-access-v4.12.0) (2026-07-23)
+
+### Features
+
+* **data-access:** canonical v2 changeDetails schema + validator for FixEntity (SITES-47997) ([#1828](https://github.com/adobe/spacecat-shared/issues/1828)) ([afdb546](https://github.com/adobe/spacecat-shared/commit/afdb5464d6af6ac6ea9f6f0075d798feb38a5699))
+
+## [@adobe/spacecat-shared-data-access-v4.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.1...@adobe/spacecat-shared-data-access-v4.11.0) (2026-07-21)
+
+### Features
+
+* add weekly-offsite job interval (LLMO-6401) ([#1834](https://github.com/adobe/spacecat-shared/issues/1834)) ([95afbc7](https://github.com/adobe/spacecat-shared/commit/95afbc70e641d2399bcdc1367cd62a86ed78e756))
+
+## [@adobe/spacecat-shared-data-access-v4.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.10.0...@adobe/spacecat-shared-data-access-v4.10.1) (2026-07-21)
+
+### Bug Fixes
+
+* add routingEnabled (timestamp) to edgeOptimizeConfig schema ([#1835](https://github.com/adobe/spacecat-shared/issues/1835)) ([bfc17da](https://github.com/adobe/spacecat-shared/commit/bfc17daaeb628d8abaf5c211bbf7aee1b35ed3be))
+
+## [@adobe/spacecat-shared-data-access-v4.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.9.0...@adobe/spacecat-shared-data-access-v4.10.0) (2026-07-20)
+
+### Features
+
+* Add allSiteIdsByTier and allByEnrollmentAndTier collection meth… ([#1569](https://github.com/adobe/spacecat-shared/issues/1569)) ([3ac585b](https://github.com/adobe/spacecat-shared/commit/3ac585bd1b3fe93d32b8d0ad027af81cf6e37830))
+
 ## [@adobe/spacecat-shared-data-access-v4.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.8.0...@adobe/spacecat-shared-data-access-v4.9.0) (2026-07-15)
 
 ### Features

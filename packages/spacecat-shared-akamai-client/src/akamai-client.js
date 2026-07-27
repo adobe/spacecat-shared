@@ -79,6 +79,42 @@ export function normalizeDomain(domain) {
 }
 
 /**
+ * True if the property's default (top-level) rule already has a Caching behavior.
+ *
+ * Cache ID Modification requires a Caching behavior to be in scope. When the default rule
+ * provides one, an Optimize-at-Edge rule must NOT add its own — an OAE-rule Caching would
+ * override the property's HTML no-store and make the optimized path cacheable. When the default
+ * rule has none, the OAE rule must add a Caching behavior so Cache ID Modification validates.
+ *
+ * @param {object} ruleTree - a PAPI rule tree ({ rules: { behaviors: [...] } })
+ * @returns {boolean}
+ */
+export function defaultRuleHasCaching(ruleTree) {
+  const behaviors = ruleTree?.rules?.behaviors;
+  return Array.isArray(behaviors) && behaviors.some((b) => b?.name === 'caching');
+}
+
+/**
+ * The default rule's Origin Server SSL verification settings.
+ *
+ * An Optimize-at-Edge origin's verificationMode must match the default rule's, otherwise PAPI
+ * rejects the tree ("Use Platform Settings ... not compatible with the custom settings"). Callers
+ * mirror these onto the OAE origin, and can gate onboarding on the mode (e.g. CUSTOM only).
+ *
+ * @param {object} ruleTree - a PAPI rule tree ({ rules: { behaviors: [...] } })
+ * @returns {{verificationMode: (string|undefined), originCertsToHonor: (string|undefined),
+ *   standardCertificateAuthorities: (string[]|undefined)}|null} null when no origin behavior exists
+ */
+export function getDefaultOriginSsl(ruleTree) {
+  const origin = (ruleTree?.rules?.behaviors || []).find((b) => b?.name === 'origin');
+  if (!origin || !origin.options) {
+    return null;
+  }
+  const { verificationMode, originCertsToHonor, standardCertificateAuthorities } = origin.options;
+  return { verificationMode, originCertsToHonor, standardCertificateAuthorities };
+}
+
+/**
  * A thin client for Akamai's Property Manager API (PAPI), authenticated with
  * the EdgeGrid (EG1-HMAC-SHA256) scheme.
  *
@@ -422,9 +458,21 @@ export default class AkamaiClient {
    * @param {string} groupId
    * @param {object} ruleTree
    * @param {string} [ruleFormat]
+   * @param {object} [options]
+   * @param {boolean} [options.dryRun] - validate the submitted tree without persisting it. PAPI
+   *   still requires an EDITABLE (inactive) version — an activation-locked version returns 403
+   *   "already-activated" even for a dry run.
    * @returns {Promise<object>}
    */
-  async updateRuleTree(propertyId, version, contractId, groupId, ruleTree, ruleFormat) {
+  async updateRuleTree(
+    propertyId,
+    version,
+    contractId,
+    groupId,
+    ruleTree,
+    ruleFormat,
+    options = {},
+  ) {
     requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
@@ -439,15 +487,15 @@ export default class AkamaiClient {
     const headers = ruleFormat
       ? { 'Content-Type': `application/vnd.akamai.papirules.${ruleFormat}+json` }
       : undefined;
-    this.log.info(`Updating rule tree for property ${propertyId} v${version}`);
+    const params = { contractId, groupId, validateRules: 'true' };
+    if (options.dryRun) {
+      params.dryRun = 'true';
+    }
+    this.log.info(`Updating rule tree for property ${propertyId} v${version}${options.dryRun ? ' (dry run)' : ''}`);
     return this.#request(
       'PUT',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      {
-        params: { contractId, groupId, validateRules: 'true' },
-        body: ruleTree,
-        headers,
-      },
+      { params, body: ruleTree, headers },
     );
   }
 

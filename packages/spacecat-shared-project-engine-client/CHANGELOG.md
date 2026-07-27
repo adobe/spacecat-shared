@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.14.0...@adobe/spacecat-shared-project-engine-client-v1.15.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** mock authorship root source→origin + legacy seed (LLMO-6273) ([3ead32b](https://github.com/adobe/spacecat-shared/commit/3ead32b1f126b3f15d1acac0f86209929b0aad73))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.13.0...@adobe/spacecat-shared-project-engine-client-v1.14.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** ProjectEngineApiError typed errors in the facade seam (LLMO-5978) ([#1824](https://github.com/adobe/spacecat-shared/issues/1824)) ([7ab364d](https://github.com/adobe/spacecat-shared/commit/7ab364d457c8d109326b3fd674152720d353c79d))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.12.0...@adobe/spacecat-shared-project-engine-client-v1.13.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** intent-named facade over the openapi-fetch client (LLMO-5977) ([#1823](https://github.com/adobe/spacecat-shared/issues/1823)) ([eef51fd](https://github.com/adobe/spacecat-shared/commit/eef51fd950b49e6a2b5c040d544f44a7491c756d))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.11.0...@adobe/spacecat-shared-project-engine-client-v1.12.0) (2026-07-16)
 
 ### Features

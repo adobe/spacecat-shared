@@ -12,6 +12,7 @@
 import BaseModel from '../base/base.model.js';
 import { guardTransition } from '../../util/status-transition-guard.js';
 import { isAllowedFixTransition } from './fix-entity.transitions.js';
+import { CHANGE_DETAILS } from './change-details.schema.js';
 
 /**
  * FixEntity - A class representing a FixEntity for a Suggestion.
@@ -40,6 +41,10 @@ class FixEntity extends BaseModel {
     ASO: 'aso',
     REPORTING: 'reporting',
   };
+
+  // Canonical v2 changeDetails enums + limits (SITES-47997, ADR
+  // adobe/mysticat-architecture#200). e.g. FixEntity.CHANGE_DETAILS.SURFACES.ASO.
+  static CHANGE_DETAILS = CHANGE_DETAILS;
 
   /**
    * Sets the fix status, guarding the transition against the canonical table

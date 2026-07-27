@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.13.0...@adobe/spacecat-shared-data-access-v4.14.0) (2026-07-27)
+
+### Features
+
+* **data-access:** derive portable JSON Schema artifact for changeDetails v2 (SITES-47997) ([#1830](https://github.com/adobe/spacecat-shared/issues/1830)) ([02163de](https://github.com/adobe/spacecat-shared/commit/02163dea72d007678777b8341d0ded2b97fb56cf)), closes [#1828](https://github.com/adobe/spacecat-shared/issues/1828) [blocking-#4](https://github.com/adobe/blocking-/issues/4)
+
 ## [@adobe/spacecat-shared-data-access-v4.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.12.0...@adobe/spacecat-shared-data-access-v4.13.0) (2026-07-23)
 
 ### Features

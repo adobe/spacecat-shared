@@ -132,6 +132,7 @@ export interface FastlyKVEntry {
   key: string;
   suggestionId: string;
   url: string;
+  status: string;
 }
 
 export class FastlyKVClient {
@@ -142,6 +143,11 @@ export class FastlyKVClient {
   }, log: any);
 
   listAllStaleKeys(options?: {
+    pageSize?: number;
+    maxPages?: number;
+  }): Promise<FastlyKVEntry[]>;
+
+  listAllLastModMissingKeys(options?: {
     pageSize?: number;
     maxPages?: number;
   }): Promise<FastlyKVEntry[]>;

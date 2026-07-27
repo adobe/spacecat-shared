@@ -57,6 +57,10 @@ export default class CloudManagerClient {
   pull(clonePath: string, programId: string, repositoryId: string, config: PullConfig): Promise<void>;
   checkout(clonePath: string, ref: string): Promise<void>;
   unzipRepository(zipBuffer: Buffer): Promise<string>;
+  unzipRepositoryFromFile(
+    zipFilePath: string,
+    opts?: { maxEntries?: number; headroomFactor?: number },
+  ): Promise<string>;
   assertTmpSpace(requiredBytes: number, opts?: { headroomFactor?: number }): void;
   zipRepository(clonePath: string): Promise<Buffer>;
   createBranch(clonePath: string, baseBranch: string, newBranch: string): Promise<void>;

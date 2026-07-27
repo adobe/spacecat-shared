@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.1...@adobe/spacecat-shared-tokowaka-client-v1.22.0) (2026-07-27)
+
+### Features
+
+* **LLMO-5751:** add listAllLastModMissingKeys to FastlyKVClient ([#1842](https://github.com/adobe/spacecat-shared/issues/1842)) ([df611c3](https://github.com/adobe/spacecat-shared/commit/df611c34d431ba57c152c2f3bd0d7afad07e8970))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.0...@adobe/spacecat-shared-tokowaka-client-v1.21.1) (2026-07-15)
 
 ### Bug Fixes

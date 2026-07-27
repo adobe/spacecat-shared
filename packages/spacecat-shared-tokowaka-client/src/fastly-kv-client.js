@@ -26,11 +26,11 @@ const DEFAULT_TIMEOUT = 30000;
  * case-insensitively so lower-case values below are the normalized form.
  * @see tokowaka-worker src/handlers/patch.js markDataStatus()
  */
-export const KV_STATUS = {
+export const KV_STATUS = Object.freeze({
   STALE: 'stale',
   LAST_MOD_MISSING: 'last_mod_missing',
   LIVE: 'live',
-};
+});
 
 /**
  * Client for interacting with Fastly KV Store used by Tokowaka.

@@ -1083,10 +1083,20 @@ export default class CloudManagerClient {
     }
     // Peak /tmp footprint = archive on disk + extracted tree coexisting.
     const archiveBytes = statSync(zipFilePath).size;
-    this.assertTmpSpace(archiveBytes + uncompressedBytes, { headroomFactor });
+    // Each extracted file occupies at least one full filesystem block, so a repo
+    // of many small files (e.g. an un-gc'd .git) needs more disk than the raw
+    // content sum. Add a per-entry block cushion so the guard reflects real
+    // on-disk footprint, not just content size.
+    const { bsize } = statfsSync(os.tmpdir());
+    const footprintBytes = archiveBytes + uncompressedBytes + (entryCount * bsize);
+    this.assertTmpSpace(footprintBytes, { headroomFactor });
 
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
     try {
+      // The uncompressed-size guard above is a sound ceiling only because zip-lib
+      // extracts via yauzl with the default validateEntrySizes:true, which aborts
+      // if an entry's actual bytes exceed its declared uncompressedSize. Keep
+      // zip-lib pinned so this invariant holds.
       await extract(zipFilePath, extractPath, { safeSymlinksOnly: true });
       this.log.info(`Repository extracted to ${extractPath}`);
       this.#logTmpDiskUsage('unzip');

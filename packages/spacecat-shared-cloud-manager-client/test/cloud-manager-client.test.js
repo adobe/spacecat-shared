@@ -78,10 +78,16 @@ function setupImsTokenMock() {
 }
 
 // Builds a fake yauzl zipfile that emits one 'entry' per size then 'end'.
-function fakeZipfile(uncompressedSizes) {
+// Pass { errorAfter: n } to instead emit an 'error' after the n-th readEntry()
+// call, exercising the central-directory-read error path.
+function fakeZipfile(uncompressedSizes, { errorAfter } = {}) {
   const zf = new EventEmitter();
   let i = 0;
   zf.readEntry = () => {
+    if (errorAfter !== undefined && i === errorAfter) {
+      queueMicrotask(() => zf.emit('error', new Error('corrupt entry stream')));
+      return;
+    }
     if (i < uncompressedSizes.length) {
       const size = uncompressedSizes[i];
       i += 1;
@@ -1644,6 +1650,14 @@ describe('CloudManagerClient', () => {
       expect(() => client.assertTmpSpace(1024, { headroomFactor: -1 }))
         .to.throw(/invalid headroomFactor/);
     });
+
+    it('guards on bavail (usable), not bfree', () => {
+      statfsSyncStub.returns({
+        bsize: 4096, blocks: 131072, bfree: 131072, bavail: 16384,
+      });
+      // bfree=512 MB would pass; bavail=64 MB must make a 100 MB request throw
+      expect(() => client.assertTmpSpace(100 * 1024 * 1024)).to.throw(/Insufficient/);
+    });
   });
 
   describe('unzipRepositoryFromFile', () => {
@@ -1707,6 +1721,49 @@ describe('CloudManagerClient', () => {
         .to.be.rejectedWith(/invalid maxEntries/);
       await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { maxEntries: -1 }))
         .to.be.rejectedWith(/invalid maxEntries/);
+    });
+
+    it('rejects when the central directory read errors mid-stream', async () => {
+      const zf = fakeZipfile([100, 200], { errorAfter: 1 });
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, zf));
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip'))
+        .to.be.rejectedWith(/corrupt entry stream/);
+      expect(extractStub).to.not.have.been.called;
+    });
+
+    it('includes per-file block overhead in the space guard', async () => {
+      // ~12 MB content fits alone, but 60000 files * 4 KB block overhead (~246 MB)
+      // tips the guard over the 256 MB budget — so this throws only because block
+      // overhead is counted.
+      statSyncStub.returns({ size: 1024 });
+      const sizes = new Array(60000).fill(200);
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, fakeZipfile(sizes)));
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip'))
+        .to.be.rejectedWith(/Insufficient \/tmp space/);
+      expect(extractStub).to.not.have.been.called;
+    });
+
+    it('allows an archive exactly at the maxEntries cap', async () => {
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, fakeZipfile([1, 1])));
+      await client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { maxEntries: 2 });
+      expect(extractStub).to.have.been.calledOnce;
+    });
+
+    it('forwards headroomFactor to the space guard', async () => {
+      statSyncStub.returns({ size: 1024 });
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, fakeZipfile([150 * 1024 * 1024])));
+      await client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { headroomFactor: 1.0 });
+      expect(extractStub).to.have.been.calledOnce;
+      extractStub.resetHistory();
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { headroomFactor: 2.0 }))
+        .to.be.rejectedWith(/Insufficient/);
+    });
+
+    it('handles an empty archive', async () => {
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, fakeZipfile([])));
+      const extractPath = await client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip');
+      expect(extractStub).to.have.been.calledOnce;
+      expect(extractPath).to.match(/cm-repo-/);
     });
   });
 

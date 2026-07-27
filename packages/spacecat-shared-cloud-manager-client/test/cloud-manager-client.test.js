@@ -148,7 +148,9 @@ describe('CloudManagerClient', () => {
     readlinkSyncStub.reset();
     rmSyncStub.reset();
     statfsSyncStub.reset();
-    statfsSyncStub.returns({ bsize: 4096, blocks: 131072, bfree: 65536 });
+    statfsSyncStub.returns({
+      bsize: 4096, blocks: 131072, bfree: 65536, bavail: 65536,
+    });
     writeSyncStub.reset();
     archiveFolderStub.reset();
     archiveFolderStub.resolves(Buffer.from('zip-content'));
@@ -1582,6 +1584,34 @@ describe('CloudManagerClient', () => {
       // Should clean up the extraction directory
       expect(rmSyncStub).to.have.been.calledOnce;
       expect(rmSyncStub.firstCall.args[0]).to.equal(expectedExtractPath);
+    });
+  });
+
+  describe('assertTmpSpace', () => {
+    let client;
+    beforeEach(() => {
+      client = CloudManagerClient.createFrom(createContext());
+    });
+
+    it('passes when usable space exceeds requiredBytes * headroomFactor', () => {
+      // stub: 4096 * 65536 bavail = 256 MB usable
+      expect(() => client.assertTmpSpace(100 * 1024 * 1024)).to.not.throw();
+    });
+
+    it('throws when usable space is below requiredBytes * headroomFactor', () => {
+      expect(() => client.assertTmpSpace(250 * 1024 * 1024))
+        .to.throw(/Insufficient \/tmp space/);
+    });
+
+    it('fails closed on non-finite requiredBytes', () => {
+      expect(() => client.assertTmpSpace(undefined)).to.throw(/invalid requiredBytes/);
+      expect(() => client.assertTmpSpace(0)).to.throw(/invalid requiredBytes/);
+      expect(() => client.assertTmpSpace(-5)).to.throw(/invalid requiredBytes/);
+    });
+
+    it('fails closed on non-finite headroomFactor', () => {
+      expect(() => client.assertTmpSpace(1024, { headroomFactor: NaN }))
+        .to.throw(/invalid headroomFactor/);
     });
   });
 

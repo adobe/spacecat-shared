@@ -25,6 +25,7 @@ import { archiveFolder, extract } from 'zip-lib';
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const DEFAULT_HEADROOM_FACTOR = 1.25;
 
 // Per-operation timeout for git commands (clone, push, pull, commit, etc.).
 // Override via GIT_OPERATION_TIMEOUT_MS env var. Defaults to 10 min so large
@@ -978,6 +979,33 @@ export default class CloudManagerClient {
   async checkout(clonePath, ref) {
     this.log.info(`Checking out ref '${ref}' in ${clonePath}`);
     this.#execGit(['checkout', ref], { cwd: clonePath });
+  }
+
+  /**
+   * Throws unless /tmp has room for `requiredBytes * headroomFactor`.
+   * Uses statfsSync `bavail` (blocks usable by unprivileged processes),
+   * which is the space actually writable, not the raw free count.
+   * @param {number} requiredBytes - Bytes the operation needs on /tmp.
+   * @param {object} [opts]
+   * @param {number} [opts.headroomFactor=1.25] - fs overhead + git pull growth.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  assertTmpSpace(requiredBytes, { headroomFactor = DEFAULT_HEADROOM_FACTOR } = {}) {
+    if (!Number.isFinite(requiredBytes) || requiredBytes <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid requiredBytes (${requiredBytes})`);
+    }
+    if (!Number.isFinite(headroomFactor) || headroomFactor <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid headroomFactor (${headroomFactor})`);
+    }
+    const { bsize, bavail } = statfsSync(os.tmpdir());
+    const usableBytes = bsize * bavail;
+    const neededBytes = requiredBytes * headroomFactor;
+    if (usableBytes < neededBytes) {
+      throw new Error(
+        `Insufficient /tmp space: need ~${Math.round(neededBytes / (1024 * 1024))} MB, `
+        + `have ${Math.round(usableBytes / (1024 * 1024))} MB`,
+      );
+    }
   }
 
   /**

@@ -1690,6 +1690,13 @@ describe('CloudManagerClient', () => {
         .to.be.rejectedWith(/Failed to unzip repository: bad zip/);
       expect(rmSyncStub).to.have.been.calledWith(`${os.tmpdir()}/cm-repo-XXXXXX`, { recursive: true, force: true });
     });
+
+    it('throws on invalid maxEntries', async () => {
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { maxEntries: NaN }))
+        .to.be.rejectedWith(/invalid maxEntries/);
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { maxEntries: -1 }))
+        .to.be.rejectedWith(/invalid maxEntries/);
+    });
   });
 
   describe('zipRepository', () => {

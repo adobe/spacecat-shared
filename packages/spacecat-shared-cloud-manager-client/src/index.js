@@ -1074,6 +1074,9 @@ export default class CloudManagerClient {
     zipFilePath,
     { maxEntries = DEFAULT_MAX_ENTRIES, headroomFactor = DEFAULT_HEADROOM_FACTOR } = {},
   ) {
+    if (!Number.isFinite(maxEntries) || maxEntries < 0) {
+      throw new Error(`Cannot unzip: invalid maxEntries (${maxEntries})`);
+    }
     const { uncompressedBytes, entryCount } = await readArchiveExtractedSize(zipFilePath);
     if (entryCount > maxEntries) {
       throw new Error(`Refusing to extract archive: ${entryCount} entries exceeds cap of ${maxEntries}`);

@@ -83,6 +83,9 @@ describe('seeds', () => {
     expect(tags.every((t) => !t.name.includes(':'))).to.equal(true);
 
     // Exactly the five dimension roots sit at the root level (model spec §7 gate 2).
+    // ORDER-sensitive on purpose: the seed provisions roots in a fixed order
+    // (`dimensionRootTree` / DIMENSION_ROOTS), and this unit test controls the seed, so it
+    // asserts that exact order; the e2e uses `.have.members` (listing order isn't contractual).
     const roots = tags.filter((t) => !t.parent_id);
     expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
 

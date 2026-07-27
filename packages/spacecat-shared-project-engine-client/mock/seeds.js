@@ -241,7 +241,8 @@ const childTag = (name, parentId) => createAIOTagMock({
  * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
  * `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human` vocabulary is
  * unchanged, only the root it hangs off differs. The open `source` dimension (producing systems)
- * is seeded with a representative subset of canonical values and no children. The source root is
+ * is seeded with a representative subset of canonical values as its direct children (which have no
+ * grandchildren of their own). The source root is
  * skipped automatically when `authorshipRootName` is the pre-rename `source` name (the two would
  * collide by name/id) — derived internally, so callers never coordinate it. WP-O6 removes the
  * legacy fixture, retiring this guard.

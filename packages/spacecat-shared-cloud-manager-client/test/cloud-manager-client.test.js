@@ -1691,6 +1691,17 @@ describe('CloudManagerClient', () => {
       expect(rmSyncStub).to.have.been.calledWith(`${os.tmpdir()}/cm-repo-XXXXXX`, { recursive: true, force: true });
     });
 
+    it('includes the on-disk archive size in the space guard', async () => {
+      // 200 MB uncompressed alone fits (250 MB needed < 256 MB usable); adding the
+      // 20 MB archive tips it over (275 MB needed) — so this throws only because
+      // archiveBytes is part of the sum.
+      statSyncStub.returns({ size: 20 * 1024 * 1024 });
+      yauzlOpenStub.callsFake((p, opts, cb) => cb(null, fakeZipfile([200 * 1024 * 1024])));
+      await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip'))
+        .to.be.rejectedWith(/Insufficient \/tmp space/);
+      expect(extractStub).to.not.have.been.called;
+    });
+
     it('throws on invalid maxEntries', async () => {
       await expect(client.unzipRepositoryFromFile('/tmp/cm-zip-x/repo.zip', { maxEntries: NaN }))
         .to.be.rejectedWith(/invalid maxEntries/);

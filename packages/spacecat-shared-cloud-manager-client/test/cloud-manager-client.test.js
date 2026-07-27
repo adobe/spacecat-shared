@@ -1613,6 +1613,13 @@ describe('CloudManagerClient', () => {
       expect(() => client.assertTmpSpace(1024, { headroomFactor: NaN }))
         .to.throw(/invalid headroomFactor/);
     });
+
+    it('fails closed on finite non-positive headroomFactor', () => {
+      expect(() => client.assertTmpSpace(1024, { headroomFactor: 0 }))
+        .to.throw(/invalid headroomFactor/);
+      expect(() => client.assertTmpSpace(1024, { headroomFactor: -1 }))
+        .to.throw(/invalid headroomFactor/);
+    });
   });
 
   describe('zipRepository', () => {

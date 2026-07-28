@@ -117,12 +117,67 @@ definitions:
       initialized:
         type: boolean
     type: object
+  model.AIOPromptCreateItem:
+    properties:
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadata'
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  model.AIOPromptCreateResult:
+    properties:
+      id:
+        type: string
+      is_new:
+        type: boolean
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadata'
+      name:
+        type: string
+    type: object
+  model.AIOPromptCreateWithMetadataResponse:
+    properties:
+      existing_count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/model.AIOPromptCreateResult'
+        type: array
+    type: object
+  model.AIOPromptMetadata:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        maxLength: 100
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        maxLength: 100
+        type: string
+    type: object
+  model.AIOPromptMetadataPatch:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      updated_at:
+        type: string
+      updated_by:
+        type: string
+    type: object
   model.AIOPromptWithStatus:
     properties:
       id:
         type: string
       is_new:
         type: boolean
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadata'
       name:
         type: string
       tags:
@@ -812,12 +867,36 @@ definitions:
           $ref: '#/definitions/model.AIOProductEntity'
         type: array
     type: object
+  model.CreateAIOPromptsRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.AIOPromptCreateItem'
+        minItems: 1
+        type: array
+      tag_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - items
+    type: object
   model.CreateProjectAIModelRequest:
     properties:
       model_id:
         type: string
     required:
     - model_id
+    type: object
+  model.CreateTaggedAIOPromptsRequest:
+    properties:
+      prompts:
+        items:
+          $ref: '#/definitions/model.TaggedAIOPromptCreateItem'
+        minItems: 1
+        type: array
+    required:
+    - prompts
     type: object
   model.CustomExtractionRequest:
     properties:
@@ -1105,6 +1184,33 @@ definitions:
         additionalProperties:
           type: boolean
         type: object
+    type: object
+  model.PatchAIOPromptRequest:
+    properties:
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadataPatch'
+      name:
+        type: string
+    type: object
+  model.PatchAIOPromptsBatchItem:
+    properties:
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadataPatch'
+      prompt_id:
+        type: string
+    required:
+    - metadata
+    - prompt_id
+    type: object
+  model.PatchAIOPromptsBatchRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/model.PatchAIOPromptsBatchItem'
+        minItems: 1
+        type: array
+    required:
+    - items
     type: object
   model.ProjectAIModelListResponse:
     properties:
@@ -1532,6 +1638,19 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  model.TaggedAIOPromptCreateItem:
+    properties:
+      metadata:
+        $ref: '#/definitions/model.AIOPromptMetadata'
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    required:
+    - name
     type: object
   model.TreeNodeListRequest:
     properties:
@@ -6594,6 +6713,10 @@ paths:
         in: query
         name: draft
         type: boolean
+      - description: Include prompt metadata into response
+        in: query
+        name: include_metadata
+        type: boolean
       - description: request body with tag IDs and pagination
         in: body
         name: request
@@ -7277,6 +7400,303 @@ paths:
           schema:
             $ref: '#/definitions/http_server.BasicResponse'
       summary: Get AIO bulk create limits
+      tags:
+      - AIO
+  /v3/workspaces/{id}/projects/{project_id}/aio/prompts:
+    post:
+      consumes:
+      - application/json
+      description: Create prompts. Response returns per-item `{id, name, is_new, metadata}`.
+        Dedupe hits preserve the previously stored metadata and report `is_new = false`.
+      operationId: aio-create-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompt items with optional metadata + optional shared tag_ids
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateAIOPromptsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.AIOPromptCreateWithMetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create prompts
+      tags:
+      - AIO
+  /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}:
+    patch:
+      consumes:
+      - application/json
+      description: 'RFC 7396 JSON Merge Patch. Both `name` and `metadata` are optional;
+        the request must include at least one. `name: null` is rejected (400). `metadata:
+        null` wipes the entire metadata block (row.metadata → NULL). `metadata: {...}`
+        applies an RFC 7396 merge to the four metadata keys (absent = keep, string
+        = set, null = delete). When a merge removes the last surviving metadata key,
+        the row''s metadata collapses to `null`.'
+      operationId: aio-patch-prompt
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompt UUID
+        format: uuid
+        in: path
+        name: prompt_id
+        required: true
+        type: string
+      - description: Optional name and/or metadata merge patch
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.PatchAIOPromptRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update a single prompt
+      tags:
+      - AIO
+  /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata:
+    patch:
+      consumes:
+      - application/json
+      description: 'RFC 7396 JSON Merge Patch for a single prompt: string values set/overwrite
+        the stored key, absent keys keep the stored value, explicit JSON `null` deletes
+        the key. When a patch removes the last surviving key, the row''s metadata
+        collapses to `null`. Thin adapter over the batch service method.'
+      operationId: aio-patch-prompt-metadata
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompt UUID
+        format: uuid
+        in: path
+        name: prompt_id
+        required: true
+        type: string
+      - description: Metadata merge patch
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AIOPromptMetadataPatch'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Update single prompt metadata (merge)
+      tags:
+      - AIO
+  /v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata:
+    patch:
+      consumes:
+      - application/json
+      description: 'RFC 7396 JSON Merge Patch: for each item, string values set/overwrite
+        the stored key, absent keys keep the stored value, and explicit JSON `null`
+        deletes the key from stored metadata. When a patch removes the last surviving
+        key, the row''s metadata collapses to `null`. The whole batch runs in one
+        transaction — a CHECK-constraint violation on any item rolls the batch back
+        and returns 400.'
+      operationId: aio-patch-prompts-metadata-batch
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Batch of {prompt_id, metadata} patches
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.PatchAIOPromptsBatchRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Batch update prompt metadata (merge)
+      tags:
+      - AIO
+  /v3/workspaces/{id}/projects/{project_id}/aio/prompts/tagged:
+    post:
+      consumes:
+      - application/json
+      description: Create prompts with per-item tags and metadata. Response returns
+        per-item `{id, name, is_new, metadata}`.
+      operationId: aio-create-tagged-prompts
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: Workspace UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project UUID
+        format: uuid
+        in: path
+        name: project_id
+        required: true
+        type: string
+      - description: Prompts with per-item tags and metadata
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreateTaggedAIOPromptsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.AIOPromptCreateWithMetadataResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: Create tagged AIO prompts
       tags:
       - AIO
 swagger: "2.0"

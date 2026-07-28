@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.6...@adobe/spacecat-shared-cloud-manager-client-v1.5.0) (2026-07-28)
+
+### Features
+
+* **cloud-manager-client:** streaming path-based unzip + disk guard ([#1844](https://github.com/adobe/spacecat-shared/issues/1844)) ([ccfcfa4](https://github.com/adobe/spacecat-shared/commit/ccfcfa490b540c46e5f22d00932c0ee80c7f51de))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.4.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.5...@adobe/spacecat-shared-cloud-manager-client-v1.4.6) (2026-07-16)
 
 ### Bug Fixes

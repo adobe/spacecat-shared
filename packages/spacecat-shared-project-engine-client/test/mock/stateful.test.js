@@ -325,7 +325,8 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       const { ops, id } = freshPrompt();
       const long = 'x'.repeat(101);
       const result = ops.patchOne(scope, id, { metadata: { created_by: long } });
-      expect(result).to.deep.equal({ status: 'check-violation' });
+      // carries the offending `field` so the handler can build prod's `<field>: exceeds 100 …`
+      expect(result).to.deep.equal({ status: 'check-violation', field: 'created_by' });
       expect(ops.get(scope, id).metadata).to.equal(undefined);
     });
 
@@ -397,9 +398,9 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
         { id: a.id, metadata: { created_by: 'fine@x' } },
         { id: b.id, metadata: { updated_by: long } },
       ]);
-      // Reuses `patchOne`'s `check-violation` status for the identical author-length CHECK, so the
-      // two metadata-write ops share one status vocabulary (MysticatBot review, LLMO-6288 rework).
-      expect(result).to.deep.equal({ status: 'check-violation' });
+      // Reuses `patchOne`'s `check-violation` status (+ offending `field`) for the identical
+      // author-length CHECK, so the two metadata-write ops share one status vocabulary.
+      expect(result).to.deep.equal({ status: 'check-violation', field: 'updated_by' });
       expect(ops.get(scope, a.id).metadata).to.equal(undefined); // rolled back too
     });
 

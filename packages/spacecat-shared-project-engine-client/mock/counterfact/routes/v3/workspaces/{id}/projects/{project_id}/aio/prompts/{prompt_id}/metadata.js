@@ -36,8 +36,9 @@ export function PATCH($) {
     return $.response[404].json(context.factories.createBasicResponseMock({ message: 'not found' }));
   }
   if (result.status === 'check-violation') {
+    // Prod's field-specific message (Rainer §7): `created_by: exceeds 100 characters`.
     return $.response[400].json(context.factories.createBasicResponseMock({
-      message: 'created_by/updated_by must be at most 100 characters',
+      message: `${result.field}: exceeds 100 characters`,
     }));
   }
   if (result.status === 'unknown-key') {

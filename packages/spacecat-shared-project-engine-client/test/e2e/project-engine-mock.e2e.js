@@ -556,11 +556,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(conflictRes.status).to.equal(409);
     expect(conflictErr).to.not.equal(undefined);
 
-    const { response: emptyRes } = await client.PATCH(V3_PATCH_ONE, {
+    const { response: emptyRes, error: emptyErr } = await client.PATCH(V3_PATCH_ONE, {
       params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT, prompt_id: a.id } },
       body: {},
     });
     expect(emptyRes.status).to.equal(400);
+    // Handler-produced JSON body matching prod (enforced in the handler, not the request schema, so
+    // the mock returns prod's `{message}` shape rather than Counterfact's plain-text rejection).
+    expect(emptyErr).to.deep.equal({ message: 'request must include at least one of name, metadata' });
   });
 
   it('batch metadata PATCH is atomic: a CHECK violation (>100 chars) rolls back the WHOLE batch', async () => {
@@ -573,7 +576,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const [a, b] = created.items;
     const tooLong = 'x'.repeat(101);
 
-    const { response: badRes } = await client.PATCH(V3_PATCH_BATCH, {
+    const { response: badRes, error: badErr } = await client.PATCH(V3_PATCH_BATCH, {
       params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
       body: {
         items: [
@@ -583,6 +586,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     });
     expect(badRes.status).to.equal(400);
+    // Field-specific JSON body matching prod (handler-enforced, not schema): the offending key.
+    expect(badErr).to.deep.equal({ message: 'created_by: exceeds 100 characters' });
 
     // Nothing landed — a's metadata is unchanged by the rolled-back batch.
     const { data: listed } = await listByTags([], { draft: true, includeMetadata: true });

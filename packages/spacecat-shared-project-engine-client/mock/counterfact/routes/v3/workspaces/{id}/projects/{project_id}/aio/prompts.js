@@ -56,8 +56,10 @@ export function POST($) {
   const tagsById = new Map(context.ops.tags.list(scope).map((t) => [t.id, t]));
   const unknownTagId = tagIds.find((id) => !tagsById.has(id));
   if (unknownTagId !== undefined) {
+    // Opaque 500 matching prod, which does NOT echo the offending id (Rainer §7). The exact prod
+    // body string is unverified; `internal server error` is the conventional opaque message.
     return $.response[500].json(
-      context.factories.createBasicResponseMock({ message: `unknown tag id: ${unknownTagId}` }),
+      context.factories.createBasicResponseMock({ message: 'internal server error' }),
     );
   }
   const tags = tagIds.map((id) => {

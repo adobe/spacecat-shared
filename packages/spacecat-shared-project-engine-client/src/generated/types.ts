@@ -2307,7 +2307,7 @@ export interface components {
         "model.PatchAIOPromptRequest": {
             metadata?: null | components["schemas"]["model.AIOPromptMetadataPatch"];
             name?: string;
-        } | unknown | unknown;
+        };
         "model.PatchAIOPromptsBatchItem": {
             metadata: components["schemas"]["model.AIOPromptMetadataPatch"];
             prompt_id: string;

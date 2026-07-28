@@ -78,34 +78,44 @@ const METADATA_KEYS = ['created_at', 'created_by', 'updated_at', 'updated_by'];
  * The 100-char cap the live API applies to `created_by` / `updated_by`. Its CONTRACT status
  * differs by write path, so on the patch paths this is an ASSUMPTION the mock encodes, not a
  * constraint the delivered spec pins:
- * - CREATE (`model.AIOPromptMetadata`) declares `maxLength: 100` on both keys, so ajv rejects an
- *   over-length author at request validation before any handler runs — the check below is
- *   redundant defence-in-depth there.
+ * - CREATE (`model.AIOPromptMetadata`) declares `maxLength: 100` on both keys — part of the
+ *   vendored contract — so Counterfact's request validation rejects an over-length author before
+ *   any handler runs (with a plain-text body; prod returns JSON — a known framework divergence, see
+ *   the review thread). The handler check below is redundant defence-in-depth there.
  * - the PATCH shape (`model.AIOPromptMetadataPatch`) declares NO length, and the delivered ADR's
  *   CHECK carries no length clause either (it constrains object-ness + the key set and calls the
  *   values opaque strings, "Not validated"). Live nonetheless 400s a 101-char author on the patch
- *   path (verified against prod, Rainer review), so the mock enforces the cap there too — a
- *   deliberate, live-matching strictness that is one inference beyond what the delivered contract
- *   pins. Practical risk is nil: across prod's prompt rows the longest author seen is 49 chars.
- *   (`spec/overlays/corrections.yaml` CR23 also copies `maxLength: 100` onto the patch schema so
- *   the generated contract carries it.)
+ *   path (verified against prod, Rainer review), so the mock enforces the cap in the PATCH HANDLERS
+ *   — deliberately NOT in the request schema (prod's swagger doesn't declare it either), so the
+ *   mock returns prod's exact JSON `<field>: exceeds 100 characters` body rather than Counterfact's
+ *   plain-text schema rejection. One inference beyond what the delivered contract pins; practical
+ *   risk nil (longest prod author seen is 49 chars).
  */
 const AUTHOR_KEYS = ['created_by', 'updated_by'];
 const MAX_AUTHOR_LENGTH = 100;
 
 /**
- * True when a metadata-shaped object's `created_by` / `updated_by` would exceed
- * {@link MAX_AUTHOR_LENGTH}. A violation 400s (and, for the batch metadata PATCH, rolls back the
- * WHOLE batch) rather than partially applying. Only a STRING value being SET can overflow; an
- * absent key or an explicit `null` (delete) never does, so a merge-patch's `null` entries are
- * exempt by construction.
+ * The first of `created_by` / `updated_by` whose STRING value exceeds {@link MAX_AUTHOR_LENGTH}, or
+ * `undefined` if neither does. Returns the KEY (not a boolean) so the PATCH handlers can build
+ * prod's field-specific `<field>: exceeds 100 characters` 400 body. Only a string value being SET
+ * can overflow; an absent key or an explicit `null` (delete) never does, so a merge-patch's `null`
+ * entries are exempt by construction.
  * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
- * @returns {boolean}
+ * @returns {string | undefined}
  */
-const violatesAuthorLengthCheck = (metadataLike) => AUTHOR_KEYS.some((k) => {
+const oversizedAuthorField = (metadataLike) => AUTHOR_KEYS.find((k) => {
   const value = /** @type {Record<string, unknown> | undefined} */ (metadataLike)?.[k];
   return typeof value === 'string' && value.length > MAX_AUTHOR_LENGTH;
 });
+
+/**
+ * True when {@link oversizedAuthorField} finds an over-length author — the boolean the create-path
+ * pre-gate and the atomic re-check use. A violation 400s (and, for the batch metadata PATCH, rolls
+ * back the WHOLE batch) rather than partially applying.
+ * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
+ * @returns {boolean}
+ */
+const violatesAuthorLengthCheck = (m) => oversizedAuthorField(m) !== undefined;
 
 /**
  * True when a metadata-shaped object carries a key OUTSIDE the closed {@link METADATA_KEYS} set.
@@ -441,8 +451,10 @@ export function createStatefulOps(store) {
        * @param {{ name?: string, metadata?: unknown }} patch `metadata: null` wipes;
        *   `metadata: {...}` merges; an absent key of either leaves it untouched
        * @returns {{ status: 'ok', entity: Entity }
-       *   | { status: 'not-found' | 'conflict' | 'empty-request' | 'check-violation'
-       *   | 'unknown-key' }}
+       *   | { status: 'not-found' | 'conflict' | 'empty-request' | 'unknown-key' }
+       *   | { status: 'check-violation', field: string }}
+       *   `check-violation` carries the offending author `field` so the handler can build prod's
+       *   `<field>: exceeds 100 characters` message.
        */
       patchOne(scope, id, { name, metadata } = {}) {
         const hasName = name !== undefined;
@@ -466,8 +478,9 @@ export function createStatefulOps(store) {
             if (violatesClosedKeySet(metadata)) {
               return { status: 'unknown-key' };
             }
-            if (violatesAuthorLengthCheck(metadata)) {
-              return { status: 'check-violation' };
+            const over = oversizedAuthorField(metadata);
+            if (over) {
+              return { status: 'check-violation', field: over };
             }
             nextMetadata = mergeMetadataPatch(
               /** @type {Record<string, unknown> | undefined} */ (current.metadata),
@@ -497,7 +510,8 @@ export function createStatefulOps(store) {
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<{ id: string, metadata: unknown }>} items
        * @returns {{ status: 'ok' }
-       *   | { status: 'not-found' | 'check-violation' | 'unknown-key' }}
+       *   | { status: 'not-found' | 'unknown-key' }
+       *   | { status: 'check-violation', field: string }}
        */
       patchMetadataBatch(scope, items) {
         const key = collectionKey('prompts', scope);
@@ -513,8 +527,11 @@ export function createStatefulOps(store) {
         if (resolved.some(({ metadata }) => violatesClosedKeySet(metadata))) {
           return { status: 'unknown-key' };
         }
-        if (resolved.some(({ metadata }) => violatesAuthorLengthCheck(metadata))) {
-          return { status: 'check-violation' };
+        for (const { metadata } of resolved) {
+          const over = oversizedAuthorField(metadata);
+          if (over) {
+            return { status: 'check-violation', field: over };
+          }
         }
         for (const { id, current, metadata } of resolved) {
           store.update(key, id, {

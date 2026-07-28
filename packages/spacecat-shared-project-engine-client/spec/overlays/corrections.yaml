@@ -124,16 +124,14 @@ info:
 #      (103 of 110 ops already declare 401) and dropping 401 from the generated response union. Add
 #      the 401 BasicResponse to each (the CR5/CR17 faithful-status pattern). Remove if Semrush
 #      declares 401 upstream.
-# CR23 model.AIOPromptMetadataPatch author keys carry maxLength: 100. The create shape
-#      (model.AIOPromptMetadata) declares it and prod enforces the same cap on the PATCH path (a
-#      101-char author 400s — Rainer review), but the delivered patch schema omits it, so request
-#      validation would let it through and the generated type loses the constraint. Add it so the
-#      patch schema matches the create schema and live. Remove if Semrush adds it upstream.
-# CR24 model.PatchAIOPromptRequest requires at least one of name / metadata. The combined PATCH
-#      .../{prompt_id} rejects an empty `{}` body (prod 400s "request must include at least one of
-#      name, metadata" — Rainer review), but the delivered schema marks neither required, so request
-#      validation would accept `{}` and lean on the handler. Express the "≥1" rule as `anyOf` so
-#      request validation catches it. Remove if Semrush documents the constraint upstream.
+#      NB: the author-length cap on the patch paths (prod 400s a 101-char author — Rainer review)
+#      and the "at least one of name/metadata" rule on the combined PATCH are NOT added to the
+#      request schema on purpose. Prod's own swagger declares neither, and prod enforces both at the
+#      service layer returning a JSON `{message}` body; declaring them here would make Counterfact
+#      reject at the request-validation layer with a plain-text body — DIVERGING from prod's body
+#      (and openapi-typescript collapses a root-level `anyOf` of bare `required` to `unknown`,
+#      poisoning the generated type). Both are modelled in the handlers instead, which return prod's
+#      exact JSON messages (see the v3 aio/prompts handlers + stateful.js patchOne/patchMetadataBatch).
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -572,30 +570,3 @@ actions:
           application/json:
             schema:
               $ref: "#/components/schemas/http_server.BasicResponse"
-
-  # ── CR23: AIOPromptMetadataPatch author keys carry maxLength: 100 ─────────
-  # The create shape (model.AIOPromptMetadata) declares maxLength: 100 on created_by/updated_by, and
-  # prod enforces the same cap on the PATCH path (a 101-char author 400s — Rainer review), but the
-  # delivered model.AIOPromptMetadataPatch omits it, so request validation would let it through and
-  # the generated type loses the constraint. Add it so the patch schema matches the create schema and
-  # live. deep-merges onto CR19's nullable author keys (→ nullable: true, maxLength: 100).
-  - target: "$.components.schemas['model.AIOPromptMetadataPatch']"
-    description: "CR23: metadata-patch author keys carry maxLength: 100 (matches the create shape + live)"
-    update:
-      properties:
-        created_by: { maxLength: 100 }
-        updated_by: { maxLength: 100 }
-
-  # ── CR24: PatchAIOPromptRequest requires at least one of name / metadata ──
-  # The combined PATCH .../{prompt_id} rejects an empty `{}` body — prod 400s "request must include
-  # at least one of name, metadata" (Rainer review) — but the delivered schema marks neither
-  # required, so request validation would accept `{}` and lean on the handler's own 400. Express the
-  # "≥1" rule as `anyOf` (a body satisfies it by carrying the `name` key OR the `metadata` key — a
-  # present-but-null `metadata` still satisfies `required`, so the CR20 wipe case still validates).
-  # deep-merges alongside CR20's `properties.metadata` oneOf, which is unaffected.
-  - target: "$.components.schemas['model.PatchAIOPromptRequest']"
-    description: "CR24: PatchAIOPromptRequest requires at least one of name or metadata"
-    update:
-      anyOf:
-        - required: [name]
-        - required: [metadata]

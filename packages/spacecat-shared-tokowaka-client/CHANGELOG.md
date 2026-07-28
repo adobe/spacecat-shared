@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.1...@adobe/spacecat-shared-tokowaka-client-v1.23.0) (2026-07-28)
+
+### Features
+
+* **LLMO-5751:** treat last_mod_missing suggestions as stale in FastlyKVClient ([#1847](https://github.com/adobe/spacecat-shared/issues/1847)) ([2860e05](https://github.com/adobe/spacecat-shared/commit/2860e05af0dd7db7b3ef59fa52c80fd5301f5d53))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.0...@adobe/spacecat-shared-tokowaka-client-v1.22.1) (2026-07-28)
 
 ### Bug Fixes

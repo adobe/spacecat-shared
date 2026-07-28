@@ -132,7 +132,6 @@ export interface FastlyKVEntry {
   key: string;
   suggestionId: string;
   url: string;
-  status: string;
 }
 
 export class FastlyKVClient {

@@ -30,6 +30,7 @@ import {
   createAIOTagLeafMock,
   createUrlResolveMock,
   createRenamePromptResponseMock,
+  createPromptCreateResultMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -111,6 +112,16 @@ const renamed: RenamePromptResponse = createRenamePromptResponseMock({ is_update
 void renamed;
 // @ts-expect-error — is_updated is a boolean, not a string.
 createRenamePromptResponseMock({ is_updated: 'yes' });
+
+// 1h. the v3 create-result factory (LLMO-6288 WP2 rework, overlay CR21 requires id/name/is_new;
+// metadata stays optional — a dedupe hit's preserved value or a new prompt's supplied one).
+type PromptCreateResult = components['schemas']['model.AIOPromptCreateResult'];
+const createResult: PromptCreateResult = createPromptCreateResultMock({
+  metadata: { created_by: 'a@x' },
+});
+void createResult.metadata;
+// @ts-expect-error — is_new is a boolean, not a string.
+createPromptCreateResultMock({ is_new: 'yes' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

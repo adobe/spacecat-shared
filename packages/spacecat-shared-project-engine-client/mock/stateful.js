@@ -112,7 +112,7 @@ const oversizedAuthorField = (metadataLike) => AUTHOR_KEYS.find((k) => {
  * True when {@link oversizedAuthorField} finds an over-length author — the boolean the create-path
  * pre-gate and the atomic re-check use. A violation 400s (and, for the batch metadata PATCH, rolls
  * back the WHOLE batch) rather than partially applying.
- * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
+ * @param {unknown} m a create item's full `metadata`, or a patch's per-key object
  * @returns {boolean}
  */
 const violatesAuthorLengthCheck = (m) => oversizedAuthorField(m) !== undefined;

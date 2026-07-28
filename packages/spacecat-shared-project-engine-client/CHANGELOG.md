@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.15.0...@adobe/spacecat-shared-project-engine-client-v1.16.0) (2026-07-28)
+
+### Features
+
+* **project-engine-client:** mock the prompt *-with-metadata write surface (LLMO-6288) ([#1818](https://github.com/adobe/spacecat-shared/issues/1818)) ([ca9e119](https://github.com/adobe/spacecat-shared/commit/ca9e119a6dbc4cc16fcccd4716057c0d3cceb945)), closes [serenity-docs#35](https://github.com/adobe/serenity-docs/issues/35)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.14.0...@adobe/spacecat-shared-project-engine-client-v1.15.0) (2026-07-20)
 
 ### Features

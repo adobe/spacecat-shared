@@ -21,24 +21,11 @@ const DEFAULT_PAGE_SIZE = 100;
 const DEFAULT_TIMEOUT = 30000;
 
 /**
- * Status values written by the Tokowaka edge worker into the KV store.
- * The worker writes them upper-cased (e.g. 'STALE', 'LAST_MOD_MISSING'); we compare
- * case-insensitively so lower-case values below are the normalized form.
- * @see tokowaka-worker src/handlers/patch.js markDataStatus()
- */
-export const KV_STATUS = Object.freeze({
-  STALE: 'stale',
-  LAST_MOD_MISSING: 'last_mod_missing',
-  LIVE: 'live',
-});
-
-/**
  * Client for interacting with Fastly KV Store used by Tokowaka.
- * Used to fetch suggestion IDs tagged with a given edge status (e.g. stale, or
- * last-modified-missing) so that downstream services can reconcile suggestion data.
+ * Used to fetch stale suggestion IDs for cleanup.
  *
  * Key format: `${suggestionId}`
- * Value format: { url: string, status: 'STALE' | 'LAST_MOD_MISSING' | 'LIVE', lastUpdated: number }
+ * Value format: { url: string, status: 'stale' | 'live' }
  */
 export class FastlyKVClient {
   /**
@@ -106,17 +93,16 @@ export class FastlyKVClient {
   }
 
   /**
-   * Lists keys matching a given status from a single page of the KV store.
+   * Lists stale keys from a single page of the KV store.
    *
-   * @param {string} targetStatus - Normalized (lower-case) status to match, see KV_STATUS
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {string} [options.cursor] - Cursor for pagination
    * @returns {Promise<{keys: Array<object>, cursor: string|null}>}
    */
-  async #listKeysByStatusPage(targetStatus, options = {}) {
+  async #listStaleKeysPage(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, cursor } = options;
-    const matchedEntries = [];
+    const staleEntries = [];
 
     const url = new URL(`${FASTLY_KV_API_BASE}/${this.storeId}/keys`);
     url.searchParams.set('limit', pageSize.toString());
@@ -147,12 +133,11 @@ export class FastlyKVClient {
           ? value.status.trim().toLowerCase()
           : '';
 
-        if (normalizedStatus === targetStatus && hasText(keyName)) {
-          matchedEntries.push({
+        if (normalizedStatus === 'stale' && hasText(keyName)) {
+          staleEntries.push({
             key: keyName,
             suggestionId: keyName,
             url: value.url,
-            status: normalizedStatus,
           });
         }
       } catch (error) {
@@ -161,53 +146,9 @@ export class FastlyKVClient {
     }
 
     return {
-      keys: matchedEntries,
+      keys: staleEntries,
       cursor: meta.next_cursor || null,
     };
-  }
-
-  /**
-   * Lists all suggestion IDs matching a given status from the KV store,
-   * handling pagination automatically.
-   *
-   * @param {string} targetStatus - Normalized (lower-case) status to match, see KV_STATUS
-   * @param {object} [options] - Options for listing keys
-   * @param {number} [options.pageSize=100] - Number of keys to fetch per page
-   * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
-   * @returns {Promise<Array<{key: string, suggestionId: string, url: string, status: string}>>}
-   */
-  async #listAllKeysByStatus(targetStatus, options = {}) {
-    const { pageSize = DEFAULT_PAGE_SIZE, maxPages = 100 } = options;
-    const allKeys = [];
-    let cursor = null;
-    let pageCount = 0;
-
-    this.log.info(`Starting to fetch '${targetStatus}' keys from Fastly KV Store`);
-
-    do {
-      // eslint-disable-next-line no-await-in-loop
-      const result = await this.#listKeysByStatusPage(targetStatus, { pageSize, cursor });
-
-      if (isNonEmptyArray(result.keys)) {
-        allKeys.push(...result.keys);
-      }
-
-      cursor = result.cursor;
-      pageCount += 1;
-
-      this.log.debug(
-        `Fetched page ${pageCount}, found ${result.keys.length} '${targetStatus}' keys, total: ${allKeys.length}`,
-      );
-
-      if (pageCount >= maxPages) {
-        this.log.warn(`Reached maximum page limit (${maxPages}), stopping pagination`);
-        break;
-      }
-    } while (cursor);
-
-    this.log.info(`Completed fetching '${targetStatus}' keys: ${allKeys.length} total from ${pageCount} pages`);
-
-    return allKeys;
   }
 
   /**
@@ -216,24 +157,40 @@ export class FastlyKVClient {
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
-   * @returns {Promise<Array<{key: string, suggestionId: string, url: string, status: string}>>}
+   * @returns {Promise<Array<{key: string, suggestionId: string, url: string}>>}
    */
   async listAllStaleKeys(options = {}) {
-    return this.#listAllKeysByStatus(KV_STATUS.STALE, options);
-  }
+    const { pageSize = DEFAULT_PAGE_SIZE, maxPages = 100 } = options;
+    const allStaleKeys = [];
+    let cursor = null;
+    let pageCount = 0;
 
-  /**
-   * Lists all suggestion IDs flagged as missing a Last-Modified header from the KV store,
-   * handling pagination automatically. These are pages the edge worker declined to optimize
-   * because the origin returned no Last-Modified header (and applyStale was not set).
-   *
-   * @param {object} [options] - Options for listing keys
-   * @param {number} [options.pageSize=100] - Number of keys to fetch per page
-   * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
-   * @returns {Promise<Array<{key: string, suggestionId: string, url: string, status: string}>>}
-   */
-  async listAllLastModMissingKeys(options = {}) {
-    return this.#listAllKeysByStatus(KV_STATUS.LAST_MOD_MISSING, options);
+    this.log.info('Starting to fetch stale keys from Fastly KV Store');
+
+    do {
+      // eslint-disable-next-line no-await-in-loop
+      const result = await this.#listStaleKeysPage({ pageSize, cursor });
+
+      if (isNonEmptyArray(result.keys)) {
+        allStaleKeys.push(...result.keys);
+      }
+
+      cursor = result.cursor;
+      pageCount += 1;
+
+      this.log.debug(
+        `Fetched page ${pageCount}, found ${result.keys.length} stale keys, total: ${allStaleKeys.length}`,
+      );
+
+      if (pageCount >= maxPages) {
+        this.log.warn(`Reached maximum page limit (${maxPages}), stopping pagination`);
+        break;
+      }
+    } while (cursor);
+
+    this.log.info(`Completed fetching stale keys: ${allStaleKeys.length} total from ${pageCount} pages`);
+
+    return allStaleKeys;
   }
 }
 

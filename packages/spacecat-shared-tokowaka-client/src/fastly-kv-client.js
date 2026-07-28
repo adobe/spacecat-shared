@@ -155,7 +155,8 @@ export class FastlyKVClient {
   }
 
   /**
-   * Lists all stale suggestion IDs from the KV store, handling pagination automatically.
+   * Lists all stale or last-modified-missing suggestion IDs from the KV store,
+   * handling pagination automatically.
    *
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page

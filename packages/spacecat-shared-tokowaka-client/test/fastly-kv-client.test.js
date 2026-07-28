@@ -138,7 +138,7 @@ describe('FastlyKVClient', () => {
 
       nock(FASTLY_KV_API_BASE)
         .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[0])}`)
-        .reply(200, JSON.stringify({ url: 'https://example.com/missing', status: 'last_mod_missing' }));
+        .reply(200, JSON.stringify({ url: 'https://example.com/missing', status: 'LAST_MOD_MISSING' }));
 
       nock(FASTLY_KV_API_BASE)
         .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[1])}`)

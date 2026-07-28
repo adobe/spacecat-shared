@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.0...@adobe/spacecat-shared-tokowaka-client-v1.22.1) (2026-07-28)
+
+### Bug Fixes
+
+* **tokowaka-client:** revert listAllLastModMissingKeys addition ([#1846](https://github.com/adobe/spacecat-shared/issues/1846)) ([65eceb4](https://github.com/adobe/spacecat-shared/commit/65eceb4fd8a9379d20a76d457c827058deb5ab0f)), closes [#1842](https://github.com/adobe/spacecat-shared/issues/1842)
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.1...@adobe/spacecat-shared-tokowaka-client-v1.22.0) (2026-07-27)
 
 ### Features

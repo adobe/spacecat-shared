@@ -13,7 +13,7 @@
 import { execFileSync } from 'child_process';
 import {
   existsSync, mkdirSync, mkdtempSync, readdirSync,
-  readlinkSync, rmSync, statfsSync, writeFileSync,
+  readlinkSync, rmSync, statfsSync, statSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -21,10 +21,13 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { archiveFolder, extract } from 'zip-lib';
+import yauzl from 'yauzl';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const DEFAULT_HEADROOM_FACTOR = 1.25;
+const DEFAULT_MAX_ENTRIES = 100_000;
 
 // Per-operation timeout for git commands (clone, push, pull, commit, etc.).
 // Override via GIT_OPERATION_TIMEOUT_MS env var. Defaults to 10 min so large
@@ -126,6 +129,34 @@ function parseS3Path(s3Path) {
     throw new Error(`Invalid S3 path: ${s3Path}. Expected format: s3://bucket/key`);
   }
   return { bucket: parsed.hostname, key: parsed.pathname.slice(1) };
+}
+
+/**
+ * Reads a ZIP's central directory (metadata only — no decompression) and
+ * returns the total uncompressed size and entry count. Used to size an
+ * extraction before committing disk to it.
+ * @param {string} zipFilePath
+ * @returns {Promise<{ uncompressedBytes: number, entryCount: number }>}
+ */
+function readArchiveExtractedSize(zipFilePath) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(zipFilePath, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      let uncompressedBytes = 0;
+      let entryCount = 0;
+      zipfile.on('entry', (entry) => {
+        uncompressedBytes += entry.uncompressedSize;
+        entryCount += 1;
+        zipfile.readEntry();
+      });
+      zipfile.on('end', () => resolve({ uncompressedBytes, entryCount }));
+      zipfile.on('error', reject);
+      zipfile.readEntry();
+    });
+  });
 }
 
 export default class CloudManagerClient {
@@ -981,6 +1012,33 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Throws unless /tmp has room for `requiredBytes * headroomFactor`.
+   * Uses statfsSync `bavail` (blocks usable by unprivileged processes),
+   * which is the space actually writable, not the raw free count.
+   * @param {number} requiredBytes - Bytes the operation needs on /tmp.
+   * @param {object} [opts]
+   * @param {number} [opts.headroomFactor=1.25] - fs overhead + git pull growth.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  assertTmpSpace(requiredBytes, { headroomFactor = DEFAULT_HEADROOM_FACTOR } = {}) {
+    if (!Number.isFinite(requiredBytes) || requiredBytes <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid requiredBytes (${requiredBytes})`);
+    }
+    if (!Number.isFinite(headroomFactor) || headroomFactor <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid headroomFactor (${headroomFactor})`);
+    }
+    const { bsize, bavail } = statfsSync(os.tmpdir());
+    const usableBytes = bsize * bavail;
+    const neededBytes = requiredBytes * headroomFactor;
+    if (usableBytes < neededBytes) {
+      throw new Error(
+        `Insufficient /tmp space: need ~${Math.round(neededBytes / (1024 * 1024))} MB, `
+        + `have ${Math.round(usableBytes / (1024 * 1024))} MB`,
+      );
+    }
+  }
+
+  /**
    * Extracts a ZIP buffer into a new unique temp directory.
    * Used to restore a previously-zipped repository from S3
    * for incremental updates (checkout + pull) instead of a full clone.
@@ -992,6 +1050,54 @@ export default class CloudManagerClient {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
     try {
       await extract(zipBuffer, extractPath, { safeSymlinksOnly: true });
+      this.log.info(`Repository extracted to ${extractPath}`);
+      this.#logTmpDiskUsage('unzip');
+      return extractPath;
+    } catch (error) {
+      rmSync(extractPath, { recursive: true, force: true });
+      throw new Error(`Failed to unzip repository: ${error.message}`);
+    }
+  }
+
+  /**
+   * Extracts a ZIP file (by path) into a new unique temp directory, streaming
+   * from disk so memory stays flat regardless of archive size. Before
+   * extracting, reads the central directory and rejects archives whose
+   * extracted size would not fit /tmp, or that exceed the entry-count cap.
+   * @param {string} zipFilePath - Path to the ZIP file on disk.
+   * @param {object} [opts]
+   * @param {number} [opts.maxEntries=100000]
+   * @param {number} [opts.headroomFactor=1.25]
+   * @returns {Promise<string>} Path to the extracted repository.
+   */
+  async unzipRepositoryFromFile(
+    zipFilePath,
+    { maxEntries = DEFAULT_MAX_ENTRIES, headroomFactor = DEFAULT_HEADROOM_FACTOR } = {},
+  ) {
+    if (!Number.isFinite(maxEntries) || maxEntries < 0) {
+      throw new Error(`Cannot unzip: invalid maxEntries (${maxEntries})`);
+    }
+    const { uncompressedBytes, entryCount } = await readArchiveExtractedSize(zipFilePath);
+    if (entryCount > maxEntries) {
+      throw new Error(`Refusing to extract archive: ${entryCount} entries exceeds cap of ${maxEntries}`);
+    }
+    // Peak /tmp footprint = archive on disk + extracted tree coexisting.
+    const archiveBytes = statSync(zipFilePath).size;
+    // Each extracted file occupies at least one full filesystem block, so a repo
+    // of many small files (e.g. an un-gc'd .git) needs more disk than the raw
+    // content sum. Add a per-entry block cushion so the guard reflects real
+    // on-disk footprint, not just content size.
+    const { bsize } = statfsSync(os.tmpdir());
+    const footprintBytes = archiveBytes + uncompressedBytes + (entryCount * bsize);
+    this.assertTmpSpace(footprintBytes, { headroomFactor });
+
+    const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
+    try {
+      // The uncompressed-size guard above is a sound ceiling only because zip-lib
+      // extracts via yauzl with the default validateEntrySizes:true, which aborts
+      // if an entry's actual bytes exceed its declared uncompressedSize. Keep
+      // zip-lib pinned so this invariant holds.
+      await extract(zipFilePath, extractPath, { safeSymlinksOnly: true });
       this.log.info(`Repository extracted to ${extractPath}`);
       this.#logTmpDiskUsage('unzip');
       return extractPath;

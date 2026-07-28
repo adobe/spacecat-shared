@@ -40,8 +40,8 @@ const READY_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = SEED_IDS.workspaceId;
 const SEED_PROJECT = SEED_IDS.projectId;
-// Every project's root level holds exactly these four dimension roots and nothing else.
-const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'type'];
+// Every project's root level holds exactly these five dimension roots and nothing else.
+const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'source', 'type'];
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -814,7 +814,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       if (t.path === undefined) {
         expect(t).to.not.have.property('parent_id');
       } else {
-        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'origin', 'type']);
+        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'origin', 'source', 'type']);
         expect(t.parent_id).to.be.a('string');
       }
     });
@@ -833,7 +833,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(res.status).to.equal(201);
 
-    // The minted name is now a root in the tag tree, alongside the four dimension roots.
+    // The minted name is now a root in the tag tree, alongside the five dimension roots.
     const { data: roots } = await listTags('');
     const minted = roots.items.find((t) => t.name === 'Freshly Minted');
     expect(minted, 'the minted root is registered in the tag tree').to.not.equal(undefined);
@@ -1466,7 +1466,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.parent_id).to.equal(SEED_IDS.categoryRootTagId);
     expect(created.path.map((leaf) => leaf.name)).to.deep.equal(['category']);
 
-    // The root level is untouched: still exactly the four dimension roots.
+    // The root level is untouched: still exactly the five dimension roots.
     const { data: roots } = await listTags('');
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
   });
@@ -1552,7 +1552,28 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(originHuman.path[0].name).to.equal('origin');
   });
 
-  // __reset restores the boot seed (the four dimension roots, no ad-hoc tags), so a created
+  // The producing-system `source` dimension (H1) is an open root seeded with a representative
+  // subset of canonical values and no grandchildren. Exercise the full HTTP path to its children
+  // — parallel to the category-subtree read above — so the new dimension is verified over the
+  // wire, not only in the seed unit tests. The seeded `source` value `gsc` is also a distinct
+  // tag from the same-named `category` sub-category (ids key on (parent,name)) — confirm over HTTP.
+  it('lists the source dimension root\'s seeded children over HTTP', async () => {
+    const { data: sources } = await listTags(SEED_IDS.sourceRootTagId);
+
+    // the representative SOURCE_VALUES subset: default + acronym + bare slug + hyphenated
+    expect(sources.items.map((t) => t.name))
+      .to.have.members(['config', 'gsc', 'drs', 'synthetic-personas']);
+    sources.items.forEach((t) => {
+      expect(t.path[0]).to.include({ id: SEED_IDS.sourceRootTagId, name: 'source' });
+      expect(t).to.have.property('children_count', 0);
+    });
+
+    const gsc = sources.items.find((t) => t.name === 'gsc');
+    expect(gsc.id).to.equal(SEED_IDS.sourceGscTagId);
+    expect(gsc.id).to.not.equal(SEED_IDS.childGscTagId);
+  });
+
+  // __reset restores the boot seed (the five dimension roots, no ad-hoc tags), so a created
   // standalone tag is cleared — proving the tags collection rides the seed/reset lifecycle like
   // every other stateful resource.
   it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
@@ -1562,9 +1583,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
 
-    // back to the baked baseline: the four dimension roots, and `Ephemeral` is gone
+    // back to the baked baseline: the five dimension roots, and `Ephemeral` is gone
     const { data: roots } = await listTags('');
-    expect(roots.total).to.equal(4);
+    expect(roots.total).to.equal(5);
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
     const { data: categories } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categories.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
@@ -1618,11 +1639,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(rootList.items[0]).to.not.have.property('path');
   });
 
-  // The boot seed bakes the dimension-root tree (`category` → `Running Shoes` → `Trail`/`human`),
-  // so consumers get a populated Categories tree out of the box.
+  // The boot seed bakes the dimension-root tree
+  // (`category` → `Running Shoes` → `Trail`/`human`/`gsc`), so consumers get a populated
+  // Categories tree out of the box.
   it('reads the baked nested taxonomy from the boot seed', async () => {
     const { data: children } = await listTags(SEED_IDS.categoryTagId);
-    expect(children.items.map((t) => t.name)).to.deep.equal(['Trail', 'human']);
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Trail', 'human', 'gsc']);
     expect(children.items[0].path).to.deep.equal([
       { id: SEED_IDS.categoryRootTagId, name: 'category' },
       {
@@ -1652,15 +1674,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(patched).to.include({ id: SEED_IDS.childTagId, name: 'Trail' });
 
     // the promoted tag now sits alongside the dimension roots — a stranded tag, exactly the failure
-    // mode the reshape's post-condition ("the root listing is exactly the four dimension roots")
+    // mode the reshape's post-condition ("the root listing is exactly the five dimension roots")
     // exists to catch
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name))
       .to.have.members([...DIMENSION_ROOT_NAMES, 'Trail']);
 
-    // …and it has left its category, whose remaining sub-category is untouched
+    // …and it has left its category, whose remaining sub-categories are untouched
     const { data: childrenAfter } = await listTags(SEED_IDS.categoryTagId);
-    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['human']);
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['human', 'gsc']);
   });
 
   // PATCH's `parent_id` is a live-verified 3-way switch (serenity-docs#24 §3.1 gate 1, CR15), NOT
@@ -1690,7 +1712,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
 
     const { data: childrenAfter } = await listTags(SEED_IDS.categoryTagId);
-    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge', 'human']);
+    expect(childrenAfter.items.map((t) => t.name)).to.deep.equal(['Ridge', 'human', 'gsc']);
   });
 
   // Same gate, the other literal: an explicit JSON `null` (not merely a falsy/empty string)
@@ -1744,7 +1766,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // the child still sits under the same parent, now carrying the new name
     const { data: children } = await listTags(SEED_IDS.categoryTagId);
-    expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking', 'human']);
+    expect(children.items.map((t) => t.name)).to.deep.equal(['Hiking', 'human', 'gsc']);
     expect(children.items[0].id).to.equal(SEED_IDS.childTagId);
   });
 
@@ -1832,7 +1854,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // `Doomed` is gone; the baked category survives (delete targets only the id sent) …
     const { data: categoriesAfter } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categoriesAfter.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
-    // … and the four dimension roots are untouched.
+    // … and the five dimension roots are untouched.
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
 
@@ -1878,6 +1900,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       SEED_IDS.childCollidingTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
+      SEED_IDS.sourceConfigTagId,
     ]);
 
     // … and the same-named `human` sub-category is untouched by the origin value's deletion.
@@ -1899,6 +1922,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       SEED_IDS.childCollidingTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
+      SEED_IDS.sourceConfigTagId,
       SEED_IDS.typeBrandedTagId,
     ]);
     expect(response.status).to.equal(204);
@@ -1934,7 +1958,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // they survive ONLY as children of the now-deleted parent id — reachable via that stale id
     const { data: orphans } = await listTags(SEED_IDS.categoryTagId);
     expect(orphans.items.map((t) => t.id))
-      .to.deep.equal([SEED_IDS.childTagId, SEED_IDS.childCollidingTagId]);
+      .to.deep.equal([SEED_IDS.childTagId, SEED_IDS.childCollidingTagId, SEED_IDS.childGscTagId]);
   });
 
   // Request validation is enabled, so GET /aio/tags 400s when a required query param

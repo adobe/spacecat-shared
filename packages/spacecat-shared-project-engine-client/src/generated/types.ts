@@ -1853,7 +1853,7 @@ export interface components {
             is_new?: boolean;
             metadata?: components["schemas"]["model.AIOPromptMetadata"];
             name: string;
-            tags: components["schemas"]["model.AIOTag"][];
+            tags?: components["schemas"]["model.AIOTag"][];
         };
         "model.AIOPromptsListRequest": {
             limit?: number;
@@ -2307,7 +2307,7 @@ export interface components {
         "model.PatchAIOPromptRequest": {
             metadata?: null | components["schemas"]["model.AIOPromptMetadataPatch"];
             name?: string;
-        };
+        } | unknown | unknown;
         "model.PatchAIOPromptsBatchItem": {
             metadata: components["schemas"]["model.AIOPromptMetadataPatch"];
             prompt_id: string;
@@ -8756,6 +8756,15 @@ export interface operations {
                     "application/json": components["schemas"]["http_server.BasicResponse"];
                 };
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -8806,6 +8815,15 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8888,6 +8906,15 @@ export interface operations {
                     "application/json": components["schemas"]["http_server.BasicResponse"];
                 };
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
             /** @description Forbidden */
             403: {
                 headers: {
@@ -8945,6 +8972,15 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9011,6 +9047,15 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["http_server.BasicResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

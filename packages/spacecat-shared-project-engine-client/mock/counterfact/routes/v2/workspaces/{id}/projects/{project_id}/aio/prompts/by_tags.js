@@ -33,6 +33,13 @@
  * payload shape, and the mock does not silently mask a missing-flag code path (MysticatBot review,
  * LLMO-6288 rework).
  *
+ * Fidelity fixes (Rainer review — pre-existing on main, corrected here since this PR already
+ * touches this handler): the response `unassigned` is the REAL count of untagged prompts in the
+ * current view (was hardcoded 0), NOT narrowed by `search`; the request-body `search` is honored
+ * as a case-insensitive prompt-name filter on the returned items (was ignored); and an untagged
+ * prompt OMITS the `tags` key entirely rather than emitting `[]` — matching prod, and spec-valid
+ * now that overlay CR5 no longer marks `tags` required on `AIOPromptWithStatus`.
+ *
  * Draft/publish gating (live-verified 2026-07-02, serenity-docs#24 §3.1 gate 2 + gate 6): both
  * prompt-create endpoints (`tagged.js`, id-based `aio/prompts.js`) stamp a fresh prompt
  * `is_new: true`. The `draft` query param (already declared in the vendored swagger for this
@@ -52,11 +59,17 @@ export function POST($) {
   const scope = { workspaceId: path.id, projectId: path.project_id };
   const draft = String(query?.draft ?? '') === 'true';
   const includeMetadata = String(query?.include_metadata ?? '') === 'true';
+  const search = String(body?.search ?? '').trim().toLowerCase();
   const all = context.ops.prompts.list(scope).filter((p) => draft || !p.is_new);
   const tagIds = body?.tag_ids ?? [];
-  const matched = tagIds.length === 0
+  const byTag = tagIds.length === 0
     ? all
     : all.filter((p) => (p.tags ?? []).some((t) => tagIds.includes(t.id)));
+  // Prod filters the returned items on `search` (a case-insensitive prompt-name match); the mock
+  // previously IGNORED the field (Rainer review, pre-existing). An empty/absent search matches all.
+  const matched = search === ''
+    ? byTag
+    : byTag.filter((p) => String(p.name ?? '').toLowerCase().includes(search));
 
   // A prompt REFERENCES its tags; the tag object is a view, derived here from the project's tag
   // collection through the one shared serializer. Live embeds the full tag — a descendant carries
@@ -76,15 +89,25 @@ export function POST($) {
   // when omitted the item carries no `metadata` key at all (not `undefined`), matching the flag-off
   // payload shape. Every other stored field flows through `...rest` unchanged.
   const items = matched.map((p) => {
-    const { metadata, ...rest } = p;
-    const item = { ...rest, tags: (p.tags ?? []).map((t) => byId.get(t.id) ?? t) };
+    const { metadata, tags: stored, ...rest } = p;
+    const tags = (Array.isArray(stored) ? stored : []).map((t) => byId.get(t.id) ?? t);
+    // Prod OMITS `tags` entirely on an untagged prompt rather than emitting `[]` (Rainer review,
+    // pre-existing). Overlay CR5 no longer marks `tags` required, so the omitted key stays
+    // spec-valid under Counterfact response validation.
+    const item = tags.length > 0 ? { ...rest, tags } : { ...rest };
     if (includeMetadata && metadata !== undefined) {
       item.metadata = metadata;
     }
     return item;
   });
 
+  // `unassigned` is the real count of prompts in this (draft/publish-filtered) view that carry no
+  // tags — prod returns it; the mock previously hardcoded 0 (Rainer review, pre-existing). It is
+  // NOT narrowed by `search` (prod probe: total 2, unassigned 3 on a filtered read) nor by the
+  // tag_ids filter (an untagged prompt matches no tag id).
+  const unassigned = all.filter((p) => !(Array.isArray(p.tags) && p.tags.length > 0)).length;
+
   return $.response[200].json({
-    items, page: body?.page ?? 1, total: items.length, unassigned: 0,
+    items, page: body?.page ?? 1, total: items.length, unassigned,
   });
 }

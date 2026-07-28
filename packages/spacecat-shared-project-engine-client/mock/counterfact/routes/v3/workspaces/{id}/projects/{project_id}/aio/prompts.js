@@ -34,10 +34,12 @@
  *   collection BEFORE any write — an unresolvable id 500s and creates nothing, mirroring the v2
  *   id-based create's atomic contract (no live-verified v3 behaviour exists yet, pending
  *   WP0-live; this is the mock's best-faith carry-over of the sibling endpoint).
- * - ATOMIC author-length CHECK: any item's `metadata.created_by` / `metadata.updated_by` beyond
- *   100 chars 400s the WHOLE request, nothing created — the live CHECK-constraint rollback the
- *   delivered contract documents for the metadata PATCH family, applied here too since create
- *   writes the same constrained column.
+ * - ATOMIC metadata CHECK: any item whose `metadata` breaks the live CHECK — a `created_by` /
+ *   `updated_by` beyond 100 chars, OR a key outside the closed set {created_at, created_by,
+ *   updated_at, updated_by} — 400s the WHOLE request, nothing created. Both are clauses of the
+ *   same live CHECK the delivered contract documents for the metadata PATCH family, applied here
+ *   too since create writes the same constrained column; a stray/typo'd key is otherwise silently
+ *   persisted here and rejected upstream (Rainer review, LLMO-6288 rework).
  * - Quota-metered like every other prompt-create path: the whole batch 405s (creates nothing)
  *   over the workspace's prompt allocation — metered on the NEW-item count only (a dedupe hit
  *   costs nothing), mirroring the v2 create paths' `existing_count` accounting.
@@ -63,10 +65,17 @@ export function POST($) {
     return { id: t.id, name: t.name };
   });
 
-  // Author-length CHECK, before quota/writing (atomic — nothing created on a violation).
+  // Metadata CHECK, before quota/writing (atomic — nothing created on a violation). Two clauses of
+  // the one live CHECK: the author-length cap, and the closed key set. Checked here so a stray or
+  // typo'd metadata key 400s exactly where live does instead of being silently persisted.
   if (context.ops.prompts.hasOversizedAuthor(items)) {
     return $.response[400].json(context.factories.createBasicResponseMock({
       message: 'created_by/updated_by must be at most 100 characters',
+    }));
+  }
+  if (context.ops.prompts.hasUnknownMetadataKey(items)) {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'metadata may only contain created_at, created_by, updated_at, updated_by',
     }));
   }
 
@@ -89,11 +98,11 @@ export function POST($) {
     scope,
     items.map((item) => ({ name: item.name, metadata: item.metadata, tags })),
   );
-  // Unreachable in practice (hasOversizedAuthor already gated above) — kept as defense-in-depth
-  // since createManyWithMetadata re-validates on every call, so it stays safe to call directly.
+  // Unreachable in practice (both CHECK clauses are gated above) — kept as defense-in-depth since
+  // createManyWithMetadata re-validates both on every call, so it stays safe to call directly.
   if (!outcome.ok) {
     return $.response[400].json(context.factories.createBasicResponseMock({
-      message: 'created_by/updated_by must be at most 100 characters',
+      message: 'metadata violates the created_by/updated_by CHECK constraint',
     }));
   }
 

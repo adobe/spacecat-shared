@@ -117,6 +117,23 @@ info:
 #      (`aio-create-prompts`, `aio-create-tagged-prompts`) always populate the three (verified
 #      against the delivered swagger's own description: "Response returns per-item {id, name,
 #      is_new, metadata}"), so this is the CR5 philosophy applied to the new response shape.
+# CR22 Declare 401 on the five v3 aio-prompt operations. Live prod returns 401 on all five when the
+#      Authorization header is missing (probed directly, Rainer review 2026-07-28), and the mock's
+#      injected bearer guard returns 401 too, but the delivered swagger declares only 400/403/500
+#      (+404/409 where applicable) — leaving the new surface inconsistent with the rest of the API
+#      (103 of 110 ops already declare 401) and dropping 401 from the generated response union. Add
+#      the 401 BasicResponse to each (the CR5/CR17 faithful-status pattern). Remove if Semrush
+#      declares 401 upstream.
+# CR23 model.AIOPromptMetadataPatch author keys carry maxLength: 100. The create shape
+#      (model.AIOPromptMetadata) declares it and prod enforces the same cap on the PATCH path (a
+#      101-char author 400s — Rainer review), but the delivered patch schema omits it, so request
+#      validation would let it through and the generated type loses the constraint. Add it so the
+#      patch schema matches the create schema and live. Remove if Semrush adds it upstream.
+# CR24 model.PatchAIOPromptRequest requires at least one of name / metadata. The combined PATCH
+#      .../{prompt_id} rejects an empty `{}` body (prod 400s "request must include at least one of
+#      name, metadata" — Rainer review), but the delivered schema marks neither required, so request
+#      validation would accept `{}` and lean on the handler. Express the "≥1" rule as `anyOf` so
+#      request validation catches it. Remove if Semrush documents the constraint upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -239,13 +256,18 @@ actions:
       required: [id]
 
   - target: "$.components.schemas['model.AIOPromptWithStatus']"
-    description: "CR5: a prompt-with-status always carries id + name + tags"
+    description: "CR5: a prompt-with-status always carries id + name"
     # `is_new` is NOT marked required: the live `by_tags` list omits it (verified
     # 2026-06-25 against prod), most likely an omit-when-false boolean. Requiring it
     # would misrepresent the live API and make the type lie. It stays an optional
     # property (the mock may still populate it; that is a spec-valid superset).
+    # `tags` is likewise NOT required (was, until 2026-07-28): prod OMITS the key
+    # entirely on an UNTAGGED prompt rather than returning `[]` (verified live, Rainer
+    # review), so a required `tags` would misrepresent the live API and force the mock
+    # to emit `[]` where live omits. The by_tags handler now omits `tags` on an untagged
+    # prompt to match; a tagged prompt still carries it (a spec-valid superset).
     update:
-      required: [id, name, tags]
+      required: [id, name]
 
   - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"
     description: "CR5: a listed benchmark always carries id (the benchmark_id brand URLs attach to)"
@@ -499,3 +521,81 @@ actions:
     description: "CR21: a create result always carries id + name + is_new (metadata is optional)"
     update:
       required: [id, name, is_new]
+
+  # ── CR22: the five v3 aio-prompt operations declare 401 ───────────────────
+  # Live prod returns 401 on all five new v3 routes with no bearer (Rainer review 2026-07-28); the
+  # mock's injected auth guard returns 401 too. The delivered swagger omits 401 on these five (7 of
+  # 110 ops lack it, and these are among them), so the generated response union drops it. Add the
+  # 401 BasicResponse to each (same faithful-status pattern as CR5/CR17, same 401 shape as CR8's).
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses"
+    description: "CR22: aio-create-prompts declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}'].patch.responses"
+    description: "CR22: aio-patch-prompt declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata'].patch.responses"
+    description: "CR22: aio-patch-prompt-metadata declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata'].patch.responses"
+    description: "CR22: aio-patch-prompts-metadata-batch declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/tagged'].post.responses"
+    description: "CR22: aio-create-tagged-prompts declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR23: AIOPromptMetadataPatch author keys carry maxLength: 100 ─────────
+  # The create shape (model.AIOPromptMetadata) declares maxLength: 100 on created_by/updated_by, and
+  # prod enforces the same cap on the PATCH path (a 101-char author 400s — Rainer review), but the
+  # delivered model.AIOPromptMetadataPatch omits it, so request validation would let it through and
+  # the generated type loses the constraint. Add it so the patch schema matches the create schema and
+  # live. deep-merges onto CR19's nullable author keys (→ nullable: true, maxLength: 100).
+  - target: "$.components.schemas['model.AIOPromptMetadataPatch']"
+    description: "CR23: metadata-patch author keys carry maxLength: 100 (matches the create shape + live)"
+    update:
+      properties:
+        created_by: { maxLength: 100 }
+        updated_by: { maxLength: 100 }
+
+  # ── CR24: PatchAIOPromptRequest requires at least one of name / metadata ──
+  # The combined PATCH .../{prompt_id} rejects an empty `{}` body — prod 400s "request must include
+  # at least one of name, metadata" (Rainer review) — but the delivered schema marks neither
+  # required, so request validation would accept `{}` and lean on the handler's own 400. Express the
+  # "≥1" rule as `anyOf` (a body satisfies it by carrying the `name` key OR the `metadata` key — a
+  # present-but-null `metadata` still satisfies `required`, so the CR20 wipe case still validates).
+  # deep-merges alongside CR20's `properties.metadata` oneOf, which is unaffected.
+  - target: "$.components.schemas['model.PatchAIOPromptRequest']"
+    description: "CR24: PatchAIOPromptRequest requires at least one of name or metadata"
+    update:
+      anyOf:
+        - required: [name]
+        - required: [metadata]

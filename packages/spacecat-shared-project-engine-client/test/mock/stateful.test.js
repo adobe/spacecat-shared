@@ -161,18 +161,45 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       expect(results[0].metadata).to.equal(undefined);
     });
 
-    it('a dedupe hit (existing stored name) preserves stored metadata, is_new: false', () => {
+    it('a dedupe hit preserves stored metadata + is_new:false, but ATTACHES the request tags', () => {
       const { ops, id } = freshPrompt();
       ops.patchOne(scope, id, { metadata: { created_by: 'orig@x' } });
       const { results, existingCount } = ops.createManyWithMetadata(scope, [
         { name: 'p', metadata: { created_by: 'ignored@x' }, tags: [{ id: 'tag-z', name: 'Z' }] },
       ]);
       expect(existingCount).to.equal(1);
+      // Metadata is idempotent (the request's is discarded, the stored one preserved)...
       expect(results[0]).to.deep.equal({
         id, name: 'p', is_new: false, metadata: { created_by: 'orig@x' },
       });
-      // the existing prompt's tags are untouched by the dedupe hit's (discarded) request tags
-      expect(ops.get(scope, id).tags).to.deep.equal([]);
+      // ...but tags are ADDITIVE — the request's tags are unioned onto the existing prompt (prod
+      // attaches a create's tags to a dedupe hit; Rainer review). Invisible in the result envelope,
+      // visible on a re-read.
+      expect(ops.get(scope, id).tags).to.deep.equal([{ id: 'tag-z', name: 'Z' }]);
+    });
+
+    it('a dedupe hit UNIONS request tags onto existing ones (no duplicates, idempotent re-attach)', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [seed] = ops.createMany(scope, [{ name: 'p', tags: [{ id: 'tag-a', name: 'A' }] }]);
+      // A: attach a NEW tag (tag-b) alongside the existing tag-a — union grows to [A, B].
+      ops.createManyWithMetadata(scope, [{ name: 'p', tags: [{ id: 'tag-b', name: 'B' }] }]);
+      expect(ops.get(scope, seed.id).tags).to.deep.equal([
+        { id: 'tag-a', name: 'A' }, { id: 'tag-b', name: 'B' },
+      ]);
+      // B: re-attach an ALREADY-present id (tag-a) — union is idempotent, tags unchanged.
+      ops.createManyWithMetadata(scope, [{ name: 'p', tags: [{ id: 'tag-a', name: 'A' }] }]);
+      expect(ops.get(scope, seed.id).tags).to.deep.equal([
+        { id: 'tag-a', name: 'A' }, { id: 'tag-b', name: 'B' },
+      ]);
+    });
+
+    it('a dedupe hit onto a prompt stored WITHOUT a tags array still attaches request tags', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      // Created with no `tags` key at all — stored prompt has `tags: undefined`.
+      const [seed] = ops.createMany(scope, [{ name: 'p' }]);
+      expect(seed.tags).to.equal(undefined);
+      ops.createManyWithMetadata(scope, [{ name: 'p', tags: [{ id: 'tag-a', name: 'A' }] }]);
+      expect(ops.get(scope, seed.id).tags).to.deep.equal([{ id: 'tag-a', name: 'A' }]);
     });
 
     it('dedupes a repeated name WITHIN the same batch (second occurrence is a hit too)', () => {
@@ -198,6 +225,31 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       ]);
       expect(ok).to.equal(false);
       expect(ops.list(scope)).to.have.length(0);
+    });
+
+    it('is atomic on the closed-key-set CHECK: a metadata key outside the four creates nothing', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const { ok } = ops.createManyWithMetadata(scope, [
+        { name: 'fine', metadata: { created_by: 'ok@x' } },
+        { name: 'bad', metadata: { updated_By: 'typo — capital B' } },
+      ]);
+      expect(ok).to.equal(false);
+      expect(ops.list(scope)).to.have.length(0);
+    });
+  });
+
+  describe('hasUnknownMetadataKey', () => {
+    it('is false when every item is absent metadata / carries only closed-set keys', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.hasUnknownMetadataKey([
+        {}, { metadata: undefined }, { metadata: null }, { metadata: { created_at: 't', updated_by: 'u@x' } },
+      ])).to.equal(false);
+    });
+
+    it('is true when any item carries a metadata key outside the closed set', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      expect(ops.hasUnknownMetadataKey([{ metadata: { created_by: 'a@x', extra: 1 } }])).to.equal(true);
+      expect(ops.hasUnknownMetadataKey([{ metadata: { updated_By: 'x' } }])).to.equal(true);
     });
   });
 
@@ -289,6 +341,26 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       expect(oversized.status).to.equal('check-violation');
       expect(empty.status).to.not.equal(oversized.status);
     });
+
+    it('400s (unknown-key) — nothing mutated — for a metadata key outside the closed four', () => {
+      const { ops, id } = freshPrompt();
+      ops.patchOne(scope, id, { metadata: { created_by: 'a@x' } });
+      const result = ops.patchOne(scope, id, { metadata: { updated_By: 'typo' } });
+      expect(result).to.deep.equal({ status: 'unknown-key' });
+      // untouched — the stray-key patch never applied
+      expect(ops.get(scope, id).metadata).to.deep.equal({ created_by: 'a@x' });
+    });
+
+    // The unknown-key case is checked BEFORE the author-length one and is a DISTINCT status, so a
+    // stray key never masquerades as an over-length author (MysticatBot/Rainer review).
+    it('distinguishes unknown-key from check-violation (both 400)', () => {
+      const { ops, id } = freshPrompt();
+      const long = 'x'.repeat(101);
+      const strayKey = ops.patchOne(scope, id, { metadata: { nope: 'x' } });
+      const oversized = ops.patchOne(scope, id, { metadata: { created_by: long } });
+      expect(strayKey.status).to.equal('unknown-key');
+      expect(oversized.status).to.equal('check-violation');
+    });
   });
 
   describe('patchMetadataBatch', () => {
@@ -329,6 +401,19 @@ describe('stateful — prompts metadata ops (WP2, LLMO-6288 v3 rework)', () => {
       // two metadata-write ops share one status vocabulary (MysticatBot review, LLMO-6288 rework).
       expect(result).to.deep.equal({ status: 'check-violation' });
       expect(ops.get(scope, a.id).metadata).to.equal(undefined); // rolled back too
+    });
+
+    it('is atomic on the closed-key-set CHECK: a stray key 400s (unknown-key), writes NOTHING', () => {
+      const ops = createStatefulOps(new InMemoryStore()).prompts;
+      const [a, b] = ops.createMany(scope, [{ name: 'a', tags: [] }, { name: 'b', tags: [] }]);
+      ops.patchOne(scope, a.id, { metadata: { created_by: 'a@x' } });
+      const result = ops.patchMetadataBatch(scope, [
+        { id: a.id, metadata: { updated_by: 'edit@x' } },
+        { id: b.id, metadata: { bogus: 'x' } },
+      ]);
+      // Same `unknown-key` status patchOne returns — one shared vocabulary across both write ops.
+      expect(result).to.deep.equal({ status: 'unknown-key' });
+      expect(ops.get(scope, a.id).metadata).to.deep.equal({ created_by: 'a@x' }); // rolled back too
     });
   });
 

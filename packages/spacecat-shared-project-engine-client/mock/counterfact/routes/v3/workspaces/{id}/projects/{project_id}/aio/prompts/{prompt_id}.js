@@ -20,14 +20,16 @@
  * (overlay CR20 only makes `metadata` nullable). `metadata: null` WIPES the entire block (the
  * row's `metadata` collapses to `null`); `metadata: {...}` is an RFC 7396 merge (absent key =
  * keep, string = set, explicit null = delete a key). A `name` equal to a SIBLING prompt's exact
- * text conflicts — `409`, nothing mutated (same rule as the dedicated `/rename` endpoint). An
- * over-length `created_by`/`updated_by` in the metadata patch — `400`, nothing mutated. Response
- * 204 No Content. All of this lives in `mock/stateful.js`'s `patchOne` (unit-tested to 100% branch
- * coverage); this handler only maps its result onto the HTTP envelope — `patchOne` reports the two
- * 400 causes as DISTINCT statuses (`empty-request` vs `check-violation`) so each gets its own,
- * accurate message rather than one caller being told "supply a field" when the real problem was an
- * oversized author value (MysticatBot review, LLMO-6288 rework). Materialized into
- * `.counterfact/routes/` by the mock runner; excluded from coverage.
+ * text conflicts — `409`, nothing mutated (same rule as the dedicated `/rename` endpoint). A
+ * metadata patch that breaks the live CHECK — an over-length `created_by`/`updated_by`, or a key
+ * outside the closed four — is `400`, nothing mutated. Response 204 No Content. All of this lives
+ * in `mock/stateful.js`'s `patchOne` (unit-tested to 100% branch coverage); this handler only maps
+ * its result onto the HTTP envelope — `patchOne` reports the three 400 causes as DISTINCT statuses
+ * (`empty-request`, `check-violation` for an over-length author, `unknown-key` for a stray metadata
+ * key) so each gets its own accurate message rather than one caller being told "supply a field"
+ * when the real problem was a well-formed-but-rejected metadata patch (MysticatBot/Rainer review,
+ * LLMO-6288 rework). Materialized into `.counterfact/routes/` by the mock runner; excluded from
+ * coverage.
  */
 
 /** PATCH — combined name/metadata merge → 204; 400 (neither field, or CHECK); 404; 409 conflict. */
@@ -47,6 +49,11 @@ export function PATCH($) {
   if (result.status === 'check-violation') {
     return $.response[400].json(context.factories.createBasicResponseMock({
       message: 'created_by/updated_by must be at most 100 characters',
+    }));
+  }
+  if (result.status === 'unknown-key') {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'metadata may only contain created_at, created_by, updated_at, updated_by',
     }));
   }
   if (result.status === 'not-found') {

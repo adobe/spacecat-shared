@@ -74,16 +74,31 @@ export function collectionKey(resource, scope = {}) {
  */
 const METADATA_KEYS = ['created_at', 'created_by', 'updated_at', 'updated_by'];
 
-/** The live CHECK constraint on `created_by` / `updated_by` (LLMO-6288 WP2, delivered contract). */
+/**
+ * The 100-char cap the live API applies to `created_by` / `updated_by`. Its CONTRACT status
+ * differs by write path, so on the patch paths this is an ASSUMPTION the mock encodes, not a
+ * constraint the delivered spec pins:
+ * - CREATE (`model.AIOPromptMetadata`) declares `maxLength: 100` on both keys, so ajv rejects an
+ *   over-length author at request validation before any handler runs — the check below is
+ *   redundant defence-in-depth there.
+ * - the PATCH shape (`model.AIOPromptMetadataPatch`) declares NO length, and the delivered ADR's
+ *   CHECK carries no length clause either (it constrains object-ness + the key set and calls the
+ *   values opaque strings, "Not validated"). Live nonetheless 400s a 101-char author on the patch
+ *   path (verified against prod, Rainer review), so the mock enforces the cap there too — a
+ *   deliberate, live-matching strictness that is one inference beyond what the delivered contract
+ *   pins. Practical risk is nil: across prod's prompt rows the longest author seen is 49 chars.
+ *   (`spec/overlays/corrections.yaml` CR23 also copies `maxLength: 100` onto the patch schema so
+ *   the generated contract carries it.)
+ */
 const AUTHOR_KEYS = ['created_by', 'updated_by'];
 const MAX_AUTHOR_LENGTH = 100;
 
 /**
- * True when a metadata-shaped object's `created_by` / `updated_by` would violate the live
- * `maxLength: 100` CHECK constraint — a violation 400s (and, for the batch metadata PATCH, rolls
- * back the WHOLE batch) rather than partially applying. Only a STRING value being SET can
- * overflow; an absent key or an explicit `null` (delete) never does, so a merge-patch's `null`
- * entries are exempt by construction.
+ * True when a metadata-shaped object's `created_by` / `updated_by` would exceed
+ * {@link MAX_AUTHOR_LENGTH}. A violation 400s (and, for the batch metadata PATCH, rolls back the
+ * WHOLE batch) rather than partially applying. Only a STRING value being SET can overflow; an
+ * absent key or an explicit `null` (delete) never does, so a merge-patch's `null` entries are
+ * exempt by construction.
  * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
  * @returns {boolean}
  */
@@ -91,6 +106,28 @@ const violatesAuthorLengthCheck = (metadataLike) => AUTHOR_KEYS.some((k) => {
   const value = /** @type {Record<string, unknown> | undefined} */ (metadataLike)?.[k];
   return typeof value === 'string' && value.length > MAX_AUTHOR_LENGTH;
 });
+
+/**
+ * True when a metadata-shaped object carries a key OUTSIDE the closed {@link METADATA_KEYS} set.
+ * The live CHECK rejects any such key — `(metadata - ARRAY['created_at','created_by','updated_at',
+ * 'updated_by']) = '{}'::jsonb` — so a stray or typo'd key (a fifth field, or `updated_By`) 400s on
+ * EVERY write path, and on the batch metadata PATCH rolls the whole batch back. Enforced on BOTH
+ * write paths so the mock refuses it exactly where live does: otherwise the create path would
+ * PERSIST an unknown key (and echo it back on the `by_tags` read) while the merge path SILENTLY
+ * dropped it — two divergences that also let the mock reach a state live cannot represent (a fifth
+ * key surviving every later patch). Neither generated request schema carries
+ * `additionalProperties: false`, so ajv passes an extra key through to the handler; this guard is
+ * where it stops (Rainer review, LLMO-6288 rework). A `null` / non-object value carries no keys and
+ * is exempt by construction (request validation already rejects a non-object `metadata`).
+ * @param {unknown} metadataLike a create item's full `metadata`, or a patch's per-key object
+ * @returns {boolean}
+ */
+const violatesClosedKeySet = (metadataLike) => {
+  if (metadataLike === null || typeof metadataLike !== 'object') {
+    return false;
+  }
+  return Object.keys(metadataLike).some((key) => !METADATA_KEYS.includes(key));
+};
 
 /**
  * RFC 7396 JSON Merge Patch, scoped to the four {@link METADATA_KEYS}: a key ABSENT from `patch`
@@ -113,6 +150,29 @@ const mergeMetadataPatch = (current, patch) => {
     }
   }
   return Object.keys(next).length === 0 ? undefined : next;
+};
+
+/**
+ * Union two AIO-tag lists by tag `id`: the existing tags first (order preserved), then any tag from
+ * `incoming` whose id is not already present, in request order. Models prod attaching a v3 create
+ * request's tags to a DEDUPE hit — "create with these tags" is idempotent for metadata but ADDITIVE
+ * for tags (verified against prod, Rainer review) — without ever duplicating an already-attached
+ * id. A non-array `existing` is treated as empty.
+ * @param {unknown} existing the stored prompt's `tags`
+ * @param {Array<{ id: string, name: string }> | undefined} incoming the request's resolved tags
+ * @returns {Array<{ id: string, name: string }>}
+ */
+const unionTagsById = (existing, incoming) => {
+  const base = Array.isArray(existing) ? existing : [];
+  const seen = new Set(base.map((t) => String(t?.id)));
+  const merged = [...base];
+  for (const tag of incoming ?? []) {
+    if (!seen.has(String(tag.id))) {
+      seen.add(String(tag.id));
+      merged.push(tag);
+    }
+  }
+  return merged;
 };
 
 /**
@@ -250,6 +310,19 @@ export function createStatefulOps(store) {
         return items.some((item) => violatesAuthorLengthCheck(item.metadata));
       },
       /**
+       * True when ANY item in a metadata-bearing batch carries a metadata key outside the closed
+       * set (see {@link violatesClosedKeySet}). The v3 create routes check this alongside
+       * {@link hasOversizedAuthor} BEFORE resolving tag ids / metering quota / writing anything, so
+       * a stray or typo'd key 400s FIRST and nothing is created — the same atomic
+       * validate-before-write discipline the author-length CHECK uses, returning the same 400 the
+       * live closed-key-set CHECK produces (LLMO-6288 rework, Rainer review).
+       * @param {Array<{ metadata?: unknown }>} items each carrying a full or per-key `metadata`
+       * @returns {boolean}
+       */
+      hasUnknownMetadataKey(items) {
+        return items.some((item) => violatesClosedKeySet(item.metadata));
+      },
+      /**
        * Counts how many of `names` would be GENUINELY NEW prompts — a name is free only if it is
        * neither already present in the project NOR a repeat earlier in the same list. This is the
        * dedupe-aware quota unit both v3 create routes meter on (a dedupe hit costs no quota), so it
@@ -277,16 +350,21 @@ export function createStatefulOps(store) {
        * rework — supersedes the ADR's dropped `*-with-metadata` PUT family this mock previously
        * modelled): each item is either a DEDUPE hit — an existing prompt already carries this exact
        * `name` (in the store, or earlier in this same batch) — or a genuinely new prompt.
-       * - A dedupe hit is left COMPLETELY untouched: its id, its PRESERVED stored `metadata`, and
-       *   `is_new: false` are echoed back — live-documented ("Dedupe hits preserve the previously
-       *   stored metadata and report is_new = false"). Any `tags`/`metadata` the request carried
-       *   for that item are discarded; only a genuinely new prompt is written with them.
+       * - A dedupe hit PRESERVES the stored `metadata` (idempotent — live-documented: "Dedupe hits
+       *   preserve the previously stored metadata and report is_new = false") and echoes back the
+       *   EXISTING id + that stored metadata + `is_new: false`; the request's `metadata` is
+       *   discarded. Its request `tags`, however, are UNIONED onto the existing prompt: prod
+       *   attaches a create's tags to a dedupe hit (verified live, Rainer review), so "create with
+       *   these tags" is idempotent for metadata but ADDITIVE for tags — a re-run import with new
+       *   tags keeps piling them on, matching prod. The attachment is invisible in the response
+       *   (the envelope carries no `tags` field) and shows only on a `by_tags` re-read.
        * - A new item is created with its supplied `tags` (already resolved by the caller — this
        *   function is tag-id-agnostic) and `metadata` (may be absent), `is_new: true`.
        * Response order mirrors the request 1:1 — one result PER INPUT ITEM, not just the
        * newly-created subset (the delivered swagger: "Response returns per-item {id, name,
-       * is_new, metadata}"). ATOMIC on the author-length CHECK ({@link hasOversizedAuthor}): if
-       * the caller did not already gate on it, this re-checks and refuses to write anything.
+       * is_new, metadata}"). ATOMIC on the metadata CHECK ({@link hasOversizedAuthor} +
+       * {@link hasUnknownMetadataKey}): if the caller did not already gate on it, this re-checks
+       * both the author-length and closed-key-set clauses and refuses to write anything.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<{ name: string, metadata?: unknown,
        *   tags?: Array<{id: string, name: string}> }>} items
@@ -294,7 +372,8 @@ export function createStatefulOps(store) {
        *   metadata: unknown }>, existingCount: number } | { ok: false }}
        */
       createManyWithMetadata(scope, items) {
-        if (items.some((item) => violatesAuthorLengthCheck(item.metadata))) {
+        if (items.some((item) => violatesAuthorLengthCheck(item.metadata)
+          || violatesClosedKeySet(item.metadata))) {
           return { ok: false };
         }
         const key = collectionKey('prompts', scope);
@@ -306,6 +385,17 @@ export function createStatefulOps(store) {
           const existing = byName.get(item.name);
           if (existing) {
             existingCount += 1;
+            // Attach the request's tags to the dedupe hit (union by id — prod is additive for tags
+            // on a dedupe hit), leaving the stored metadata untouched (dedupe is idempotent for
+            // metadata). `byName` is refreshed so a later in-batch repeat of this name unions onto
+            // the just-updated tags too.
+            const mergedTags = unionTagsById(existing.tags, item.tags);
+            const grew = mergedTags.length
+              !== (Array.isArray(existing.tags) ? existing.tags.length : 0);
+            const stored = grew
+              ? /** @type {Entity} */ (store.update(key, existing.id, { tags: mergedTags }))
+              : existing;
+            byName.set(String(existing.name), stored);
             results.push({
               id: existing.id,
               name: String(existing.name),
@@ -338,18 +428,21 @@ export function createStatefulOps(store) {
        * null = delete); an ABSENT `metadata` key leaves it untouched. `name` may not be `null` —
        * the spec keeps it a plain, non-nullable string, so that case 400s at REQUEST VALIDATION
        * before this ever runs. A `name` equal to a SIBLING prompt's exact text conflicts (409),
-       * same rule as the dedicated `/rename` endpoint; nothing is mutated. An over-length
-       * `created_by`/`updated_by` in the metadata patch 400s, nothing mutated. The two 400 causes
-       * are reported as DISTINCT statuses (`empty-request` vs `check-violation`) rather than a
-       * single `bad-request` — MysticatBot review (LLMO-6288 rework): a caller who supplied an
-       * oversized author field was otherwise told "request must include at least one of name or
-       * metadata", a misleading message for a well-formed-but-rejected request.
+       * same rule as the dedicated `/rename` endpoint; nothing is mutated. A metadata patch that
+       * violates the CHECK 400s, nothing mutated. The 400 causes are reported as DISTINCT statuses
+       * — `empty-request` (neither field), `check-violation` (an over-length `created_by`/
+       * `updated_by`), and `unknown-key` (a metadata key outside the closed four) — rather than a
+       * single `bad-request` (MysticatBot/Rainer review, LLMO-6288 rework), so a caller who
+       * supplied a well-formed-but-rejected metadata patch is never told "request must include one
+       * of name or metadata". Both `check-violation` and `unknown-key` are clauses of the same live
+       * CHECK and both 400.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {string} id
        * @param {{ name?: string, metadata?: unknown }} patch `metadata: null` wipes;
        *   `metadata: {...}` merges; an absent key of either leaves it untouched
        * @returns {{ status: 'ok', entity: Entity }
-       *   | { status: 'not-found' | 'conflict' | 'empty-request' | 'check-violation' }}
+       *   | { status: 'not-found' | 'conflict' | 'empty-request' | 'check-violation'
+       *   | 'unknown-key' }}
        */
       patchOne(scope, id, { name, metadata } = {}) {
         const hasName = name !== undefined;
@@ -370,6 +463,9 @@ export function createStatefulOps(store) {
           if (metadata === null) {
             nextMetadata = undefined;
           } else {
+            if (violatesClosedKeySet(metadata)) {
+              return { status: 'unknown-key' };
+            }
             if (violatesAuthorLengthCheck(metadata)) {
               return { status: 'check-violation' };
             }
@@ -390,17 +486,18 @@ export function createStatefulOps(store) {
       /**
        * The v3 BATCH metadata PATCH (`aio-patch-prompts-metadata-batch`, LLMO-6288 WP2 rework) —
        * `{ id, metadata }` per item, run as ONE transaction: an unknown `id`, or any item's
-       * `metadata` violating the author-length CHECK, aborts the WHOLE batch (`not-found` /
-       * `check-violation` respectively) with NOTHING written — the delivered contract's "a
-       * CHECK-constraint violation on any item rolls the batch back". Every item is resolved AND
-       * validated before any merge is applied. The author-length failure reuses the SAME
-       * `check-violation` status {@link patchOne} returns for the identical condition, so the two
-       * metadata-write ops share one internal status vocabulary (MysticatBot review, LLMO-6288
-       * rework) — a future handler dispatching on status can't hit a `bad-request` vs
-       * `check-violation` split for what is one cause.
+       * `metadata` violating the CHECK (an over-length author, or a key outside the closed four),
+       * aborts the WHOLE batch (`not-found` / `check-violation` / `unknown-key` respectively) with
+       * NOTHING written — the delivered contract's "a CHECK-constraint violation on any item rolls
+       * the batch back". Every item is resolved AND validated before any merge is applied. The
+       * `check-violation` and `unknown-key` statuses are the SAME ones {@link patchOne} returns for
+       * the identical conditions, so the two metadata-write ops share one internal status
+       * vocabulary (MysticatBot/Rainer review, LLMO-6288 rework) — a future handler dispatching on
+       * status can't hit a `bad-request` vs `check-violation` split for what is one CHECK.
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<{ id: string, metadata: unknown }>} items
-       * @returns {{ status: 'ok' } | { status: 'not-found' | 'check-violation' }}
+       * @returns {{ status: 'ok' }
+       *   | { status: 'not-found' | 'check-violation' | 'unknown-key' }}
        */
       patchMetadataBatch(scope, items) {
         const key = collectionKey('prompts', scope);
@@ -412,6 +509,9 @@ export function createStatefulOps(store) {
             return { status: 'not-found' };
           }
           resolved.push({ id, current, metadata });
+        }
+        if (resolved.some(({ metadata }) => violatesClosedKeySet(metadata))) {
+          return { status: 'unknown-key' };
         }
         if (resolved.some(({ metadata }) => violatesAuthorLengthCheck(metadata))) {
           return { status: 'check-violation' };

@@ -19,10 +19,11 @@
  * `{ metadata }` wrapper, unlike the combined `PATCH .../{prompt_id}`), so it is passed straight
  * through `stateful.js`'s `patchOne` core as `{ metadata: body }` — the same RFC 7396 merge
  * (absent key = keep, string = set, explicit null = delete a key) `patchMetadataBatch` applies per
- * item. Response 204 No Content. 404 for an unknown prompt id; 400 (`check-violation`) on the
- * author-length CHECK (`created_by`/`updated_by` > 100 chars) — `patchOne`'s OTHER 400 cause
- * (`empty-request`) cannot happen here since `metadata` is always passed. Materialized into
- * `.counterfact/routes/` by the mock runner; excluded from coverage.
+ * item. Response 204 No Content. 404 for an unknown prompt id; 400 on either CHECK clause —
+ * `check-violation` (`created_by`/`updated_by` > 100 chars) or `unknown-key` (a metadata key
+ * outside the closed four). `patchOne`'s `empty-request` cause cannot happen here since `metadata`
+ * is always passed. Materialized into `.counterfact/routes/` by the mock runner; excluded from
+ * coverage.
  */
 
 /** PATCH — single-prompt RFC-7396 metadata merge → 204; 404 unknown id; 400 CHECK violation. */
@@ -37,6 +38,11 @@ export function PATCH($) {
   if (result.status === 'check-violation') {
     return $.response[400].json(context.factories.createBasicResponseMock({
       message: 'created_by/updated_by must be at most 100 characters',
+    }));
+  }
+  if (result.status === 'unknown-key') {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'metadata may only contain created_at, created_by, updated_at, updated_by',
     }));
   }
   // 'empty-request' / 'conflict' are unreachable here: `metadata` is always passed (never

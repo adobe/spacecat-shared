@@ -45,5 +45,10 @@ export function PATCH($) {
       message: 'created_by/updated_by must be at most 100 characters',
     }));
   }
+  if (outcome.status === 'unknown-key') {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'metadata may only contain created_at, created_by, updated_at, updated_by',
+    }));
+  }
   return { status: 204 };
 }

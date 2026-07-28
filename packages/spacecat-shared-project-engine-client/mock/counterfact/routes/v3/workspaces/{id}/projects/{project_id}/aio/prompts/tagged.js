@@ -29,8 +29,12 @@
  * - DEDUPE by prompt NAME (mirrors the plain v3 create): a name already present in the project
  *   (in the store, or earlier in this batch) is NOT re-created — its result echoes the EXISTING
  *   id + PRESERVED stored metadata, `is_new: false`. Its OWN request tags/metadata are discarded.
- * - ATOMIC author-length CHECK: any item's metadata beyond the 100-char CHECK 400s the whole
- *   request, nothing created (mirrors the plain v3 create).
+ * - ATOMIC metadata CHECK: any item whose metadata breaks the live CHECK — an author beyond 100
+ *   chars, OR a key outside the closed {created_at, created_by, updated_at, updated_by} set — 400s
+ *   the whole request, nothing created (mirrors the plain v3 create).
+ * - DEDUPE hit ATTACHES the request's tags (union) to the existing prompt, preserving its stored
+ *   metadata — prod is additive for tags on a dedupe hit (Rainer review); the shared
+ *   `createManyWithMetadata` owns that union.
  * - Quota-metered on NEW items only (a dedupe hit costs nothing).
  */
 
@@ -63,6 +67,11 @@ export function POST($) {
       message: 'created_by/updated_by must be at most 100 characters',
     }));
   }
+  if (context.ops.prompts.hasUnknownMetadataKey(items)) {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'metadata may only contain created_at, created_by, updated_at, updated_by',
+    }));
+  }
 
   // Quota metered on NEW items only, via the shared `countNewPrompts` the plain v3 create uses too.
   const newCount = context.ops.prompts.countNewPrompts(scope, items.map((item) => item.name));
@@ -76,8 +85,9 @@ export function POST($) {
 
   const outcome = context.ops.prompts.createManyWithMetadata(scope, items);
   if (!outcome.ok) {
+    // Unreachable — both CHECK clauses are gated above; defense-in-depth (see aio/prompts.js).
     return $.response[400].json(context.factories.createBasicResponseMock({
-      message: 'created_by/updated_by must be at most 100 characters',
+      message: 'metadata violates the created_by/updated_by CHECK constraint',
     }));
   }
 

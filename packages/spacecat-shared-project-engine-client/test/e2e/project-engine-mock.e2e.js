@@ -629,6 +629,59 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(listed.items.find((p) => p.id === id).metadata).to.deep.equal({ created_by: 'a@adobe.com' });
   });
 
+  // §4 (Rainer review): prod ATTACHES a create's tags to a DEDUPE hit — additive, not idempotent —
+  // so re-creating a name with a new tag piles it onto the existing prompt. Invisible in the
+  // response envelope (no tags field), so it is only observable on a by_tags re-read.
+  it('v3 create dedupe hit ATTACHES the request tags to the existing prompt (additive)', async () => {
+    const { data: first } = await client.POST(V3_CREATE_TAGGED, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { prompts: [{ name: 'tag-union target?', tags: ['union-root-a'] }] },
+    });
+    const [{ id }] = first.items;
+
+    const { data: second } = await client.POST(V3_CREATE_TAGGED, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { prompts: [{ name: 'tag-union target?', tags: ['union-root-b'] }] },
+    });
+    expect(second.existing_count).to.equal(1);
+    expect(second.items[0]).to.include({ id, is_new: false });
+
+    const { data: listed } = await listByTags([], { draft: true });
+    const mine = listed.items.find((p) => p.id === id);
+    expect(mine.tags.map((t) => t.name)).to.have.members(['union-root-a', 'union-root-b']);
+  });
+
+  // CR1 (Rainer change-request): a metadata key outside the closed four 400s on the write path —
+  // the live closed-key-set CHECK the mock must model. ajv passes the extra key through (neither
+  // request schema carries additionalProperties:false), so the 400 is the handler's guard, not
+  // request validation.
+  it('v3 create 400s a metadata key outside {created_at,created_by,updated_at,updated_by}', async () => {
+    const { response } = await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: 'stray key prompt?', metadata: { updated_By: 'typo — capital B' } }] },
+    });
+    expect(response.status).to.equal(400);
+  });
+
+  // §6 (Rainer review): the request-body `search` filters returned items by a case-insensitive
+  // prompt-name substring; the mock previously ignored it.
+  it('by_tags honors the request-body search filter (case-insensitive name match)', async () => {
+    const uniq = `zzq-search-${Date.now()}`;
+    await client.POST(V3_CREATE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+      body: { items: [{ name: `${uniq} prompt?` }] },
+    });
+    const { data: hit } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT }, query: { draft: true } },
+        body: { tag_ids: [], search: uniq.toUpperCase() },
+      },
+    );
+    expect(hit.items).to.have.length(1);
+    expect(hit.items[0].name).to.equal(`${uniq} prompt?`);
+  });
+
   // MysticatBot review (LLMO-6288 rework): the 401 guard was only exercised on ONE of the five new
   // v3 write routes (the batch PATCH). If the auth-guard injection or route materialization had a
   // path-specific bug, only hitting one route would leave it invisible. Every request body below
@@ -1848,7 +1901,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { data: all } = await listByTags([]);
     expect(all.total).to.equal(1);
     expect(all.items[0].id).to.equal(SEED_IDS.promptId);
-    expect(all.items[0].tags).to.deep.equal([]);
+    // A fully-unassigned prompt OMITS the `tags` key entirely (matches prod — §6 fidelity fix),
+    // rather than emitting `[]`, and is counted in `unassigned`.
+    expect(all.items[0]).to.not.have.property('tags');
+    expect(all.unassigned).to.equal(1);
   });
 
   // Anchors the DELETE-orphan limitation documented in the tags.js header: deleting a parent does

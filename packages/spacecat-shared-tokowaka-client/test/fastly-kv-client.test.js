@@ -124,6 +124,37 @@ describe('FastlyKVClient', () => {
       expect(result).to.have.lengthOf(1);
       expect(result[0].suggestionId).to.equal('sugg-stale');
       expect(result[0].url).to.equal('https://example.com/stale');
+      expect(result[0].status).to.equal('stale');
+    });
+
+    it('should include last_mod_missing keys alongside their status', async () => {
+      const client = new FastlyKVClient(env, log);
+      const keys = ['sugg-last-mod-missing', 'sugg-stale', 'sugg-live'];
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: keys, meta: {} });
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[0])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/missing', status: 'last_mod_missing' }));
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[1])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/stale', status: 'stale' }));
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[2])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/live', status: 'live' }));
+
+      const result = await client.listAllStaleKeys();
+
+      expect(result).to.have.lengthOf(2);
+      expect(result[0].suggestionId).to.equal('sugg-last-mod-missing');
+      expect(result[0].status).to.equal('last_mod_missing');
+      expect(result[1].suggestionId).to.equal('sugg-stale');
+      expect(result[1].status).to.equal('stale');
     });
 
     it('should respect maxPages limit', async () => {

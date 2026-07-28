@@ -22,10 +22,11 @@ const DEFAULT_TIMEOUT = 30000;
 
 /**
  * Client for interacting with Fastly KV Store used by Tokowaka.
- * Used to fetch stale suggestion IDs for cleanup.
+ * Used to fetch stale suggestion IDs, or suggestion IDs with a missing
+ * last-modified date, for cleanup.
  *
  * Key format: `${suggestionId}`
- * Value format: { url: string, status: 'stale' | 'live' }
+ * Value format: { url: string, status: 'stale' | 'last_mod_missing' | 'live' }
  */
 export class FastlyKVClient {
   /**
@@ -98,7 +99,8 @@ export class FastlyKVClient {
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {string} [options.cursor] - Cursor for pagination
-   * @returns {Promise<{keys: Array<object>, cursor: string|null}>}
+   * @returns {Promise<{keys: Array<{key: string, suggestionId: string, url: string,
+   *   status: string}>, cursor: string|null}>}
    */
   async #listStaleKeysPage(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, cursor } = options;
@@ -133,11 +135,12 @@ export class FastlyKVClient {
           ? value.status.trim().toLowerCase()
           : '';
 
-        if (normalizedStatus === 'stale' && hasText(keyName)) {
+        if ((normalizedStatus === 'stale' || normalizedStatus === 'last_mod_missing') && hasText(keyName)) {
           staleEntries.push({
             key: keyName,
             suggestionId: keyName,
             url: value.url,
+            status: normalizedStatus,
           });
         }
       } catch (error) {
@@ -157,7 +160,7 @@ export class FastlyKVClient {
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
-   * @returns {Promise<Array<{key: string, suggestionId: string, url: string}>>}
+   * @returns {Promise<Array<{key: string, suggestionId: string, url: string, status: string}>>}
    */
   async listAllStaleKeys(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, maxPages = 100 } = options;

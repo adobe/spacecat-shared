@@ -29,7 +29,9 @@
  * - DEDUPE by prompt NAME (`createManyWithMetadata`): a name already present in the project (in
  *   the store, or earlier in this same batch) is NOT re-created — its result echoes the EXISTING
  *   id and its PRESERVED stored metadata, `is_new: false` (the delivered contract's documented
- *   dedupe behaviour). `tag_ids` attach only to genuinely NEW prompts.
+ *   dedupe behaviour). The shared `tag_ids` attach to a genuinely NEW prompt AND are unioned onto a
+ *   dedupe hit (prod is additive for tags on a hit — Rainer review); only the request's metadata is
+ *   discarded on a hit.
  * - ATOMIC tag_id validation: every `tag_id` is resolved against the project's standalone tag
  *   collection BEFORE any write — an unresolvable id 500s and creates nothing, mirroring the v2
  *   id-based create's atomic contract (no live-verified v3 behaviour exists yet, pending

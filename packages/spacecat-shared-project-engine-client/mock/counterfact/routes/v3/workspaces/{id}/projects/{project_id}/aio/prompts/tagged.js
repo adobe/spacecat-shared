@@ -28,7 +28,9 @@
  * Behaviour:
  * - DEDUPE by prompt NAME (mirrors the plain v3 create): a name already present in the project
  *   (in the store, or earlier in this batch) is NOT re-created — its result echoes the EXISTING
- *   id + PRESERVED stored metadata, `is_new: false`. Its OWN request tags/metadata are discarded.
+ *   id + PRESERVED stored metadata, `is_new: false`. Only its request METADATA is discarded; its
+ *   request TAGS are NOT — they are unioned onto the existing prompt (see the dedupe-attach bullet
+ *   below).
  * - ATOMIC metadata CHECK: any item whose metadata breaks the live CHECK — an author beyond 100
  *   chars, OR a key outside the closed {created_at, created_by, updated_at, updated_by} set — 400s
  *   the whole request, nothing created (mirrors the plain v3 create).

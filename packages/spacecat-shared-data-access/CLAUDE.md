@@ -277,6 +277,17 @@ validated "deploy action" record (who/when/what/which-pages/result) from ADR
     `CALL_STATUSES`, `APPLIED`, `CHANGE_RESULT_STATUSES`, `VERIFY_VERDICTS`,
     `SCHEMA_VERSION`, `DEPLOY_RESPONSE_PAYLOAD_MAX_BYTES`). Kept on the model
     (not the barrel) to avoid collisions on these generic names.
+- **Portable JSON Schema artifact** (for the Python runtime, mystique). The Joi
+  schema is the single source of truth; a **JSON Schema is derived from it** and
+  shipped at `schemas/fix-entity-change-details.v2.schema.json` (draft-2019-09).
+  Regenerate with `npm run generate:schemas` (script:
+  `scripts/generate-change-details-schema.js`, uses `joi-to-json`); a unit test
+  fails CI if the committed artifact drifts from the Joi schema. mystique vendors
+  this file and validates against it. **Caveat:** JSON Schema captures
+  structure/enums/required/patterns only — the cross-field invariants
+  (`changeResults`↔`target.changes` key-match, `applied:ALL` completeness,
+  `deployResponsePayload` 4 KB cap) are Joi `.custom()` rules and are NOT in the
+  artifact; a consumer needing them must port those checks.
 - **Not yet done** (tracked on SITES-47997): the `publishedBy` column +
   `executedBy/At` → `deployedBy/At` rename (dual-write, needs a companion
   mysticat-data-service migration), and gating the `DEPLOYED`/`PUBLISHED`

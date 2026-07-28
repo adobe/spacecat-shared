@@ -248,5 +248,68 @@ describe('FastlyKVClient', () => {
         expect(error.message).to.include('Failed to list keys from KV Store');
       }
     });
+
+    it('should include the normalized status on returned entries', async () => {
+      const client = new FastlyKVClient(env, log);
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: ['sugg-1'], meta: {} });
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent('sugg-1')}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com', status: 'STALE' }));
+
+      const result = await client.listAllStaleKeys();
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].status).to.equal('stale');
+    });
+  });
+
+  describe('listAllLastModMissingKeys', () => {
+    it('should fetch only LAST_MOD_MISSING keys and ignore stale/live', async () => {
+      const client = new FastlyKVClient(env, log);
+      const keys = ['sugg-missing', 'sugg-stale', 'sugg-live'];
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: keys, meta: {} });
+
+      // Worker writes the status upper-cased; client must match case-insensitively.
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[0])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/a', status: 'LAST_MOD_MISSING' }));
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[1])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/b', status: 'STALE' }));
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[2])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/c', status: 'LIVE' }));
+
+      const result = await client.listAllLastModMissingKeys();
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].suggestionId).to.equal('sugg-missing');
+      expect(result[0].url).to.equal('https://example.com/a');
+      expect(result[0].status).to.equal('last_mod_missing');
+    });
+
+    it('should return empty array if no LAST_MOD_MISSING keys found', async () => {
+      const client = new FastlyKVClient(env, log);
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: [], meta: {} });
+
+      const result = await client.listAllLastModMissingKeys();
+
+      expect(result).to.have.lengthOf(0);
+    });
   });
 });

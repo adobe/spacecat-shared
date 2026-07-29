@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 
 import {
-  Config, validateConfiguration,
+  Config, validateConfiguration, CDN_LOGS_FILTER_KEYS,
 } from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
@@ -2609,7 +2609,7 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/', '/content/'] },
+            { key: 'url', value: ['/api/', '/content/'] },
           ],
         },
       };
@@ -2623,8 +2623,8 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/'], type: 'include' },
-            { key: 'status_code', value: ['404'], type: 'exclude' },
+            { key: 'url', value: ['/api/'], type: 'include' },
+            { key: 'host', value: ['example.com'], type: 'exclude' },
           ],
         },
       };
@@ -2650,11 +2650,38 @@ describe('Config Tests', () => {
     it('should be able to update cdnlogsFilter', () => {
       const config = Config();
       const cdnlogsFilter = [
-        { key: 'path', value: ['/api/'], type: 'include' },
-        { key: 'status_code', value: ['200'], type: 'exclude' },
+        { key: 'url', value: ['/api/'], type: 'include' },
+        { key: 'host', value: ['example.com'], type: 'exclude' },
       ];
       config.updateLlmoCdnlogsFilter(cdnlogsFilter);
       expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+
+    it('accepts every allowed cdnlogsFilter key', () => {
+      CDN_LOGS_FILTER_KEYS.forEach((key) => {
+        const config = Config();
+        const cdnlogsFilter = [{ key, value: ['x'], type: 'include' }];
+        config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+        expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+      });
+    });
+
+    it('normalizes an uppercase cdnlogsFilter key to lowercase', () => {
+      const config = Config();
+      config.updateLlmoCdnlogsFilter([
+        { key: 'X_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal([
+        { key: 'x_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+    });
+
+    it('rejects a cdnlogsFilter key that is not on the allowlist (VULN-37491)', () => {
+      const config = Config();
+      const maliciousKey = "url, '(?i)(x)')) UNION ALL SELECT CONCAT('https://x?s=', CAST(current_schema AS VARCHAR)), CAST(1 AS BIGINT) -- ";
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: maliciousKey, value: ['x'], type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
     });
   });
 

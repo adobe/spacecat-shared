@@ -389,6 +389,7 @@ export const configSchema = Joi.object({
       'ams-frontdoor',
       'other',
     ).optional(),
+    showWww: Joi.boolean().optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -719,6 +720,11 @@ export const Config = (data = {}) => {
   self.updateLlmoBrand = (brand) => {
     state.llmo = state.llmo || {};
     state.llmo.brand = brand;
+  };
+
+  self.updateLlmoShowWww = (showWww) => {
+    state.llmo = state.llmo || {};
+    state.llmo.showWww = showWww;
   };
 
   self.addLlmoHumanQuestions = (questions) => {

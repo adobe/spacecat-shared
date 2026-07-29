@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.16.0...@adobe/spacecat-shared-project-engine-client-v1.17.0) (2026-07-29)
+
+### Features
+
+* **project-engine-client:** expose v3 prompt-metadata write facade (LLMO-6288) ([#1853](https://github.com/adobe/spacecat-shared/issues/1853)) ([60a7001](https://github.com/adobe/spacecat-shared/commit/60a700137362d3bcffb522435c1b6f948f6bd8d3)), closes [#2877](https://github.com/adobe/spacecat-shared/issues/2877)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.15.0...@adobe/spacecat-shared-project-engine-client-v1.16.0) (2026-07-28)
 
 ### Features

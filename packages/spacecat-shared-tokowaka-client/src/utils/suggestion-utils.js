@@ -95,6 +95,18 @@ export function filterEligibleSuggestions(suggestions, mapper) {
 // Import worker job type for a bulk suggestion field update (agnostic set/unset by id).
 export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
 
+// Max suggestion IDs per SQS message. Keeps message bodies well under the 256KB
+// SQS limit even for large batches (domain-wide coverage can hit 6-7k suggestions).
+const SQS_SUGGESTION_ID_BATCH_SIZE = 3000;
+
+function chunk(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
 /**
  * Batch-saves suggestions using the optimal strategy based on count.
  *
@@ -103,11 +115,12 @@ export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
  *   from the API due to serialization, network, and Lambda overhead.
  * - > 1700 with no queueContext: parallel individual .save() via Promise.allSettled to
  *   avoid sequential chunk bottleneck at scale.
- * - > 1700 with queueContext: enqueues a SUGGESTION_BULK_UPDATE_TYPE job to the import
- *   worker instead of saving here (the worker fetches by id and applies
- *   queueContext.set/unset itself). Falls back to the Promise.allSettled path above
- *   if sqs/queueUrl aren't configured or sendMessage fails, so a queue outage
- *   degrades rather than silently drops the save.
+ * - > 1700 with queueContext: enqueues one or more SUGGESTION_BULK_UPDATE_TYPE jobs to the
+ *   import worker instead of saving here (the worker fetches by id and applies
+ *   queueContext.set/unset itself). Suggestion IDs are chunked into batches of
+ *   SQS_SUGGESTION_ID_BATCH_SIZE per message to stay under the SQS message size limit.
+ *   Falls back to the Promise.allSettled path above if sqs/queueUrl aren't configured or
+ *   any sendMessage fails, so a queue outage degrades rather than silently drops the save.
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
@@ -129,16 +142,23 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
 
       if (queueUrl && sqs) {
         try {
-          await sqs.sendMessage(queueUrl, {
+          const idBatches = chunk(
+            suggestions.map((s) => s.getId()),
+            SQS_SUGGESTION_ID_BATCH_SIZE,
+          );
+          // If any of the batches below fails, then we fallback to the save method,
+          // re-marking a suggestion is acceptable since we update the same value again
+          await Promise.all(idBatches.map((suggestionIds) => sqs.sendMessage(queueUrl, {
             type: SUGGESTION_BULK_UPDATE_TYPE,
             siteId,
-            suggestionIds: suggestions.map((s) => s.getId()),
+            suggestionIds,
             ...(set && { set }),
             ...(unset && { unset }),
             updatedBy,
-          });
+          })));
           log.info(
-            `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} suggestion(s)`,
+            `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} `
+            + `suggestion(s) in ${idBatches.length} batch(es)`,
           );
           return;
         } catch (error) {

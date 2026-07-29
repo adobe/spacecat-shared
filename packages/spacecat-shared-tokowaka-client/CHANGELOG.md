@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.1...@adobe/spacecat-shared-tokowaka-client-v1.23.2) (2026-07-29)
+
+### Bug Fixes
+
+* llmo-6614 add suggestions batching to sqs messages in edge flows ([#1854](https://github.com/adobe/spacecat-shared/issues/1854)) ([30b635f](https://github.com/adobe/spacecat-shared/commit/30b635f5a24dfa02a02ccf72350c8d006de37911))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.0...@adobe/spacecat-shared-tokowaka-client-v1.23.1) (2026-07-29)
 
 ### Bug Fixes

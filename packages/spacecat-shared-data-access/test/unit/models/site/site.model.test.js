@@ -30,12 +30,14 @@ describe('SiteModel', () => {
 
   let mockElectroService;
   let mockRecord;
+  let mockLogger;
 
   beforeEach(() => {
     mockRecord = sampleSite;
 
     ({
       mockElectroService,
+      mockLogger,
       model: instance,
     } = createElectroMocks(Site, mockRecord));
 
@@ -621,6 +623,50 @@ describe('SiteModel', () => {
       it('sets projectId', () => {
         instance.setProjectId('1e9c6f94-f226-41f3-9005-4bb766765ac2');
         expect(instance.getProjectId()).to.equal('1e9c6f94-f226-41f3-9005-4bb766765ac2');
+      });
+    });
+
+    describe('setConfig', () => {
+      const original = process.env.CONFIG_VALIDATION_ENFORCEMENT;
+
+      afterEach(() => {
+        if (original === undefined) {
+          delete process.env.CONFIG_VALIDATION_ENFORCEMENT;
+        } else {
+          process.env.CONFIG_VALIDATION_ENFORCEMENT = original;
+        }
+      });
+
+      it('sets a valid config without warning', () => {
+        process.env.CONFIG_VALIDATION_ENFORCEMENT = 'enforce';
+        mockLogger.warn.resetHistory(); // ignore construction-time warnings
+        instance.setConfig({ slack: {}, handlers: {} });
+        expect(instance.getConfig().state).to.deep.equal({ slack: {}, handlers: {} });
+        expect(mockLogger.warn).to.not.have.been.called;
+      });
+
+      it('warns but still applies an invalid config in warn mode (default)', () => {
+        delete process.env.CONFIG_VALIDATION_ENFORCEMENT;
+        mockLogger.warn.resetHistory(); // ignore construction-time warnings
+        const invalidConfig = { llmo: { dataFolder: 'test', brand: 'Test', showWww: 'nope' } };
+        instance.setConfig(invalidConfig);
+        expect(instance.getConfig().state).to.deep.equal(invalidConfig);
+        expect(mockLogger.warn).to.have.been.calledOnce;
+      });
+
+      it('throws on an invalid config in enforce mode', () => {
+        process.env.CONFIG_VALIDATION_ENFORCEMENT = 'enforce';
+        const invalidConfig = { llmo: { dataFolder: 'test', brand: 'Test', showWww: 'nope' } };
+        expect(() => instance.setConfig(invalidConfig)).to.throw('Site');
+      });
+
+      it('does not validate when enforcement is off', () => {
+        process.env.CONFIG_VALIDATION_ENFORCEMENT = 'off';
+        mockLogger.warn.resetHistory();
+        const invalidConfig = { llmo: { dataFolder: 'test', brand: 'Test', showWww: 'nope' } };
+        expect(() => instance.setConfig(invalidConfig)).to.not.throw();
+        expect(instance.getConfig().state).to.deep.equal(invalidConfig);
+        expect(mockLogger.warn).to.not.have.been.called;
       });
     });
   });

@@ -22,7 +22,7 @@ import { ProjectEngineApiError } from './errors.js';
 
 /**
  * Intent-named facade over the raw {@link createSerenityProjectEngineApiClient} openapi-fetch
- * client. It wraps ONLY the 28 in-spec Project Engine operations that spacecat-api-service
+ * client. It wraps ONLY the 32 in-spec Project Engine operations that spacecat-api-service
  * consumes, behind verb+resource method names, so consumers depend on this seam rather than the
  * raw client and its literal path strings. Each method is THIN: it forwards the caller's
  * openapi-fetch `init` (params.path/query, body) to `client.<METHOD>('<literal path>', init)` and
@@ -221,6 +221,34 @@ export function createSerenityProjectEngineTransport(options) {
      */
     renamePrompt(init) {
       return unwrap('POST', client.POST('/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename', init));
+    },
+    /**
+     * POST /v3/workspaces/{id}/projects/{project_id}/aio/prompts — aio-create-prompts
+     * (metadata-carrying create; each item is `{ name, metadata }`, LLMO-6289)
+     */
+    createPromptsWithMetadata(init) {
+      return unwrap('POST', client.POST('/v3/workspaces/{id}/projects/{project_id}/aio/prompts', init));
+    },
+    /**
+     * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}
+     * — aio-patch-prompt (combined name + metadata merge-patch, RFC 7396, LLMO-6289)
+     */
+    patchPrompt(init) {
+      return unwrap('PATCH', client.PATCH('/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}', init));
+    },
+    /**
+     * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata
+     * — aio-patch-prompt-metadata (metadata-only merge-patch, RFC 7396, LLMO-6289)
+     */
+    patchPromptMetadata(init) {
+      return unwrap('PATCH', client.PATCH('/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata', init));
+    },
+    /**
+     * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata
+     * — aio-patch-prompts-metadata-batch (atomic batch metadata merge-patch, LLMO-6289)
+     */
+    patchPromptsMetadataBatch(init) {
+      return unwrap('PATCH', client.PATCH('/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata', init));
     },
     /** GET /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-get-project-tags */
     listProjectTags(init) {

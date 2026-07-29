@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 
 import {
-  Config, validateConfiguration,
+  Config, validateConfiguration, CDN_LOGS_FILTER_KEYS,
 } from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
@@ -1884,6 +1884,37 @@ describe('Config Tests', () => {
       });
     });
 
+    describe('updateLlmoShowWww', () => {
+      it('should create llmo config if it does not exist and set showWww', () => {
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.brand).to.be.undefined;
+      });
+
+      it('should update showWww when llmo config already exists', () => {
+        // First create llmo config
+        config.updateLlmoConfig('/old/folder', 'oldBrand');
+
+        // Then update showWww
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.dataFolder).to.equal('/old/folder'); // Should preserve existing dataFolder
+      });
+
+      it('should update showWww multiple times', () => {
+        config.updateLlmoShowWww(true);
+        config.updateLlmoShowWww(false);
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+      });
+    });
+
     describe('getLlmoHumanQuestions', () => {
       it('should return undefined when llmo questions do not exist', () => {
         expect(config.getLlmoHumanQuestions()).to.be.undefined;
@@ -2578,7 +2609,7 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/', '/content/'] },
+            { key: 'url', value: ['/api/', '/content/'] },
           ],
         },
       };
@@ -2592,8 +2623,8 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/'], type: 'include' },
-            { key: 'status_code', value: ['404'], type: 'exclude' },
+            { key: 'url', value: ['/api/'], type: 'include' },
+            { key: 'host', value: ['example.com'], type: 'exclude' },
           ],
         },
       };
@@ -2619,11 +2650,38 @@ describe('Config Tests', () => {
     it('should be able to update cdnlogsFilter', () => {
       const config = Config();
       const cdnlogsFilter = [
-        { key: 'path', value: ['/api/'], type: 'include' },
-        { key: 'status_code', value: ['200'], type: 'exclude' },
+        { key: 'url', value: ['/api/'], type: 'include' },
+        { key: 'host', value: ['example.com'], type: 'exclude' },
       ];
       config.updateLlmoCdnlogsFilter(cdnlogsFilter);
       expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+
+    it('accepts every allowed cdnlogsFilter key', () => {
+      CDN_LOGS_FILTER_KEYS.forEach((key) => {
+        const config = Config();
+        const cdnlogsFilter = [{ key, value: ['x'], type: 'include' }];
+        config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+        expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+      });
+    });
+
+    it('normalizes an uppercase cdnlogsFilter key to lowercase', () => {
+      const config = Config();
+      config.updateLlmoCdnlogsFilter([
+        { key: 'X_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal([
+        { key: 'x_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+    });
+
+    it('rejects a cdnlogsFilter key that is not on the allowlist (VULN-37491)', () => {
+      const config = Config();
+      const maliciousKey = "url, '(?i)(x)')) UNION ALL SELECT CONCAT('https://x?s=', CAST(current_schema AS VARCHAR)), CAST(1 AS BIGINT) -- ";
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: maliciousKey, value: ['x'], type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
     });
   });
 
@@ -2773,6 +2831,32 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw(/Configuration validation error: "llmo\.detectedCdn" must be one of/);
+    });
+  });
+
+  describe('LLMO Show Www', () => {
+    it('accepts a valid showWww boolean via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: true,
+        },
+      };
+      const validated = validateConfiguration(config);
+      expect(validated.llmo.showWww).to.equal(true);
+    });
+
+    it('rejects a non-boolean showWww value via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: 'not-a-boolean',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.showWww" must be a boolean/);
     });
   });
 

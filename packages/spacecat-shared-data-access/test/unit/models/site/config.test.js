@@ -2676,6 +2676,20 @@ describe('Config Tests', () => {
       ]);
     });
 
+    it('rejects a cdnlogsFilter value string that exceeds the length cap', () => {
+      const config = Config();
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: 'url', value: ['a'.repeat(501)], type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter value string at the length cap', () => {
+      const config = Config();
+      const cdnlogsFilter = [{ key: 'url', value: ['a'.repeat(500)], type: 'include' }];
+      config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+
     it('rejects a cdnlogsFilter key that is not on the allowlist (VULN-37491)', () => {
       const config = Config();
       const maliciousKey = "url, '(?i)(x)')) UNION ALL SELECT CONCAT('https://x?s=', CAST(current_schema AS VARCHAR)), CAST(1 AS BIGINT) -- ";

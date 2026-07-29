@@ -283,6 +283,39 @@ describe('Suggestion Utils', () => {
       expect(payload.unset).to.deep.equal(['coveredByDomainWide']);
     });
 
+    it('splits suggestionIds into multiple SQS messages when count exceeds the batch size', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 6500 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().resolves() },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        set: { coveredByDomainWide: 'pattern-sugg-id' },
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(queueContext.sqs.sendMessage.callCount).to.equal(3);
+      const batches = queueContext.sqs.sendMessage.getCalls().map((call) => call.args[1]);
+      expect(batches[0].suggestionIds).to.have.lengthOf(3000);
+      expect(batches[1].suggestionIds).to.have.lengthOf(3000);
+      expect(batches[2].suggestionIds).to.have.lengthOf(500);
+      expect(batches[0].suggestionIds).to.deep.equal(items.slice(0, 3000).map((s) => s.getId()));
+      batches.forEach((payload) => {
+        expect(payload.type).to.equal(SUGGESTION_BULK_UPDATE_TYPE);
+        expect(payload.siteId).to.equal('site-1');
+        expect(payload.set).to.deep.equal({ coveredByDomainWide: 'pattern-sugg-id' });
+      });
+      expect(items[0].save.called).to.be.false;
+      expect(queueContext.log.info.calledOnce).to.be.true;
+      expect(queueContext.log.info.firstCall.args[0]).to.include('3 batch(es)');
+    });
+
     it('falls back to direct save when queueUrl is not configured', async () => {
       const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
       const items = Array.from({ length: 1701 }, (_, i) => ({

@@ -12,6 +12,7 @@
 
 export interface BotBlockerConfig {
   baseUrl: string;
+  headers?: Record<string, string>;
   timeout?: number;
 }
 

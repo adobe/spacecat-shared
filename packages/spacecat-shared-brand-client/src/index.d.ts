@@ -36,6 +36,32 @@ export interface BrandGuidelines extends Brand {
   additionalGuidelines?: string[];
 }
 
+export interface BrandGovernanceProfile {
+  data: Record<string, unknown>;
+  meta?: Record<string, unknown>;
+}
+
+export class BrandGovernanceClient {
+  constructor(config: { apiBaseUrl: string; apiKey: string }, log?: Console);
+
+  static createFrom(context: UniversalContext): BrandGovernanceClient;
+
+  /**
+   * Fetches brand guidelines for a site URL from the Brand Governance Agent.
+   * Returns null if the brand is not registered (404) — caller falls back to Brand Publish.
+   * The returned object is the raw /profile response from the Brand Governance Agent.
+   *
+   * @param siteBaseUrl - The site's base URL to resolve brand by domain
+   * @param imsOrgId - The IMS org ID sent as x-gw-ims-org-id header
+   * @param imsConfig - IMS auth config
+   */
+  getBrandGuidelinesForUrl(
+    siteBaseUrl: string,
+    imsOrgId: string,
+    imsConfig: ImsConfig,
+  ): Promise<BrandGovernanceProfile | null>;
+}
+
 export default class BrandClient {
   constructor(config: BrandClientConfig, log?: Console);
 

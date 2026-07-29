@@ -1,0 +1,120 @@
+name: Project Engine Client Mock Image Smoke
+
+# PR-time guard that the mock Docker image actually BUILDS and BOOTS.
+#
+# The publish workflow (project-engine-client-mock-image.yaml) only runs on the release tag, so
+# without this a broken Dockerfile / Caddyfile / entrypoint would not surface until release — on a
+# tag, where it is hardest to fix. This builds the image and smoke-tests a throwaway container on
+# every PR that touches the package, so the same break is caught on the PR that introduces it.
+#
+# Path-gated (like project-engine-mock-e2e.yaml) so the Docker build cost is only paid when the
+# image's inputs change. Builds locally only — never pushes, no registry/OIDC auth (permissions
+# are read-only), independent of main.yaml's release path.
+
+permissions: {}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/spacecat-shared-project-engine-client/Dockerfile'
+      - 'packages/spacecat-shared-project-engine-client/Caddyfile'
+      - 'packages/spacecat-shared-project-engine-client/docker-entrypoint.sh'
+      - 'packages/spacecat-shared-project-engine-client/.dockerignore'
+      - 'packages/spacecat-shared-project-engine-client/mock/**'
+      - 'packages/spacecat-shared-project-engine-client/spec/**'
+      - 'packages/spacecat-shared-project-engine-client/scripts/**'
+      - '.github/workflows/project-engine-client-mock-image-smoke.yaml'
+  pull_request:
+    paths:
+      - 'packages/spacecat-shared-project-engine-client/Dockerfile'
+      - 'packages/spacecat-shared-project-engine-client/Caddyfile'
+      - 'packages/spacecat-shared-project-engine-client/docker-entrypoint.sh'
+      - 'packages/spacecat-shared-project-engine-client/.dockerignore'
+      - 'packages/spacecat-shared-project-engine-client/mock/**'
+      - 'packages/spacecat-shared-project-engine-client/spec/**'
+      - 'packages/spacecat-shared-project-engine-client/scripts/**'
+      - '.github/workflows/project-engine-client-mock-image-smoke.yaml'
+  workflow_dispatch:
+
+# One run per PR branch; cancel superseded runs.
+concurrency:
+  group: project-engine-client-mock-image-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: pe-mock-smoke:ci
+  BASE: https://localhost:8443/enterprise/projects/api
+
+jobs:
+  smoke:
+    name: Build & smoke-test mock image
+    runs-on: ubuntu-latest
+    # Bound a wedged build / a container that never goes healthy.
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Build image
+        # Same context + Dockerfile the publish workflow uses, so a build break here is the build
+        # break that would otherwise only appear at release. Loads into the local daemon (no push).
+        run: docker build -t "$IMAGE" packages/spacecat-shared-project-engine-client
+
+      - name: Run throwaway container
+        run: |
+          docker run -d --name pe-mock-smoke -p 127.0.0.1:8443:8443 "$IMAGE"
+
+      - name: Wait for healthy
+        # The image's own HEALTHCHECK is the readiness contract; poll it instead of re-implementing
+        # a probe. Fail fast (and dump logs) if it never goes healthy.
+        run: |
+          for i in $(seq 1 30); do
+            state=$(docker inspect -f '{{.State.Status}}' pe-mock-smoke 2>/dev/null || echo missing)
+            health=$(docker inspect -f '{{.State.Health.Status}}' pe-mock-smoke 2>/dev/null || echo missing)
+            echo "state[$i]: $state / health: $health"
+            [ "$health" = "healthy" ] && exit 0
+            # Fail fast on a crashed container instead of sleeping through all 30 iterations.
+            case "$state" in
+              exited|dead) echo "::error::container is $state before becoming healthy"; docker logs pe-mock-smoke || true; exit 1 ;;
+            esac
+            [ "$health" = "unhealthy" ] && break
+            sleep 2
+          done
+          echo "::error::container did not become healthy"
+          docker logs pe-mock-smoke || true
+          exit 1
+
+      - name: Smoke test — TLS, proxy path, auth guard
+        # Exercises the whole image end to end through Caddy on :8443:
+        #   1. __dump (auth-exempt control route) returns 200          -> TLS terminates + proxy reaches the mock
+        #   2. a real route WITHOUT a bearer token returns 401         -> the auth guard is wired end to end
+        #   3. the same route WITH a bearer token returns 200 + items  -> handler serves real data through the proxy
+        # -k: the cert is self-signed by design (see docs/mock-docker.md).
+        run: |
+          set -euo pipefail
+
+          echo "1) __dump (auth-exempt) -> 200"
+          curl -ksf "$BASE/__dump" >/dev/null || { echo "::error::__dump did not return 200 over HTTPS"; exit 1; }
+
+          echo "2) GET /v1/languages without token -> 401"
+          code=$(curl -ks -o /dev/null -w '%{http_code}' "$BASE/v1/languages")
+          [ "$code" = "401" ] || { echo "::error::expected 401 without token, got $code"; exit 1; }
+
+          echo "3) GET /v1/languages with token -> 200 + items"
+          body=$(curl -ksf -H 'Authorization: Bearer smoke-test' "$BASE/v1/languages")
+          echo "$body" | grep -q '"items"' || { echo "::error::authed response missing items: $body"; exit 1; }
+
+          echo "smoke test passed"
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker logs pe-mock-smoke || true
+
+      - name: Tear down
+        if: always()
+        run: docker rm -f pe-mock-smoke || true

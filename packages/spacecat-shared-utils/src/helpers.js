@@ -33,6 +33,12 @@ export function resolveSecretsName(opts, ctx, defaultPath) {
 
   // if funcVersion is something like ci123, then use ci directly
   funcVersion = /^ci\d+$/i.test(funcVersion) ? 'ci' : funcVersion;
+  // when a Lambda is invoked via an unqualified ARN (e.g. SQS event source
+  // mappings without an alias), helix-universal sets ctx.func.version to
+  // '$LATEST'. '$' is not a valid character in AWS Secrets Manager secret
+  // names, which causes ValidationException downstream. Normalize to
+  // 'latest' so the resolved secret path matches the :latest alias path.
+  funcVersion = funcVersion === '$LATEST' ? 'latest' : funcVersion;
 
   return `${defaultPath}/${funcVersion}`;
 }

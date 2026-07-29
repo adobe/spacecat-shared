@@ -1,0 +1,14 @@
+# The image installs deps fresh and bakes build/openapi3.json itself, so keep the build context
+# lean — none of these are needed (or wanted) inside the image.
+node_modules
+src
+.counterfact
+build
+coverage
+junit
+test
+docs
+python
+*.log
+test-results.xml
+.DS_Store

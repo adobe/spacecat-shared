@@ -27,6 +27,8 @@ export interface SiteEnrollmentCollection extends
     BaseCollection<SiteEnrollment> {
   allBySiteId(siteId: string): Promise<SiteEnrollment[]>;
   allByEntitlementId(entitlementId: string): Promise<SiteEnrollment[]>;
+  allSiteIdsByProductCode(productCode: string): Promise<string[]>;
+  allSiteIdsByTier(tier: string, productCode?: string): Promise<string[]>;
 
   findBySiteId(siteId: string): Promise<SiteEnrollment | null>;
   findByEntitlementId(entitlementId: string): Promise<SiteEnrollment | null>;

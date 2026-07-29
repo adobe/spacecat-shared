@@ -436,15 +436,30 @@ export const DATA_SCHEMAS = {
       },
     },
   },
+  // Sitemap has two data shapes from the audit worker:
+  // 1. URL-type (type='url'): sitemapUrl + pageUrl identify a probed page issue
+  // 2. Error-type (type='error'): site/sitemap infrastructure failures; sitemapUrl may be empty
   [OPPORTUNITY_TYPES.SITEMAP]: {
     schema: Joi.object({
-      sitemapUrl: Joi.string().uri().required(),
-      pageUrl: Joi.string().uri().required(),
       type: Joi.string().valid('url', 'error').optional(),
+      error: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().required(),
+        otherwise: Joi.string().optional(),
+      }),
+      sitemapUrl: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().uri().allow('').optional(),
+        otherwise: Joi.string().uri().required(),
+      }),
+      pageUrl: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().uri().allow('').optional(),
+        otherwise: Joi.string().uri().required(),
+      }),
       statusCode: Joi.number().optional(),
-      urlsSuggested: Joi.string().uri().optional(),
-      recommendedAction: Joi.string().optional(),
-      error: Joi.string().optional(),
+      urlsSuggested: Joi.string().uri().allow('').optional(),
+      recommendedAction: Joi.string().allow('').optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
     projections: {

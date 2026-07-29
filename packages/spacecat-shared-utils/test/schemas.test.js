@@ -61,6 +61,65 @@ describe('schemas', () => {
       expect(result.success).true;
     });
 
+    it('validates optional claims guidance fields', () => {
+      const result = llmoConfig.safeParse({
+        ...baseConfig,
+        claims: {
+          brandContext: 'Treat Firefly as an Adobe product family.',
+          sentimentGuidance: 'Mentions of difficult setup are unfavorable.',
+        },
+      });
+
+      expect(result.success).true;
+      if (!result.success) {
+        throw new Error('Expected validation to pass');
+      }
+      expect(result.data.claims).to.deep.equal({
+        brandContext: 'Treat Firefly as an Adobe product family.',
+        sentimentGuidance: 'Mentions of difficult setup are unfavorable.',
+      });
+    });
+
+    it('allows an empty claims object', () => {
+      const result = llmoConfig.safeParse({
+        ...baseConfig,
+        claims: {},
+      });
+
+      expect(result.success).true;
+    });
+
+    it('rejects claims guidance longer than 4000 characters', () => {
+      const result = llmoConfig.safeParse({
+        ...baseConfig,
+        claims: {
+          brandContext: 'x'.repeat(4001),
+        },
+      });
+
+      expect(result.success).false;
+      if (result.success) {
+        throw new Error('Expected validation to fail');
+      }
+      expect(result.error.issues[0].path).to.deep.equal(['claims', 'brandContext']);
+      expect(result.error.issues[0].code).to.equal('too_big');
+    });
+
+    it('rejects non-string claims guidance', () => {
+      const result = llmoConfig.safeParse({
+        ...baseConfig,
+        claims: {
+          sentimentGuidance: ['positive'],
+        },
+      });
+
+      expect(result.success).false;
+      if (result.success) {
+        throw new Error('Expected validation to fail');
+      }
+      expect(result.error.issues[0].path).to.deep.equal(['claims', 'sentimentGuidance']);
+    });
+
     it('fails when brand references unknown entities', () => {
       const unknownCategoryId = '11111111-1111-4111-8111-111111111111';
       const config = {

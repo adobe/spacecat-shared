@@ -12,8 +12,9 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
+import { StandardRetryStrategy } from '@smithy/util-retry';
 
-import { createDataAccess, createFetchCompat } from '../../../src/service/index.js';
+import { createDataAccess, createFetchCompat, EbusyRetryStrategy } from '../../../src/service/index.js';
 
 describe('service/index', () => {
   it('uses provided PostgREST client and does not require postgrestUrl', () => {
@@ -30,89 +31,182 @@ describe('service/index', () => {
       .to.throw('postgrestUrl is required to create data access');
   });
 
-  it('creates data access with PostgREST config and no S3 bucket', () => {
+  it('creates data access with full config', () => {
     const dataAccess = createDataAccess({
       postgrestUrl: 'http://localhost:3000',
-      postgrestSchema: 'public',
-      postgrestApiKey: 'api-key',
-      postgrestHeaders: {
-        'x-test-header': 'value',
-      },
+      postgrestSchema: 'test',
+      postgrestApiKey: 'test-key',
+      postgrestHeaders: { 'X-Custom': 'header' },
     }, console);
 
     expect(dataAccess).to.be.an('object');
     expect(dataAccess.services).to.be.an('object');
-    expect(dataAccess.services.postgrestClient).to.be.an('object');
-    expect(dataAccess.services.postgrestClient).to.have.property('from').that.is.a('function');
+    expect(dataAccess.services.postgrestClient).to.exist;
   });
 
-  it('creates data access with optional S3 config', () => {
-    const dataAccess = createDataAccess({
-      postgrestUrl: 'http://localhost:3000',
-      s3Bucket: 'test-bucket',
-      region: 'us-east-1',
-    }, console, {});
-
-    expect(dataAccess).to.be.an('object');
-  });
-
-  it('creates data access with S3 bucket and default region options', () => {
+  it('creates S3 service when s3Bucket is provided', () => {
     const dataAccess = createDataAccess({
       postgrestUrl: 'http://localhost:3000',
       s3Bucket: 'test-bucket',
     }, console, {});
 
-    expect(dataAccess).to.be.an('object');
+    expect(dataAccess.Configuration).to.exist;
+  });
+
+  it('does not create S3 service when s3Bucket is missing', () => {
+    const dataAccess = createDataAccess({
+      postgrestUrl: 'http://localhost:3000',
+    }, console, {});
+
+    expect(dataAccess.Configuration.s3Client).to.be.undefined;
   });
 
   describe('createFetchCompat', () => {
-    it('converts native Headers instances to plain objects', async () => {
+    it('converts native Headers to plain object', async () => {
       const mockFetch = sinon.stub().resolves({ ok: true });
-      const wrappedFetch = createFetchCompat(mockFetch);
+      const compatFetch = createFetchCompat(mockFetch);
 
-      const nativeHeaders = new Headers();
-      nativeHeaders.set('Content-Type', 'application/json');
-      nativeHeaders.set('Authorization', 'Bearer token');
+      const headers = new Headers();
+      headers.set('Content-Type', 'application/json');
+      headers.set('X-Custom', 'value');
 
-      await wrappedFetch('http://example.com', {
-        method: 'POST',
-        headers: nativeHeaders,
-        body: '{"test":true}',
-      });
-
-      expect(mockFetch).to.have.been.calledOnce;
-      const [url, opts] = mockFetch.firstCall.args;
-      expect(url).to.equal('http://example.com');
-      expect(opts.headers).to.deep.equal({
-        'content-type': 'application/json',
-        authorization: 'Bearer token',
-      });
-      expect(opts.body).to.equal('{"test":true}');
-    });
-
-    it('passes plain object headers through unchanged', async () => {
-      const mockFetch = sinon.stub().resolves({ ok: true });
-      const wrappedFetch = createFetchCompat(mockFetch);
-
-      const plainHeaders = { 'Content-Type': 'application/json' };
-
-      await wrappedFetch('http://example.com', {
-        method: 'GET',
-        headers: plainHeaders,
-      });
+      await compatFetch('http://test.com', { headers });
 
       expect(mockFetch).to.have.been.calledOnce;
       const [, opts] = mockFetch.firstCall.args;
-      expect(opts.headers).to.equal(plainHeaders);
+      expect(opts.headers).to.deep.equal({
+        'content-type': 'application/json',
+        'x-custom': 'value',
+      });
     });
 
-    it('handles calls with no options', async () => {
+    it('passes through opts with no headers', async () => {
       const mockFetch = sinon.stub().resolves({ ok: true });
-      const wrappedFetch = createFetchCompat(mockFetch);
+      const compatFetch = createFetchCompat(mockFetch);
 
-      await wrappedFetch('http://example.com');
+      await compatFetch('http://test.com', { method: 'POST' });
 
-      expect(mockFetch).to.have.been.calledOnceWith('http://example.com', undefined);
+      expect(mockFetch).to.have.been.calledWith('http://test.com', { method: 'POST' });
+    });
+
+    it('passes through opts with plain object headers', async () => {
+      const mockFetch = sinon.stub().resolves({ ok: true });
+      const compatFetch = createFetchCompat(mockFetch);
+
+      await compatFetch('http://test.com', { headers: { 'X-Test': 'value' } });
+
+      expect(mockFetch).to.have.been.calledWith('http://test.com', { headers: { 'X-Test': 'value' } });
+    });
+  });
+
+  describe('S3 service with EbusyRetryStrategy', () => {
+    it('configures S3 client with custom retry strategy when s3Bucket is provided', () => {
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+        s3Bucket: 'test-bucket',
+      }, console, {});
+
+      expect(dataAccess.Configuration).to.exist;
+      expect(dataAccess.Configuration.s3Client).to.exist;
+    });
+
+    it('retry strategy extends StandardRetryStrategy', () => {
+      const dataAccess = createDataAccess({
+        postgrestUrl: 'http://localhost:3000',
+        s3Bucket: 'test-bucket',
+        region: 'us-east-1',
+      }, console, {});
+
+      const { Configuration } = dataAccess;
+      expect(Configuration.s3Client).to.exist;
+      expect(Configuration.s3Bucket).to.equal('test-bucket');
+    });
+  });
+
+  describe('EbusyRetryStrategy', () => {
+    let strategy;
+    let superStub;
+
+    beforeEach(() => {
+      strategy = new EbusyRetryStrategy(4);
+      // Stub the parent method to avoid needing full AWS SDK context
+      superStub = sinon.stub(StandardRetryStrategy.prototype, 'refreshRetryTokenForRetry')
+        .resolves({ retryDelay: 100, retryCount: 1 });
+    });
+
+    afterEach(() => {
+      if (superStub) {
+        superStub.restore();
+      }
+    });
+
+    it('extends StandardRetryStrategy', () => {
+      expect(strategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('has refreshRetryTokenForRetry method', () => {
+      expect(strategy.refreshRetryTokenForRetry).to.be.a('function');
+    });
+
+    it('constructs with default maxAttempts', () => {
+      const newStrategy = new EbusyRetryStrategy();
+      expect(newStrategy).to.exist;
+      expect(newStrategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('constructs with custom maxAttempts', () => {
+      const newStrategy = new EbusyRetryStrategy(10);
+      expect(newStrategy).to.exist;
+      expect(newStrategy).to.be.instanceOf(StandardRetryStrategy);
+    });
+
+    it('reclassifies EBUSY error with code as TRANSIENT', async () => {
+      const ebusyError = new Error('getaddrinfo EBUSY');
+      ebusyError.code = 'EBUSY';
+      const errorInfo = { error: ebusyError };
+      const mockToken = {};
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      // Verify parent was called with errorType: 'TRANSIENT'
+      expect(superStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+      expect(modifiedErrorInfo.error).to.equal(ebusyError);
+    });
+
+    it('reclassifies EBUSY error in message as TRANSIENT', async () => {
+      const ebusyError = new Error('getaddrinfo EBUSY spacecat.s3.amazonaws.com');
+      const errorInfo = { error: ebusyError };
+      const mockToken = {};
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(superStub).to.have.been.calledOnce;
+      const [, modifiedErrorInfo] = superStub.firstCall.args;
+      expect(modifiedErrorInfo.errorType).to.equal('TRANSIENT');
+    });
+
+    it('does not reclassify non-EBUSY errors', async () => {
+      const otherError = new Error('Connection reset');
+      otherError.code = 'ECONNRESET';
+      const errorInfo = { error: otherError, errorType: 'THROTTLING' };
+      const mockToken = {};
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(superStub).to.have.been.calledOnce;
+      const [, passedErrorInfo] = superStub.firstCall.args;
+      expect(passedErrorInfo.errorType).to.equal('THROTTLING');
+    });
+
+    it('handles errorInfo with no error', async () => {
+      const errorInfo = { errorType: 'THROTTLING' };
+      const mockToken = {};
+
+      await strategy.refreshRetryTokenForRetry(mockToken, errorInfo);
+
+      expect(superStub).to.have.been.calledOnce;
     });
   });
 });

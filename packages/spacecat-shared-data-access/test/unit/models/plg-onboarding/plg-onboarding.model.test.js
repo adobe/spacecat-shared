@@ -79,6 +79,226 @@ describe('PlgOnboardingModel', () => {
     });
   });
 
+  describe('DOMAIN_PATTERN', () => {
+    const { DOMAIN_PATTERN } = PlgOnboarding;
+
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'sub.domain.example.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/path/with-hyphens',
+        'example.com/path.with.dots',
+        'example.io/a/b/c',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
+        // Hostnames that begin with a dotted-quad-shaped prefix but end in an
+        // alphabetic TLD remain valid — IP literals are blocked by the TLD
+        // requirement (final label must be [a-z]{2,} or xn--*), not by a
+        // lookahead. Covers nip.io-style wildcard DNS.
+        '1.2.3.4.example.com',
+        '192.168.1.1.nip.io',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(DOMAIN_PATTERN.test(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['scheme prefix http', 'http://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['IPv4 address 8.8.8.8', '8.8.8.8'],
+        ['IPv4 with path', '127.0.0.1/path'],
+        ['query string', 'nba.com?foo=bar'],
+        ['fragment', 'nba.com#section'],
+        ['path with query string', 'nba.com/kings?q=1'],
+        ['path with fragment', 'nba.com/kings#top'],
+        ['trailing hyphen in label', 'nba-.com'],
+        ['trailing hyphen in subdomain', 'foo-.nba.com'],
+        ['trailing slash', 'nba.com/'],
+        ['trailing slash after path', 'nba.com/kings/'],
+        ['double slash', 'nba.com//kings'],
+        ['port number', 'nba.com:8080'],
+        ['path traversal dot-dot', 'nba.com/../etc'],
+        ['path traversal dot', 'nba.com/./x'],
+        ['path traversal dot-dot at end', 'nba.com/..'],
+        ['path traversal dot at end', 'nba.com/.'],
+        ['leading dot in path segment', 'nba.com/.hidden'],
+        ['leading double-dot prefix in segment', 'nba.com/..foo'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['single-label hostname', 'localhost'],
+        ['single-label intranet hostname', 'intranet'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['uppercase locale path', 'example.com/en-US'],
+        ['IPv6 bracketed', '[::1]'],
+        ['IPv6 unbracketed', '2001:db8::1'],
+        ['percent-encoded path', 'nba.com/path%20with%20space'],
+        // IP-literal forms rejected via the alphabetic/punycode TLD requirement.
+        ['hex IPv4', '0x7f.0.0.1'],
+        ['hex IPv4 (IMDS)', '0xa9.254.169.254'],
+        ['octal IPv4', '0177.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['numeric TLD', 'foo.1'],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}: "${value}"`, () => {
+          expect(DOMAIN_PATTERN.test(value)).to.be.false;
+        });
+      });
+    });
+  });
+
+  describe('isValidDomain', () => {
+    describe('valid values', () => {
+      [
+        'nba.com',
+        'www.nba.com',
+        'nba.com/kings',
+        'nba.com/us/kings',
+        'example.com/en-us',
+        'example.com/case_studies',
+        'xn--nba-6na.com',
+        // Hostnames that start with a dotted-quad but continue with non-IP labels:
+        // IP literals are rejected via the alphabetic/punycode TLD requirement,
+        // not via a hostname-prefix lookahead, so these legitimate hosts pass.
+        '1.2.3.4.example.com',
+        '192.168.1.1.nip.io',
+      ].forEach((value) => {
+        it(`accepts "${value}"`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.true;
+        });
+      });
+    });
+
+    describe('invalid values', () => {
+      [
+        ['empty string', ''],
+        ['scheme prefix', 'https://nba.com'],
+        ['IPv4 address', '127.0.0.1'],
+        ['short-form IPv4', '127.1'],
+        ['decimal IPv4', '2130706433'],
+        ['uppercase hostname', 'NBA.COM'],
+        ['uppercase path segment', 'nba.com/Kings'],
+        ['null byte in domain', 'nba.com\x00/evil'],
+        ['control character in path', 'nba.com/ki\x01ngs'],
+        ['trailing dot path segment', 'nba.com/foo.'],
+        ['trailing dot fqdn', 'nba.com.'],
+        ['consecutive dots mid path segment', 'nba.com/v1..0'],
+        ['consecutive dots mid path segment 2', 'nba.com/foo..bar'],
+        // Hex-encoded IPv4 literals (WHATWG URL canonicalizes these to dotted-quad,
+        // bypassing denylist-based SSRF gates that match raw strings).
+        ['hex IPv4', '0x7f.0.0.1'],
+        ['hex IPv4 (IMDS)', '0xa9.254.169.254'],
+        ['hex IPv4 all hex', '0xa9.0xfe.0xa9.0xfe'],
+        ['octal IPv4', '0177.0.0.1'],
+        ['numeric TLD', 'foo.1'],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+        });
+      });
+    });
+
+    describe('non-string inputs', () => {
+      [
+        ['null', null],
+        ['undefined', undefined],
+        ['number', 123],
+        ['boolean', true],
+        ['object', { domain: 'nba.com' }],
+        ['array', ['nba.com']],
+      ].forEach(([label, value]) => {
+        it(`rejects ${label}`, () => {
+          expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+        });
+      });
+    });
+
+    describe('length boundaries', () => {
+      it('accepts a hostname of exactly 253 chars', () => {
+        const hostname = `${'a'.repeat(249)}.com`;
+        expect(hostname.length).to.equal(253);
+        expect(PlgOnboarding.isValidDomain(hostname)).to.be.true;
+      });
+
+      it('rejects a hostname exceeding 253 chars', () => {
+        const hostname = `${'a'.repeat(250)}.com`;
+        expect(hostname.length).to.equal(254);
+        expect(PlgOnboarding.isValidDomain(hostname)).to.be.false;
+      });
+
+      it('accepts a domain of exactly 2048 chars', () => {
+        const value = `nba.com/${'a'.repeat(2040)}`;
+        expect(value.length).to.equal(2048);
+        expect(PlgOnboarding.isValidDomain(value)).to.be.true;
+      });
+
+      it('rejects a domain exceeding 2048 chars', () => {
+        const value = `nba.com/${'a'.repeat(2041)}`;
+        expect(value.length).to.equal(2049);
+        expect(PlgOnboarding.isValidDomain(value)).to.be.false;
+      });
+    });
+
+    describe('regression: DOMAIN_PATTERN alone is insufficient', () => {
+      // Pinning tests: these inputs pass the bare regex but are correctly rejected
+      // by the full validator. They exist to prevent regressions if a future caller
+      // is tempted to import DOMAIN_PATTERN directly instead of isValidDomain.
+      it('DOMAIN_PATTERN accepts trailing-dot path segment but isValidDomain rejects it', () => {
+        expect(PlgOnboarding.DOMAIN_PATTERN.test('nba.com/foo.')).to.be.true;
+        expect(PlgOnboarding.isValidDomain('nba.com/foo.')).to.be.false;
+      });
+
+      it('DOMAIN_PATTERN accepts consecutive-dot path segment but isValidDomain rejects it', () => {
+        expect(PlgOnboarding.DOMAIN_PATTERN.test('nba.com/v1..0')).to.be.true;
+        expect(PlgOnboarding.isValidDomain('nba.com/v1..0')).to.be.false;
+      });
+
+      it('DOMAIN_PATTERN has no length cap but isValidDomain enforces 2048', () => {
+        const tooLong = `nba.com/${'a'.repeat(2041)}`;
+        expect(tooLong.length).to.equal(2049);
+        expect(PlgOnboarding.DOMAIN_PATTERN.test(tooLong)).to.be.true;
+        expect(PlgOnboarding.isValidDomain(tooLong)).to.be.false;
+      });
+    });
+
+    describe('SSRF defense: IP-literal hostnames rejected via TLD requirement', () => {
+      // These would canonicalize to private/loopback IPs via WHATWG URL parsing
+      // (new URL('https://0xa9.254.169.254').hostname → '169.254.169.254').
+      // The alphabetic/punycode TLD requirement in DOMAIN_PATTERN rejects them at
+      // the structural level so downstream raw-string denylists cannot be bypassed.
+      [
+        ['hex IPv4 loopback', '0x7f.0.0.1', '127.0.0.1'],
+        ['hex IPv4 IMDS', '0xa9.254.169.254', '169.254.169.254'],
+        ['hex IPv4 all hex', '0xa9.0xfe.0xa9.0xfe', '169.254.169.254'],
+        ['hex IPv4 RFC1918', '0xa.0.0.1', '10.0.0.1'],
+        ['octal IPv4', '0177.0.0.1', '127.0.0.1'],
+      ].forEach(([label, input]) => {
+        it(`isValidDomain rejects ${label} (${input})`, () => {
+          expect(PlgOnboarding.isValidDomain(input)).to.be.false;
+        });
+      });
+    });
+  });
+
+  describe('normalizeDomain', () => {
+    it('lowercases a string value', () => {
+      expect(PlgOnboarding.normalizeDomain('NBA.COM/Kings')).to.equal('nba.com/kings');
+    });
+
+    it('returns non-string values unchanged', () => {
+      expect(PlgOnboarding.normalizeDomain(null)).to.be.null;
+      expect(PlgOnboarding.normalizeDomain(undefined)).to.be.undefined;
+    });
+  });
+
   describe('REVIEW_DECISIONS', () => {
     it('defines all expected review decisions', () => {
       expect(PlgOnboarding.REVIEW_DECISIONS).to.deep.equal({
@@ -87,6 +307,7 @@ describe('PlgOnboardingModel', () => {
         CLOSED: 'CLOSED',
         REOPENED: 'REOPENED',
         OFFBOARDED: 'OFFBOARDED',
+        PENDING: 'PENDING',
       });
     });
   });

@@ -31,4 +31,6 @@ export {
   isValidUrl,
   isValidUUID,
   toBoolean,
+  UUID_REGEX,
+  UUID_V4_REGEX,
 } from './functions.js';

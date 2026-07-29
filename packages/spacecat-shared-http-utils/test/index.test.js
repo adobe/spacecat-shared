@@ -26,6 +26,8 @@ import {
   notFound,
   ok,
   unauthorized,
+  FT_MAC_FACS_PERMISSIONS,
+  X_PRODUCT_HEADER,
 } from '../src/index.js';
 
 const gunzipAsync = promisify(gunzip);
@@ -251,5 +253,19 @@ describe('HTTP Response Functions', () => {
     expect(response.headers.get('custom-header')).to.equal('value');
     const responseBody = await response.json();
     expect(responseBody).to.deep.equal({ message: 'Server error occurred' });
+  });
+
+  describe('FACS constant re-exports', () => {
+    it('re-exports FT_MAC_FACS_PERMISSIONS from the package root', () => {
+      // Regression guard: spacecat-auth-service imports this from the bare
+      // package; it must be re-exported from index.js, not only src/auth/constants.js.
+      expect(FT_MAC_FACS_PERMISSIONS).to.be.an('object');
+      expect(FT_MAC_FACS_PERMISSIONS).to.have.property('LLMO');
+      expect(FT_MAC_FACS_PERMISSIONS).to.have.property('ASO');
+    });
+
+    it('re-exports X_PRODUCT_HEADER from the package root', () => {
+      expect(X_PRODUCT_HEADER).to.equal('x-product');
+    });
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@adobe/spacecat-shared-data-access",
-  "version": "3.64.0",
+  "version": "4.15.1",
   "description": "Shared modules of the Spacecat Services - Data Access",
   "type": "module",
   "engines": {
@@ -19,7 +19,8 @@
     "test:debug:grep": "mocha --inspect-brk --require ./test/setup-env.js --grep",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "clean": "rm -rf package-lock.json node_modules"
+    "clean": "rm -rf package-lock.json node_modules",
+    "generate:schemas": "node scripts/generate-change-details-schema.js"
   },
   "mocha": {
     "require": "test/setup-env.js",
@@ -42,8 +43,9 @@
   "dependencies": {
     "@adobe/fetch": "^4.2.3",
     "@adobe/spacecat-shared-utils": "1.105.0",
-    "@supabase/postgrest-js": "2.105.4",
     "@aws-sdk/client-s3": "^3.940.0",
+    "@smithy/util-retry": "^4.0.0",
+    "@supabase/postgrest-js": "2.106.2",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",
     "joi": "18.2.1",
@@ -52,8 +54,10 @@
   "devDependencies": {
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
+    "electrodb": "3.9.0",
+    "joi-to-json": "^5.0.5",
     "nock": "14.0.15",
-    "sinon": "21.1.2",
+    "sinon": "22.0.0",
     "sinon-chai": "4.0.1"
   }
 }

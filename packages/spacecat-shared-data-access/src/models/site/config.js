@@ -46,8 +46,54 @@ export const IMPORT_SOURCES = {
   RUM: 'rum',
 };
 
+// HTTP header names that must not be set via `scraperConfig.headers`
+// (case-insensitive). These are owned by the scraper, its HTTP client, or its
+// auth flow; persisting them as per-site overrides would either be stripped at
+// scrape time or open a security surface outside the per-site config contract.
+const RESERVED_SCRAPER_HEADER_NAMES = new Set([
+  // Credential / authentication headers.
+  'authorization',
+  'cookie',
+  'proxy-authorization',
+  // Routing / fingerprint headers the scraper or its environment owns.
+  'host',
+  'user-agent',
+  // Hop-by-hop / connection-management headers (RFC 7230 section 6.1).
+  'content-length',
+  'transfer-encoding',
+  'connection',
+  'keep-alive',
+  'upgrade',
+  'te',
+  'trailer',
+]);
+
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
 const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
+
+// Columns on the CDN log tables that a cdnlogsFilter entry is allowed to target.
+// `key` is interpolated (unquoted) into Athena SQL by the audit worker's
+// buildSiteFilters(), so it MUST be constrained to this allowlist to prevent SQL
+// injection (VULN-37491). Keep in sync with ALLOWED_FILTER_KEYS in
+// spacecat-audit-worker/src/utils/cdn-utils.js.
+export const CDN_LOGS_FILTER_KEYS = [
+  'url',
+  'host',
+  'x_forwarded_host',
+  'user_agent',
+  'referer',
+  'cdn_provider',
+];
+
+const CDN_LOGS_FILTER_SCHEMA = Joi.array().items(
+  Joi.object({
+    // Athena folds column identifiers to lowercase; normalize before matching
+    // the allowlist so a stored 'X_forwarded_host' is accepted as the same column.
+    key: Joi.string().lowercase().valid(...CDN_LOGS_FILTER_KEYS).required(),
+    value: Joi.array().items(Joi.string()).required(),
+    type: Joi.string().valid('include', 'exclude').optional(),
+  }),
+);
 const LLMO_TAG = Joi.alternatives()
   .try(
     // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
@@ -329,13 +375,7 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     tags: Joi.array().items(Joi.string()).optional(),
-    cdnlogsFilter: Joi.array().items(
-      Joi.object({
-        key: Joi.string().required(),
-        value: Joi.array().items(Joi.string()).required(),
-        type: Joi.string().valid('include', 'exclude').optional(),
-      }),
-    ).optional(),
+    cdnlogsFilter: CDN_LOGS_FILTER_SCHEMA.optional(),
     countryCodeIgnoreList: Joi.array().items(
       Joi.string().length(2),
     ).optional(),
@@ -367,6 +407,7 @@ export const configSchema = Joi.object({
       'ams-frontdoor',
       'other',
     ).optional(),
+    showWww: Joi.boolean().optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -378,6 +419,42 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     outputLocation: Joi.string().required(),
+  }).optional(),
+  /**
+   * Per-site configuration intended to be forwarded by the content scraper as
+   * HTTP headers on outbound requests. Values are bounded and restricted to
+   * printable ASCII to avoid header-injection (CR/LF) and oversized-payload
+   * hazards. Header names are restricted to RFC 7230 token characters.
+   * Reserved names (see `RESERVED_SCRAPER_HEADER_NAMES`) are rejected.
+   *
+   * Enforcement lives at the schema layer (rather than at each consumer or API
+   * boundary) so any writer using `updateScraperConfig` -- API endpoint,
+   * internal tool, Slack command -- inherits the same checks.
+   */
+  scraperConfig: Joi.object({
+    headers: Joi.object()
+      .pattern(
+        // RFC 7230 token characters for header names, 64 chars max.
+        Joi.string().pattern(/^[A-Za-z0-9!#$%&'*+\-.^_`|~]+$/).max(64),
+        // Visible ASCII + tab, no CR/LF/NUL, 1 to 1024 chars (empty rejected).
+        Joi.string().pattern(/^[\t\x20-\x7E]+$/).max(1024),
+      )
+      .max(32)
+      // Case-insensitive denylist for credential / routing / hop-by-hop names.
+      // Done as an object-level custom validator (rather than on the key
+      // pattern) so the error message names the offending header instead of
+      // surfacing as Joi's generic "is not allowed" pattern-object error.
+      .custom((value, helpers) => {
+        for (const key of Object.keys(value)) {
+          if (RESERVED_SCRAPER_HEADER_NAMES.has(key.toLowerCase())) {
+            return helpers.message(
+              `"${key}" is a reserved scraper header name and cannot be set via scraperConfig.headers`,
+            );
+          }
+        }
+        return value;
+      })
+      .optional(),
   }).optional(),
   tokowakaConfig: Joi.object({
     apiKey: Joi.string().optional(),
@@ -391,6 +468,7 @@ export const configSchema = Joi.object({
       )
       .optional(),
     opted: Joi.number().optional(),
+    routingEnabled: Joi.number().optional(),
     stagingDomains: Joi.array().items(
       Joi.object({
         domain: Joi.string().required(),
@@ -419,9 +497,17 @@ export const configSchema = Joi.object({
       storeCode: Joi.string().required(),
       storeViewCode: Joi.string().required(),
       hostName: Joi.string().optional(),
-      magentoEndpoint: Joi.string().uri().optional(),
-      magentoAPIKey: Joi.string().optional(),
-    }),
+      catalogFieldConfig: Joi.object({
+        name: Joi.object({
+          enabled: Joi.boolean().required(),
+          maxLength: Joi.number().integer().min(0).optional(),
+        }).optional(),
+        description: Joi.object({
+          enabled: Joi.boolean().required(),
+          maxLength: Joi.number().integer().min(0).optional(),
+        }).optional(),
+      }).optional(),
+    }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({
     index: Joi.string().optional(),
@@ -500,7 +586,9 @@ export const Config = (data = {}) => {
   } catch (error) {
     const logger = getLogger();
     if (logger && logger !== console) {
-      logger.error('Site configuration validation failed, using provided data', {
+      // Recoverable: validation failed but we fall back to the provided data,
+      // so this is a warning, not an error (avoids prod ERROR-severity noise).
+      logger.warn('Site configuration validation failed, using provided data', {
         error: error.message,
         invalidConfig: data,
       });
@@ -524,10 +612,12 @@ export const Config = (data = {}) => {
   self.getIncludedURLs = (type) => state?.handlers?.[type]?.includedURLs;
   self.getGroupedURLs = (type) => state?.handlers?.[type]?.groupedURLs;
   self.getLatestMetrics = (type) => state?.handlers?.[type]?.latestMetrics;
+  self.getDefaults = () => state?.defaults;
   self.getFetchConfig = () => state?.fetchConfig;
   self.getBrandConfig = () => state?.brandConfig;
   self.getBrandProfile = () => state?.brandProfile;
   self.getCdnLogsConfig = () => state?.cdnLogsConfig;
+  self.getScraperConfig = () => state?.scraperConfig;
   self.getLlmoConfig = () => state?.llmo;
   self.getLlmoDataFolder = () => state?.llmo?.dataFolder;
   self.getLlmoBrand = () => state?.llmo?.brand;
@@ -650,6 +740,11 @@ export const Config = (data = {}) => {
     state.llmo.brand = brand;
   };
 
+  self.updateLlmoShowWww = (showWww) => {
+    state.llmo = state.llmo || {};
+    state.llmo.showWww = showWww;
+  };
+
   self.addLlmoHumanQuestions = (questions) => {
     state.llmo = state.llmo || {};
     state.llmo.questions = state.llmo.questions || {};
@@ -765,8 +860,17 @@ export const Config = (data = {}) => {
   };
 
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
+    // Reject invalid filter keys at write time (VULN-37491): `key` is
+    // interpolated into Athena SQL downstream, so anything off the allowlist
+    // must never be persisted. Validate only the filter here to avoid coupling
+    // to unrelated required fields elsewhere in the config.
+    const { error, value } = CDN_LOGS_FILTER_SCHEMA.validate(cdnlogsFilter);
+    if (error) {
+      throw new Error(`CDN logs filter validation error: ${error.message}`, { cause: error });
+    }
+
     state.llmo = state.llmo || {};
-    state.llmo.cdnlogsFilter = cdnlogsFilter;
+    state.llmo.cdnlogsFilter = value;
   };
 
   self.updateLlmoCountryCodeIgnoreList = (countryCodeIgnoreList) => {
@@ -948,6 +1052,21 @@ export const Config = (data = {}) => {
     state.cdnLogsConfig = cdnLogsConfig;
   };
 
+  self.updateScraperConfig = (scraperConfig) => {
+    // Validate eagerly (unlike neighboring setters) so bad input is rejected
+    // at the setter rather than silently round-tripping through Dynamo. This
+    // eagerness is the contract every writer relies on for scraperConfig;
+    // do not "harmonize" with cdnLogs/tokowaka setters.
+    //
+    // Use the sanitized value Joi returns so any future `default()` or
+    // `lowercase()` on the schema applies here too — assigning raw input
+    // would silently drift from what validation guarantees.
+    const { scraperConfig: validated } = validateConfiguration(
+      { ...state, scraperConfig },
+    );
+    state.scraperConfig = validated;
+  };
+
   self.updateTokowakaConfig = (tokowakaConfig) => {
     state.tokowakaConfig = tokowakaConfig;
   };
@@ -995,12 +1114,14 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
   handlers: config.getHandlers(),
+  defaults: config.getDefaults?.(),
   contentAiConfig: config.getContentAiConfig(),
   imports: config.getImports(),
   fetchConfig: config.getFetchConfig(),
   brandConfig: config.getBrandConfig(),
   brandProfile: config.getBrandProfile(),
   cdnLogsConfig: config.getCdnLogsConfig(),
+  scraperConfig: config.getScraperConfig?.(),
   llmo: config.getLlmoConfig(),
   tokowakaConfig: config.getTokowakaConfig(),
   edgeOptimizeConfig: config.getEdgeOptimizeConfig(),

@@ -177,6 +177,7 @@ describe('Opportunity IT', async () => {
     expect(opportunity).to.be.an('object');
 
     expect(isValidUUID(opportunity.getId())).to.be.true;
+    expect(opportunity.getId().charAt(14)).to.equal('7');
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -206,6 +207,7 @@ describe('Opportunity IT', async () => {
     expect(opportunity).to.be.an('object');
 
     expect(isValidUUID(opportunity.getId())).to.be.true;
+    expect(opportunity.getId().charAt(14)).to.equal('7');
     expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
     expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -303,6 +305,7 @@ describe('Opportunity IT', async () => {
       expect(opportunity).to.be.an('object');
 
       expect(isValidUUID(opportunity.getId())).to.be.true;
+      expect(opportunity.getId().charAt(14)).to.equal('7');
       expect(isIsoDate(opportunity.getCreatedAt())).to.be.true;
       expect(isIsoDate(opportunity.getUpdatedAt())).to.be.true;
 
@@ -488,7 +491,9 @@ describe('Opportunity IT', async () => {
       const fixEntity2 = result.createdItems[1];
 
       expect(isValidUUID(fixEntity1.getId())).to.be.true;
+      expect(fixEntity1.getId().charAt(14)).to.equal('7');
       expect(isValidUUID(fixEntity2.getId())).to.be.true;
+      expect(fixEntity2.getId().charAt(14)).to.equal('7');
       expect(fixEntity1.getType()).to.equal('CODE_CHANGE');
       expect(fixEntity2.getType()).to.equal('CONTENT_UPDATE');
       expect(fixEntity1.getStatus()).to.equal('PENDING');

@@ -56,6 +56,18 @@ export function isValidHelixPreviewUrl(urlString: string): boolean;
 
 export function isValidUUID(uuid: string): boolean;
 
+/**
+ * Matches any RFC 4122 / 9562 UUID variant (v1 through v8).
+ * The database mints v7 ids; the API also encounters v4 ids minted by the
+ * legacy ORM path or by Mystique direct INSERTs that use `gen_random_uuid()`.
+ */
+export const UUID_REGEX: RegExp;
+
+/**
+ * @deprecated Use `UUID_REGEX`. This pattern was never v4-specific.
+ */
+export const UUID_V4_REGEX: RegExp;
+
 export function isValidIMSOrgId(imsOrgId: string): boolean;
 
 export function dateAfterDays(days: number, dateString: string): Date;
@@ -346,6 +358,8 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function prettifyLogForwardingConfig(payload: object): object;
+
+export const CLOUDFLARE_LOGPUSH_FIELDS: readonly string[];
 
 export function isoCalendarWeek(date: Date): ISOCalendarWeek;
 

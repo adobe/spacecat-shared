@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "https://ns.adobe.com/spacecat/fix-entity/change-details/v2",
+  "title": "FixEntity changeDetails v2",
+  "description": "Canonical v2 deploy-action record for FixEntity.changeDetails (SITES-47997, ADR adobe/mysticat-architecture#200). GENERATED from the Joi source of truth (changeDetailsV2Schema in spacecat-shared-data-access) — DO NOT EDIT BY HAND; run `npm run generate:schemas -w packages/spacecat-shared-data-access`. Structure/enums/required/patterns only: the cross-field invariants (changeResults<->target.changes key-match, applied:ALL completeness, deployResponsePayload 4KB cap) are Joi-enforced and NOT expressible in JSON Schema.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "surface": {
+      "type": "string",
+      "enum": [
+        "ASO",
+        "AUTHOR_PUBLISH",
+        "GIT_MERGE",
+        "SYSTEM"
+      ]
+    },
+    "actorType": {
+      "type": "string",
+      "enum": [
+        "IMS_USER",
+        "SERVICE",
+        "GITHUB",
+        "DETECTOR",
+        "UNKNOWN"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "properties": {
+        "system": {
+          "type": "string"
+        },
+        "changeType": {
+          "type": "string"
+        },
+        "siteId": {
+          "type": "string"
+        },
+        "pageId": {
+          "type": "string"
+        },
+        "documentPath": {
+          "type": "string"
+        },
+        "detectedPageAuthorUrl": {
+          "type": "string"
+        },
+        "changes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "targetPath": {
+                "type": "string"
+              },
+              "property": {
+                "type": "string"
+              },
+              "intendedValue": {
+                "type": [
+                  "array",
+                  "boolean",
+                  "number",
+                  "object",
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "targetPath",
+              "property",
+              "intendedValue"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "changeType",
+        "changes"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "callStatus": {
+          "type": "string",
+          "enum": [
+            "success",
+            "no_op",
+            "client_error",
+            "server_error",
+            "timeout"
+          ]
+        },
+        "applied": {
+          "type": "string",
+          "enum": [
+            "ALL",
+            "PARTIAL",
+            "NONE"
+          ]
+        },
+        "deployResponsePayload": {
+          "type": [
+            "array",
+            "boolean",
+            "number",
+            "object",
+            "string",
+            "null"
+          ],
+          "description": "Raw deploy/apply API response (body + status + relevant headers). MUST be <= 4096 bytes at the write chokepoint; larger payloads must be hashed into deployResponseSha256 and truncated. Size cap enforced by the Joi validator, not by this JSON Schema."
+        },
+        "deployResponseSha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "changeResults": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "targetPath": {
+                "type": "string"
+              },
+              "property": {
+                "type": "string"
+              },
+              "previousValue": {
+                "type": [
+                  "array",
+                  "boolean",
+                  "number",
+                  "object",
+                  "string",
+                  "null"
+                ]
+              },
+              "appliedValue": {
+                "type": [
+                  "array",
+                  "boolean",
+                  "number",
+                  "object",
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "applied",
+                  "unchanged",
+                  "failed"
+                ]
+              }
+            },
+            "required": [
+              "targetPath",
+              "property",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "preVerify": {
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "verified",
+                "rejected",
+                "inconclusive",
+                "verify_failed"
+              ]
+            },
+            "reasonCode": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": [
+                "array",
+                "boolean",
+                "number",
+                "object",
+                "string",
+                "null"
+              ]
+            },
+            "preVerifiedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "verdict"
+          ],
+          "additionalProperties": false
+        },
+        "postVerify": {
+          "type": "object",
+          "properties": {
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "verified",
+                "rejected",
+                "inconclusive",
+                "verify_failed"
+              ]
+            },
+            "reasonCode": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": [
+                "array",
+                "boolean",
+                "number",
+                "object",
+                "string",
+                "null"
+              ]
+            },
+            "revert": {
+              "type": [
+                "array",
+                "boolean",
+                "number",
+                "object",
+                "string",
+                "null"
+              ]
+            },
+            "postVerifiedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "verdict"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "callStatus",
+        "applied"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "surface",
+    "actorType",
+    "target"
+  ],
+  "additionalProperties": false
+}

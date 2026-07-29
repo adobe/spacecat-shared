@@ -36,6 +36,8 @@ import {
   isValidIMSOrgId,
   isValidHelixPreviewUrl,
   toBoolean,
+  UUID_REGEX,
+  UUID_V4_REGEX,
 } from '../src/index.js';
 
 describe('Shared functions', () => {
@@ -348,6 +350,19 @@ describe('Shared functions', () => {
 
     it('returns true for valid UUID', async () => {
       expect(isValidUUID('123e4567-e89b-12d3-a456-426614174000')).to.be.true;
+    });
+
+    it('accepts both v4 and v7 ids (RFC 4122 / 9562 variants)', () => {
+      expect(isValidUUID('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(isValidUUID('019cde0c-fe79-76b2-bc50-a40e1b1b1c36')).to.be.true;
+    });
+
+    it('exposes UUID_REGEX and the deprecated UUID_V4_REGEX alias', () => {
+      expect(UUID_REGEX).to.be.an.instanceOf(RegExp);
+      expect(UUID_V4_REGEX).to.equal(UUID_REGEX);
+      expect(UUID_REGEX.test('78fec9c7-2141-4600-b7b1-ea5c78752b91')).to.be.true;
+      expect(UUID_REGEX.test('019cde0c-fe79-76b2-bc50-a40e1b1b1c36')).to.be.true;
+      expect(UUID_REGEX.test('not-a-uuid')).to.be.false;
     });
   });
 

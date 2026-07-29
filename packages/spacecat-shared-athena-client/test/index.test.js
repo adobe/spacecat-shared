@@ -170,6 +170,69 @@ describe('AWSAthenaClient', () => {
         .to.be.rejectedWith('Invalid query syntax');
     });
 
+    it('attaches the structured AthenaError (retryable=true) to the thrown error', async () => {
+      sinon.stub(athenaClient.client, 'send').resolves({
+        QueryExecutionId: 'test-execution-id',
+        QueryExecution: {
+          Status: {
+            State: QueryExecutionState.FAILED,
+            StateChangeReason: 'Query exhausted resources at this scale factor',
+            AthenaError: { ErrorCategory: 1, ErrorType: 200, Retryable: true },
+          },
+        },
+      });
+
+      const error = await athenaClient.query('SELECT 1', 'database').then(
+        () => null,
+        (e) => e,
+      );
+      expect(error).to.be.an('error');
+      expect(error.message).to.equal('Query exhausted resources at this scale factor');
+      expect(error.retryable).to.equal(true);
+      expect(error.athenaError).to.deep.equal({
+        ErrorCategory: 1, ErrorType: 200, Retryable: true,
+      });
+    });
+
+    it('sets retryable=false when AthenaError.Retryable is not true', async () => {
+      sinon.stub(athenaClient.client, 'send').resolves({
+        QueryExecutionId: 'test-execution-id',
+        QueryExecution: {
+          Status: {
+            State: QueryExecutionState.FAILED,
+            StateChangeReason: 'SYNTAX_ERROR',
+            AthenaError: { ErrorCategory: 2, Retryable: false },
+          },
+        },
+      });
+
+      const error = await athenaClient.query('SELECT 1', 'database').then(
+        () => null,
+        (e) => e,
+      );
+      expect(error.retryable).to.equal(false);
+    });
+
+    it('leaves retryable/athenaError unset when no AthenaError is returned', async () => {
+      sinon.stub(athenaClient.client, 'send').resolves({
+        QueryExecutionId: 'test-execution-id',
+        QueryExecution: {
+          Status: {
+            State: QueryExecutionState.FAILED,
+            StateChangeReason: 'Invalid query syntax',
+          },
+        },
+      });
+
+      const error = await athenaClient.query('SELECT 1', 'database').then(
+        () => null,
+        (e) => e,
+      );
+      expect(error.message).to.equal('Invalid query syntax');
+      expect(error.retryable).to.equal(undefined);
+      expect(error.athenaError).to.equal(undefined);
+    });
+
     it('handles query cancelled state', async () => {
       const queryExecutionId = 'test-execution-id';
       sinon.stub(athenaClient.client, 'send').resolves({

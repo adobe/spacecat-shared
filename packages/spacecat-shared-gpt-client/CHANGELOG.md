@@ -1,3 +1,16 @@
+## [@adobe/spacecat-shared-gpt-client-v1.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.7.0...@adobe/spacecat-shared-gpt-client-v1.7.1) (2026-05-29)
+
+### Bug Fixes
+
+* **deps:** update adobe fixes ([#1609](https://github.com/adobe/spacecat-shared/issues/1609)) ([ccdcc2b](https://github.com/adobe/spacecat-shared/commit/ccdcc2b88c1b03e5c58ed682daaaadb382638395))
+* **deps:** update external major (major) ([#1611](https://github.com/adobe/spacecat-shared/issues/1611)) ([5a80797](https://github.com/adobe/spacecat-shared/commit/5a807979187f1ebcc32b088faee9165aa38cc461))
+
+## [@adobe/spacecat-shared-gpt-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.23...@adobe/spacecat-shared-gpt-client-v1.7.0) (2026-05-21)
+
+### Features
+
+* **ci:** migrate npm publishing to OIDC Trusted Publishers ([#1592](https://github.com/adobe/spacecat-shared/issues/1592)) ([7556295](https://github.com/adobe/spacecat-shared/commit/75562957a223b5783a97998c8dc12eebd3e4db34))
+
 ## [@adobe/spacecat-shared-gpt-client-v1.6.23](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-gpt-client-v1.6.22...@adobe/spacecat-shared-gpt-client-v1.6.23) (2026-05-14)
 
 ### Bug Fixes

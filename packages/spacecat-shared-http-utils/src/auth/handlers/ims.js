@@ -21,7 +21,7 @@ import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 import { getBearerToken } from './utils/bearer.js';
 import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
-import { FF_READ_ONLY_ORG } from '../constants.js';
+import { FF_READ_ONLY_ORG, FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from '../constants.js';
 
 const IGNORED_PROFILE_PROPS = [
   'id',
@@ -37,7 +37,11 @@ const IGNORED_PROFILE_PROPS = [
   'aa_id',
 ];
 
-const ADMIN_GROUP_IDENT = {
+/**
+ * ASO (Sites Optimizer) IMS admin groups.
+ * Keep in sync with auth-service ADMIN_GROUP_IDENT_BY_PRODUCT.ASO.
+ */
+const ASO_ADMIN_GROUP_IDENT = {
   '8C6043F15F43B6390A49401A': [ // IMS admin group for stag
     635541219,
   ],
@@ -52,6 +56,43 @@ const ADMIN_GROUP_IDENT = {
     945802231, // IMS admin group for AEM Showcase org users
   ],
 };
+
+/** LLMO IMS admin groups — keep in sync with auth-service ADMIN_GROUP_IDENT_BY_PRODUCT.LLMO */
+const LLMO_ADMIN_GROUP_IDENT = {
+  '8C6043F15F43B6390A49401A': [ // LLMO admin group for stag
+    748308943,
+  ],
+  '908936ED5D35CC220A495CD4': [
+    964401320, // LLMO admin group for prod
+    901092291,
+  ],
+};
+
+function mergeAdminGroupIdents(...groupMaps) {
+  const merged = {};
+  for (const map of groupMaps) {
+    for (const [orgIdent, groupIdents] of Object.entries(map)) {
+      if (!merged[orgIdent]) {
+        merged[orgIdent] = new Set();
+      }
+      for (const groupIdent of groupIdents) {
+        merged[orgIdent].add(groupIdent);
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(merged).map(([orgIdent, groupSet]) => [orgIdent, [...groupSet]]),
+  );
+}
+
+const IMS_ADMIN_GROUP_IDENT = Object.freeze(
+  Object.fromEntries(
+    Object.entries(
+      mergeAdminGroupIdents(ASO_ADMIN_GROUP_IDENT, LLMO_ADMIN_GROUP_IDENT),
+    ).map(([orgIdent, groupIdents]) => [orgIdent, Object.freeze(groupIdents)]),
+  ),
+);
+
 const SERVICE_CODE = 'dx_aem_perf';
 const loadConfig = (context) => {
   try {
@@ -88,13 +129,17 @@ function getTenants(organizations) {
   }));
 }
 
-function isUserASOAdmin(organizations) {
+/**
+ * True when the user belongs to a platform IMS admin group (ASO, LLMO, etc.) for any org.
+ * Used with @adobe.com email to grant the admin scope (hasAdminReadAccess bypass).
+ */
+function isUserPlatformAdmin(organizations) {
   if (!organizations) {
     throw new Error('organizations param is required.');
   }
 
   return organizations.some((org) => {
-    const adminGroupsForOrg = ADMIN_GROUP_IDENT[org.orgRef.ident];
+    const adminGroupsForOrg = IMS_ADMIN_GROUP_IDENT[org.orgRef.ident];
     if (!adminGroupsForOrg) {
       return false;
     }
@@ -138,6 +183,49 @@ async function isOrgBlockedFromImsAuth(context, organizations) {
     return false;
   }
 }
+
+/**
+ * Checks whether RBAC (the FACS / hybrid permission model) is enabled for the
+ * caller's first IMS org under the requested product. When enabled, the org
+ * must authenticate via the JWT / auth-service path — which mints the
+ * `facs_permissions` claim — rather than this legacy IMS handler, so IMS auth is
+ * blocked (mirroring the read-only-org gate).
+ *
+ * The FACS flag is product-scoped (`FT_MAC_FACS_PERMISSIONS`), resolved from the
+ * `x-product` header. A missing/unknown product (no flag entry) is never
+ * blocked. Only the first org is evaluated (same limitation as the read-only
+ * gate). Fail-open: returns false when the LD client is unavailable or
+ * evaluation errors.
+ */
+async function isOrgRbacEnabled(context, organizations) {
+  if (!isNonEmptyArray(organizations)) {
+    return false;
+  }
+
+  const product = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toUpperCase();
+  const flagKey = product ? FT_MAC_FACS_PERMISSIONS[product] : undefined;
+  if (!flagKey) {
+    return false;
+  }
+
+  try {
+    const ldClient = LaunchDarklyClient.createFrom(context);
+    if (!ldClient) {
+      return false;
+    }
+
+    // Only evaluate the first org - see NOTE on isOrgBlockedFromImsAuth.
+    const ident = organizations[0]?.orgRef?.ident;
+    if (!ident) {
+      return false;
+    }
+
+    return await ldClient.isFlagEnabledForIMSOrg(flagKey, `${ident}@AdobeOrg`);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * @deprecated Use JwtHandler instead in the context of IMS login with subsequent JWT exchange.
  */
@@ -217,7 +305,13 @@ export default class AdobeImsHandler extends AbstractHandler {
         this.log('User belongs to a read-only org, blocking IMS authentication', 'warn');
         throw new Error('Unauthorized');
       }
-      const isAdmin = isUserASOAdmin(organizations);
+      // RBAC-enabled orgs must authenticate via the JWT/auth-service path (which
+      // mints facs_permissions), not this legacy IMS handler.
+      if (await isOrgRbacEnabled(context, organizations)) {
+        this.log('User belongs to an RBAC-enabled org, blocking IMS authentication', 'warn');
+        throw new Error('Unauthorized');
+      }
+      const isAdmin = isUserPlatformAdmin(organizations);
       const scopes = [];
       if (imsProfile.email?.toLowerCase().endsWith('@adobe.com') && isAdmin) {
         scopes.push({ name: 'admin' });

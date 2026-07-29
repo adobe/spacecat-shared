@@ -1,0 +1,22 @@
+{
+  "//": "Single tsconfig shared by editors (JS/TS language service) and CI (`npm run test:types` runs `tsc -p tsconfig.json`). Compile-only — `noEmit`; the package ships hand-written .d.ts, not tsc output. `allowJs` lets tsc read the `// @ts-check` source files (src + mock) so JSDoc/fixture drift from the overlayed schema is a compile error. Node ESM resolution (`nodenext`) + Node-only libs (no `dom` — this is not a browser package; fetch/Request/crypto/structuredClone come from @types/node). The Counterfact route handlers under mock/counterfact/routes deliberately omit `// @ts-check` (untyped `$` context) — in the program but not error-reported (`checkJs: false`).",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "mock/**/*.js",
+    "test/**/*.ts",
+    "test/**/*.js"
+  ]
+}

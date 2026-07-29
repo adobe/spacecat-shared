@@ -76,6 +76,27 @@ const schema = new SchemaBuilder(Site, SiteCollection)
     validate: (value) => isNonEmptyObject(validateConfiguration(value)),
     get: (value) => Config(value),
   })
+  /**
+   * Repository configuration used by the code importer and downstream
+   * consumers (autofix, suggestion generation, code analysis).
+   *
+   * Fields written by the importer after a successful clone:
+   *   - s3StoragePath: S3 key (not full URL) of the imported repository ZIP
+   *   - metadata.submodules: per-submodule array. Each entry carries
+   *     `{ sectionName, gitmodulesUrl, external }` from the parent's
+   *     `.gitmodules`. Empty array when the repo has no `.gitmodules`.
+   *     The importer refreshes these fields on every import; entries whose
+   *     `sectionName` is no longer present are dropped.
+   *
+   * Fields populated at onboarding (not by the importer):
+   *   - metadata.submodules[].resolvedUrl: BYOG-only. Pre-resolved CM URL
+   *     the cm-client writes into `.git/config submodule.<sectionName>.url`
+   *     at clone/pull time so submodules can fetch through the CM proxy
+   *     (or `git.cloudmanager.adobe.com` for standard submodules of BYOG
+   *     parents). Preserved across re-imports for surviving sectionNames.
+   *
+   * See SubmoduleEntry / CodeConfig in index.d.ts for the full TypeScript shape.
+   */
   .addAttribute('code', {
     type: 'any',
     required: false,
@@ -89,6 +110,7 @@ const schema = new SchemaBuilder(Site, SiteCollection)
       installationId: { type: 'string', required: false },
       url: { type: 'string', required: true, validate: (value) => isValidUrl(value) },
       s3StoragePath: { type: 'string', required: false },
+      metadata: { type: 'any', required: false },
     },
   })
   .addAttribute('deliveryType', {

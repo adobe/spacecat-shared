@@ -38,6 +38,7 @@ const nonEmptyString = z.string().min(1);
 
 const region = z.string().length(2).regex(/^[a-z][a-z]$/i);
 const awsRegion = z.string().regex(/^[a-z]{2}(?:-[a-z]+)+-\d+$/i);
+const claimsGuidance = z.string().max(4000);
 
 const auditFields = {
   updatedBy: z.string().optional(),
@@ -143,6 +144,10 @@ export const llmoConfig = z.object({
   }).optional(),
   ignored: z.object({
     prompts: z.record(z.uuid(), ignoredPrompt).optional(),
+  }).optional(),
+  claims: z.object({
+    brandContext: claimsGuidance.optional(),
+    sentimentGuidance: claimsGuidance.optional(),
   }).optional(),
 }).superRefine((value, ctx) => {
   const {

@@ -63,6 +63,30 @@ Valid `datasetId` values (available via `SCRAPE_DATASET_IDS`):
 - `reddit_comments`
 - `wikipedia`
 
+##### Reddit-comments-only parameters
+
+When `datasetId === 'reddit_comments'`, the following optional parameters tune
+the Bright Data scrape. They are rejected for any other dataset.
+
+| Param | Type | Default (when omitted) | Notes |
+|---|---|---|---|
+| `commentLimit` | positive integer | `150` | Sent as `comment_limit`. |
+| `sortBy` | `'Best' \| 'Top' \| 'New' \| 'Controversial' \| 'Old' \| 'Q&A'` | `'Best'` | Sent as `sort_by`. |
+| `daysBack` | positive integer | not sent | Sent as `days_back`. When omitted, Bright Data applies no time filter. |
+| `loadAllReplies` | boolean | not sent | Sent as `load_all_replies`. |
+
+```js
+await client.submitScrapeJob({
+  datasetId: SCRAPE_DATASET_IDS.REDDIT_COMMENTS,
+  siteId: 'site-uuid',
+  urls: ['https://www.reddit.com/r/technology/comments/abc123/post_title/'],
+  commentLimit: 300,
+  sortBy: 'Top',
+  daysBack: 7,
+  loadAllReplies: true,
+});
+```
+
 #### lookupScrapeResults(params)
 
 Looks up scraping results for an array of URLs.

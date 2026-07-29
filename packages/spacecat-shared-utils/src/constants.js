@@ -30,6 +30,9 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
 
   // Custom Audit Types (not in shared AUDIT_TYPES)
   LLM_BLOCKED: 'llm-blocked',
+  LLM_ERROR_PAGES_404: 'llm-error-pages-404',
+  LLM_ERROR_PAGES_403: 'llm-error-pages-403',
+  LLM_ERROR_PAGES_5XX: 'llm-error-pages-5xx',
   REDIRECT_CHAINS: 'redirect-chains',
   SECURITY_PERMISSIONS: 'security-permissions',
   SECURITY_PERMISSIONS_REDUNDANT: 'security-permissions-redundant',

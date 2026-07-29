@@ -394,8 +394,11 @@ describe('SchemaBuilder', () => {
       expect(isIsoDate(instance.attributes.updatedAt.set())).to.be.true;
     });
 
-    it('sets default for id attribute', () => {
-      expect(isValidUUID(instance.attributes.mockModelId.default())).to.be.true;
+    it('sets default for id attribute as a UUID v7', () => {
+      const id = instance.attributes.mockModelId.default();
+      expect(isValidUUID(id)).to.be.true;
+      // Version nibble pinned to 7 — see schema.builder.js for context.
+      expect(id.charAt(14)).to.equal('7');
     });
 
     it('validates id attribute', () => {

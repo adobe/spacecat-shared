@@ -2690,6 +2690,33 @@ describe('Config Tests', () => {
       expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
     });
 
+    it('rejects a cdnlogsFilter with more than 50 entries', () => {
+      const config = Config();
+      const entries = Array.from({ length: 51 }, () => ({ key: 'url', value: ['x'], type: 'include' }));
+      expect(() => config.updateLlmoCdnlogsFilter(entries)).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter with exactly 50 entries', () => {
+      const config = Config();
+      const entries = Array.from({ length: 50 }, () => ({ key: 'url', value: ['x'], type: 'include' }));
+      config.updateLlmoCdnlogsFilter(entries);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(entries);
+    });
+
+    it('rejects a cdnlogsFilter entry with more than 100 values', () => {
+      const config = Config();
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: 'url', value: Array.from({ length: 101 }, () => 'x'), type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter entry with exactly 100 values', () => {
+      const config = Config();
+      const filter = [{ key: 'url', value: Array.from({ length: 100 }, () => 'x'), type: 'include' }];
+      config.updateLlmoCdnlogsFilter(filter);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(filter);
+    });
+
     it('rejects a cdnlogsFilter key that is not on the allowlist (VULN-37491)', () => {
       const config = Config();
       const maliciousKey = "url, '(?i)(x)')) UNION ALL SELECT CONCAT('https://x?s=', CAST(current_schema AS VARCHAR)), CAST(1 AS BIGINT) -- ";

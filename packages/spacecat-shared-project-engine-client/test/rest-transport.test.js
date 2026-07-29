@@ -53,7 +53,7 @@ const pathParamsFor = (template) => {
 
 const resolve = (template) => template.replace(/\{(\w+)\}/g, (_, k) => PARAM_VALUES[k]);
 
-// facadeMethod — HTTP method — path template. 1:1 with the 28 operations.
+// facadeMethod — HTTP method — path template. 1:1 with the 32 operations.
 const OPERATIONS = [
   ['listLanguages', 'GET', '/v1/languages'],
   ['listGlobalAiModels', 'GET', '/v1/ai_models'],
@@ -80,16 +80,20 @@ const OPERATIONS = [
   ['listPromptsByTagIds', 'POST', '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags'],
   ['updatePromptTags', 'PUT', '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags'],
   ['renamePrompt', 'POST', '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename'],
+  ['createPromptsWithMetadata', 'POST', '/v3/workspaces/{id}/projects/{project_id}/aio/prompts'],
+  ['patchPrompt', 'PATCH', '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}'],
+  ['patchPromptMetadata', 'PATCH', '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata'],
+  ['patchPromptsMetadataBatch', 'PATCH', '/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata'],
   ['listProjectTags', 'GET', '/v2/workspaces/{id}/projects/{project_id}/aio/tags'],
   ['createProjectTags', 'POST', '/v2/workspaces/{id}/projects/{project_id}/aio/tags'],
   ['updateProjectTag', 'PATCH', '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'],
 ];
 
 describe('createSerenityProjectEngineTransport', () => {
-  it('exposes exactly the 28 declared facade methods, all functions', () => {
+  it('exposes exactly the 32 declared facade methods, all functions', () => {
     const transport = make(sandbox.stub().resolves(json({})));
     const names = Object.keys(transport);
-    expect(names).to.have.length(28);
+    expect(names).to.have.length(32);
     expect(names.sort()).to.deep.equal(OPERATIONS.map(([n]) => n).sort());
     names.forEach((n) => expect(transport[n]).to.be.a('function'));
   });

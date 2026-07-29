@@ -5,7 +5,7 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
 
 - `src/` — the published surface: the raw `createSerenityProjectEngineApiClient` (an
   `openapi-fetch` client over every generated operation) **and** `createSerenityProjectEngineTransport`,
-  an intent-named facade that wraps the 28 in-spec operations spacecat-api-service consumes behind
+  an intent-named facade that wraps the 32 in-spec operations spacecat-api-service consumes behind
   verb+resource methods with a single error seam. Consumers depend on the facade; the raw client
   stays available for the remaining operations. Plus generated types (`src/generated/types.ts`).
   This is the ONLY thing that ships (`files: ["src"]`).

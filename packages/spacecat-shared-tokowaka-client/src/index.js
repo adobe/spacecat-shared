@@ -1483,7 +1483,8 @@ class TokowakaClient {
       const succeeded = result.succeededSuggestions.map((s) => {
         const currentData = s.getData();
         const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
-        if (updated.edgeOptimizeStatus === 'STALE') {
+        const statusesToExcludeFromOptimization = ['STALE', 'LAST_MOD_MISSING'];
+        if (statusesToExcludeFromOptimization.includes(updated.edgeOptimizeStatus)) {
           delete updated.edgeOptimizeStatus;
         }
         s.setData(updated);

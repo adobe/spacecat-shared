@@ -1884,6 +1884,37 @@ describe('Config Tests', () => {
       });
     });
 
+    describe('updateLlmoShowWww', () => {
+      it('should create llmo config if it does not exist and set showWww', () => {
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.brand).to.be.undefined;
+      });
+
+      it('should update showWww when llmo config already exists', () => {
+        // First create llmo config
+        config.updateLlmoConfig('/old/folder', 'oldBrand');
+
+        // Then update showWww
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.dataFolder).to.equal('/old/folder'); // Should preserve existing dataFolder
+      });
+
+      it('should update showWww multiple times', () => {
+        config.updateLlmoShowWww(true);
+        config.updateLlmoShowWww(false);
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+      });
+    });
+
     describe('getLlmoHumanQuestions', () => {
       it('should return undefined when llmo questions do not exist', () => {
         expect(config.getLlmoHumanQuestions()).to.be.undefined;
@@ -2773,6 +2804,32 @@ describe('Config Tests', () => {
       };
       expect(() => validateConfiguration(config))
         .to.throw(/Configuration validation error: "llmo\.detectedCdn" must be one of/);
+    });
+  });
+
+  describe('LLMO Show Www', () => {
+    it('accepts a valid showWww boolean via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: true,
+        },
+      };
+      const validated = validateConfiguration(config);
+      expect(validated.llmo.showWww).to.equal(true);
+    });
+
+    it('rejects a non-boolean showWww value via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: 'not-a-boolean',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.showWww" must be a boolean/);
     });
   });
 

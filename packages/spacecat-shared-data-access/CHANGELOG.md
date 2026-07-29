@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.1...@adobe/spacecat-shared-data-access-v4.15.2) (2026-07-29)
+
+### Bug Fixes
+
+* **site:** guard config writes against the config schema ([#1852](https://github.com/adobe/spacecat-shared/issues/1852)) ([dafbea2](https://github.com/adobe/spacecat-shared/commit/dafbea2619d1ff65f27b0fe5ca47734b2622619d)), closes [#1850](https://github.com/adobe/spacecat-shared/issues/1850)
+
 ## [@adobe/spacecat-shared-data-access-v4.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.0...@adobe/spacecat-shared-data-access-v4.15.1) (2026-07-29)
 
 ### Bug Fixes

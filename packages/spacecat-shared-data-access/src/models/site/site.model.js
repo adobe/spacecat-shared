@@ -18,6 +18,8 @@ import {
   AUTHORING_TYPES,
 } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
+import { validateConfiguration } from './config.js';
+import { guardConfigValidation } from '../../util/config-validation-guard.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
 export const AEM_CS_HOST = /^author-p(\d+)-e(\d+)/i;
@@ -81,6 +83,34 @@ class Site extends BaseModel {
   async toggleLive() {
     const newIsLive = !this.getIsLive();
     this.setIsLive(newIsLive);
+    return this;
+  }
+
+  /**
+   * Sets the site config, guarding it against the config schema
+   * (`validateConfiguration`). Overrides the auto-generated setter so every
+   * writer (e.g. the `PATCH /sites/{id}` config merge) is checked at one
+   * chokepoint. Behavior is governed by `CONFIG_VALIDATION_ENFORCEMENT`
+   * (default `warn`; `enforce` throws; `off` skips) — see
+   * config-validation-guard.js for the rollout rationale.
+   *
+   * Note: this only guards writes. Reads still go through the lenient
+   * `Config()` getter (attribute `get:` transform), which intentionally
+   * tolerates legacy invalid config already stored on existing sites so a
+   * bad historical record doesn't break every read of that site.
+   *
+   * @param {object} value - candidate config object
+   * @returns {this}
+   */
+  setConfig(value) {
+    guardConfigValidation({
+      entityName: Site.ENTITY_NAME,
+      entityId: this.getId(),
+      value,
+      validate: validateConfiguration,
+      log: this.log,
+    });
+    this.patcher.patchValue('config', value, false);
     return this;
   }
 

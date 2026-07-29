@@ -111,7 +111,7 @@ type TransportData<P extends keyof paths, M extends keyof paths[P]> =
   | null;
 
 /**
- * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 28 in-spec
+ * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 32 in-spec
  * Project Engine operations spacecat-api-service consumes behind verb+resource methods, so
  * consumers depend on this seam rather than the raw client's literal path strings. Each method
  * is THIN: it forwards the caller's openapi-fetch `init` to the underlying client and resolves
@@ -324,6 +324,46 @@ export interface SerenityProjectEngineTransport {
   ): Promise<
     TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename', 'post'>
   >;
+  /**
+   * POST /v3/workspaces/{id}/projects/{project_id}/aio/prompts — aio-create-prompts
+   * (metadata-carrying create, LLMO-6289)
+   */
+  createPromptsWithMetadata(
+    ...init: TransportInitParam<
+      TransportInit<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts', 'post'>
+    >
+  ): Promise<TransportData<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts', 'post'>>;
+  /**
+   * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}
+   * — aio-patch-prompt (combined name + metadata merge-patch, LLMO-6289)
+   */
+  patchPrompt(
+    ...init: TransportInitParam<
+      TransportInit<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}', 'patch'>
+    >
+  ): Promise<
+    TransportData<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}', 'patch'>
+  >;
+  /**
+   * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata
+   * — aio-patch-prompt-metadata (metadata-only merge-patch, LLMO-6289)
+   */
+  patchPromptMetadata(
+    ...init: TransportInitParam<
+      TransportInit<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata', 'patch'>
+    >
+  ): Promise<
+    TransportData<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata', 'patch'>
+  >;
+  /**
+   * PATCH /v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata
+   * — aio-patch-prompts-metadata-batch (atomic batch metadata merge-patch, LLMO-6289)
+   */
+  patchPromptsMetadataBatch(
+    ...init: TransportInitParam<
+      TransportInit<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata', 'patch'>
+    >
+  ): Promise<TransportData<'/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata', 'patch'>>;
   /** GET /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-get-project-tags */
   listProjectTags(
     ...init: TransportInitParam<

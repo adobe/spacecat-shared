@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.0...@adobe/spacecat-shared-tokowaka-client-v1.23.1) (2026-07-29)
+
+### Bug Fixes
+
+* **LLMO-5751:** clear LAST_MOD_MISSING status on redeploy, like STALE ([#1848](https://github.com/adobe/spacecat-shared/issues/1848)) ([86f199c](https://github.com/adobe/spacecat-shared/commit/86f199c0310b7744f583840f862a17f4de03b887))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.1...@adobe/spacecat-shared-tokowaka-client-v1.23.0) (2026-07-28)
 
 ### Features

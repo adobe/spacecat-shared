@@ -146,6 +146,8 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
             suggestions.map((s) => s.getId()),
             SQS_SUGGESTION_ID_BATCH_SIZE,
           );
+          // If any of the batches below fails, then we fallback to the save method,
+          // re-marking a suggestion is acceptable since we update the same value again
           await Promise.all(idBatches.map((suggestionIds) => sqs.sendMessage(queueUrl, {
             type: SUGGESTION_BULK_UPDATE_TYPE,
             siteId,

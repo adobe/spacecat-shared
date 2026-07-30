@@ -211,12 +211,18 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   return noCycleRedirects;
 };
 
-const GDRIVE_SHARING_ERROR = /\b(403|404)\b|not found|access denied|insufficient|permission|not shared/i;
+// Google Drive returns 404 "File not found" when the folder is NOT SHARED with the service
+// account (not only when a document is genuinely missing), and 403 / "does not have permission"
+// when shared read-only. So both 403 and 404 signal a possible sharing problem and must trigger
+// the fallback (verified on prod: the old SA got "File not found" for a folder shared only with
+// the new SA). Accepted side effect: a genuinely missing document also triggers one extra
+// fallback attempt before the error propagates. Keep in sync with the spacecat-auth-service
+// `categorizeError` predicate (src/google-drive/handler.js).
+const GDRIVE_SHARING_ERROR = /\b(403|404)\b|forbidden|not found|access denied|insufficient|does not have permission|not shared/i;
 
 /**
  * True when a Google Drive error looks like a folder-sharing / permission problem (the service
- * account cannot see the folder) — the signal to retry with the fallback SA. Mirrors the
- * spacecat-auth-service categorizeError predicate.
+ * account cannot see or edit the folder) — the signal to retry with the fallback SA.
  * @param {Error & {code?: any, status?: any}} error
  * @returns {boolean}
  */
@@ -239,6 +245,9 @@ const buildGDriveFallbackConfig = (env, envMapping, primaryConfig) => {
   if (!hasText(env.GDRIVE_EMAIL_FALLBACK) || !hasText(env.GDRIVE_PRIVATE_KEY_FALLBACK)) {
     return null;
   }
+  // Spread the primary so the fallback inherits the Google-universal constants (and any non-gdrive
+  // keys already on it, which the gdrive SDK ignores); the loop then overrides the per-SA fields
+  // that have a _FALLBACK value.
   const fallback = { ...primaryConfig };
   for (const [configVar, envVar] of Object.entries(envMapping)) {
     const fallbackValue = env[`${envVar}_FALLBACK`];
@@ -349,10 +358,21 @@ export default class ContentClient {
   }
 
   /**
-   * Run a Google Drive operation against the current service account. If it fails with a
-   * folder-sharing / permission error and a fallback SA is configured, rebuild the SDK client with
-   * the fallback SA and retry once, then keep using the fallback for the rest of this instance's
-   * lifetime. A no-op passthrough for OneDrive or when no fallback is configured.
+   * TODO(SITES-47990): remove after the EDS Google Drive SA migration completes, together with
+   * `fallbackConfig`, `usingFallback`, `buildGDriveFallbackConfig` and the `GDRIVE_*_FALLBACK` env.
+   *
+   * Run a Google Drive `op` against the current service account. If it fails with a folder-sharing
+   * / permission error (see `isGDriveSharingError`) and a fallback SA is set, rebuild the SDK
+   * client with the fallback SA, retry `op` once, then keep using the fallback SA for the rest of
+   * this instance's lifetime (a ContentClient is per-site, so the winning SA is stable; a transient
+   * primary error also pins to the fallback, which is acceptable for the not-shared case this
+   * targets). A no-op passthrough for OneDrive or when no fallback is configured.
+   *
+   * Retry safety: a sharing/permission failure surfaces on the FIRST Drive access (resolving the
+   * document / redirects file), i.e. before any write in a compound read-then-write op, so
+   * re-running the whole `op` on the fallback does not double-apply a write. A future write op that
+   * can throw a sharing-matching error AFTER a partial mutation would break that assumption — wrap
+   * only its read then.
    * @template T
    * @param {() => Promise<T>} op
    * @returns {Promise<T>}
@@ -368,7 +388,10 @@ export default class ContentClient {
       if (!canFallback) {
         throw e;
       }
-      this.log.warn(`ContentClient: primary Google Drive SA (${this.config.client_email}) cannot access content for ${this.site.getId()} (${e.message}); retrying with fallback SA (${this.fallbackConfig.client_email})`);
+      // Keep the raw SDK error out of the warn line (it can carry request URLs / token material and
+      // warn logs are long-retained); the detail goes to debug.
+      this.log.warn(`ContentClient: primary Google Drive SA (${this.config.client_email}) cannot access content for ${this.site.getId()}; retrying with fallback SA (${this.fallbackConfig.client_email})`);
+      this.log.debug(`ContentClient: primary Google Drive SA failure detail for ${this.site.getId()}: ${e.message}`);
       this.usingFallback = true;
       this.rawClient = null;
       await this.#initClient();

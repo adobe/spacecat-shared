@@ -1322,13 +1322,52 @@ describe('ContentClient', () => {
         siteConfigGoogleDrive,
       );
 
-      await client.getPageMetadata('/test-path');
-      await client.getPageMetadata('/second-path');
+      const first = await client.getPageMetadata('/test-path');
+      const second = await client.getPageMetadata('/second-path');
 
+      expect(first).to.deep.equal(sampleMetadata);
+      expect(second).to.deep.equal(sampleMetadata); // 2nd call served by the fallback SA
       expect(contentSDK.calledTwice).to.be.true; // not rebuilt again for the 2nd call
       expect(primaryClient.getDocument.calledOnce).to.be.true;
       expect(fallbackClient.getDocument.calledTwice).to.be.true;
       expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('applies a write (updateImageAltText) through the fallback SA after a primary sharing error', async () => {
+      const primaryClient = {
+        getDocument: sinon.stub().rejects(new Error('404 File not found')),
+      };
+      const fallbackDoc = {
+        getMetadata: sinon.stub().resolves(new Map()),
+        updateImageAltText: sinon.stub().resolves({ status: 200 }),
+      };
+      const fallbackClient = { getDocument: sinon.stub().returns(fallbackDoc) };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      const imageAltText = [{ imageUrl: 'https://example.com/image.png', altText: 'desc' }];
+      await expect(client.updateImageAltText('/test-path', imageAltText)).to.be.fulfilled;
+
+      expect(contentSDK.calledTwice).to.be.true;
+      expect(client.usingFallback).to.be.true;
+      expect(fallbackClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      // the write itself ran on the fallback SA's document
+      expect(fallbackDoc.updateImageAltText.calledOnceWith(imageAltText)).to.be.true;
+      expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('reuses the primary value for any per-SA field whose _FALLBACK is blank', async () => {
+      const env2 = { ...fallbackEnv(), GDRIVE_PROJECT_ID_FALLBACK: '' }; // empty = not hasText
+      const client = await ContentClient.createFrom(
+        { env: env2, log: warnLog },
+        siteConfigGoogleDrive,
+      );
+      // blank _FALLBACK is skipped, so project_id falls back to the primary value
+      expect(client.fallbackConfig.project_id).to.equal('drive-project-id');
+      expect(client.fallbackConfig.client_email).to.equal('fallback-email');
     });
 
     it('does not retry on a non-sharing error even when a fallback is configured', async () => {

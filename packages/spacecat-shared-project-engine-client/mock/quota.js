@@ -33,6 +33,15 @@
  * `quota` collection (so it rides along in seed / `__reset` / `__dump`), while USAGE is derived
  * live from the actual `projects:{ws}` and `prompts:{ws}:*` collections — so deleting a project or
  * prompt frees its unit, matching an allocation that meters concurrent count.
+ *
+ * PROMPT UNIT = texts × models (live-verified 2026-07-02, serenity-docs#22 §2): a prompt unit is
+ * NOT one prompt text — it is one text × one attached AI model, counted PER PROJECT and summed:
+ * `promptsUsed = Σ_project ( promptTexts(project) × attachedModels(project) )`. A project with zero
+ * models therefore consumes zero prompt units, and attaching/removing a model re-meters every one
+ * of that project's texts. Because usage is derived live from the `prompts:{ws}:{proj}` and
+ * `ai_models:{ws}:{proj}` collection sizes, a model add/remove (or prompt/project delete) is
+ * reflected automatically — no incremental bookkeeping. Models are attached on the Project Engine
+ * gateway (this mock), so the multiplier is enforced here.
  */
 
 /** The store collection holding per-workspace allocations: `{ id: ws, projects, prompts }`. */
@@ -102,7 +111,20 @@ export function createQuota(store) {
     },
 
     /**
-     * Prompts currently created across ALL the workspace's projects (`prompts:{ws}:*`).
+     * Models attached to one project (`ai_models:{ws}:{proj}` collection size). A project with no
+     * models has none, so its texts consume zero prompt units.
+     * @param {string} workspaceId
+     * @param {string} projectId
+     * @returns {number}
+     */
+    modelsUsed(workspaceId, projectId) {
+      return store.size(`ai_models:${workspaceId}:${projectId}`);
+    },
+
+    /**
+     * Prompt UNITS currently consumed across ALL the workspace's projects: `Σ_project (texts ×
+     * models)` (see the module note). Each `prompts:{ws}:{proj}` collection's size is multiplied by
+     * that project's attached-model count — so a model-less project contributes 0.
      * @param {string} workspaceId
      * @returns {number}
      */
@@ -110,7 +132,10 @@ export function createQuota(store) {
       const prefix = `prompts:${workspaceId}:`;
       return store.keys()
         .filter((name) => name.startsWith(prefix))
-        .reduce((sum, name) => sum + store.size(name), 0);
+        .reduce((sum, name) => {
+          const projectId = name.slice(prefix.length);
+          return sum + store.size(name) * api.modelsUsed(workspaceId, projectId);
+        }, 0);
     },
 
     /**
@@ -128,17 +153,37 @@ export function createQuota(store) {
     },
 
     /**
-     * Whether the workspace can create `count` more prompts (all-or-nothing, as the live 405 is).
+     * Whether the workspace can create `count` more prompt texts ON `projectId` (all-or-nothing, as
+     * the live 405 is). The units the new texts consume are `count × models(projectId)` — so on a
+     * project with no attached models the texts are free (zero units).
      * @param {string} workspaceId
+     * @param {string} projectId
      * @param {number} count
      * @returns {boolean}
      */
-    canCreatePrompts(workspaceId, count) {
+    canCreatePrompts(workspaceId, projectId, count) {
       const limit = api.limits(workspaceId)?.prompts;
       if (limit == null) {
         return true;
       }
-      return api.promptsUsed(workspaceId) + count <= limit;
+      return api.promptsUsed(workspaceId) + count * api.modelsUsed(workspaceId, projectId) <= limit;
+    },
+
+    /**
+     * Whether the workspace can attach one more AI model to `projectId`. A new model re-meters
+     * every one of that project's existing texts, so it consumes `promptTexts(projectId)` more
+     * units — the live API 405s the model-add when that would exceed the allocation.
+     * @param {string} workspaceId
+     * @param {string} projectId
+     * @returns {boolean}
+     */
+    canAddModel(workspaceId, projectId) {
+      const limit = api.limits(workspaceId)?.prompts;
+      if (limit == null) {
+        return true;
+      }
+      return api.promptsUsed(workspaceId) + store.size(`prompts:${workspaceId}:${projectId}`)
+        <= limit;
     },
 
     /**

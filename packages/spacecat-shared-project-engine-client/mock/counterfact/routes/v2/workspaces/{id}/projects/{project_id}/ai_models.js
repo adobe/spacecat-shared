@@ -31,6 +31,18 @@
 /** POST — add an AI model to the project (body: { model_id }) → 201 (matches live). */
 export function POST($) {
   const { path, body, context } = $;
+  // A new model re-meters every one of the project's existing texts (prompt unit = texts × models),
+  // so the add itself is a metered op the live API 405s when it would exceed the allocation.
+  if (!context.quota.canAddModel(path.id, path.project_id)) {
+    // 405 is not a declared response for this operation (only 201/401/403/500) — the disguised
+    // quota 405 the live API returns (mock/quota.js), so this stays a raw bypass like every other
+    // quota-gated route in this package; it can't go through $.response[405].json(...).
+    return {
+      status: 405,
+      body: { message: 'Quota exceeded: model attach exceeds prompt allocation' },
+      contentType: 'application/json',
+    };
+  }
   const catalogModel = context.aiModelCatalog.find((m) => m.id === body.model_id);
   // Live echoes the catalog model's name + icon on add; only `key` comes back empty there.
   // A missing model_id can't reach here on the validated route (the request schema marks it

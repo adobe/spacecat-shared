@@ -595,6 +595,232 @@ describe('TierClient', () => {
     });
   });
 
+  describe('entitlement.tier_changed event emission', () => {
+    const queueUrl = 'https://sqs.us-east-1.amazonaws.com/1234/entitlement-events';
+    let sqsStub;
+    let eventContext;
+
+    beforeEach(() => {
+      sqsStub = { sendMessage: sandbox.stub().resolves() };
+      eventContext = {
+        ...mockContext,
+        sqs: sqsStub,
+        env: { ENTITLEMENT_EVENTS_QUEUE_URL: queueUrl },
+      };
+      mockDataAccess.Organization.findById.resolves(mockOrganization);
+      mockDataAccess.Site.findById.resolves(mockSite);
+    });
+
+    it('emits on fresh create for org-only client (from null, no site/enrollment)', async () => {
+      const orgOnlyClient = new TierClient(eventContext, organizationInstance, null, productCode);
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+
+      await orgOnlyClient.createEntitlement('FREE_TRIAL');
+
+      expect(sqsStub.sendMessage).to.have.been.calledOnce;
+      const [url, event] = sqsStub.sendMessage.firstCall.args;
+      expect(url).to.equal(queueUrl);
+      expect(event).to.include({
+        type: 'entitlement.tier_changed',
+        entitlementId: 'entitlement-123',
+        organizationId: orgId,
+        productCode,
+        siteId: null,
+        enrollmentId: null,
+        from: null,
+        to: 'FREE_TRIAL',
+      });
+      expect(event.occurredAt).to.be.a('string');
+    });
+
+    it('emits on fresh create for site client (siteId + enrollmentId populated)', async () => {
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(sqsStub.sendMessage).to.have.been.calledOnce;
+      const [, event] = sqsStub.sendMessage.firstCall.args;
+      expect(event).to.include({
+        type: 'entitlement.tier_changed',
+        siteId,
+        enrollmentId: 'enrollment-123',
+        from: null,
+        to: 'FREE_TRIAL',
+      });
+    });
+
+    it('emits on tier transition with correct from/to', async () => {
+      const transitioningEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'FREE_TRIAL',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(transitioningEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      await siteClient.createEntitlement('PAID');
+
+      expect(sqsStub.sendMessage).to.have.been.calledOnce;
+      const [, event] = sqsStub.sendMessage.firstCall.args;
+      expect(event).to.include({
+        type: 'entitlement.tier_changed',
+        entitlementId: 'entitlement-123',
+        enrollmentId: 'enrollment-123',
+        from: 'FREE_TRIAL',
+        to: 'PAID',
+      });
+    });
+
+    it('emits on transition when a new site enrollment is also created', async () => {
+      const transitioningEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'FREE_TRIAL',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(transitioningEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([]);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await siteClient.createEntitlement('PAID');
+
+      expect(sqsStub.sendMessage).to.have.been.calledOnce;
+      const [, event] = sqsStub.sendMessage.firstCall.args;
+      expect(event).to.include({
+        from: 'FREE_TRIAL',
+        to: 'PAID',
+        enrollmentId: 'enrollment-123',
+      });
+    });
+
+    it('does NOT emit when tier is unchanged', async () => {
+      const sameTierEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'FREE_TRIAL',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(sameTierEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(sqsStub.sendMessage).to.not.have.been.called;
+    });
+
+    it('does NOT emit when existing entitlement is PAID (no downgrade)', async () => {
+      const paidEntitlement = {
+        ...mockEntitlement,
+        getTier: () => 'PAID',
+        setTier: sandbox.stub().returnsThis(),
+        save: sandbox.stub().resolves(),
+      };
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement
+        .findByOrganizationIdAndProductCode.resolves(paidEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(sqsStub.sendMessage).to.not.have.been.called;
+    });
+
+    it('is a no-op (no throw) when no sqs is configured', async () => {
+      // mockContext has no sqs — emission must be skipped silently.
+      const siteClient = new TierClient(
+        mockContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      const result = await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(sqsStub.sendMessage).to.not.have.been.called;
+    });
+
+    it('is a no-op when sqs is present but the queue URL env var is absent', async () => {
+      const contextWithoutQueue = { ...mockContext, sqs: sqsStub, env: {} };
+      const siteClient = new TierClient(
+        contextWithoutQueue,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(sqsStub.sendMessage).to.not.have.been.called;
+    });
+
+    it('does not fail createEntitlement when the publisher throws (best-effort)', async () => {
+      sqsStub.sendMessage.rejects(new Error('SQS down'));
+      const siteClient = new TierClient(
+        eventContext,
+        organizationInstance,
+        siteInstance,
+        productCode,
+      );
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      const result = await siteClient.createEntitlement('FREE_TRIAL');
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(eventContext.log.warn).to.have.been.calledWithMatch(/Failed to emit entitlement.tier_changed/);
+    });
+  });
+
   describe('Edge Cases', () => {
     it('should handle context without authInfo', async () => {
       const contextWithoutAuth = {

@@ -31,6 +31,7 @@ describe('FixEntityCollection', () => {
     changeDetails: { field: 'title', oldValue: 'Old', newValue: 'New' },
     executedAt: '2024-01-01T00:00:00.000Z',
     executedBy: 'user123',
+    deployedAt: '2024-01-01T00:00:00.000Z',
     publishedAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   };

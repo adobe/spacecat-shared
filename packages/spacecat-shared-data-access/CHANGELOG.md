@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.3...@adobe/spacecat-shared-data-access-v4.16.0) (2026-07-31)
+
+### Features
+
+* **data-access:** expose deployedAt on FixEntity (SITES-47997/48823) ([#1857](https://github.com/adobe/spacecat-shared/issues/1857)) ([512d991](https://github.com/adobe/spacecat-shared/commit/512d991aaee98cad2387807193852937cede6ddd))
+
 ## [@adobe/spacecat-shared-data-access-v4.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.2...@adobe/spacecat-shared-data-access-v4.15.3) (2026-07-29)
 
 ### Bug Fixes

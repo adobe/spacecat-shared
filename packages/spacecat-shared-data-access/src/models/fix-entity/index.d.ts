@@ -20,6 +20,8 @@ export interface FixEntity extends BaseModel {
   setChangeDetails(value: object): this;
   getExecutedAt(): string;
   setExecutedAt(value: string): this;
+  getDeployedAt(): string;
+  setDeployedAt(value: string): this;
   getExecutedBy(): string;
   setExecutedBy(value: string): this;
   getOpportunity(): Promise<Opportunity>;

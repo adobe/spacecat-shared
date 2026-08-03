@@ -69,6 +69,9 @@ export const SORTABLE_FIELDS = /** @type {const} */ (['metadata.created_at', 'me
 export const sortPromptsByMetadata = (prompts, { sortField, sortDir } = {}) => {
   const list = Array.isArray(prompts) ? [...prompts] : [];
   const field = typeof sortField === 'string' ? sortField : '';
+  // Cast unavoidable: a `readonly` tuple's `.includes()` narrows its arg to the tuple's literal
+  // union, so tsc rejects an arbitrary `string`. Widening `field` to `any` is the standard
+  // membership-test escape; the runtime check is exactly what narrows it back to a valid field.
   if (!SORTABLE_FIELDS.includes(/** @type {any} */ (field))) {
     return list;
   }

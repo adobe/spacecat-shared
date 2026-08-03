@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.125.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.0...@adobe/spacecat-shared-utils-v1.125.1) (2026-08-03)
+
+### Bug Fixes
+
+* **bot-blocker:** exclude Cloudflare JS Detections script from challenge-platform pattern (SITES-49160) ([#1861](https://github.com/adobe/spacecat-shared/issues/1861)) ([07f0370](https://github.com/adobe/spacecat-shared/commit/07f0370d8a6cb1856b2ac1432458b015ed14d8c8))
+
 ## [@adobe/spacecat-shared-utils-v1.125.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.1...@adobe/spacecat-shared-utils-v1.125.0) (2026-07-17)
 
 ### Features

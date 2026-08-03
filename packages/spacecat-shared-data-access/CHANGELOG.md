@@ -1,3 +1,39 @@
+## [@adobe/spacecat-shared-data-access-v4.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.0...@adobe/spacecat-shared-data-access-v4.16.1) (2026-08-03)
+
+### Bug Fixes
+
+* **data-access:** reconcile status-transition tables from SITES-47286 warn findings ([#1860](https://github.com/adobe/spacecat-shared/issues/1860)) ([237c081](https://github.com/adobe/spacecat-shared/commit/237c081feaec5368e4b08422d83087762a672fe5)), closes [#5](https://github.com/adobe/spacecat-shared/issues/5)
+
+## [@adobe/spacecat-shared-data-access-v4.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.3...@adobe/spacecat-shared-data-access-v4.16.0) (2026-07-31)
+
+### Features
+
+* **data-access:** expose deployedAt on FixEntity (SITES-47997/48823) ([#1857](https://github.com/adobe/spacecat-shared/issues/1857)) ([512d991](https://github.com/adobe/spacecat-shared/commit/512d991aaee98cad2387807193852937cede6ddd))
+
+## [@adobe/spacecat-shared-data-access-v4.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.2...@adobe/spacecat-shared-data-access-v4.15.3) (2026-07-29)
+
+### Bug Fixes
+
+* bound cdnlogsFilter value length and entry counts ([#1855](https://github.com/adobe/spacecat-shared/issues/1855)) ([ec88c22](https://github.com/adobe/spacecat-shared/commit/ec88c2202f8c3fabd75c3a35be21589a8f7bf29d))
+
+## [@adobe/spacecat-shared-data-access-v4.15.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.1...@adobe/spacecat-shared-data-access-v4.15.2) (2026-07-29)
+
+### Bug Fixes
+
+* **site:** guard config writes against the config schema ([#1852](https://github.com/adobe/spacecat-shared/issues/1852)) ([dafbea2](https://github.com/adobe/spacecat-shared/commit/dafbea2619d1ff65f27b0fe5ca47734b2622619d)), closes [#1850](https://github.com/adobe/spacecat-shared/issues/1850)
+
+## [@adobe/spacecat-shared-data-access-v4.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.0...@adobe/spacecat-shared-data-access-v4.15.1) (2026-07-29)
+
+### Bug Fixes
+
+* validate cdnlogsFilter key against a column allowlist in site config ([#1851](https://github.com/adobe/spacecat-shared/issues/1851)) ([46a0408](https://github.com/adobe/spacecat-shared/commit/46a0408b852fa6f6483fc2ad81c3ce1a8d0c615d)), closes [adobe/spacecat-audit-worker#2826](https://github.com/adobe/spacecat-audit-worker/issues/2826)
+
+## [@adobe/spacecat-shared-data-access-v4.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.14.0...@adobe/spacecat-shared-data-access-v4.15.0) (2026-07-29)
+
+### Features
+
+* **site-config:** add showWww flag to llmo config ([#1850](https://github.com/adobe/spacecat-shared/issues/1850)) ([e87b454](https://github.com/adobe/spacecat-shared/commit/e87b45481d2b34cdb9f86e569f7598dea967ed6e))
+
 ## [@adobe/spacecat-shared-data-access-v4.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.13.0...@adobe/spacecat-shared-data-access-v4.14.0) (2026-07-27)
 
 ### Features

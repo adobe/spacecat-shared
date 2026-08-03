@@ -29,6 +29,7 @@ describe('FixEntity transitions', () => {
     ['DEPLOYED', 'PUBLISHED'],
     ['DEPLOYED', 'ROLLED_BACK'],
     ['FAILED', 'PENDING'],
+    ['FAILED', 'ROLLED_BACK'], // revert of a failed fix (SITES-47286, reconciled to api-service rule)
     ['PUBLISHED', 'ROLLED_BACK'],
   ];
 

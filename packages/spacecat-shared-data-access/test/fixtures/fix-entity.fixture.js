@@ -24,6 +24,7 @@ const fixEntities = [
     },
     executedBy: 'developer123',
     executedAt: '2025-01-09T23:21:55.834Z',
+    deployedAt: '2025-01-10T23:21:55.834Z',
     publishedAt: '2025-01-10T23:21:55.834Z',
   },
   {
@@ -39,6 +40,7 @@ const fixEntities = [
     },
     executedBy: 'developer456',
     executedAt: '2025-01-09T23:21:55.834Z',
+    deployedAt: '2025-02-09T23:21:55.834Z',
     publishedAt: '2025-02-09T23:21:55.834Z',
   },
   {
@@ -55,6 +57,7 @@ const fixEntities = [
     },
     executedBy: 'developer789',
     executedAt: '2025-02-09T23:21:55.834Z',
+    deployedAt: '2025-03-09T23:21:55.834Z',
     publishedAt: '2025-03-09T23:21:55.834Z',
   },
   {
@@ -71,6 +74,7 @@ const fixEntities = [
     },
     executedBy: 'developer789',
     executedAt: '2025-02-09T23:21:55.834Z',
+    deployedAt: '2025-03-09T23:21:55.834Z',
     publishedAt: '2025-03-09T23:21:55.834Z',
   },
   {
@@ -87,6 +91,7 @@ const fixEntities = [
     },
     executedBy: 'developer789',
     executedAt: '2025-02-09T23:21:55.834Z',
+    deployedAt: '2025-03-09T23:21:55.834Z',
     publishedAt: '2025-03-09T23:21:55.834Z',
   },
   {
@@ -103,6 +108,7 @@ const fixEntities = [
     },
     executedBy: 'developer789',
     executedAt: '2025-02-09T23:21:55.834Z',
+    deployedAt: '2025-03-09T23:21:55.834Z',
     publishedAt: '2025-03-09T23:21:55.834Z',
   },
 ];

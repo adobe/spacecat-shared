@@ -36,6 +36,7 @@ describe('Suggestion transitions', () => {
     ['SKIPPED', 'NEW'], // un-skip
     ['OUTDATED', 'NEW'],
     ['REJECTED', 'NEW'], // reopen after incorrect classification (sandsinh review)
+    ['REJECTED', 'OUTDATED'], // re-audit outdates a rejected suggestion (SITES-47286)
   ];
 
   const illegal = [

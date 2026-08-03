@@ -70,6 +70,40 @@ const RESERVED_SCRAPER_HEADER_NAMES = new Set([
 
 const LLMO_TAG_PATTERN = /^(market|product|topic):\s?.+/;
 const AWS_REGION_PATTERN = /^[a-z]{2}(?:-[a-z]+)+-\d+$/i;
+
+// Columns on the CDN log tables that a cdnlogsFilter entry is allowed to target.
+// `key` is interpolated (unquoted) into Athena SQL by the audit worker's
+// buildSiteFilters(), so it MUST be constrained to this allowlist to prevent SQL
+// injection (VULN-37491). Keep in sync with ALLOWED_FILTER_KEYS in
+// spacecat-audit-worker/src/utils/cdn-utils.js.
+export const CDN_LOGS_FILTER_KEYS = [
+  'url',
+  'host',
+  'x_forwarded_host',
+  'user_agent',
+  'referer',
+  'cdn_provider',
+];
+
+// Bounds on the filter values. `value` entries become Athena regex patterns
+// downstream; SQL injection is already prevented by escaping in the audit worker,
+// but capping length/count limits regex abuse (ReDoS) and stored size.
+const CDN_LOGS_FILTER_MAX_ENTRIES = 50;
+const CDN_LOGS_FILTER_MAX_VALUES = 100;
+const CDN_LOGS_FILTER_MAX_VALUE_LENGTH = 500;
+
+const CDN_LOGS_FILTER_SCHEMA = Joi.array().max(CDN_LOGS_FILTER_MAX_ENTRIES).items(
+  Joi.object({
+    // Athena folds column identifiers to lowercase; normalize before matching
+    // the allowlist so a stored 'X_forwarded_host' is accepted as the same column.
+    key: Joi.string().lowercase().valid(...CDN_LOGS_FILTER_KEYS).required(),
+    value: Joi.array()
+      .max(CDN_LOGS_FILTER_MAX_VALUES)
+      .items(Joi.string().max(CDN_LOGS_FILTER_MAX_VALUE_LENGTH))
+      .required(),
+    type: Joi.string().valid('include', 'exclude').optional(),
+  }),
+);
 const LLMO_TAG = Joi.alternatives()
   .try(
     // Tag market, product, topic like this: "market: ch", "product: firefly", "topic: copyright"
@@ -351,13 +385,7 @@ export const configSchema = Joi.object({
       }),
     ).optional(),
     tags: Joi.array().items(Joi.string()).optional(),
-    cdnlogsFilter: Joi.array().items(
-      Joi.object({
-        key: Joi.string().required(),
-        value: Joi.array().items(Joi.string()).required(),
-        type: Joi.string().valid('include', 'exclude').optional(),
-      }),
-    ).optional(),
+    cdnlogsFilter: CDN_LOGS_FILTER_SCHEMA.optional(),
     countryCodeIgnoreList: Joi.array().items(
       Joi.string().length(2),
     ).optional(),
@@ -389,6 +417,7 @@ export const configSchema = Joi.object({
       'ams-frontdoor',
       'other',
     ).optional(),
+    showWww: Joi.boolean().optional(),
   }).optional(),
   cdnLogsConfig: Joi.object({
     bucketName: Joi.string().required(),
@@ -721,6 +750,11 @@ export const Config = (data = {}) => {
     state.llmo.brand = brand;
   };
 
+  self.updateLlmoShowWww = (showWww) => {
+    state.llmo = state.llmo || {};
+    state.llmo.showWww = showWww;
+  };
+
   self.addLlmoHumanQuestions = (questions) => {
     state.llmo = state.llmo || {};
     state.llmo.questions = state.llmo.questions || {};
@@ -836,8 +870,17 @@ export const Config = (data = {}) => {
   };
 
   self.updateLlmoCdnlogsFilter = (cdnlogsFilter) => {
+    // Reject invalid filter keys at write time (VULN-37491): `key` is
+    // interpolated into Athena SQL downstream, so anything off the allowlist
+    // must never be persisted. Validate only the filter here to avoid coupling
+    // to unrelated required fields elsewhere in the config.
+    const { error, value } = CDN_LOGS_FILTER_SCHEMA.validate(cdnlogsFilter);
+    if (error) {
+      throw new Error(`CDN logs filter validation error: ${error.message}`, { cause: error });
+    }
+
     state.llmo = state.llmo || {};
-    state.llmo.cdnlogsFilter = cdnlogsFilter;
+    state.llmo.cdnlogsFilter = value;
   };
 
   self.updateLlmoCountryCodeIgnoreList = (countryCodeIgnoreList) => {

@@ -211,24 +211,30 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   return noCycleRedirects;
 };
 
-// Google Drive returns 404 "File not found" when the folder is NOT SHARED with the service
-// account (not only when a document is genuinely missing), and 403 / "does not have permission"
-// when shared read-only. So both 403 and 404 signal a possible sharing problem and must trigger
-// the fallback (verified on prod: the old SA got "File not found" for a folder shared only with
-// the new SA). Accepted side effect: a genuinely missing document also triggers one extra
-// fallback attempt before the error propagates. Keep in sync with the spacecat-auth-service
-// `categorizeError` predicate (src/google-drive/handler.js).
-const GDRIVE_SHARING_ERROR = /\b(403|404)\b|forbidden|not found|access denied|insufficient|does not have permission|not shared/i;
+// A "folder not shared with this service account" failure surfaces as an HTTP 403 (shared
+// read-only / "does not have permission" / insufficientFilePermissions) or 404 ("File not found" —
+// Drive returns 404 for a folder the SA cannot see; verified on prod: the old SA got "File not
+// found" for a folder shared only with the new SA). Prefer the SDK error's STRUCTURED status code;
+// only fall back to a few specific reason phrases. Do NOT substring-match the whole message for
+// bare "not found" / "insufficient" / loose "403"/"404" — those false-match unrelated errors (e.g.
+// "module not found", "insufficient memory", a 404 in a trace id). Keep in sync with the
+// spacecat-auth-service `categorizeError` predicate (src/google-drive/handler.js).
+const GDRIVE_SHARING_REASON = /forbidden|insufficientFilePermissions|does not have permission|not shared|file not found/i;
 
 /**
  * True when a Google Drive error looks like a folder-sharing / permission problem (the service
- * account cannot see or edit the folder) — the signal to retry with the fallback SA.
+ * account cannot see or edit the folder) — the signal to retry with the fallback SA. Prefers the
+ * error's structured HTTP status (403/404) over message matching.
  * @param {Error & {code?: any, status?: any}} error
  * @returns {boolean}
  */
-const isGDriveSharingError = (error) => GDRIVE_SHARING_ERROR.test(
-  `${error?.message || ''} ${error?.code || ''} ${error?.status || ''}`,
-);
+const isGDriveSharingError = (error) => {
+  const status = Number(error?.status ?? error?.code);
+  if (status === 403 || status === 404) {
+    return true;
+  }
+  return GDRIVE_SHARING_REASON.test(error?.message || '');
+};
 
 /**
  * Build the fallback Google Drive service-account config, or null when no fallback is configured.
@@ -368,11 +374,9 @@ export default class ContentClient {
    * primary error also pins to the fallback, which is acceptable for the not-shared case this
    * targets). A no-op passthrough for OneDrive or when no fallback is configured.
    *
-   * Retry safety: a sharing/permission failure surfaces on the FIRST Drive access (resolving the
-   * document / redirects file), i.e. before any write in a compound read-then-write op, so
-   * re-running the whole `op` on the fallback does not double-apply a write. A future write op that
-   * can throw a sharing-matching error AFTER a partial mutation would break that assumption — wrap
-   * only its read then.
+   * Callers pass ONLY the initial Drive read here (via `#getDocument` / `#getRedirectsFile`) — the
+   * point at which a folder-not-shared error surfaces. Writes run afterwards, outside this wrapper,
+   * on the winning SA's handle, so a retry never replays a (non-idempotent) write.
    * @template T
    * @param {() => Promise<T>} op
    * @returns {Promise<T>}
@@ -397,6 +401,14 @@ export default class ContentClient {
       await this.#initClient();
       return op();
     }
+  }
+
+  async #getDocument(docPath) {
+    return this.#withGDriveFallback(() => this.rawClient.getDocument(docPath));
+  }
+
+  async #getRedirectsFile() {
+    return this.#withGDriveFallback(() => this.rawClient.getRedirects());
   }
 
   #logDuration(message, startTime) {
@@ -472,10 +484,8 @@ export default class ContentClient {
     this.log.debug(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const metadata = await this.#withGDriveFallback(async () => {
-      const document = await this.rawClient.getDocument(docPath);
-      return document.getMetadata();
-    });
+    const document = await this.#getDocument(docPath);
+    const metadata = await document.getMetadata();
 
     this.#logDuration('getPageMetadata', startTime);
 
@@ -492,20 +502,17 @@ export default class ContentClient {
     this.log.debug(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const mergedMetadata = await this.#withGDriveFallback(async () => {
-      const document = await this.rawClient.getDocument(docPath);
-      const originalMetadata = await document.getMetadata();
+    const document = await this.#getDocument(docPath);
+    const originalMetadata = await document.getMetadata();
 
-      const merged = overwrite
-        ? new Map([...originalMetadata, ...metadata])
-        : new Map([...metadata, ...originalMetadata]);
+    const mergedMetadata = overwrite
+      ? new Map([...originalMetadata, ...metadata])
+      : new Map([...metadata, ...originalMetadata]);
 
-      const response = await document.updateMetadata(merged);
-      if (response?.status !== 200) {
-        throw new Error(`Failed to update metadata for path ${path}: ${response.statusText}`);
-      }
-      return merged;
-    });
+    const response = await document.updateMetadata(mergedMetadata);
+    if (response?.status !== 200) {
+      throw new Error(`Failed to update metadata for path ${path}: ${response.statusText}`);
+    }
 
     this.#logDuration('updatePageMetadata', startTime);
 
@@ -517,10 +524,8 @@ export default class ContentClient {
 
     this.log.debug(`Getting redirects for ${this.site.getId()}`);
 
-    const redirects = await this.#withGDriveFallback(async () => {
-      const redirectsFile = await this.rawClient.getRedirects();
-      return redirectsFile.get();
-    });
+    const redirectsFile = await this.#getRedirectsFile();
+    const redirects = await redirectsFile.get();
     this.#logDuration('getRedirects', startTime);
 
     return redirects;
@@ -533,26 +538,24 @@ export default class ContentClient {
 
     this.log.debug(`Updating redirects for ${this.site.getId()}`);
 
-    await this.#withGDriveFallback(async () => {
-      const redirectsFile = await this.rawClient.getRedirects();
-      const currentRedirects = await redirectsFile.get();
-      // validate combination of existing and new redirects
-      const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
-      if (cleanNewRedirects.length === 0) {
-        this.log.debug('No valid redirects to update');
-        return;
-      }
-      const noCycleRedirects = removeRedirectLoops(currentRedirects, cleanNewRedirects, this.log);
-      if (noCycleRedirects.length === 0) {
-        this.log.debug('No valid redirects to update');
-        return;
-      }
+    const redirectsFile = await this.#getRedirectsFile();
+    const currentRedirects = await redirectsFile.get();
+    // validate combination of existing and new redirects
+    const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
+    if (cleanNewRedirects.length === 0) {
+      this.log.debug('No valid redirects to update');
+      return;
+    }
+    const noCycleRedirects = removeRedirectLoops(currentRedirects, cleanNewRedirects, this.log);
+    if (noCycleRedirects.length === 0) {
+      this.log.debug('No valid redirects to update');
+      return;
+    }
 
-      const response = await redirectsFile.append(noCycleRedirects);
-      if (response.status !== 200) {
-        throw new Error('Failed to update redirects');
-      }
-    });
+    const response = await redirectsFile.append(noCycleRedirects);
+    if (response.status !== 200) {
+      throw new Error('Failed to update redirects');
+    }
 
     this.#logDuration('updateRedirects', startTime);
   }
@@ -563,10 +566,8 @@ export default class ContentClient {
     this.log.debug(`Getting document links for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const links = await this.#withGDriveFallback(async () => {
-      const document = await this.rawClient.getDocument(docPath);
-      return document.getLinks();
-    });
+    const document = await this.#getDocument(docPath);
+    const links = await document.getLinks();
 
     this.#logDuration('getDocumentLinks', startTime);
 
@@ -582,16 +583,14 @@ export default class ContentClient {
     this.log.debug(`Updating page link for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    await this.#withGDriveFallback(async () => {
-      const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
 
-      this.log.debug('Updating link from', brokenLink.from, 'to', brokenLink.to);
-      const response = await document.updateLink(brokenLink.from, brokenLink.to);
+    this.log.debug('Updating link from', brokenLink.from, 'to', brokenLink.to);
+    const response = await document.updateLink(brokenLink.from, brokenLink.to);
 
-      if (response.status !== 200) {
-        throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
-      }
-    });
+    if (response.status !== 200) {
+      throw new Error(`Failed to update link from ${brokenLink.from} to ${brokenLink.to} // ${brokenLink}`);
+    }
 
     this.#logDuration('updateBrokenInternalLink', startTime);
   }
@@ -606,14 +605,12 @@ export default class ContentClient {
 
     const docPath = this.#resolveDocPath(path);
     this.log.debug(`Doc path: ${docPath}`);
-    await this.#withGDriveFallback(async () => {
-      const document = await this.rawClient.getDocument(docPath);
-      this.log.debug(`Document: ${document}`);
-      const response = await document.updateImageAltText(imageAltText);
-      if (response?.status !== 200) {
-        throw new Error(`Failed to update image alt text for path ${path}`);
-      }
-    });
+    const document = await this.#getDocument(docPath);
+    this.log.debug(`Document: ${document}`);
+    const response = await document.updateImageAltText(imageAltText);
+    if (response?.status !== 200) {
+      throw new Error(`Failed to update image alt text for path ${path}`);
+    }
 
     this.#logDuration('updateImageAltText', startTime);
   }

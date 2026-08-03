@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.17.0...@adobe/spacecat-shared-project-engine-client-v1.18.0) (2026-08-03)
+
+### Features
+
+* **project-engine-client:** honour sort_field / sort_dir on the by_tags mock (LLMO-6666) ([#1859](https://github.com/adobe/spacecat-shared/issues/1859)) ([edd2030](https://github.com/adobe/spacecat-shared/commit/edd20301f895da9e050ca33cd981059605a29380))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.16.0...@adobe/spacecat-shared-project-engine-client-v1.17.0) (2026-07-29)
 
 ### Features

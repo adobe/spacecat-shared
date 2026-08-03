@@ -49,9 +49,19 @@
  * matching live's always-visible draft tree. `publish.js` flips `is_new` back to `false` for
  * every prompt in the project on a successful publish, which is what moves a prompt from
  * draft-only into this endpoint's default (published) view.
+ *
+ * Sort (LLMO-6666): live orders the returned `items` on the request-body `sort_field` / `sort_dir`
+ * (`AIOPromptsListRequest`) — the authorship read sorts on `metadata.created_at` /
+ * `metadata.updated_at`. The wrong `sort` / `order` keys are silently ignored by live (200 in
+ * default order), so the mock honours only `sort_field` / `sort_dir` (via the pure, unit-tested
+ * `context.sortPromptsByMetadata`) and returns store order for anything else — what makes a
+ * caller sending the correct keys distinguishable from the wrong ones (before this every
+ * ordering assertion was vacuous, the one thing blocking the sorted read from being covered). The
+ * sort runs on the prompt list, independent of `include_metadata` gating, and a prompt with
+ * an unset sort key sorts last deterministically. See `mock/prompt-sort.js` for the full contract.
  */
 
-/** POST — list prompts, optionally tag-id filtered (OR), gated by draft/publish state → 200. */
+/** POST — list prompts, tag-id filtered, gated by draft/publish, ordered by sort_field → 200. */
 export function POST($) {
   const {
     path, query, body, context,
@@ -71,6 +81,19 @@ export function POST($) {
     ? byTag
     : byTag.filter((p) => String(p.name ?? '').toLowerCase().includes(search));
 
+  // Sort ordering (LLMO-6666). Live orders this list on the request-body `sort_field` / `sort_dir`
+  // (`AIOPromptsListRequest`); the authorship read sorts on `metadata.created_at` /
+  // `metadata.updated_at`. The wrong `sort` / `order` keys are silently ignored by live and return
+  // default order — the pure helper honours only `sort_field` / `sort_dir`, so wrong keys fall
+  // through to store order here, making the two request shapes distinguishable. Sorting
+  // the PROMPT list (before the item mapping below) keeps it independent of `include_metadata`: the
+  // stored `metadata` drives the order even when the emitted item omits the key. An unrecognised
+  // `sort_field`, or a prompt whose sort key is unset, is handled deterministically in the helper.
+  const ordered = context.sortPromptsByMetadata(matched, {
+    sortField: body?.sort_field,
+    sortDir: body?.sort_dir,
+  });
+
   // A prompt REFERENCES its tags; the tag object is a view, derived here from the project's tag
   // collection through the one shared serializer. Live embeds the full tag — a descendant carries
   // its own `parent_id` + root-first `path`, a root carries neither — and the embedded object is
@@ -88,7 +111,7 @@ export function POST($) {
   // `metadata` is pulled out of the spread so it is only re-attached when `include_metadata=true`;
   // when omitted the item carries no `metadata` key at all (not `undefined`), matching the flag-off
   // payload shape. Every other stored field flows through `...rest` unchanged.
-  const items = matched.map((p) => {
+  const items = ordered.map((p) => {
     const { metadata, tags: stored, ...rest } = p;
     const tags = (Array.isArray(stored) ? stored : []).map((t) => byId.get(t.id) ?? t);
     // Prod OMITS `tags` entirely on an untagged prompt rather than emitting `[]` (Rainer review,

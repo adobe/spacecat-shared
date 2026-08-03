@@ -124,7 +124,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     'content-type': 'application/json',
     Accept: 'application/json',
   };
-  const listByTags = (tagIds, { draft, includeMetadata } = {}) => {
+  const listByTags = (tagIds, {
+    draft, includeMetadata, sortField, sortDir, sort, order,
+  } = {}) => {
     const query = {
       ...(draft ? { draft: true } : {}),
       ...(includeMetadata ? { include_metadata: true } : {}),
@@ -136,7 +138,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
           path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
           ...(Object.keys(query).length > 0 ? { query } : {}),
         },
-        body: { tag_ids: tagIds },
+        body: {
+          tag_ids: tagIds,
+          // The wire sort keys (`sort_field` / `sort_dir`); the ignored `sort` / `order` are also
+          // passable so a case can prove they are NOT honoured (LLMO-6666).
+          ...(sortField !== undefined ? { sort_field: sortField } : {}),
+          ...(sortDir !== undefined ? { sort_dir: sortDir } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          ...(order !== undefined ? { order } : {}),
+        },
       },
     );
   };
@@ -442,6 +452,96 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // Without `include_metadata`, the same list omits the `metadata` key entirely (default shape).
     const { data: bare } = await listByTags([], { draft: true });
     expect(bare.items.find((p) => p.id === item.id)).to.not.have.property('metadata');
+  });
+
+  // by_tags sort (LLMO-6666). Fixtures are stamped so store order matches NEITHER the created_at
+  // nor the updated_at order, so an ordering assertion fails if the keys regress (rather than
+  // passing on store order by accident — the vacuity these cases exist to remove). Results are
+  // filtered to the ids created here (the seed carries its own prompt), which preserves relative
+  // order under a stable sort.
+  describe('by_tags ordering on sort_field / sort_dir', () => {
+    // Store order [X, Y, Z]. created_at ascending → [Y, Z, X]; updated_at ascending → [X, Z, Y]:
+    // both differ from store order and from each other.
+    const FIXTURES = [
+      { name: 'sort X?', metadata: { created_at: '2026-03-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
+      { name: 'sort Y?', metadata: { created_at: '2026-01-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' } },
+      { name: 'sort Z?', metadata: { created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' } },
+    ];
+
+    // Creates the fixtures and returns a name→id map, so a case can express expected order by the
+    // stable X/Y/Z labels rather than opaque ids.
+    const seedFixtures = async (items = FIXTURES) => {
+      const { data: created, error } = await client.POST(V3_CREATE, {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { items },
+      });
+      expect(error).to.equal(undefined);
+      const byName = new Map(created.items.map((p) => [p.name, p.id]));
+      return { ids: [...byName.values()], byName };
+    };
+    const orderedNames = (listed, byName) => {
+      const idToName = new Map([...byName].map(([n, id]) => [id, n]));
+      return listed.items.filter((p) => idToName.has(p.id)).map((p) => idToName.get(p.id));
+    };
+
+    it('orders by metadata.created_at ascending and descending', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort X?', 'sort Z?', 'sort Y?']);
+    });
+
+    it('orders by metadata.updated_at ascending and descending', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.updated_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort X?', 'sort Z?', 'sort Y?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.updated_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+    });
+
+    it('sorts even without include_metadata (order is driven by the STORED metadata)', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      // Items carry no metadata key (opt-in omitted) but are still ordered by the stored value.
+      expect(asc.items.filter((p) => byName.get('sort X?') === p.id)[0]).to.not.have.property('metadata');
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+    });
+
+    it('preserves store order when NO sort keys are sent (legacy behavior unchanged)', async () => {
+      // Backward-compat regression guard: every pre-existing consumer lists without sort keys and
+      // must see the same store order as before this change. `seedFixtures` inserts X, Y, Z in that
+      // order, so a bare list returns them in that order — the pre-change contract.
+      const { byName } = await seedFixtures();
+      const { data: def } = await listByTags([], { draft: true });
+      expect(orderedNames(def, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('ignores the WRONG keys (sort / order): returns store order, so the two shapes are distinguishable', async () => {
+      const { byName } = await seedFixtures();
+      const { data: wrong } = await listByTags([], { draft: true, sort: 'metadata.created_at', order: 'asc' });
+      expect(orderedNames(wrong, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('returns store order for an unrecognised sort_field (200, not stricter than prod)', async () => {
+      const { byName } = await seedFixtures();
+      const { data: listed, error } = await listByTags([], { draft: true, sortField: 'metadata.name', sortDir: 'asc' });
+      expect(error).to.equal(undefined);
+      expect(orderedNames(listed, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('sorts a prompt with absent metadata LAST in both directions', async () => {
+      // Store order [X, none, Y]: the unstamped prompt is created between two stamped ones.
+      const { byName } = await seedFixtures([
+        FIXTURES[0],
+        { name: 'sort none?' },
+        FIXTURES[1],
+      ]);
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort X?', 'sort none?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort none?']);
+    });
   });
 
   it('v3 create dedupe hit PRESERVES the existing stored metadata and reports is_new: false', async () => {

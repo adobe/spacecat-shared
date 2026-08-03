@@ -59,6 +59,20 @@ describe('mock Context', () => {
     expect(ctx.resolveUrl('not a url')).to.deep.equal({});
   });
 
+  it('exposes the shared sortPromptsByMetadata helper for the by_tags route', () => {
+    const ctx = new Context();
+    // Context just re-exposes the pure sort; the wire key sort_field reorders on the metadata
+    // timestamp, and the ignored `sort` key falls through to store order (LLMO-6666).
+    const list = [
+      { id: 'b', metadata: { created_at: '2026-02-01T00:00:00Z' } },
+      { id: 'a', metadata: { created_at: '2026-01-01T00:00:00Z' } },
+    ];
+    expect(ctx.sortPromptsByMetadata(list, { sortField: 'metadata.created_at', sortDir: 'asc' })
+      .map((p) => p.id)).to.deep.equal(['a', 'b']);
+    expect(ctx.sortPromptsByMetadata(list, { sort: 'metadata.created_at' })
+      .map((p) => p.id)).to.deep.equal(['b', 'a']);
+  });
+
   it('exposes the ai-model catalog for the catalog route + add-path resolution', () => {
     const ctx = new Context();
     expect(ctx.aiModelCatalog).to.be.an('array').with.length.greaterThan(0);

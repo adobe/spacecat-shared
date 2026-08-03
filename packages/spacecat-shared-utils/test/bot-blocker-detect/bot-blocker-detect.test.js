@@ -772,6 +772,39 @@ describe('Bot Blocker Detection', () => {
       expect(result.type).to.equal('cloudflare');
     });
 
+    it('does not flag Cloudflare JS Detections script (jsd/main.js) as a challenge page', () => {
+      // Cloudflare Bot Fight Mode injects /cdn-cgi/challenge-platform/scripts/jsd/main.js
+      // as a silent fingerprinting script — this is NOT a challenge page
+      const realContent = 'This is real page content. '.repeat(400); // ~11KB
+      const jsdScript = '<script src="/cdn-cgi/challenge-platform/scripts/jsd/main.js"></script>';
+      const html = `<html><head><title>Real Page</title>${jsdScript}</head><body><p>${realContent}</p></body></html>`;
+      const headers = { 'cf-ray': '123456789-CDG' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.true;
+      expect(result.type).to.equal('cloudflare-allowed');
+    });
+
+    it('still detects real Cloudflare challenge-platform pages (non-jsd paths)', () => {
+      const html = '<html><body><div class="challenge-platform/h/b/abc123"></div></body></html>';
+      const headers = { 'cf-ray': '123456789-CDG' };
+
+      const result = analyzeBotProtection({
+        status: 200,
+        headers,
+        html,
+      });
+
+      expect(result.crawlable).to.be.false;
+      expect(result.type).to.equal('cloudflare');
+      expect(result.confidence).to.equal(0.99);
+    });
+
     it('returns cloudflare-allowed when Cloudflare present but no challenge', () => {
       // Create HTML > 10KB to ensure it's not flagged as "suspiciously short"
       const realContent = 'This is real page content. '.repeat(400); // ~11KB

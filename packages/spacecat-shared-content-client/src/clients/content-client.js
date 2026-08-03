@@ -211,6 +211,63 @@ const removeRedirectLoops = (currentRedirects, newRedirects, log) => {
   return noCycleRedirects;
 };
 
+// A "folder not shared with this service account" failure surfaces as an HTTP 403 (shared
+// read-only / "does not have permission" / insufficientFilePermissions) or 404 ("File not found" —
+// Drive returns 404 for a folder the SA cannot see; verified on prod: the old SA got "File not
+// found" for a folder shared only with the new SA). Prefer the SDK error's STRUCTURED status code;
+// only fall back to a few specific reason phrases. Do NOT substring-match the whole message for
+// bare "not found" / "insufficient" / loose "403"/"404" — those false-match unrelated errors (e.g.
+// "module not found", "insufficient memory", a 404 in a trace id). Keep in sync with the
+// spacecat-auth-service `categorizeError` predicate (src/google-drive/handler.js).
+const GDRIVE_SHARING_REASON = /forbidden|insufficientFilePermissions|does not have permission|not shared|file not found/i;
+
+/**
+ * True when a Google Drive error looks like a folder-sharing / permission problem (the service
+ * account cannot see or edit the folder) — the signal to retry with the fallback SA. Prefers the
+ * error's structured HTTP status (403/404) over message matching.
+ * @param {Error & {code?: any, status?: any}} error
+ * @returns {boolean}
+ */
+const isGDriveSharingError = (error) => {
+  const status = Number(error?.status ?? error?.code);
+  if (status === 403 || status === 404) {
+    return true;
+  }
+  return GDRIVE_SHARING_REASON.test(error?.message || '');
+};
+
+/**
+ * Build the fallback Google Drive service-account config, or null when no fallback is configured.
+ * A customer's Drive folder may be shared with only one of the two SAs during the migration, so we
+ * keep a second SA to retry with. Any GDRIVE_*_FALLBACK env var overrides the matching SA field;
+ * fields without a _FALLBACK (the Google-universal constants) are reused from the primary config.
+ * Mirrors the dual-SA convention already live in spacecat-auth-service and mystique.
+ * @param {Record<string, any>} env
+ * @param {{[key: string]: string}} envMapping
+ * @param {{[key: string]: string}} primaryConfig
+ * @returns {{[key: string]: string} | null}
+ */
+const buildGDriveFallbackConfig = (env, envMapping, primaryConfig) => {
+  if (!hasText(env.GDRIVE_EMAIL_FALLBACK) || !hasText(env.GDRIVE_PRIVATE_KEY_FALLBACK)) {
+    return null;
+  }
+  // Spread the primary so the fallback inherits the Google-universal constants (and any non-gdrive
+  // keys already on it, which the gdrive SDK ignores); the loop then overrides the per-SA fields
+  // that have a _FALLBACK value.
+  const fallback = { ...primaryConfig };
+  for (const [configVar, envVar] of Object.entries(envMapping)) {
+    const fallbackValue = env[`${envVar}_FALLBACK`];
+    if (hasText(fallbackValue)) {
+      // The primary GDRIVE_PRIVATE_KEY is newline-unescaped by the consumer (e.g. autofix-worker
+      // run.js); the fallback key is not, so normalize it here. Idempotent for real newlines.
+      fallback[configVar] = configVar === 'private_key'
+        ? fallbackValue.replace(/\\n/g, '\n')
+        : fallbackValue;
+    }
+  }
+  return fallback;
+};
+
 export default class ContentClient {
   /**
    * @param {{log: Logging, env: Record<string, any>}} context
@@ -245,7 +302,11 @@ export default class ContentClient {
     } catch (e) {
       log.debug(`Customer ${site.getBaseURL()} secrets containing onedrive domain id not configured: ${e.message}`);
     }
-    return new ContentClient(config, site, log);
+    let fallbackConfig = null;
+    if (contentSourceType === CONTENT_SOURCE_TYPE_DRIVE_GOOGLE && envMapping) {
+      fallbackConfig = buildGDriveFallbackConfig(env, envMapping, config);
+    }
+    return new ContentClient(config, site, log, fallbackConfig);
   }
 
   static async createFromDomain(domain, env, log = console) {
@@ -282,12 +343,14 @@ export default class ContentClient {
    * @param {Site} site
    * @param {Logging} log
    */
-  constructor(config, site, log) {
+  constructor(config, site, log, fallbackConfig = null) {
     validateSite(site);
     validateConfiguration(config, site.getHlxConfig()?.content.source?.type);
 
     this.log = log;
     this.config = config;
+    this.fallbackConfig = fallbackConfig;
+    this.usingFallback = false;
     this.contentSource = site.getHlxConfig()?.content?.source;
     this.site = site;
     this.rawClient = null;
@@ -295,8 +358,57 @@ export default class ContentClient {
 
   async #initClient() {
     if (!this.rawClient) {
-      this.rawClient = await createContentSDKClient(this.config, this.contentSource, this.log);
+      const config = this.usingFallback ? this.fallbackConfig : this.config;
+      this.rawClient = await createContentSDKClient(config, this.contentSource, this.log);
     }
+  }
+
+  /**
+   * TODO(SITES-47990): remove after the EDS Google Drive SA migration completes, together with
+   * `fallbackConfig`, `usingFallback`, `buildGDriveFallbackConfig` and the `GDRIVE_*_FALLBACK` env.
+   *
+   * Run a Google Drive `op` against the current service account. If it fails with a folder-sharing
+   * / permission error (see `isGDriveSharingError`) and a fallback SA is set, rebuild the SDK
+   * client with the fallback SA, retry `op` once, then keep using the fallback SA for the rest of
+   * this instance's lifetime (a ContentClient is per-site, so the winning SA is stable; a transient
+   * primary error also pins to the fallback, which is acceptable for the not-shared case this
+   * targets). A no-op passthrough for OneDrive or when no fallback is configured.
+   *
+   * Callers pass ONLY the initial Drive read here (via `#getDocument` / `#getRedirectsFile`) — the
+   * point at which a folder-not-shared error surfaces. Writes run afterwards, outside this wrapper,
+   * on the winning SA's handle, so a retry never replays a (non-idempotent) write.
+   * @template T
+   * @param {() => Promise<T>} op
+   * @returns {Promise<T>}
+   */
+  async #withGDriveFallback(op) {
+    await this.#initClient();
+    try {
+      return await op();
+    } catch (e) {
+      const canFallback = this.fallbackConfig && !this.usingFallback
+        && this.contentSource?.type === CONTENT_SOURCE_TYPE_DRIVE_GOOGLE
+        && isGDriveSharingError(e);
+      if (!canFallback) {
+        throw e;
+      }
+      // Keep the raw SDK error out of the warn line (it can carry request URLs / token material and
+      // warn logs are long-retained); the detail goes to debug.
+      this.log.warn(`ContentClient: primary Google Drive SA (${this.config.client_email}) cannot access content for ${this.site.getId()}; retrying with fallback SA (${this.fallbackConfig.client_email})`);
+      this.log.debug(`ContentClient: primary Google Drive SA failure detail for ${this.site.getId()}: ${e.message}`);
+      this.usingFallback = true;
+      this.rawClient = null;
+      await this.#initClient();
+      return op();
+    }
+  }
+
+  async #getDocument(docPath) {
+    return this.#withGDriveFallback(() => this.rawClient.getDocument(docPath));
+  }
+
+  async #getRedirectsFile() {
+    return this.#withGDriveFallback(() => this.rawClient.getRedirects());
   }
 
   #logDuration(message, startTime) {
@@ -369,12 +481,10 @@ export default class ContentClient {
 
     validatePath(path);
 
-    await this.#initClient();
-
     this.log.debug(`Getting page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
     const metadata = await document.getMetadata();
 
     this.#logDuration('getPageMetadata', startTime);
@@ -389,20 +499,15 @@ export default class ContentClient {
     validatePath(path);
     validateMetadata(metadata);
 
-    await this.#initClient();
-
     this.log.debug(`Updating page metadata for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
     const originalMetadata = await document.getMetadata();
 
-    let mergedMetadata;
-    if (overwrite) {
-      mergedMetadata = new Map([...originalMetadata, ...metadata]);
-    } else {
-      mergedMetadata = new Map([...metadata, ...originalMetadata]);
-    }
+    const mergedMetadata = overwrite
+      ? new Map([...originalMetadata, ...metadata])
+      : new Map([...metadata, ...originalMetadata]);
 
     const response = await document.updateMetadata(mergedMetadata);
     if (response?.status !== 200) {
@@ -416,11 +521,10 @@ export default class ContentClient {
 
   async getRedirects() {
     const startTime = process.hrtime.bigint();
-    await this.#initClient();
 
     this.log.debug(`Getting redirects for ${this.site.getId()}`);
 
-    const redirectsFile = await this.rawClient.getRedirects();
+    const redirectsFile = await this.#getRedirectsFile();
     const redirects = await redirectsFile.get();
     this.#logDuration('getRedirects', startTime);
 
@@ -432,11 +536,9 @@ export default class ContentClient {
 
     validateLinks(redirects, 'Redirect');
 
-    await this.#initClient();
-
     this.log.debug(`Updating redirects for ${this.site.getId()}`);
 
-    const redirectsFile = await this.rawClient.getRedirects();
+    const redirectsFile = await this.#getRedirectsFile();
     const currentRedirects = await redirectsFile.get();
     // validate combination of existing and new redirects
     const cleanNewRedirects = removeDuplicatedRedirects(currentRedirects, redirects, this.log);
@@ -461,12 +563,10 @@ export default class ContentClient {
   async getDocumentLinks(path) {
     const startTime = process.hrtime.bigint();
 
-    await this.#initClient();
-
     this.log.debug(`Getting document links for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
     const links = await document.getLinks();
 
     this.#logDuration('getDocumentLinks', startTime);
@@ -480,12 +580,10 @@ export default class ContentClient {
     validateLinks([brokenLink], 'URL');
     validatePath(path);
 
-    await this.#initClient();
-
     this.log.debug(`Updating page link for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
-    const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
 
     this.log.debug('Updating link from', brokenLink.from, 'to', brokenLink.to);
     const response = await document.updateLink(brokenLink.from, brokenLink.to);
@@ -502,13 +600,12 @@ export default class ContentClient {
 
     validatePath(path);
     validateImageAltText(imageAltText);
-    await this.#initClient();
 
     this.log.debug(`Updating image alt text for ${this.site.getId()} and path ${path}`);
 
     const docPath = this.#resolveDocPath(path);
     this.log.debug(`Doc path: ${docPath}`);
-    const document = await this.rawClient.getDocument(docPath);
+    const document = await this.#getDocument(docPath);
     this.log.debug(`Document: ${document}`);
     const response = await document.updateImageAltText(imageAltText);
     if (response?.status !== 200) {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.0...@adobe/spacecat-shared-data-access-v4.16.1) (2026-08-03)
+
+### Bug Fixes
+
+* **data-access:** reconcile status-transition tables from SITES-47286 warn findings ([#1860](https://github.com/adobe/spacecat-shared/issues/1860)) ([237c081](https://github.com/adobe/spacecat-shared/commit/237c081feaec5368e4b08422d83087762a672fe5)), closes [#5](https://github.com/adobe/spacecat-shared/issues/5)
+
 ## [@adobe/spacecat-shared-data-access-v4.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.3...@adobe/spacecat-shared-data-access-v4.16.0) (2026-07-31)
 
 ### Features

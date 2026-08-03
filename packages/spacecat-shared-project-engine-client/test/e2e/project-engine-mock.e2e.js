@@ -508,6 +508,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
     });
 
+    it('preserves store order when NO sort keys are sent (legacy behavior unchanged)', async () => {
+      // Backward-compat regression guard: every pre-existing consumer lists without sort keys and
+      // must see the same store order as before this change. `seedFixtures` inserts X, Y, Z in that
+      // order, so a bare list returns them in that order — the pre-change contract.
+      const { byName } = await seedFixtures();
+      const { data: def } = await listByTags([], { draft: true });
+      expect(orderedNames(def, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
     it('ignores the WRONG keys (sort / order): returns store order, so the two shapes are distinguishable', async () => {
       const { byName } = await seedFixtures();
       const { data: wrong } = await listByTags([], { draft: true, sort: 'metadata.created_at', order: 'asc' });

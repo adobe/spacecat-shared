@@ -49,6 +49,7 @@ import { tagId } from './tag-id.js';
 import { parentIdField } from './parent-id.js';
 import { buildTagView } from './tag-view.js';
 import { resolveUrl } from './url-resolve.js';
+import { sortPromptsByMetadata } from './prompt-sort.js';
 import { brandUrlHttpsTag } from './brand-url-validation.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
@@ -118,6 +119,12 @@ export class Context {
     // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
     // convention as `tagId`. The consumer resolves a raw brand URL through this before writing it.
     this.resolveUrl = resolveUrl;
+    // The `by_tags` prompt-list sort (mock/prompt-sort.js). Exposed so the `.../prompts/by_tags`
+    // route orders its items on the wire `sort_field` / `sort_dir` through one pure, unit-tested
+    // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
+    // convention as `resolveUrl`. The consumer sorts the authorship read on `metadata.created_at` /
+    // `metadata.updated_at`; the wrong `sort` / `order` keys fall through to store order.
+    this.sortPromptsByMetadata = sortPromptsByMetadata;
     // The brand-URL `https://` validator (mock/brand-url-validation.js). Exposed so the
     // `POST .../brand_urls` route rejects a non-https value with the live gateway's 400 through one
     // pure, unit-tested function — same `$.context` lib-helper convention as `tagId`.

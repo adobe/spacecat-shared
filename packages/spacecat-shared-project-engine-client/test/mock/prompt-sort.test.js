@@ -67,6 +67,13 @@ describe('prompt-sort (by_tags sort_field / sort_dir)', () => {
     expect(ids(sortPromptsByMetadata(prompts, {}))).to.deep.equal(['c', 'a', 'b']);
   });
 
+  it('returns store order for a bare sort_dir with no sort_field', () => {
+    // A direction with nothing to sort on is not a sort — it must not reorder (guards the
+    // sortField-absent path explicitly, not just via the wrong-keys case above).
+    expect(ids(sortPromptsByMetadata(prompts, { sortDir: 'asc' }))).to.deep.equal(['c', 'a', 'b']);
+    expect(ids(sortPromptsByMetadata(prompts, { sortDir: 'desc' }))).to.deep.equal(['c', 'a', 'b']);
+  });
+
   it('returns store order for an unrecognised sort_field (mirrors live: 200 in default order)', () => {
     expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.name', sortDir: 'asc' })))
       .to.deep.equal(['c', 'a', 'b']);

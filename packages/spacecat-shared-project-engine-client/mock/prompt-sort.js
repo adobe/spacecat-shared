@@ -47,6 +47,14 @@ export const SORTABLE_FIELDS = /** @type {const} */ (['metadata.created_at', 'me
  *   sorting on a metadata field while the response omits the `metadata` key is valid and never
  *   throws (the handler sorts the prompt list, then maps to items).
  *
+ * CAVEAT — two of these are mock-DEFINED conventions, not live-VERIFIED. The 2026-07-29 probe
+ * captured the sort keys but NOT (a) where a missing key lands or (b) the default when `sort_dir`
+ * is absent. We define missing-key = LAST-in-both-directions (matching the spec's "NULLS LAST",
+ * §16 gate G5) and absent-`sort_dir` = ascending. LLMO-6667's api-service assertions pin whatever
+ * this mock does, so if real Semrush diverges (e.g. NULLS-FIRST on DESC) the suite would go green
+ * against a mock that disagrees with prod — confirm both against live before relying on 6667 as a
+ * prod-faithfulness guarantee. Tracked on LLMO-6666.
+ *
  * Values are compared with `<` / `>`; the timestamps are ISO-8601 strings, which order correctly
  * lexicographically. No dependency on their being parseable dates — an opaque interim value still
  * orders consistently with itself.

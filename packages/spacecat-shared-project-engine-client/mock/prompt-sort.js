@@ -78,8 +78,10 @@ export const sortPromptsByMetadata = (prompts, { sortField, sortDir } = {}) => {
   }
 
   const key = field.slice('metadata.'.length); // 'created_at' | 'updated_at'
-  // Ascending ONLY for the literal `'asc'`; absent / `'desc'` / anything else is descending — live
-  // Semrush defaults an omitted `sort_dir` to descending (verified 2026-08-04, see below).
+  // Ascending ONLY for the literal `'asc'`; absent / `'desc'` / unrecognised is descending. Only
+  // the OMITTED default is live-verified (2026-08-04, below); grouping an unrecognised value with
+  // it is a mock choice, not verified — but unreachable end-to-end: the api-service controller
+  // allow-lists `order` to asc/desc, so a bad value 400s before it reaches the mock.
   const descending = String(sortDir ?? '').toLowerCase() !== 'asc';
   /** @param {T} prompt @returns {any} the sort-key value, or `undefined` when absent/null */
   const valueOf = (prompt) => {

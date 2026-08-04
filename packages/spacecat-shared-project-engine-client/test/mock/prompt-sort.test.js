@@ -47,14 +47,30 @@ describe('prompt-sort (by_tags sort_field / sort_dir)', () => {
       .to.deep.equal(['c', 'a', 'b']);
   });
 
-  it('defaults to ascending when sort_dir is absent or unrecognised', () => {
+  it('defaults to DESCENDING when sort_dir is absent or unrecognised (matches live Semrush)', () => {
+    // Live-verified 2026-08-04 (prod Lovesac 2840/en): an omitted sort_dir sorts descending.
     expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at' })))
-      .to.deep.equal(['a', 'b', 'c']);
+      .to.deep.equal(['c', 'b', 'a']);
     expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: 'sideways' })))
-      .to.deep.equal(['a', 'b', 'c']);
+      .to.deep.equal(['c', 'b', 'a']);
   });
 
-  it('is case-insensitive on sort_dir', () => {
+  it('resolves null / undefined / empty-string sort_dir to the descending default', () => {
+    // Pin the exact input shapes the `String(sortDir ?? '').toLowerCase() !== 'asc'` expression
+    // relies on: null and undefined take the `?? ''` nullish branch, while '' is NON-nullish and
+    // reaches descending only via `!== 'asc'`. Asserting '' separately guards against a future
+    // refactor to `(sortDir || '')`, which would keep '' descending but silently change intent.
+    expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: null })))
+      .to.deep.equal(['c', 'b', 'a']);
+    expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: undefined })))
+      .to.deep.equal(['c', 'b', 'a']);
+    expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: '' })))
+      .to.deep.equal(['c', 'b', 'a']);
+  });
+
+  it('is case-insensitive on sort_dir (asc is the only special-cased value)', () => {
+    expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: 'ASC' })))
+      .to.deep.equal(['a', 'b', 'c']);
     expect(ids(sortPromptsByMetadata(prompts, { sortField: 'metadata.created_at', sortDir: 'DESC' })))
       .to.deep.equal(['c', 'b', 'a']);
   });

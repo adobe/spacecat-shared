@@ -37,8 +37,8 @@ export const SORTABLE_FIELDS = /** @type {const} */ (['metadata.created_at', 'me
  * - An unrecognised `sortField` (including the wrong `sort` key, an empty value, or a non-metadata
  *   field) returns the input order unchanged — a 200 in default order, so the mock never becomes
  *   stricter than prod.
- * - `sortDir` is descending only for the literal `'desc'` (case-insensitive); every other value,
- *   including absent and `'asc'`, is ascending.
+ * - `sortDir` is ascending only for the literal `'asc'` (case-insensitive); every other value —
+ *   absent, `'desc'`, or unrecognised — is descending, matching live's omitted-`sort_dir` default.
  * - A prompt whose sort key is missing — `metadata` absent/`null`, or that specific timestamp unset
  *   — sorts LAST in BOTH directions. Missing values are the tail, never interleaved, so a project
  *   mixing stamped and unstamped prompts is deterministic regardless of direction.
@@ -47,13 +47,14 @@ export const SORTABLE_FIELDS = /** @type {const} */ (['metadata.created_at', 'me
  *   sorting on a metadata field while the response omits the `metadata` key is valid and never
  *   throws (the handler sorts the prompt list, then maps to items).
  *
- * CAVEAT — two of these are mock-DEFINED conventions, not live-VERIFIED. The 2026-07-29 probe
- * captured the sort keys but NOT (a) where a missing key lands or (b) the default when `sort_dir`
- * is absent. We define missing-key = LAST-in-both-directions (matching the spec's "NULLS LAST",
- * §16 gate G5) and absent-`sort_dir` = ascending. LLMO-6667's api-service assertions pin whatever
- * this mock does, so if real Semrush diverges (e.g. NULLS-FIRST on DESC) the suite would go green
- * against a mock that disagrees with prod — confirm both against live before relying on 6667 as a
- * prod-faithfulness guarantee. Tracked on LLMO-6666.
+ * Provenance of the two edge behaviors (LLMO-6666):
+ * - Default direction (absent `sort_dir`) = descending is LIVE-VERIFIED (2026-08-04, prod Lovesac
+ *   `2840/en`): a read with `sort_field` and no `sort_dir` returned the exact same order as an
+ *   explicit `sort_dir=desc`. This originally defaulted to ascending and was corrected here.
+ * - Missing-key position = LAST-in-both-directions is still mock-DEFINED, not live-verified: the
+ *   fleet is fully stamped post-backfill, so no null-metadata prompt exists to observe live. It
+ *   matches the spec's "NULLS LAST" (§16 gate G5); confirm against Semrush's `ORDER BY … NULLS`
+ *   semantics before treating it as a prod-faithfulness guarantee. Tracked on LLMO-6666.
  *
  * Values are compared with `<` / `>`; the timestamps are ISO-8601 strings, which order correctly
  * lexicographically. No dependency on their being parseable dates — an opaque interim value still
@@ -77,7 +78,9 @@ export const sortPromptsByMetadata = (prompts, { sortField, sortDir } = {}) => {
   }
 
   const key = field.slice('metadata.'.length); // 'created_at' | 'updated_at'
-  const descending = String(sortDir ?? '').toLowerCase() === 'desc';
+  // Ascending ONLY for the literal `'asc'`; absent / `'desc'` / anything else is descending — live
+  // Semrush defaults an omitted `sort_dir` to descending (verified 2026-08-04, see below).
+  const descending = String(sortDir ?? '').toLowerCase() !== 'asc';
   /** @param {T} prompt @returns {any} the sort-key value, or `undefined` when absent/null */
   const valueOf = (prompt) => {
     const value = prompt?.metadata?.[key];

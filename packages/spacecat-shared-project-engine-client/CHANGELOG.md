@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.0...@adobe/spacecat-shared-project-engine-client-v1.18.1) (2026-08-04)
+
+### Bug Fixes
+
+* **project-engine-client:** by_tags mock defaults omitted sort_dir to descending (LLMO-6666) ([#1862](https://github.com/adobe/spacecat-shared/issues/1862)) ([44f64d8](https://github.com/adobe/spacecat-shared/commit/44f64d897b8f08b59ef5ff87311305ef720c7df7)), closes [#1859](https://github.com/adobe/spacecat-shared/issues/1859)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.17.0...@adobe/spacecat-shared-project-engine-client-v1.18.0) (2026-08-03)
 
 ### Features

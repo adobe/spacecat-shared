@@ -519,6 +519,14 @@ export const DATA_SCHEMAS = {
       },
     },
   },
+  // Field ownership:
+  // - validation — written by import-worker's validate-site.js after running the S3-vs-live
+  //   content comparison for this suggestion's URL, only for suggestions reached via a
+  //   geoExperimentId-triggered validation call (the bulk/automatic hourly job does not write
+  //   per-suggestion status). status is a plain boolean; reason is only present when
+  //   status is false, and is one of 'waf-blocked', 'content-issue', or 'error' — the same
+  //   flat vocabulary used at the Opportunity.data.validation / GeoExperiment.metadata.validation
+  //   levels.
   [OPPORTUNITY_TYPES.PRERENDER]: {
     schema: Joi.object({
       url: Joi.string().uri().required(),
@@ -529,6 +537,11 @@ export const DATA_SCHEMAS = {
       prerenderedHtmlKey: Joi.string().optional(),
       organicTraffic: Joi.number().optional(),
       aggregationKey: Joi.string().allow(null).optional(),
+      validation: Joi.object({
+        status: Joi.boolean().required(),
+        reason: Joi.string().valid('waf-blocked', 'content-issue', 'error').optional(),
+        validatedAt: Joi.string().isoDate().required(),
+      }).optional(),
     }).unknown(true),
     projections: {
       minimal: {

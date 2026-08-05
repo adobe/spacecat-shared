@@ -11,6 +11,7 @@
  */
 
 import { buildUrlMatcher } from './pattern-utils.js';
+import { normalizePath } from './s3-utils.js';
 
 /** Returns a shallow copy of obj with the specified keys removed. */
 export function omitKeys(obj, keys) {
@@ -35,7 +36,7 @@ export function isPatternSuggestion(suggestion) {
 }
 
 /**
- * Groups suggestions by URL pathname
+ * Groups suggestions by normalized URL pathname
  * @param {Array} suggestions - Array of suggestion entities
  * @param {string} baseURL - Base URL for pathname extraction
  * @param {Object} log - Logger instance
@@ -53,7 +54,7 @@ export function groupSuggestionsByUrlPath(suggestions, baseURL, log) {
 
     let urlPath;
     try {
-      urlPath = new URL(url, baseURL).pathname;
+      urlPath = normalizePath(new URL(url, baseURL).pathname);
     } catch (e) {
       log.warn(`Failed to extract pathname from URL for suggestion ${suggestion.getId()}: ${url}`);
       return acc;

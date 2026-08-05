@@ -790,8 +790,9 @@ class TokowakaClient {
       );
     }
 
-    // Each URL is its own file, so we can handle several at the same time.
+    // Each URL has its own S3 config, so we can handle several at the same time.
     const urlEntries = Object.entries(suggestionsByUrl);
+    const loopStart = Date.now();
     const processed = await mapWithConcurrency(
       urlEntries,
       async ([urlPath, urlSuggestions]) => {
@@ -840,7 +841,8 @@ class TokowakaClient {
       }
     });
 
-    this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
+    this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length}/${urlEntries.length}`
+      + ` URL(s) in ${Date.now() - loopStart}ms (concurrency=${URL_CONFIG_CONCURRENCY})`);
 
     // Update metaconfig with deployed paths
     await this.#updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseURL);
@@ -981,8 +983,10 @@ class TokowakaClient {
     let totalRemovedCount = 0;
 
     // Each URL is its own file, so we can roll back several at the same time.
+    const urlEntries = Object.entries(suggestionsByUrl);
+    const loopStart = Date.now();
     const removedCounts = await mapWithConcurrency(
-      Object.entries(suggestionsByUrl),
+      urlEntries,
       async ([urlPath, urlSuggestions]) => {
         const fullUrl = new URL(urlPath, baseURL).toString();
         this.log.debug(`Rolling back ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
@@ -1001,7 +1005,8 @@ class TokowakaClient {
     totalRemovedCount += removedCounts.reduce((sum, n) => sum + n, 0);
 
     // eslint-disable-next-line max-len
-    this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
+    this.log.info(`Updated Tokowaka configs for ${s3Paths.length}/${urlEntries.length} URL(s), `
+      + `removed ${totalRemovedCount} patches total in ${Date.now() - loopStart}ms (concurrency=${URL_CONFIG_CONCURRENCY})`);
 
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions

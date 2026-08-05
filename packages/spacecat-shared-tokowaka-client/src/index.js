@@ -75,12 +75,8 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
 
-/**
- * Max number of per-URL S3 config operations (fetch + upload) to run in parallel
- * during deploy/rollback. Each URL maps to a distinct S3 object, so the work is
- * independent; the cap avoids exhausting the S3 socket pool on large opportunities.
- */
-const URL_CONFIG_CONCURRENCY = 10;
+// URLs to deploy/roll back in parallel
+const URL_CONFIG_CONCURRENCY = 5;
 
 /**
  * Tokowaka Client - Manages edge optimization configurations
@@ -794,8 +790,7 @@ class TokowakaClient {
       );
     }
 
-    // Process each URL separately. URLs are independent (each maps to a distinct
-    // S3 object), so fetch+upload run in parallel with bounded concurrency.
+    // Each URL is its own file, so we can handle several at the same time.
     const urlEntries = Object.entries(suggestionsByUrl);
     const processed = await mapWithConcurrency(
       urlEntries,
@@ -985,9 +980,7 @@ class TokowakaClient {
     const rolledBackUrls = [];
     let totalRemovedCount = 0;
 
-    // URLs are independent (each maps to a distinct S3 object), so fetch+upload run
-    // in parallel with bounded concurrency. #rollbackPerUrlConfig appends to the shared
-    // s3Paths / rolledBackUrls accumulators (order is not significant for those).
+    // Each URL is its own file, so we can roll back several at the same time.
     const removedCounts = await mapWithConcurrency(
       Object.entries(suggestionsByUrl),
       async ([urlPath, urlSuggestions]) => {

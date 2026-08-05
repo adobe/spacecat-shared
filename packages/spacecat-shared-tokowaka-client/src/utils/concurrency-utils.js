@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -26,7 +26,7 @@
  * @param {number} [concurrency=10] - Max number of tasks running at once
  * @returns {Promise<Array<R>>} - Results in input order
  */
-export async function mapWithConcurrency(items, mapper, concurrency = 10) {
+export async function mapWithConcurrency(items, mapper, concurrency = 5) {
   if (!Array.isArray(items) || items.length === 0) {
     return [];
   }

@@ -134,6 +134,16 @@ describe('AkamaiClient', () => {
       const c = new AkamaiClient(CREDS);
       expect(c).to.be.instanceOf(AkamaiClient);
     });
+
+    it('defaults ruleTreeTimeoutMs to 60000', () => {
+      const c = new AkamaiClient(CREDS, log);
+      expect(c.ruleTreeTimeoutMs).to.equal(60000);
+    });
+
+    it('accepts a custom ruleTreeTimeoutMs', () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 45000 }, log);
+      expect(c.ruleTreeTimeoutMs).to.equal(45000);
+    });
   });
 
   // ─── low-level request behavior (via getLatestVersion) ────────────────
@@ -276,6 +286,67 @@ describe('AkamaiClient', () => {
 
       await expect(client.activate(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID, 'STAGING'))
         .to.be.rejectedWith(/unexpected redirect \(307\)/);
+    });
+  });
+
+  // ─── rule-tree call timeout ─────────────────────────────────────────────
+  // getRuleTree/updateRuleTree/patchRuleTree scale with rule-tree size (PAPI's validateRules is a
+  // semantic pass over the whole tree), so they use the client's configurable ruleTreeTimeoutMs
+  // instead of tracingFetch's generic 10s default. Reproduced against a real customer property
+  // whose PUT consistently exceeded 10s and got aborted client-side before Akamai could respond —
+  // these tests use small ms values (not real 10s/60s waits) to prove the configured value is what
+  // actually gates each call, fast.
+
+  describe('rule-tree call timeout', () => {
+    it('getRuleTree times out using the configured ruleTreeTimeoutMs, not the 10s default', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query(true)
+        .delay(80)
+        .reply(200, { rules: {} });
+
+      await expect(c.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID))
+        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+    });
+
+    it('updateRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .put(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`)
+        .query(true)
+        .delay(80)
+        .reply(200, { errors: [] });
+
+      await expect(c.updateRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, { rules: {} }))
+        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+    });
+
+    it('patchRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      const ops = [{ op: 'add', path: '/rules/children/-', value: { name: 'X' } }];
+      nock(API_BASE)
+        .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, ops)
+        .query(true)
+        .delay(80)
+        .reply(200, { errors: [] });
+
+      await expect(c.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, ops))
+        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+    });
+
+    it('a short ruleTreeTimeoutMs does not affect cheap, metadata-only calls', async () => {
+      // getLatestVersion doesn't scale with rule-tree size, so it should keep tracingFetch's
+      // generic (much longer) default even when ruleTreeTimeoutMs is configured very small.
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query(true)
+        .delay(80)
+        .reply(200, { versions: { items: [{ propertyVersion: 7 }] } });
+
+      const version = await c.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID);
+      expect(version).to.equal(7);
     });
   });
 

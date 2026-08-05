@@ -28,6 +28,14 @@ const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
 // printable-ASCII, whitespace-free token (PAPI returns a hex etag) — this stops a malformed value
 // from injecting extra headers via CR/LF, mirroring RULE_FORMAT_RE's guard for ruleFormat.
 const ETAG_RE = /^[!-~]+$/;
+// tracingFetch defaults to a 10s timeout, fine for cheap metadata calls (getLatestVersion,
+// createVersion, activate, ...) but too short for a rule-tree PUT/PATCH/GET on a property with many
+// rules: PAPI's `validateRules=true` check is a semantic pass over the whole tree and its latency
+// scales with rule count. A property that legitimately needs >10s gets its request aborted
+// client-side before Akamai can respond, so the version is created but the rule content never
+// gets written — reproduced against a real customer property (all attempts died at exactly
+// "Request timeout after 10000ms"). Give the size-scaling calls a much longer default instead.
+const DEFAULT_RULE_TREE_TIMEOUT_MS = 60000;
 
 function requireText(name, value) {
   if (!hasText(value)) {
@@ -165,6 +173,9 @@ export default class AkamaiClient {
    * @param {string} [config.accountSwitchKey]
    * @param {string[]} [config.notifyEmails] - Required only to call activate();
    *   emails PAPI notifies about activation progress.
+   * @param {number} [config.ruleTreeTimeoutMs] - Timeout for calls whose latency scales with
+   *   rule-tree size (getRuleTree, updateRuleTree, patchRuleTree). Defaults to 60s, well above
+   *   tracingFetch's generic 10s default used by every other (cheap, metadata-only) call.
    * @param {object} [log]
    */
   constructor(config = {}, log = console) {
@@ -179,6 +190,7 @@ export default class AkamaiClient {
     this.#accessToken = config.accessToken;
     this.accountSwitchKey = config.accountSwitchKey;
     this.notifyEmails = config.notifyEmails;
+    this.ruleTreeTimeoutMs = config.ruleTreeTimeoutMs || DEFAULT_RULE_TREE_TIMEOUT_MS;
     this.log = log;
   }
 
@@ -191,7 +203,9 @@ export default class AkamaiClient {
     return `https://${this.host}${path}${qs ? `?${qs}` : ''}`;
   }
 
-  async #request(method, path, { params, body, headers } = {}) {
+  async #request(method, path, {
+    params, body, headers, timeout,
+  } = {}) {
     const bodyStr = body ? JSON.stringify(body) : undefined;
 
     // The EG1-HMAC-SHA256 signature is bound to the exact request URL, so a followed redirect
@@ -222,6 +236,7 @@ export default class AkamaiClient {
             ...headers,
           },
           body: bodyStr,
+          ...(timeout ? { timeout } : {}),
         });
       } catch (e) {
         throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
@@ -415,7 +430,7 @@ export default class AkamaiClient {
     const data = await this.#request(
       'GET',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params: { contractId, groupId } },
+      { params: { contractId, groupId }, timeout: this.ruleTreeTimeoutMs },
     );
     // `etag` is the version's optimistic-concurrency token; patchRuleTree passes it back as
     // If-Match so a concurrent edit fails the PATCH instead of silently clobbering.
@@ -495,7 +510,9 @@ export default class AkamaiClient {
     return this.#request(
       'PUT',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params, body: ruleTree, headers },
+      {
+        params, body: ruleTree, headers, timeout: this.ruleTreeTimeoutMs,
+      },
     );
   }
 
@@ -549,7 +566,9 @@ export default class AkamaiClient {
     return this.#request(
       'PATCH',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params, body: ops, headers },
+      {
+        params, body: ops, headers, timeout: this.ruleTreeTimeoutMs,
+      },
     );
   }
 

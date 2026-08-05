@@ -29,6 +29,10 @@ export interface AkamaiClientConfig {
   accessToken: string;
   accountSwitchKey?: string;
   notifyEmails?: string[];
+  /** Timeout (ms) for calls whose latency scales with rule-tree size (getRuleTree,
+   * updateRuleTree, patchRuleTree). Defaults to 60000, above tracingFetch's generic 10s default
+   * used by every other (cheap, metadata-only) call. */
+  ruleTreeTimeoutMs?: number;
 }
 
 export interface PropertyMatch {
@@ -75,6 +79,8 @@ export default class AkamaiClient {
   accountSwitchKey?: string;
 
   notifyEmails?: string[];
+
+  ruleTreeTimeoutMs: number;
 
   searchBy(key: 'hostname' | 'edgeHostname' | 'propertyName', value: string): Promise<object[]>;
 

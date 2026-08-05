@@ -40,7 +40,18 @@ class Opportunity extends BaseModel {
     RESOLVED: 'RESOLVED',
   };
 
+  // SITES-49175 — `SITE` was the implicit "not brand" scope, historically
+  // represented by leaving `scopeType` NULL and relying on the `siteId` FK.
+  // That implicit representation caused divergence between V1 audit-worker
+  // writes (NULL scope) and V2 Mystique projector writes (`'site'` scope),
+  // and Postgres unique-index NULL semantics let both survive as
+  // duplicate active rows for the same `(siteId, type)`. Making SITE
+  // explicit here lets V1 writers stamp `scopeType='site'` so the partial
+  // unique index on the data-service side treats V1 and V2 rows as the
+  // same tuple. See SITES-49175 and the Mystique projector guard PR for
+  // the full diagnosis.
   static SCOPE_TYPES = {
+    SITE: 'site',
     BRAND: 'brand',
   };
 

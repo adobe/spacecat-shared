@@ -67,7 +67,7 @@ describe('Concurrency Utils', () => {
       expect(maxActive).to.be.at.most(4);
     });
 
-    it('defaults concurrency to 10 when not provided', async () => {
+    it('defaults concurrency to 5 when not provided', async () => {
       let active = 0;
       let maxActive = 0;
       const items = Array.from({ length: 30 }, (_, i) => i);
@@ -79,7 +79,8 @@ describe('Concurrency Utils', () => {
         active -= 1;
       });
 
-      expect(maxActive).to.be.at.most(10);
+      // 30 items with delay would all run at once if unbounded; the default caps it at 5.
+      expect(maxActive).to.equal(5);
     });
 
     it('treats concurrency < 1 as 1 (sequential)', async () => {

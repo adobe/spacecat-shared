@@ -23,7 +23,7 @@
  * @template T, R
  * @param {Array<T>} items - Items to process
  * @param {(item: T, index: number) => Promise<R>} mapper - Async mapper per item
- * @param {number} [concurrency=10] - Max number of tasks running at once
+ * @param {number} [concurrency=5] - Max number of tasks running at once
  * @returns {Promise<Array<R>>} - Results in input order
  */
 export async function mapWithConcurrency(items, mapper, concurrency = 5) {

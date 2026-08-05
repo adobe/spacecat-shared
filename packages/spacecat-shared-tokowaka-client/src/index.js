@@ -860,16 +860,14 @@ class TokowakaClient {
 
   /**
    * Rolls back a single URL's S3 config by removing the relevant patches.
-   * Returns the number of patches removed, or 0 if nothing changed.
-   * Pushes the uploaded S3 path into s3Paths and the URL into rolledBackUrls on success.
+   * Returns { s3Path, fullUrl, removed } when a config was re-uploaded,
+   * or null when there was nothing to roll back
    * @param {string} fullUrl
    * @param {Array} urlSuggestions - Suggestions for this URL
    * @param {Object} opportunity
    * @param {Object} mapper
    * @param {string} opportunityType
-   * @param {Array} s3Paths - Accumulator array (mutated)
-   * @param {Array} rolledBackUrls - Accumulator array (mutated)
-   * @returns {Promise<number>} Number of patches removed
+   * @returns {Promise<{s3Path: string, fullUrl: string, removed: number}|null>}
    * @private
    */
   async #rollbackPerUrlConfig(
@@ -878,26 +876,22 @@ class TokowakaClient {
     opportunity,
     mapper,
     opportunityType,
-    s3Paths,
-    rolledBackUrls,
   ) {
     const existingConfig = await this.fetchConfig(fullUrl);
     if (!existingConfig) {
       this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     if (opportunityType === 'prerender') {
       this.log.info(`Rolling back prerender config for URL: ${fullUrl}`);
       const s3Path = await this.uploadConfig(fullUrl, { ...existingConfig, prerender: false });
-      s3Paths.push(s3Path);
-      rolledBackUrls.push(fullUrl);
-      return 1;
+      return { s3Path, fullUrl, removed: 1 };
     }
 
     if (!existingConfig.patches) {
       this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     const suggestionIdsToRemove = urlSuggestions.map((s) => s.getId());
@@ -909,7 +903,7 @@ class TokowakaClient {
 
     if (updatedConfig.removedCount === 0) {
       this.log.warn(`No patches found for suggestions at URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     this.log.info(`Removed ${updatedConfig.removedCount} patches for URL: ${fullUrl}`);
@@ -917,9 +911,7 @@ class TokowakaClient {
     delete updatedConfig.removedCount;
 
     const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
-    s3Paths.push(s3Path);
-    rolledBackUrls.push(fullUrl);
-    return removed;
+    return { s3Path, fullUrl, removed };
   }
 
   /**
@@ -978,14 +970,11 @@ class TokowakaClient {
 
     // Roll back per-URL suggestions: one S3 config file per URL.
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
-    const s3Paths = [];
-    const rolledBackUrls = [];
-    let totalRemovedCount = 0;
 
     // Each URL is its own file, so we can roll back several at the same time.
     const urlEntries = Object.entries(suggestionsByUrl);
     const loopStart = Date.now();
-    const removedCounts = await mapWithConcurrency(
+    const processed = await mapWithConcurrency(
       urlEntries,
       async ([urlPath, urlSuggestions]) => {
         const fullUrl = new URL(urlPath, baseURL).toString();
@@ -996,13 +985,21 @@ class TokowakaClient {
           opportunity,
           mapper,
           opportunityType,
-          s3Paths,
-          rolledBackUrls,
         );
       },
       URL_CONFIG_CONCURRENCY,
     );
-    totalRemovedCount += removedCounts.reduce((sum, n) => sum + n, 0);
+
+    const s3Paths = [];
+    const rolledBackUrls = [];
+    let totalRemovedCount = 0;
+    processed.forEach((entry) => {
+      if (entry) {
+        s3Paths.push(entry.s3Path);
+        rolledBackUrls.push(entry.fullUrl);
+        totalRemovedCount += entry.removed;
+      }
+    });
 
     // eslint-disable-next-line max-len
     this.log.info(`Updated Tokowaka configs for ${s3Paths.length}/${urlEntries.length} URL(s), `

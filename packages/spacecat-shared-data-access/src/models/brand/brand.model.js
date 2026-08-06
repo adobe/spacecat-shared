@@ -16,11 +16,11 @@ import BaseModel from '../base/base.model.js';
  * Brand - an Adobe brand, stored in the `brands` table in mysticat-data-service
  * and served over PostgREST. Intentionally minimal: it surfaces only the fields
  * the serenity sub-workspace provisioning flows read/write
- * (`semrushWorkspaceId`, `status`, `name`). Brands are created and fully
+ * (`semrushSubWorkspaceId`, `status`, `name`). Brands are created and fully
  * managed elsewhere (Brandalf sync, onboarding); this entity is a read +
  * targeted-patch surface, not a create surface.
  *
- * `semrushWorkspaceId` is the dual-mode switch: NULL = the brand is not
+ * `semrushSubWorkspaceId` is the dual-mode switch: NULL = the brand is not
  * connected to a Semrush sub-workspace (resolves against the org parent
  * workspace — "flat" mode); set = the brand has its own Semrush sub-workspace.
  * Deactivation empties the sub-workspace and clears this pointer (the
@@ -39,23 +39,6 @@ class Brand extends BaseModel {
    * `pending`; customer offboard writes `deleted`.
    */
   static STATUSES = Object.freeze(['pending', 'active', 'deleted', 'ignored']);
-
-  /**
-   * Deprecated BC-compat setter. `semrushWorkspaceId` is `readOnly: true` in
-   * the schema (mirrored by the mysticat-data-service sync trigger), so no
-   * setter is auto-generated for it — this manual method exists purely so an
-   * existing external caller of `setSemrushWorkspaceId` does not get a
-   * semver-breaking runtime error on upgrade. Delegates to the real
-   * write-of-record attribute. Remove once every direct caller has migrated
-   * to `setSemrushSubWorkspaceId` (see brand.schema.js).
-   *
-   * @deprecated Use setSemrushSubWorkspaceId instead.
-   * @param {string|null} value
-   * @returns {Brand}
-   */
-  setSemrushWorkspaceId(value) {
-    return this.setSemrushSubWorkspaceId(value);
-  }
 }
 
 export default Brand;

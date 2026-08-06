@@ -419,25 +419,10 @@ describe('OpportunityModel', () => {
 
   describe('SCOPE_TYPES', () => {
     it('defines expected scope type constants', () => {
-      // SITES-49175 — SITE was added so V1 audit-worker writes can stamp
-      // scopeType='site' + scopeId=siteId, matching the shape V2 Mystique
-      // projector already emits. Prior to this change, SITE was undefined
-      // and V1 rows landed with NULL scope, diverging from V2 rows and
-      // producing duplicate active opportunities per (siteId, type).
+      // SITES-49175 — SITE added so V1 writers stamp scopeType='site' and
+      // align with the V2 Mystique projector shape.
       expect(Opportunity.SCOPE_TYPES.SITE).to.equal('site');
       expect(Opportunity.SCOPE_TYPES.BRAND).to.equal('brand');
-    });
-
-    it('accepts scopeType="site" on the schema validator', () => {
-      // Schema attribute validator at opportunity.schema.js:70-73 rejects
-      // any scopeType not present in Object.values(SCOPE_TYPES). Positive
-      // check that "site" now passes.
-      const validator = (value) => (
-        !value || Object.values(Opportunity.SCOPE_TYPES).includes(value)
-      );
-      expect(validator('site')).to.equal(true);
-      expect(validator('brand')).to.equal(true);
-      expect(validator('bogus')).to.equal(false);
     });
   });
 

@@ -28,28 +28,12 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   })
   // reference_status enum on the brands table. Not `required`: this entity
   // never creates a brand, and a targeted PATCH (e.g. setting only
-  // semrushWorkspaceId) must not be forced to also send status. The validator
+  // semrushSubWorkspaceId) must not be forced to also send status. The validator
   // still rejects an out-of-enum value when status IS written
   // (activate → 'active', deactivate → 'pending').
   .addAttribute('status', {
     type: Brand.STATUSES,
     validate: (value) => value == null || Brand.STATUSES.includes(value),
-  })
-  // DEPRECATED (serenity-docs brand-semrush-mapping-maintenance.md §10
-  // rename, write-of-record cutover): read-only mirror of
-  // semrushSubWorkspaceId below, maintained entirely by the
-  // mysticat-data-service brands_sync_semrush_workspace_id trigger
-  // (migration 20260702094229). No schema-generated setter — app code must
-  // write semrushSubWorkspaceId instead. brand.model.js still defines a
-  // manual, deprecated setSemrushWorkspaceId() that delegates to
-  // setSemrushSubWorkspaceId(), so an existing external caller of the old
-  // setter is not broken (a bare readOnly flip here would be a semver-breaking
-  // removal for any @adobe/spacecat-shared-data-access consumer). Will be
-  // retired (attribute, column, and trigger) once every direct external
-  // reader has migrated.
-  .addAttribute('semrushWorkspaceId', {
-    type: 'string',
-    readOnly: true,
   })
   // Brand → Semrush sub-workspace. Nullable (NULL = no sub-workspace
   // connected). Same minimum guard as organizations.semrushWorkspaceId: the
@@ -57,8 +41,8 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   // null/undefined short-circuit. Note hasText does NOT trim, so a
   // whitespace-only value would pass — acceptable here because this column is
   // only ever written by the activate flow with a real Semrush workspace UUID,
-  // never user input. This is now the write-of-record (see semrushWorkspaceId
-  // above for the deprecated BC mirror).
+  // never user input. This is the write-of-record for the brand → Semrush
+  // sub-workspace pointer.
   .addAttribute('semrushSubWorkspaceId', {
     type: 'string',
     validate: (value) => value == null || hasText(value),
@@ -72,15 +56,9 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     type: 'any',
     validate: (value) => value == null || (typeof value === 'object' && !Array.isArray(value)),
   })
-  // Uniqueness is enforced at the DB level via the UNIQUE constraint on the
-  // deprecated brands.semrush_workspace_id (mysticat-data-service migration
-  // 20260615102123), so findBySemrushWorkspaceId returns at most one row.
-  // Kept for BC lookups against the mirrored column; new code should prefer
-  // findBySemrushSubWorkspaceId below.
-  .addAllIndex(['semrushWorkspaceId'])
-  // Same uniqueness guarantee on the write-of-record column
+  // Uniqueness guarantee on the write-of-record column
   // (brands.semrush_sub_workspace_id, mysticat-data-service migration
-  // 20260702091920).
+  // 20260702091920), so findBySemrushSubWorkspaceId returns at most one row.
   .addAllIndex(['semrushSubWorkspaceId']);
 
 export default schema.build();

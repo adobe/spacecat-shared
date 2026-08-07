@@ -419,8 +419,10 @@ describe('OpportunityModel', () => {
 
   describe('SCOPE_TYPES', () => {
     it('defines expected scope type constants', () => {
+      // SITES-49175 — SITE added so V1 writers stamp scopeType='site' and
+      // align with the V2 Mystique projector shape.
+      expect(Opportunity.SCOPE_TYPES.SITE).to.equal('site');
       expect(Opportunity.SCOPE_TYPES.BRAND).to.equal('brand');
-      expect(Opportunity.SCOPE_TYPES.SITE).to.be.undefined;
     });
   });
 

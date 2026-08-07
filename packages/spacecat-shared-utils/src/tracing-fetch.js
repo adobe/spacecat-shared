@@ -124,17 +124,18 @@ const createTimeoutError = (timeout) => {
  * @param {string|Request} resource - The resource to fetch
  * @param {Object} options - Options for the fetch call
  * @param {Object} signal - The timeout signal
+ * @param {number} timeout - The timeout value in milliseconds, for a correct error message on
+ *   abort. `@adobe/fetch`'s TimeoutSignal keeps its ms value behind a private Symbol (no public
+ *   `_ms` or similar), so it cannot be read back off the signal — it must be threaded through
+ *   explicitly by the caller, which already has it in scope.
  * @returns {Promise<Response>} The fetch response
  */
-const fetchWithTimeout = async (resource, options, signal) => {
+const fetchWithTimeout = async (resource, options, signal, timeout) => {
   try {
     const fetchOptions = { ...options, signal };
     return await adobeFetch(resource, fetchOptions);
   } catch (error) {
     if (error instanceof AbortError) {
-      // Extract timeout from signal (implementation detail, but necessary)
-      // eslint-disable-next-line no-underscore-dangle
-      const timeout = signal._ms || 10000;
       throw createTimeoutError(timeout);
     }
     throw error;
@@ -175,14 +176,14 @@ export async function tracingFetch(url, options) {
 
   // fallback to adobe fetch outside an aws lambda function
   if (!isAWSLambda()) {
-    return fetchWithTimeout(url, options, signal);
+    return fetchWithTimeout(url, options, signal, timeout);
   }
 
   const parentSegment = AWSXRay.getSegment();
 
   // If no parent segment, perform fetch without tracing
   if (!parentSegment) {
-    return fetchWithTimeout(url, options, signal);
+    return fetchWithTimeout(url, options, signal, timeout);
   }
 
   // With parent segment, create subsegment and add tracing
@@ -203,7 +204,7 @@ export async function tracingFetch(url, options) {
     const requestWithSignal = new Request(request, { signal });
 
     // Use the same fetchWithTimeout function but catch errors to handle subsegment
-    const response = await fetchWithTimeout(requestWithSignal, { }, signal);
+    const response = await fetchWithTimeout(requestWithSignal, { }, signal, timeout);
 
     setSubSegmentFlagsByStatusCode(subSegment, response.status);
     addFetchRequestDataToSegment(subSegment, request, response);

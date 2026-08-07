@@ -652,10 +652,12 @@ describe('AkamaiClient', () => {
   describe('patchRuleTree', () => {
     const OPS = [{ op: 'add', path: '/rules/children/-', value: { name: 'X' } }];
 
-    it('sends the json-patch content-type, If-Match etag, and validateRules; returns body', async () => {
+    it('sends the json-patch content-type, QUOTED If-Match etag, and validateRules; returns body', async () => {
       nock(API_BASE)
         .matchHeader('content-type', 'application/json-patch+json')
-        .matchHeader('if-match', 'etag123')
+        // RFC 7232 requires a quoted etag; PAPI rejects a bare token with a generic 400. The client
+        // wraps the caller's raw etag in double quotes, so the wire value is `"etag123"`.
+        .matchHeader('if-match', '"etag123"')
         .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, OPS)
         .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true' })
         .reply(200, { errors: [], warnings: [{ detail: 'w' }] });

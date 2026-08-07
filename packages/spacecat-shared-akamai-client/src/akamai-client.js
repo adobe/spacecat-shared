@@ -557,7 +557,11 @@ export default class AkamaiClient {
     }
     const headers = {
       'Content-Type': 'application/json-patch+json',
-      ...(etag ? { 'If-Match': etag } : {}),
+      // RFC 7232 If-Match values must be a quoted string; PAPI enforces this strictly and rejects
+      // an unquoted etag with a generic, unhelpful 400 ("The system cannot understand your
+      // request") regardless of what the patch ops say — reproduced empirically: every op
+      // combination failed identically with a bare `If-Match: <etag>`, and succeeded once quoted.
+      ...(etag ? { 'If-Match': `"${etag}"` } : {}),
     };
     this.log.info(
       `Patching rule tree for property ${propertyId} v${version} `

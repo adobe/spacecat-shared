@@ -185,7 +185,12 @@ export default class AkamaiClient {
     this.#accessToken = config.accessToken;
     this.accountSwitchKey = config.accountSwitchKey;
     this.notifyEmails = config.notifyEmails;
-    this.ruleTreeTimeoutMs = config.ruleTreeTimeoutMs || DEFAULT_RULE_TREE_TIMEOUT_MS;
+    // Honor an explicitly configured positive timeout; fall back to the default when unset or
+    // invalid. (Plain `||`/`??` would mis-handle 0 — AbortSignal.timeout treats it as instant.)
+    const ms = config.ruleTreeTimeoutMs;
+    this.ruleTreeTimeoutMs = typeof ms === 'number' && Number.isFinite(ms) && ms > 0
+      ? ms
+      : DEFAULT_RULE_TREE_TIMEOUT_MS;
     this.log = log;
   }
 
@@ -413,7 +418,10 @@ export default class AkamaiClient {
    * @param {number} version
    * @param {string} contractId
    * @param {string} groupId
-   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined, etag: string|undefined}>}
+   * @param {{ validateRules?: boolean }} [options] - when validateRules is true, PAPI runs a full
+   *   validation pass and the result also includes `errors`/`warnings`.
+   * @returns {Promise<{ruleTree: object, ruleFormat?: string, etag?: string, errors?: object[],
+   *   warnings?: object[]}>} errors/warnings present only when validateRules was requested
    */
   async getRuleTree(propertyId, version, contractId, groupId, options = {}) {
     requirePropertyRef(propertyId, contractId, groupId);
@@ -567,7 +575,7 @@ export default class AkamaiClient {
     const headers = {
       'Content-Type': 'application/json-patch+json',
       // PAPI requires an RFC 7232 quoted etag; a bare token yields a generic, unhelpful 400.
-      ...(etag ? { 'If-Match': `"${etag}"` } : {}),
+      ...(etag ? { 'If-Match': `"${String(etag).replace(/^"+|"+$/g, '')}"` } : {}),
     };
     this.log.info(
       `Patching rule tree for property ${propertyId} v${version} `

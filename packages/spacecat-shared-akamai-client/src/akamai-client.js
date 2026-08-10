@@ -420,21 +420,38 @@ export default class AkamaiClient {
    * @param {string} groupId
    * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined, etag: string|undefined}>}
    */
-  async getRuleTree(propertyId, version, contractId, groupId) {
+  async getRuleTree(propertyId, version, contractId, groupId, options = {}) {
     requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
     }
     const id = encodePathSegment(propertyId);
-    this.log.info(`Fetching rule tree for property ${propertyId} v${version}`);
+    const params = { contractId, groupId };
+    // Opt-in: ask PAPI to validate the stored tree and return its errors/warnings arrays. Off by
+    // default (a plain read is cheap); on, PAPI runs its full validation pass so the response
+    // carries `errors`/`warnings` — used to tell whether a version can be activated. Its latency
+    // scales with tree size (the same pass the PUT runs), which is why the size-scaling timeout
+    // applies.
+    if (options.validateRules) {
+      params.validateRules = 'true';
+    }
+    const suffix = options.validateRules ? ' (validate)' : '';
+    this.log.info(`Fetching rule tree for property ${propertyId} v${version}${suffix}`);
     const data = await this.#request(
       'GET',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params: { contractId, groupId }, timeout: this.ruleTreeTimeoutMs },
+      { params, timeout: this.ruleTreeTimeoutMs },
     );
     // `etag` is the version's optimistic-concurrency token; patchRuleTree passes it back as
-    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering.
-    return { ruleTree: data, ruleFormat: data.ruleFormat, etag: data.etag };
+    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering. `errors`/
+    // `warnings` are present only when validateRules was requested (undefined otherwise).
+    return {
+      ruleTree: data,
+      ruleFormat: data.ruleFormat,
+      etag: data.etag,
+      errors: data.errors,
+      warnings: data.warnings,
+    };
   }
 
   /**

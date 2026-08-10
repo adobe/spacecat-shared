@@ -543,6 +543,39 @@ describe('AkamaiClient', () => {
       await expect(client.getRuleTree(PROPERTY_ID, '5', CONTRACT_ID, GROUP_ID))
         .to.be.rejectedWith('version must be an integer');
     });
+
+    it('adds validateRules=true and returns errors/warnings when requested', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true' })
+        .reply(200, {
+          ruleFormat: 'v2024-01-01',
+          rules: { name: 'default' },
+          errors: [{ detail: 'bad rule' }],
+          warnings: [{ detail: 'a warning' }],
+        });
+
+      const result = await client.getRuleTree(
+        PROPERTY_ID,
+        5,
+        CONTRACT_ID,
+        GROUP_ID,
+        { validateRules: true },
+      );
+      expect(result.errors).to.deep.equal([{ detail: 'bad rule' }]);
+      expect(result.warnings).to.deep.equal([{ detail: 'a warning' }]);
+    });
+
+    it('omits validateRules and leaves errors/warnings undefined by default', async () => {
+      nock(API_BASE, { badheaders: [] })
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query((q) => q.contractId === CONTRACT_ID && q.groupId === GROUP_ID && !('validateRules' in q))
+        .reply(200, { ruleFormat: 'v2024-01-01', rules: { name: 'default' } });
+
+      const result = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
+      expect(result.errors).to.equal(undefined);
+      expect(result.warnings).to.equal(undefined);
+    });
   });
 
   describe('createVersion', () => {

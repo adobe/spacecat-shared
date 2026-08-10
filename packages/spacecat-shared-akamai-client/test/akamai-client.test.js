@@ -294,8 +294,9 @@ describe('AkamaiClient', () => {
   // semantic pass over the whole tree), so they use the client's configurable ruleTreeTimeoutMs
   // instead of tracingFetch's generic 10s default. Reproduced against a real customer property
   // whose PUT consistently exceeded 10s and got aborted client-side before Akamai could respond —
-  // these tests use small ms values (not real 10s/60s waits) to prove the configured value is what
-  // actually gates each call, fast.
+  // these tests use small ms values (not real waits): the abort firing on an 80ms response proves
+  // the 30ms timeout gated the call. The regex matches any ms — the exact-ms wording is asserted
+  // in spacecat-shared-utils (where that fix lives); this package sees it only after utils ships.
 
   describe('rule-tree call timeout', () => {
     it('getRuleTree times out using the configured ruleTreeTimeoutMs, not the 10s default', async () => {
@@ -307,7 +308,7 @@ describe('AkamaiClient', () => {
         .reply(200, { rules: {} });
 
       await expect(c.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID))
-        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
     });
 
     it('updateRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
@@ -319,7 +320,7 @@ describe('AkamaiClient', () => {
         .reply(200, { errors: [] });
 
       await expect(c.updateRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, { rules: {} }))
-        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
     });
 
     it('patchRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
@@ -332,7 +333,7 @@ describe('AkamaiClient', () => {
         .reply(200, { errors: [] });
 
       await expect(c.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, ops))
-        .to.be.rejectedWith(/request failed: Request timeout after 30ms/);
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
     });
 
     it('a short ruleTreeTimeoutMs does not affect cheap, metadata-only calls', async () => {

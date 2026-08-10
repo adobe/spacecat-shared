@@ -124,10 +124,8 @@ const createTimeoutError = (timeout) => {
  * @param {string|Request} resource - The resource to fetch
  * @param {Object} options - Options for the fetch call
  * @param {Object} signal - The timeout signal
- * @param {number} timeout - The timeout value in milliseconds, for a correct error message on
- *   abort. `@adobe/fetch`'s TimeoutSignal keeps its ms value behind a private Symbol (no public
- *   `_ms` or similar), so it cannot be read back off the signal — it must be threaded through
- *   explicitly by the caller, which already has it in scope.
+ * @param {number} timeout - Timeout in ms; passed explicitly because `@adobe/fetch`'s signal
+ *   doesn't expose its ms value, so it can't be read back for the abort message.
  * @returns {Promise<Response>} The fetch response
  */
 const fetchWithTimeout = async (resource, options, signal, timeout) => {

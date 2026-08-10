@@ -51,6 +51,9 @@ export interface RuleTreeResult {
   ruleTree: object;
   ruleFormat?: string;
   etag?: string;
+  /** Present when getRuleTree is called with { validateRules: true }. */
+  errors?: object[];
+  warnings?: object[];
 }
 
 export type Network = 'STAGING' | 'PRODUCTION';
@@ -93,6 +96,7 @@ export default class AkamaiClient {
     version: number,
     contractId: string,
     groupId: string,
+    options?: { validateRules?: boolean },
   ): Promise<RuleTreeResult>;
 
   createVersion(

@@ -28,13 +28,8 @@ const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
 // printable-ASCII, whitespace-free token (PAPI returns a hex etag) — this stops a malformed value
 // from injecting extra headers via CR/LF, mirroring RULE_FORMAT_RE's guard for ruleFormat.
 const ETAG_RE = /^[!-~]+$/;
-// tracingFetch defaults to a 10s timeout, fine for cheap metadata calls (getLatestVersion,
-// createVersion, activate, ...) but too short for a rule-tree PUT/PATCH/GET on a property with many
-// rules: PAPI's `validateRules=true` check is a semantic pass over the whole tree and its latency
-// scales with rule count. A property that legitimately needs >10s gets its request aborted
-// client-side before Akamai can respond, so the version is created but the rule content never
-// gets written — reproduced against a real customer property (all attempts died at exactly
-// "Request timeout after 10000ms"). Give the size-scaling calls a much longer default instead.
+// Rule-tree GET/PUT/PATCH run PAPI's validateRules pass, whose latency scales with tree size and
+// can exceed tracingFetch's 10s default (aborting the write). Give them a longer default.
 const DEFAULT_RULE_TREE_TIMEOUT_MS = 60000;
 
 function requireText(name, value) {
@@ -427,11 +422,8 @@ export default class AkamaiClient {
     }
     const id = encodePathSegment(propertyId);
     const params = { contractId, groupId };
-    // Opt-in: ask PAPI to validate the stored tree and return its errors/warnings arrays. Off by
-    // default (a plain read is cheap); on, PAPI runs its full validation pass so the response
-    // carries `errors`/`warnings` — used to tell whether a version can be activated. Its latency
-    // scales with tree size (the same pass the PUT runs), which is why the size-scaling timeout
-    // applies.
+    // Opt-in: PAPI runs its full validation pass and returns errors/warnings (used to tell whether
+    // a version is activatable). Off by default; slow and size-scaling, so the timeout applies.
     if (options.validateRules) {
       params.validateRules = 'true';
     }
@@ -574,10 +566,7 @@ export default class AkamaiClient {
     }
     const headers = {
       'Content-Type': 'application/json-patch+json',
-      // RFC 7232 If-Match values must be a quoted string; PAPI enforces this strictly and rejects
-      // an unquoted etag with a generic, unhelpful 400 ("The system cannot understand your
-      // request") regardless of what the patch ops say — reproduced empirically: every op
-      // combination failed identically with a bare `If-Match: <etag>`, and succeeded once quoted.
+      // PAPI requires an RFC 7232 quoted etag; a bare token yields a generic, unhelpful 400.
       ...(etag ? { 'If-Match': `"${etag}"` } : {}),
     };
     this.log.info(

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.17.0...@adobe/spacecat-shared-data-access-v4.18.0) (2026-08-11)
+
+### Features
+
+* **data-access:** add prerender validation fields to Suggestion/GeoExperiment ([#1863](https://github.com/adobe/spacecat-shared/issues/1863)) ([88b3baa](https://github.com/adobe/spacecat-shared/commit/88b3baaaedc2a9a12a48a88abb184baf85796426))
+
 ## [@adobe/spacecat-shared-data-access-v4.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.1...@adobe/spacecat-shared-data-access-v4.17.0) (2026-08-07)
 
 ### Features

@@ -49,7 +49,7 @@ describe('ImsPromiseClient', () => {
 
   describe('constructor and createFrom', () => {
     it('throws errors for missing configuration using createFrom', () => {
-      const expectedError = 'Context param must include properties: imsHost, clientId, and clientSecret and for CONSUMER type also promiseDefinitionId.';
+      const expectedError = 'Context param must include properties: imsHost, clientId, and clientSecret and for EMITTER type also promiseDefinitionId.';
       expect(() => ImsPromiseClient.createFrom({
         env: {},
         log: console,
@@ -85,6 +85,100 @@ describe('ImsPromiseClient', () => {
         },
         log: console,
       }, 'randomtype')).to.throw('Unknown IMS promise client type.');
+    });
+  });
+
+  describe('createFrom pair selector', () => {
+    const testAccessToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';
+    let semrushContext;
+
+    beforeEach(() => {
+      semrushContext = {
+        log: console,
+        env: {
+          IMS_HOST: DUMMY_HOST,
+          IMS_PROMISE_SEMRUSH_EMITTER_CLIENT_ID: 'semrushEmitterClientId',
+          IMS_PROMISE_SEMRUSH_EMITTER_CLIENT_SECRET: 'semrushEmitterClientSecret',
+          IMS_PROMISE_SEMRUSH_EMITTER_DEFINITION_ID: 'semrushDefinitionId',
+          IMS_PROMISE_SEMRUSH_CONSUMER_CLIENT_ID: 'semrushConsumerClientId',
+          IMS_PROMISE_SEMRUSH_CONSUMER_CLIENT_SECRET: 'semrushConsumerClientSecret',
+        },
+      };
+    });
+
+    it('defaults to the unprefixed pair when no selector is given', () => {
+      // mockContext holds only unprefixed env vars, so these succeed only if
+      // the default (unprefixed) names are read.
+      expect(() => ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+      )).to.not.throw();
+      expect(() => ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.CONSUMER,
+        {},
+      )).to.not.throw();
+    });
+
+    it('throws for an unknown pair', () => {
+      expect(() => ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+        { pair: 'BOGUS' },
+      )).to.throw('Unknown IMS promise client pair: BOGUS');
+    });
+
+    it('resolves the SEMRUSH emitter env vars', () => {
+      // semrushContext has no unprefixed vars, so this succeeds only if the
+      // IMS_PROMISE_SEMRUSH_EMITTER_* names are read.
+      expect(() => ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+        { pair: ImsPromiseClient.PROMISE_PAIR.SEMRUSH },
+      )).to.not.throw();
+    });
+
+    it('resolves the SEMRUSH consumer env vars', () => {
+      expect(() => ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.CONSUMER,
+        { pair: ImsPromiseClient.PROMISE_PAIR.SEMRUSH },
+      )).to.not.throw();
+    });
+
+    it('throws when a required SEMRUSH env var is missing', () => {
+      delete semrushContext.env.IMS_PROMISE_SEMRUSH_EMITTER_CLIENT_ID;
+      expect(() => ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+        { pair: ImsPromiseClient.PROMISE_PAIR.SEMRUSH },
+      )).to.throw('Context param must include properties');
+    });
+
+    it('mints using the SEMRUSH emitter client id and definition id', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post(
+          IMS_TOKEN_ENDPOINT,
+          (body) => body.match('name="client_id"\r\n\r\nsemrushEmitterClientId')
+            && body.match('name="promise_definition_id"\r\n\r\nsemrushDefinitionId'),
+        )
+        .reply(200, {
+          promise_token: 'semrushPromiseToken',
+          token_type: 'promise_token',
+          expires_in: 14399,
+        });
+
+      const client = ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+        { pair: ImsPromiseClient.PROMISE_PAIR.SEMRUSH },
+      );
+      const result = await client.getPromiseToken(testAccessToken);
+      expect(result).to.deep.equal({
+        promise_token: 'semrushPromiseToken',
+        token_type: 'promise_token',
+        expires_in: 14399,
+      });
     });
   });
 

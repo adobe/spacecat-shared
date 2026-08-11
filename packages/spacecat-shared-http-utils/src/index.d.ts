@@ -49,7 +49,35 @@ export interface FacsRouteCapabilities {
   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Record<string, Record<string, string[]>>;
   INTERNAL_ROUTES?: string[];
   FACS_NON_RESOURCE_PARAMS?: string[];
+  /**
+   * Per-product SECONDARY resource param (opt-in). When no PRIMARY resource resolves
+   * for a route, the wrapper falls back to the secondary param (identified by `aliases`)
+   * and delegates the grant/deny decision to the registered resolver named by `resolver`
+   * (see `secondaryResolvers` on `facsWrapper`). Used for cross-resource authorization
+   * such as LLMO site routes decided against the site's brands.
+   */
+  PRODUCTS_FACS_SECONDARY_RESOURCE?: Record<
+    string,
+    { resourceType: string; aliases: string[]; resolver: string }
+  >;
 }
+
+/**
+ * A secondary-resource resolver registered by the consuming service and referenced by key
+ * from `FacsRouteCapabilities.PRODUCTS_FACS_SECONDARY_RESOURCE[<product>].resolver`.
+ * Returns `true` to grant, `false` to deny; a thrown error is treated as deny (fail-closed).
+ */
+export type FacsSecondaryResolver = (
+  context: object,
+  args: {
+    resourceType: string;
+    resourceId: string;
+    capability: string;
+    product: string;
+    subjectId?: string;
+    orgId?: string;
+  },
+) => Promise<boolean>;
 
 /**
  * FACS authorization wrapper for the helix-shared-wrap `.with()` chain.
@@ -57,12 +85,16 @@ export interface FacsRouteCapabilities {
  * feature flag. Internal identities and Adobe internal orgs always bypass.
  *
  * @param fn - The handler to wrap.
- * @param opts - Options containing the FACS route-capability configuration.
+ * @param opts - Options containing the FACS route-capability configuration and, optionally,
+ *   the secondary-resource resolvers referenced by `PRODUCTS_FACS_SECONDARY_RESOURCE`.
  * @returns A wrapped handler.
  */
 export function facsWrapper(
   fn: (request: Request, context: object) => Promise<Response>,
-  opts: { routeFacsCapabilities: FacsRouteCapabilities },
+  opts: {
+    routeFacsCapabilities: FacsRouteCapabilities;
+    secondaryResolvers?: Record<string, FacsSecondaryResolver>;
+  },
 ): (request: Request, context: object) => Promise<Response>;
 
 /**

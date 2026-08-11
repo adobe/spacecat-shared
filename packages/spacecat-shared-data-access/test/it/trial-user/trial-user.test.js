@@ -73,6 +73,21 @@ describe('TrialUser IT', async () => {
     );
   });
 
+  it('gets a trial user by external user id', async () => {
+    const sampleTrialUser = sampleData.trialUsers[0];
+    const externalUserId = sampleTrialUser.getExternalUserId();
+
+    const trialUser = await TrialUser.findByExternalUserId(externalUserId);
+
+    expect(trialUser).to.be.an('object');
+    expect(trialUser.getExternalUserId()).to.equal(externalUserId);
+    expect(
+      sanitizeTimestamps(trialUser.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleTrialUser.toJSON()),
+    );
+  });
+
   it('gets all trial users by organization id', async () => {
     const sampleTrialUser = sampleData.trialUsers[0];
     const organizationId = sampleTrialUser.getOrganizationId();

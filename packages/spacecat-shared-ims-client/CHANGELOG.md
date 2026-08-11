@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ims-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.14.0...@adobe/spacecat-shared-ims-client-v1.15.0) (2026-08-11)
+
+### Features
+
+* **ims-client:** expose org groups and add public getGroupMembers ([#1873](https://github.com/adobe/spacecat-shared/issues/1873)) ([4627779](https://github.com/adobe/spacecat-shared/commit/46277796cd8939a6a8c7e84c31a2cd5849e70e8e))
+
 ## [@adobe/spacecat-shared-ims-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.13.3...@adobe/spacecat-shared-ims-client-v1.14.0) (2026-06-18)
 
 ### Features

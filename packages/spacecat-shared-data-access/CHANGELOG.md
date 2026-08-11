@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.1...@adobe/spacecat-shared-data-access-v4.17.0) (2026-08-07)
+
+### Features
+
+* **data-access:** add SITE to Opportunity.SCOPE_TYPES (SITES-49175) ([#1866](https://github.com/adobe/spacecat-shared/issues/1866)) ([c33a236](https://github.com/adobe/spacecat-shared/commit/c33a23677101ad6b6b839c5fb12f1810d1612571))
+
 ## [@adobe/spacecat-shared-data-access-v4.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.0...@adobe/spacecat-shared-data-access-v4.16.1) (2026-08-03)
 
 ### Bug Fixes

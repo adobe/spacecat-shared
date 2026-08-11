@@ -30,9 +30,9 @@ export default class ImsPromiseClient extends ImsBaseClient {
    * (unprefixed) pair. `SEMRUSH` => the dedicated Semrush-scoped pair, read from
    * `IMS_PROMISE_SEMRUSH_*` env vars (see docs/specs/ims-client-promise-pair-selector).
    */
-  static PROMISE_PAIR = {
+  static PROMISE_PAIR = Object.freeze({
     SEMRUSH: 'SEMRUSH',
-  };
+  });
 
   static createFrom(context, type, opts = {}) {
     const { log = console } = context;

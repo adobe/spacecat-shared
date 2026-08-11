@@ -17,7 +17,7 @@ export class ImsPromiseClient {
    * Named IMS emitter/consumer credential pairs. Absent selector => the default
    * (unprefixed) pair. `SEMRUSH` => the dedicated Semrush-scoped pair.
    */
-  static PROMISE_PAIR: { SEMRUSH: 'SEMRUSH' };
+  static readonly PROMISE_PAIR: { readonly SEMRUSH: 'SEMRUSH' };
 
   /**
    * Creates a new ImsPromiseClient instance from the given UniversalContext and of the
@@ -25,16 +25,16 @@ export class ImsPromiseClient {
    * @param {UniversalContext} context The UniversalContext to use for creating
    *                                   the ImsPromiseClient.
    * @param {string} type The type of the client, either 'emitter' or 'consumer'.
-   * @param {{ pair?: 'SEMRUSH' }} [opts] Optional credential-pair selector. Absent
-   *                                   reads the default IMS_PROMISE_{EMITTER,CONSUMER}_*
-   *                                   env vars; 'SEMRUSH' reads IMS_PROMISE_SEMRUSH_*.
+   * @param {object} [opts] Optional credential-pair selector. Absent reads the
+   *                                   default IMS_PROMISE_{EMITTER,CONSUMER}_* env
+   *                                   vars; 'SEMRUSH' reads IMS_PROMISE_SEMRUSH_*.
    *                                   An unknown value throws.
    * @returns {ImsPromiseClient} The ImsPromiseClient instance.
    */
   static createFrom(
     context: UniversalContext,
     type: string,
-    opts?: { pair?: 'SEMRUSH' },
+    opts?: { pair?: (typeof ImsPromiseClient.PROMISE_PAIR)[keyof typeof ImsPromiseClient.PROMISE_PAIR] },
   ): ImsPromiseClient;
 
   /**

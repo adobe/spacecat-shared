@@ -138,6 +138,16 @@ describe('ImsPromiseClient', () => {
       )).to.not.throw();
     });
 
+    it('does not read the SEMRUSH env vars without the selector', () => {
+      // semrushContext has only prefixed vars; without the selector the default
+      // (unprefixed) names resolve to nothing, so construction must throw. This
+      // documents that the prefix routing is load-bearing.
+      expect(() => ImsPromiseClient.createFrom(
+        semrushContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+      )).to.throw('Context param must include properties');
+    });
+
     it('resolves the SEMRUSH consumer env vars', () => {
       expect(() => ImsPromiseClient.createFrom(
         semrushContext,

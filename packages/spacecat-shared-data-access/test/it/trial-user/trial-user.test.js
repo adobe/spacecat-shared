@@ -88,6 +88,12 @@ describe('TrialUser IT', async () => {
     );
   });
 
+  it('returns null when no trial user matches the external user id', async () => {
+    const trialUser = await TrialUser.findByExternalUserId('nonexistent-id');
+
+    expect(trialUser).to.be.null;
+  });
+
   it('gets all trial users by organization id', async () => {
     const sampleTrialUser = sampleData.trialUsers[0];
     const organizationId = sampleTrialUser.getOrganizationId();

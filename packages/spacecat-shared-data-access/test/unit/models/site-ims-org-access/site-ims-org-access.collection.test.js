@@ -604,4 +604,45 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(createInstanceFromRowStub.callCount).to.equal(DEFAULT_PAGE_SIZE + 1);
     });
   });
+
+  describe('all (PostgREST orderBy)', () => {
+    function makeChainableQuery(result) {
+      const q = {};
+      [
+        'select', 'order', 'eq', 'gte', 'lte', 'in',
+        'is', 'like', 'ilike', 'contains', 'neq', 'range',
+      ].forEach((m) => { q[m] = sinon.stub().returns(q); });
+      q.then = (resolve) => resolve(result); // `await query` yields {data,error}
+      return q;
+    }
+
+    beforeEach(() => {
+      // createElectroMocks wires a matching ElectroDB entity by default, which would
+      // route #all() through the ElectroDB branch of #queryByIndexKeys instead of the
+      // PostgREST branch that owns #queryPage. Force the PostgREST branch the same way
+      // scrape-job.collection.test.js's "postgrest accessor parity" suite does.
+      instance.entity = undefined;
+    });
+
+    it('orders by an explicit orderBy column and direction', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'desc' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: false });
+    });
+
+    it('falls back to index-derived ordering when orderBy is absent (back-compat)', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all({}, { order: 'asc', limit: 10 });
+
+      expect(query.order.getCalls().some((c) => c.args[0] === 'updated_at')).to.equal(false);
+    });
+  });
 });

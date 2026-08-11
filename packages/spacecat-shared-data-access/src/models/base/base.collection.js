@@ -428,8 +428,13 @@ class BaseCollection {
       this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${options.index}] not found`);
     }
 
-    const orderFields = this.#getOrderFields(indexName, keys);
-    const ascending = options.order === 'asc';
+    const hasExplicitOrderBy = isObject(options.orderBy) && hasText(options.orderBy.attribute);
+    const orderFields = hasExplicitOrderBy
+      ? [this.#toDbField(options.orderBy.attribute)]
+      : this.#getOrderFields(indexName, keys);
+    const ascending = hasExplicitOrderBy
+      ? options.orderBy.direction !== 'desc'
+      : options.order === 'asc';
     let query = this.postgrestService
       .from(this.tableName)
       .select(select);

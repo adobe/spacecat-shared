@@ -1801,6 +1801,74 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.be.a('string');
     });
 
+    it('logs a distinct warning (not info) when broken-links endpoint returns 404', async () => {
+      const warn = sandbox.stub();
+      const info = sandbox.stub();
+      const loggingClient = new SeoClient(v2Config, fetch, { ...console, warn, info });
+      nockToken();
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(404, 'Not Found');
+
+      await loggingClient.getBrokenBacklinksV2('adobe.com');
+      expect(info.called).to.equal(false);
+      expect(warn.calledOnce).to.equal(true);
+      const warnMsg = warn.firstCall.args[0];
+      expect(warnMsg).to.include('broken-links 404 (no data / not indexed)');
+      expect(warnMsg).to.include('may be transient');
+    });
+
+    it('omits response_code=200 from the emitted filter (proven no-op)', async () => {
+      nockToken();
+      let capturedFilter;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          capturedFilter = q.filter;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('adobe.com');
+      expect(capturedFilter).to.be.a('string');
+      expect(capturedFilter).to.not.include('response_code=200');
+    });
+
+    it('root-domain url sends the hostname as url and adds NO target_url filter', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.oklahoma.gov');
+      expect(captured.url).to.equal('oklahoma.gov');
+      expect(captured.filter).to.not.include('target_url LIKE');
+    });
+
+    it('sub-path url sends the hostname as url and scopes with a target_url LIKE clause', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.oklahoma.gov/omes');
+      // domain (not the path-carrying value) is sent as the `url` param
+      expect(captured.url).to.equal('oklahoma.gov');
+      // sub-path scoping added server-side
+      expect(captured.filter).to.include("target_url LIKE '%oklahoma.gov/omes%'");
+    });
+
     it('handles null source_title', async () => {
       nockToken();
       nockBrokenLinksV2([{ ...sampleRow, source_title: null }]);

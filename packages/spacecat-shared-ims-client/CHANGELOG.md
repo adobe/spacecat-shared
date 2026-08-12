@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-ims-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.15.0...@adobe/spacecat-shared-ims-client-v1.16.0) (2026-08-12)
+
+### Features
+
+* **ims-client:** optional pair selector on ImsPromiseClient.createFrom ([#1872](https://github.com/adobe/spacecat-shared/issues/1872)) ([24939ef](https://github.com/adobe/spacecat-shared/commit/24939efdf294b379c82ac7c15509a09948467857))
+
 ## [@adobe/spacecat-shared-ims-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-ims-client-v1.14.0...@adobe/spacecat-shared-ims-client-v1.15.0) (2026-08-11)
 
 ### Features

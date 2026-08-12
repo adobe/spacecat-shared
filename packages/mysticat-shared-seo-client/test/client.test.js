@@ -1801,6 +1801,96 @@ describe('SeoClient', () => {
       expect(result.fullAuditRef).to.be.a('string');
     });
 
+    it('logs a distinct warning (not info) when broken-links endpoint returns 404', async () => {
+      const warn = sandbox.stub();
+      const info = sandbox.stub();
+      const loggingClient = new SeoClient(v2Config, fetch, { ...console, warn, info });
+      nockToken();
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query(true)
+        .reply(404, 'Not Found');
+
+      await loggingClient.getBrokenBacklinksV2('adobe.com');
+      expect(info.called).to.equal(false);
+      expect(warn.calledOnce).to.equal(true);
+      const warnMsg = warn.firstCall.args[0];
+      expect(warnMsg).to.include('broken-links 404 (no data / not indexed)');
+      expect(warnMsg).to.include('may be transient');
+    });
+
+    it('root-domain url is sent unchanged and adds NO target_url filter', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.example.com');
+      expect(captured.url).to.equal('https://www.example.com');
+      expect(captured.filter).to.not.include('target_url LIKE');
+    });
+
+    it('sub-path url is sent unchanged and scopes with a target_url LIKE clause', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.example.gov/us');
+      // `url` param sent unchanged; ROOT_DOMAIN ignores its path
+      expect(captured.url).to.equal('https://www.example.gov/us');
+      // sub-path scoping added server-side via target_url
+      expect(captured.filter).to.include("target_url LIKE '%example.gov/us%'");
+    });
+
+    it('normalizes a trailing slash so /foo and /foo/ scope identically', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.example.com/foo/');
+      expect(captured.url).to.equal('https://www.example.com/foo/');
+      expect(captured.filter).to.include("target_url LIKE '%example.com/foo%'");
+      expect(captured.filter).to.not.include('/foo/%');
+    });
+
+    it('falls back to the raw url with no sub-path clause when the url cannot be parsed', async () => {
+      const warn = sandbox.stub();
+      const loggingClient = new SeoClient(v2Config, fetch, { ...console, warn });
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      // A non-empty but malformed value that prependSchema cannot turn into a valid URL.
+      await loggingClient.getBrokenBacklinksV2('http://[malformed');
+      expect(captured.url).to.equal('http://[malformed');
+      expect(captured.filter).to.not.include('target_url LIKE');
+      expect(warn.calledOnce).to.equal(true);
+      expect(warn.firstCall.args[0]).to.include('Could not parse URL');
+    });
+
     it('handles null source_title', async () => {
       nockToken();
       nockBrokenLinksV2([{ ...sampleRow, source_title: null }]);

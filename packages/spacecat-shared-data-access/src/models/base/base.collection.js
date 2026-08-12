@@ -429,12 +429,24 @@ class BaseCollection {
     }
 
     const hasExplicitOrderBy = isObject(options.orderBy) && hasText(options.orderBy.attribute);
+    let explicitAscending;
+    if (hasExplicitOrderBy) {
+      const { toDbMap } = this.fieldMaps;
+      if (!Object.prototype.hasOwnProperty.call(toDbMap, options.orderBy.attribute)) {
+        this.#logAndThrowError(`Failed to query [${this.entityName}]: unknown orderBy attribute [${options.orderBy.attribute}]`);
+      }
+      const direction = options.orderBy.direction === undefined
+        ? 'asc'
+        : String(options.orderBy.direction).toLowerCase();
+      if (direction !== 'asc' && direction !== 'desc') {
+        this.#logAndThrowError(`Failed to query [${this.entityName}]: invalid orderBy direction [${options.orderBy.direction}]`);
+      }
+      explicitAscending = direction === 'asc';
+    }
     const orderFields = hasExplicitOrderBy
       ? [this.#toDbField(options.orderBy.attribute)]
       : this.#getOrderFields(indexName, keys);
-    const ascending = hasExplicitOrderBy
-      ? options.orderBy.direction !== 'desc'
-      : options.order === 'asc';
+    const ascending = hasExplicitOrderBy ? explicitAscending : options.order === 'asc';
     let query = this.postgrestService
       .from(this.tableName)
       .select(select);

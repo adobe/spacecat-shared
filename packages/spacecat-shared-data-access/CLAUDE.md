@@ -178,7 +178,7 @@ This is the same client instance used internally by entity collections — same 
 async findByStatus(status) {
   return this.all(
     (attrs, op) => op.eq(attrs.status, status),
-    { limit: 100, order: { field: 'createdAt', direction: 'desc' } }
+    { limit: 100, orderBy: { attribute: 'createdAt', direction: 'desc' } }
   );
 }
 ```

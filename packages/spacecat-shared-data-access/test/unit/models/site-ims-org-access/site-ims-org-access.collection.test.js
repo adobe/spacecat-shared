@@ -644,5 +644,56 @@ describe('SiteImsOrgAccessCollection', () => {
 
       expect(query.order.getCalls().some((c) => c.args[0] === 'updated_at')).to.equal(false);
     });
+
+    it('orders ascending when direction is "asc"', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'asc' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: true });
+    });
+
+    it('defaults to ascending when direction is omitted', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all({}, { orderBy: { attribute: 'updatedAt' }, limit: 10 });
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: true });
+    });
+
+    it('treats direction case-insensitively ("DESC" -> descending)', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'DESC' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: false });
+    });
+
+    it('throws on an unknown orderBy attribute', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await expect(instance.all({}, { orderBy: { attribute: 'bogusField' }, limit: 10 }))
+        .to.be.rejectedWith(/unknown orderBy attribute/);
+    });
+
+    it('throws on an invalid orderBy direction', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await expect(instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'sideways' }, limit: 10 },
+      )).to.be.rejectedWith(/invalid orderBy direction/);
+    });
   });
 });

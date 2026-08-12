@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.34.0...@adobe/spacecat-shared-http-utils-v1.35.0) (2026-08-12)
+
+### Features
+
+* **http-utils:** secondary FACS resource param + resolver registry in facsWrapper ([#1870](https://github.com/adobe/spacecat-shared/issues/1870)) ([36ab056](https://github.com/adobe/spacecat-shared/commit/36ab0563669d9e4a0dc36544c6c86e002b6cce2b)), closes [adobe/mysticat-architecture#241](https://github.com/adobe/mysticat-architecture/issues/241) [#2947](https://github.com/adobe/spacecat-shared/issues/2947)
+
 ## [@adobe/spacecat-shared-http-utils-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.33.1...@adobe/spacecat-shared-http-utils-v1.34.0) (2026-07-10)
 
 ### Features

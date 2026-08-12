@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.19.0...@adobe/spacecat-shared-data-access-v4.20.0) (2026-08-12)
+
+### Features
+
+* **data-access:** compound AND filter and orderBy column for postgrest queries ([#1874](https://github.com/adobe/spacecat-shared/issues/1874)) ([620b37e](https://github.com/adobe/spacecat-shared/commit/620b37eb1bc252c9bdd01661037de6fd7e0bfe35))
+
 ## [@adobe/spacecat-shared-data-access-v4.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.18.0...@adobe/spacecat-shared-data-access-v4.19.0) (2026-08-11)
 
 ### Features

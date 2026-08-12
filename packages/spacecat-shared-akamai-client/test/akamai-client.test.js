@@ -134,6 +134,16 @@ describe('AkamaiClient', () => {
       const c = new AkamaiClient(CREDS);
       expect(c).to.be.instanceOf(AkamaiClient);
     });
+
+    it('defaults ruleTreeTimeoutMs to 60000', () => {
+      const c = new AkamaiClient(CREDS, log);
+      expect(c.ruleTreeTimeoutMs).to.equal(60000);
+    });
+
+    it('accepts a custom ruleTreeTimeoutMs', () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 45000 }, log);
+      expect(c.ruleTreeTimeoutMs).to.equal(45000);
+    });
   });
 
   // ─── low-level request behavior (via getLatestVersion) ────────────────
@@ -276,6 +286,68 @@ describe('AkamaiClient', () => {
 
       await expect(client.activate(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID, 'STAGING'))
         .to.be.rejectedWith(/unexpected redirect \(307\)/);
+    });
+  });
+
+  // ─── rule-tree call timeout ─────────────────────────────────────────────
+  // getRuleTree/updateRuleTree/patchRuleTree scale with rule-tree size (PAPI's validateRules is a
+  // semantic pass over the whole tree), so they use the client's configurable ruleTreeTimeoutMs
+  // instead of tracingFetch's generic 10s default. Reproduced against a real customer property
+  // whose PUT consistently exceeded 10s and got aborted client-side before Akamai could respond —
+  // these tests use small ms values (not real waits): the abort firing on an 80ms response proves
+  // the 30ms timeout gated the call. The regex matches any ms — the exact-ms wording is asserted
+  // in spacecat-shared-utils (where that fix lives); this package sees it only after utils ships.
+
+  describe('rule-tree call timeout', () => {
+    it('getRuleTree times out using the configured ruleTreeTimeoutMs, not the 10s default', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query(true)
+        .delay(80)
+        .reply(200, { rules: {} });
+
+      await expect(c.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID))
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
+    });
+
+    it('updateRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .put(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`)
+        .query(true)
+        .delay(80)
+        .reply(200, { errors: [] });
+
+      await expect(c.updateRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, { rules: {} }))
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
+    });
+
+    it('patchRuleTree times out using the configured ruleTreeTimeoutMs', async () => {
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      const ops = [{ op: 'add', path: '/rules/children/-', value: { name: 'X' } }];
+      nock(API_BASE)
+        .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, ops)
+        .query(true)
+        .delay(80)
+        .reply(200, { errors: [] });
+
+      await expect(c.patchRuleTree(PROPERTY_ID, 6, CONTRACT_ID, GROUP_ID, ops))
+        .to.be.rejectedWith(/request failed: Request timeout after \d+ms/);
+    });
+
+    it('a short ruleTreeTimeoutMs does not affect cheap, metadata-only calls', async () => {
+      // getLatestVersion doesn't scale with rule-tree size, so it should keep tracingFetch's
+      // generic (much longer) default even when ruleTreeTimeoutMs is configured very small.
+      const c = new AkamaiClient({ ...CREDS, ruleTreeTimeoutMs: 30 }, log);
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query(true)
+        .delay(80)
+        .reply(200, { versions: { items: [{ propertyVersion: 7 }] } });
+
+      const version = await c.getLatestVersion(PROPERTY_ID, CONTRACT_ID, GROUP_ID);
+      expect(version).to.equal(7);
     });
   });
 
@@ -472,6 +544,39 @@ describe('AkamaiClient', () => {
       await expect(client.getRuleTree(PROPERTY_ID, '5', CONTRACT_ID, GROUP_ID))
         .to.be.rejectedWith('version must be an integer');
     });
+
+    it('adds validateRules=true and returns errors/warnings when requested', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true' })
+        .reply(200, {
+          ruleFormat: 'v2024-01-01',
+          rules: { name: 'default' },
+          errors: [{ detail: 'bad rule' }],
+          warnings: [{ detail: 'a warning' }],
+        });
+
+      const result = await client.getRuleTree(
+        PROPERTY_ID,
+        5,
+        CONTRACT_ID,
+        GROUP_ID,
+        { validateRules: true },
+      );
+      expect(result.errors).to.deep.equal([{ detail: 'bad rule' }]);
+      expect(result.warnings).to.deep.equal([{ detail: 'a warning' }]);
+    });
+
+    it('omits validateRules and leaves errors/warnings undefined by default', async () => {
+      nock(API_BASE, { badheaders: [] })
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/5/rules`)
+        .query((q) => q.contractId === CONTRACT_ID && q.groupId === GROUP_ID && !('validateRules' in q))
+        .reply(200, { ruleFormat: 'v2024-01-01', rules: { name: 'default' } });
+
+      const result = await client.getRuleTree(PROPERTY_ID, 5, CONTRACT_ID, GROUP_ID);
+      expect(result.errors).to.equal(undefined);
+      expect(result.warnings).to.equal(undefined);
+    });
   });
 
   describe('createVersion', () => {
@@ -581,10 +686,12 @@ describe('AkamaiClient', () => {
   describe('patchRuleTree', () => {
     const OPS = [{ op: 'add', path: '/rules/children/-', value: { name: 'X' } }];
 
-    it('sends the json-patch content-type, If-Match etag, and validateRules; returns body', async () => {
+    it('sends the json-patch content-type, QUOTED If-Match etag, and validateRules; returns body', async () => {
       nock(API_BASE)
         .matchHeader('content-type', 'application/json-patch+json')
-        .matchHeader('if-match', 'etag123')
+        // RFC 7232 requires a quoted etag; PAPI rejects a bare token with a generic 400. The client
+        // wraps the caller's raw etag in double quotes, so the wire value is `"etag123"`.
+        .matchHeader('if-match', '"etag123"')
         .patch(`/papi/v1/properties/${PROPERTY_ID}/versions/6/rules`, OPS)
         .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, validateRules: 'true' })
         .reply(200, { errors: [], warnings: [{ detail: 'w' }] });

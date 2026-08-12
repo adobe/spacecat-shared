@@ -29,6 +29,10 @@ export interface AkamaiClientConfig {
   accessToken: string;
   accountSwitchKey?: string;
   notifyEmails?: string[];
+  /** Timeout (ms) for calls whose latency scales with rule-tree size (getRuleTree,
+   * updateRuleTree, patchRuleTree). Defaults to 60000, above tracingFetch's generic 10s default
+   * used by every other (cheap, metadata-only) call. */
+  ruleTreeTimeoutMs?: number;
 }
 
 export interface PropertyMatch {
@@ -47,6 +51,9 @@ export interface RuleTreeResult {
   ruleTree: object;
   ruleFormat?: string;
   etag?: string;
+  /** Present when getRuleTree is called with { validateRules: true }. */
+  errors?: object[];
+  warnings?: object[];
 }
 
 export type Network = 'STAGING' | 'PRODUCTION';
@@ -76,6 +83,8 @@ export default class AkamaiClient {
 
   notifyEmails?: string[];
 
+  ruleTreeTimeoutMs: number;
+
   searchBy(key: 'hostname' | 'edgeHostname' | 'propertyName', value: string): Promise<object[]>;
 
   findPropertiesByDomain(domain: string): Promise<PropertyMatch[]>;
@@ -87,6 +96,7 @@ export default class AkamaiClient {
     version: number,
     contractId: string,
     groupId: string,
+    options?: { validateRules?: boolean },
   ): Promise<RuleTreeResult>;
 
   createVersion(

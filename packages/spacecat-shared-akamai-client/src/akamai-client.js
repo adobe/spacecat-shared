@@ -28,6 +28,9 @@ const RULE_FORMAT_RE = /^[a-z0-9-]+$/i;
 // printable-ASCII, whitespace-free token (PAPI returns a hex etag) — this stops a malformed value
 // from injecting extra headers via CR/LF, mirroring RULE_FORMAT_RE's guard for ruleFormat.
 const ETAG_RE = /^[!-~]+$/;
+// Rule-tree GET/PUT/PATCH run PAPI's validateRules pass, whose latency scales with tree size and
+// can exceed tracingFetch's 10s default (aborting the write). Give them a longer default.
+const DEFAULT_RULE_TREE_TIMEOUT_MS = 60000;
 
 function requireText(name, value) {
   if (!hasText(value)) {
@@ -165,6 +168,9 @@ export default class AkamaiClient {
    * @param {string} [config.accountSwitchKey]
    * @param {string[]} [config.notifyEmails] - Required only to call activate();
    *   emails PAPI notifies about activation progress.
+   * @param {number} [config.ruleTreeTimeoutMs] - Timeout for calls whose latency scales with
+   *   rule-tree size (getRuleTree, updateRuleTree, patchRuleTree). Defaults to 60s, well above
+   *   tracingFetch's generic 10s default used by every other (cheap, metadata-only) call.
    * @param {object} [log]
    */
   constructor(config = {}, log = console) {
@@ -179,6 +185,12 @@ export default class AkamaiClient {
     this.#accessToken = config.accessToken;
     this.accountSwitchKey = config.accountSwitchKey;
     this.notifyEmails = config.notifyEmails;
+    // Honor an explicitly configured positive timeout; fall back to the default when unset or
+    // invalid. (Plain `||`/`??` would mis-handle 0 — AbortSignal.timeout treats it as instant.)
+    const ms = config.ruleTreeTimeoutMs;
+    this.ruleTreeTimeoutMs = typeof ms === 'number' && Number.isFinite(ms) && ms > 0
+      ? ms
+      : DEFAULT_RULE_TREE_TIMEOUT_MS;
     this.log = log;
   }
 
@@ -191,7 +203,9 @@ export default class AkamaiClient {
     return `https://${this.host}${path}${qs ? `?${qs}` : ''}`;
   }
 
-  async #request(method, path, { params, body, headers } = {}) {
+  async #request(method, path, {
+    params, body, headers, timeout,
+  } = {}) {
     const bodyStr = body ? JSON.stringify(body) : undefined;
 
     // The EG1-HMAC-SHA256 signature is bound to the exact request URL, so a followed redirect
@@ -222,6 +236,7 @@ export default class AkamaiClient {
             ...headers,
           },
           body: bodyStr,
+          ...(timeout ? { timeout } : {}),
         });
       } catch (e) {
         throw new Error(`PAPI ${method} ${path} request failed: ${e.message}`);
@@ -403,23 +418,40 @@ export default class AkamaiClient {
    * @param {number} version
    * @param {string} contractId
    * @param {string} groupId
-   * @returns {Promise<{ruleTree: object, ruleFormat: string|undefined, etag: string|undefined}>}
+   * @param {{ validateRules?: boolean }} [options] - when validateRules is true, PAPI runs a full
+   *   validation pass and the result also includes `errors`/`warnings`.
+   * @returns {Promise<{ruleTree: object, ruleFormat?: string, etag?: string, errors?: object[],
+   *   warnings?: object[]}>} errors/warnings present only when validateRules was requested
    */
-  async getRuleTree(propertyId, version, contractId, groupId) {
+  async getRuleTree(propertyId, version, contractId, groupId, options = {}) {
     requirePropertyRef(propertyId, contractId, groupId);
     if (!Number.isInteger(version)) {
       throw new Error('version must be an integer');
     }
     const id = encodePathSegment(propertyId);
-    this.log.info(`Fetching rule tree for property ${propertyId} v${version}`);
+    const params = { contractId, groupId };
+    // Opt-in: PAPI runs its full validation pass and returns errors/warnings (used to tell whether
+    // a version is activatable). Off by default; slow and size-scaling, so the timeout applies.
+    if (options.validateRules) {
+      params.validateRules = 'true';
+    }
+    const suffix = options.validateRules ? ' (validate)' : '';
+    this.log.info(`Fetching rule tree for property ${propertyId} v${version}${suffix}`);
     const data = await this.#request(
       'GET',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params: { contractId, groupId } },
+      { params, timeout: this.ruleTreeTimeoutMs },
     );
     // `etag` is the version's optimistic-concurrency token; patchRuleTree passes it back as
-    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering.
-    return { ruleTree: data, ruleFormat: data.ruleFormat, etag: data.etag };
+    // If-Match so a concurrent edit fails the PATCH instead of silently clobbering. `errors`/
+    // `warnings` are present only when validateRules was requested (undefined otherwise).
+    return {
+      ruleTree: data,
+      ruleFormat: data.ruleFormat,
+      etag: data.etag,
+      errors: data.errors,
+      warnings: data.warnings,
+    };
   }
 
   /**
@@ -495,7 +527,9 @@ export default class AkamaiClient {
     return this.#request(
       'PUT',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params, body: ruleTree, headers },
+      {
+        params, body: ruleTree, headers, timeout: this.ruleTreeTimeoutMs,
+      },
     );
   }
 
@@ -540,7 +574,8 @@ export default class AkamaiClient {
     }
     const headers = {
       'Content-Type': 'application/json-patch+json',
-      ...(etag ? { 'If-Match': etag } : {}),
+      // PAPI requires an RFC 7232 quoted etag; a bare token yields a generic, unhelpful 400.
+      ...(etag ? { 'If-Match': `"${String(etag).replace(/^"+|"+$/g, '')}"` } : {}),
     };
     this.log.info(
       `Patching rule tree for property ${propertyId} v${version} `
@@ -549,7 +584,9 @@ export default class AkamaiClient {
     return this.#request(
       'PATCH',
       `/papi/v1/properties/${id}/versions/${version}/rules`,
-      { params, body: ops, headers },
+      {
+        params, body: ops, headers, timeout: this.ruleTreeTimeoutMs,
+      },
     );
   }
 

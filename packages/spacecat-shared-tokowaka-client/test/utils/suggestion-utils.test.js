@@ -104,6 +104,40 @@ describe('Suggestion Utils', () => {
       // Should skip sugg-1 due to URL parsing error
       expect(Object.keys(result)).to.have.lengthOf(0); // Both fail due to invalid base
     });
+
+    it('should merge trailing-slash and non-trailing-slash variants of the same path', () => {
+      const suggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({ url: 'https://example.com/page1' }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({ url: 'https://example.com/page1/' }),
+        },
+      ];
+
+      const result = groupSuggestionsByUrlPath(suggestions, 'https://example.com', log);
+
+      // "/page1" and "/page1/" resolve to the same S3 object, so they share one group.
+      expect(Object.keys(result)).to.have.lengthOf(1);
+      expect(result).to.have.property('/page1');
+      expect(result['/page1']).to.have.lengthOf(2);
+    });
+
+    it('should preserve the root path "/" (no trailing slash stripping)', () => {
+      const suggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({ url: 'https://example.com/' }),
+        },
+      ];
+
+      const result = groupSuggestionsByUrlPath(suggestions, 'https://example.com', log);
+
+      expect(result).to.have.property('/');
+      expect(result['/']).to.have.lengthOf(1);
+    });
   });
 
   describe('filterEligibleSuggestions', () => {

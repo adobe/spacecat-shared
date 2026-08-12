@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-akamai-client-v1.2.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.2.0...@adobe/spacecat-shared-akamai-client-v1.2.1) (2026-08-12)
+
+### Bug Fixes
+
+* **akamai-client:** configurable rule-tree timeout + patchRuleTree + accurate timeout message ([#1864](https://github.com/adobe/spacecat-shared/issues/1864)) ([2aec2be](https://github.com/adobe/spacecat-shared/commit/2aec2bee822a10232d82acee484114a718900720)), closes [adobe/spacecat-api-service#3013](https://github.com/adobe/spacecat-api-service/issues/3013) [adobe/spacecat-api-service#3013](https://github.com/adobe/spacecat-api-service/issues/3013)
+
 ## [@adobe/spacecat-shared-akamai-client-v1.2.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-akamai-client-v1.1.0...@adobe/spacecat-shared-akamai-client-v1.2.0) (2026-07-20)
 
 ### Features

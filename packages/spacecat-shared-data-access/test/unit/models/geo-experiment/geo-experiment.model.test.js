@@ -78,6 +78,7 @@ describe('GeoExperimentModel', () => {
     expect(GeoExperiment.METADATA_KEYS).to.deep.equal({
       SCHEDULE_CONFIG: 'scheduleConfig',
       IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
+      VALIDATION: 'validation',
     });
   });
 

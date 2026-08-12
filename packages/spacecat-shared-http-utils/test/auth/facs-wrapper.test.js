@@ -924,4 +924,171 @@ describe('facsWrapper', () => {
       expect(captured.warn.user).to.equal(undefined);
     });
   });
+
+  describe('secondary resource resolution (opt-in)', () => {
+    // A product with a PRIMARY (brand) resource plus a SECONDARY (site) resource
+    // whose grant/deny decision is delegated to a registered resolver.
+    const secRouteCaps = {
+      PRODUCTS_ROUTES: {
+        LLMO: {
+          'GET /insights': 'llmo/can_read',
+          'GET /brands/:brandId': 'llmo/can_read',
+          'GET /sites/:siteId/agentic-categories': 'llmo/can_read',
+        },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+        LLMO: { brand: ['brandId'] },
+      },
+      PRODUCTS_FACS_SECONDARY_RESOURCE: {
+        LLMO: { resourceType: 'site', aliases: ['siteId'], resolver: 'llmoSiteToBrands' },
+      },
+    };
+
+    describe('creation-time guards', () => {
+      it('throws when a secondary config entry is malformed', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: {
+            PRODUCTS_ROUTES: { LLMO: { 'GET /x': 'llmo/can_read' } },
+            PRODUCTS_FACS_SECONDARY_RESOURCE: { LLMO: { resourceType: 'site' } },
+          },
+          secondaryResolvers: { llmoSiteToBrands: async () => true },
+        })).to.throw(/PRODUCTS_FACS_SECONDARY_RESOURCE.LLMO must be/);
+      });
+
+      it('throws when the declared resolver is not registered', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: {},
+        })).to.throw(/secondary resolver 'llmoSiteToBrands' for product 'LLMO' is not registered/);
+      });
+
+      it('accepts a valid secondary config with a registered resolver', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: async () => true },
+        })).to.not.throw();
+      });
+    });
+
+    describe('request-time behavior', () => {
+      let ldClient;
+      let mockedWrapper;
+      let resolverStub;
+
+      beforeEach(async () => {
+        ldClient = { isFlagEnabledForIMSOrg: sandbox.stub().resolves(true) };
+        const mod = await esmock('../../src/auth/facs-wrapper.js', {
+          '@adobe/spacecat-shared-launchdarkly-client': {
+            LaunchDarklyClient: { createFrom: sandbox.stub().returns(ldClient) },
+          },
+          '../../src/auth/facs-state-layer.js': {
+            findFacsResourceBinding: sandbox.stub(),
+            normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
+          },
+        });
+        mockedWrapper = mod.facsWrapper;
+        resolverStub = sandbox.stub();
+        // No org-wide JWT grant → the wrapper reaches the resource seam.
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
+        context.dataAccess = { services: { postgrestClient: { from: () => {} } } };
+      });
+
+      function siteReq() {
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/sites/site-abc/agentic-categories',
+          headers: { 'x-product': 'llmo' },
+        };
+      }
+
+      it('grants when the secondary resolver returns true', async () => {
+        resolverStub.resolves(true);
+        siteReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.calledOnce).to.be.true;
+        const [ctxArg, args] = resolverStub.firstCall.args;
+        expect(ctxArg).to.equal(context);
+        expect(args).to.deep.equal({
+          resourceType: 'site',
+          resourceId: 'site-abc',
+          capability: 'llmo/can_read',
+          product: 'LLMO',
+          subjectId: 'user@example.com',
+          orgId: 'CUST-ORG-123@AdobeOrg',
+        });
+        expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'secondary-resolver' })).to.be.true;
+        // The wrapper decided authorization; no defer flag is surfaced to the controller.
+        expect(context.attributes.facs).to.equal(undefined);
+      });
+
+      it('denies (403) when the secondary resolver returns false', async () => {
+        resolverStub.resolves(false);
+        siteReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.warn.calledWithMatch({ tag: 'facs', deny: 'secondary-resolver' })).to.be.true;
+      });
+
+      it('fails closed (403) when the secondary resolver throws', async () => {
+        resolverStub.rejects(new Error('postgrest down'));
+        siteReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.error.calledWithMatch({ tag: 'facs', deny: 'secondary-resolver-error' })).to.be.true;
+      });
+
+      it('JWT org-wide grant short-circuits before the secondary resolver runs', async () => {
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => true });
+        siteReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+      });
+
+      it('defers (no resolver call) for a non-secondary route even when a secondary is configured', async () => {
+        // GET /insights carries neither brandId nor siteId → primary resolves null
+        // and it is not a secondary-scoped route → falls through to the collection
+        // defer (INV-1: secondary config does not change non-site routes).
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/insights',
+          headers: { 'x-product': 'llmo' },
+        };
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: secRouteCaps,
+          secondaryResolvers: { llmoSiteToBrands: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+        expect(context.attributes.facs).to.deep.equal({
+          enabled: true,
+          product: 'LLMO',
+          subjectId: 'user@example.com',
+        });
+      });
+    });
+  });
 });

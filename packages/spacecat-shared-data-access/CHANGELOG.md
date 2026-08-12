@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v4.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.18.0...@adobe/spacecat-shared-data-access-v4.19.0) (2026-08-11)
+
+### Features
+
+* add support for searching trial users by external user id ([#1869](https://github.com/adobe/spacecat-shared/issues/1869)) ([ec48340](https://github.com/adobe/spacecat-shared/commit/ec483403ac2b118abea814309079716fc516042a))
+
+## [@adobe/spacecat-shared-data-access-v4.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.17.0...@adobe/spacecat-shared-data-access-v4.18.0) (2026-08-11)
+
+### Features
+
+* **data-access:** add prerender validation fields to Suggestion/GeoExperiment ([#1863](https://github.com/adobe/spacecat-shared/issues/1863)) ([88b3baa](https://github.com/adobe/spacecat-shared/commit/88b3baaaedc2a9a12a48a88abb184baf85796426))
+
+## [@adobe/spacecat-shared-data-access-v4.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.1...@adobe/spacecat-shared-data-access-v4.17.0) (2026-08-07)
+
+### Features
+
+* **data-access:** add SITE to Opportunity.SCOPE_TYPES (SITES-49175) ([#1866](https://github.com/adobe/spacecat-shared/issues/1866)) ([c33a236](https://github.com/adobe/spacecat-shared/commit/c33a23677101ad6b6b839c5fb12f1810d1612571))
+
 ## [@adobe/spacecat-shared-data-access-v4.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.0...@adobe/spacecat-shared-data-access-v4.16.1) (2026-08-03)
 
 ### Bug Fixes

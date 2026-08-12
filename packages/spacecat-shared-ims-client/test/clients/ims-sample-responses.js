@@ -21,8 +21,11 @@ export const IMS_FETCH_PC_BY_ORG_RESPONSE = {
   ],
 };
 
-export const GROUP_1_ID = 123456789;
-export const GROUP_2_ID = 222223333;
+// IMS group idents are strings: they are handed back to consumers via the org
+// group catalog and passed into getGroupMembers(imsOrgId, groupId), which requires
+// a non-empty string groupId.
+export const GROUP_1_ID = '123456789';
+export const GROUP_2_ID = '222223333';
 
 export const IMS_FETCH_ORG_DETAILS_RESPONSE = {
   orgName: 'Example Org Human Readable Name',

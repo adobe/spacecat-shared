@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.18.0...@adobe/spacecat-shared-data-access-v4.19.0) (2026-08-11)
+
+### Features
+
+* add support for searching trial users by external user id ([#1869](https://github.com/adobe/spacecat-shared/issues/1869)) ([ec48340](https://github.com/adobe/spacecat-shared/commit/ec483403ac2b118abea814309079716fc516042a))
+
 ## [@adobe/spacecat-shared-data-access-v4.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.17.0...@adobe/spacecat-shared-data-access-v4.18.0) (2026-08-11)
 
 ### Features

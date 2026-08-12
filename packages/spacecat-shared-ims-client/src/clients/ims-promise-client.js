@@ -25,39 +25,50 @@ export default class ImsPromiseClient extends ImsBaseClient {
     CONSUMER: 'consumer',
   };
 
-  static createFrom(context, type) {
-    const { log = console } = context;
+  /**
+   * Named IMS emitter/consumer credential pairs. Absent selector => the default
+   * (unprefixed) pair. `SEMRUSH` => the dedicated Semrush-scoped pair, read from
+   * `IMS_PROMISE_SEMRUSH_*` env vars (see docs/specs/ims-client-promise-pair-selector).
+   */
+  static PROMISE_PAIR = Object.freeze({
+    SEMRUSH: 'SEMRUSH',
+  });
 
-    let imsHost;
+  static createFrom(context, type, opts = {}) {
+    const { log = console } = context;
+    const { pair } = opts;
+
+    if (pair !== undefined
+      && !Object.values(ImsPromiseClient.PROMISE_PAIR).includes(pair)) {
+      throw new Error(`Unknown IMS promise client pair: ${pair}`);
+    }
+    const prefix = pair ? `${pair}_` : '';
+
+    const { env } = context;
+    const imsHost = env.IMS_HOST;
+    const encryption = {
+      secret: env.AUTOFIX_CRYPT_SECRET,
+      salt: env.AUTOFIX_CRYPT_SALT,
+    };
+
     let clientId;
     let clientSecret;
     let promiseDefinitionId;
-    const encryption = {};
 
     if (type === ImsPromiseClient.CLIENT_TYPE.EMITTER) {
-      ({
-        IMS_HOST: imsHost,
-        IMS_PROMISE_EMITTER_CLIENT_ID: clientId,
-        IMS_PROMISE_EMITTER_CLIENT_SECRET: clientSecret,
-        IMS_PROMISE_EMITTER_DEFINITION_ID: promiseDefinitionId,
-        AUTOFIX_CRYPT_SECRET: encryption.secret,
-        AUTOFIX_CRYPT_SALT: encryption.salt,
-      } = context.env);
+      clientId = env[`IMS_PROMISE_${prefix}EMITTER_CLIENT_ID`];
+      clientSecret = env[`IMS_PROMISE_${prefix}EMITTER_CLIENT_SECRET`];
+      promiseDefinitionId = env[`IMS_PROMISE_${prefix}EMITTER_DEFINITION_ID`];
     } else if (type === ImsPromiseClient.CLIENT_TYPE.CONSUMER) {
-      ({
-        IMS_HOST: imsHost,
-        IMS_PROMISE_CONSUMER_CLIENT_ID: clientId,
-        IMS_PROMISE_CONSUMER_CLIENT_SECRET: clientSecret,
-        AUTOFIX_CRYPT_SECRET: encryption.secret,
-        AUTOFIX_CRYPT_SALT: encryption.salt,
-      } = context.env);
+      clientId = env[`IMS_PROMISE_${prefix}CONSUMER_CLIENT_ID`];
+      clientSecret = env[`IMS_PROMISE_${prefix}CONSUMER_CLIENT_SECRET`];
     } else {
       throw new Error('Unknown IMS promise client type.');
     }
 
     if (!hasText(imsHost) || !hasText(clientId) || !hasText(clientSecret)
       || (type === ImsPromiseClient.CLIENT_TYPE.EMITTER && !hasText(promiseDefinitionId))) {
-      throw new Error('Context param must include properties: imsHost, clientId, and clientSecret and for CONSUMER type also promiseDefinitionId.');
+      throw new Error('Context param must include properties: imsHost, clientId, and clientSecret and for EMITTER type also promiseDefinitionId.');
     }
 
     return new ImsPromiseClient({

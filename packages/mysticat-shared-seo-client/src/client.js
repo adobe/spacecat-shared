@@ -805,24 +805,28 @@ export default class SeoClient {
 
     const token = await this._getSemrushToken();
 
-    // Semrush's broken-links endpoint with scope=ROOT_DOMAIN ignores the path in `url`
-    // and returns whole-domain broken backlinks (scope=SUBFOLDER is rejected with HTTP 400).
-    // To scope a sub-path site to its own broken backlinks we send the hostname (domain) as
-    // `url` and add a server-side `target_url LIKE '%<hostname><path>%'` filter (SITES-49721).
-    const hostname = stripWWW(new URL(prependSchema(url)).hostname);
-    const { pathname } = new URL(prependSchema(url));
-
-    const notLike = LOW_VALUE_HOSTS.map((h) => `AND source_url NOT LIKE '%${h}%'`).join(' ');
-    // response_code here is the SOURCE page's code (always 200 for live sources) — a proven
-    // no-op that does NOT exclude broken (4xx) targets; the endpoint is inherently
-    // "broken targets only", so it is intentionally omitted.
-    let filter = `is_nofollow=false AND is_lost=false AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}`;
-    if (pathname && pathname !== '/') {
-      filter += ` AND target_url LIKE '%${hostname}${pathname}%'`;
+    // scope=ROOT_DOMAIN ignores the path in `url` (scope=SUBFOLDER is rejected, HTTP 400), so we
+    // send the hostname as `url` and scope sub-paths via a server-side target_url LIKE clause.
+    let urlParam;
+    let subPathClause = '';
+    try {
+      const { hostname, pathname } = new URL(prependSchema(url));
+      urlParam = stripWWW(hostname);
+      const path = pathname.replace(/\/$/, ''); // /foo == /foo/; root ('/') → no clause
+      if (path) {
+        subPathClause = ` AND target_url LIKE '%${urlParam}${path}%'`;
+      }
+    } catch {
+      this.log.warn(`[SEO] Could not parse URL "${url}"; querying whole domain with no sub-path scope`);
+      urlParam = url;
     }
 
+    const notLike = LOW_VALUE_HOSTS.map((h) => `AND source_url NOT LIKE '%${h}%'`).join(' ');
+    // response_code is the SOURCE page's code (always 200) — a no-op, intentionally omitted.
+    const filter = `is_nofollow=false AND is_lost=false AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}${subPathClause}`;
+
     const params = new URLSearchParams({
-      url: hostname,
+      url: urlParam,
       scope: 'ROOT_DOMAIN',
       limit: String(FETCH_LIMIT),
       order_by: 'domain_score',

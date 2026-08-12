@@ -1846,8 +1846,8 @@ describe('SeoClient', () => {
         })
         .reply(200, { data: [], meta: {} });
 
-      await v2Client.getBrokenBacklinksV2('https://www.oklahoma.gov');
-      expect(captured.url).to.equal('oklahoma.gov');
+      await v2Client.getBrokenBacklinksV2('https://www.example.com');
+      expect(captured.url).to.equal('example.com');
       expect(captured.filter).to.not.include('target_url LIKE');
     });
 
@@ -1862,11 +1862,49 @@ describe('SeoClient', () => {
         })
         .reply(200, { data: [], meta: {} });
 
-      await v2Client.getBrokenBacklinksV2('https://www.oklahoma.gov/omes');
+      await v2Client.getBrokenBacklinksV2('https://www.example.gov/us');
       // domain (not the path-carrying value) is sent as the `url` param
-      expect(captured.url).to.equal('oklahoma.gov');
+      expect(captured.url).to.equal('example.gov');
       // sub-path scoping added server-side
-      expect(captured.filter).to.include("target_url LIKE '%oklahoma.gov/omes%'");
+      expect(captured.filter).to.include("target_url LIKE '%example.gov/us%'");
+    });
+
+    it('normalizes a trailing slash so /foo and /foo/ scope identically', async () => {
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      await v2Client.getBrokenBacklinksV2('https://www.example.com/foo/');
+      expect(captured.url).to.equal('example.com');
+      expect(captured.filter).to.include("target_url LIKE '%example.com/foo%'");
+      expect(captured.filter).to.not.include('/foo/%');
+    });
+
+    it('falls back to the raw url with no sub-path clause when the url cannot be parsed', async () => {
+      const warn = sandbox.stub();
+      const loggingClient = new SeoClient(v2Config, fetch, { ...console, warn });
+      nockToken();
+      let captured;
+      nock(BROKEN_LINKS_HOST)
+        .get(BROKEN_LINKS_PATH)
+        .query((q) => {
+          captured = q;
+          return true;
+        })
+        .reply(200, { data: [], meta: {} });
+
+      // A non-empty but malformed value that prependSchema cannot turn into a valid URL.
+      await loggingClient.getBrokenBacklinksV2('http://[malformed');
+      expect(captured.url).to.equal('http://[malformed');
+      expect(captured.filter).to.not.include('target_url LIKE');
+      expect(warn.calledOnce).to.equal(true);
+      expect(warn.firstCall.args[0]).to.include('Could not parse URL');
     });
 
     it('handles null source_title', async () => {

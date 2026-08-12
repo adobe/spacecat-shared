@@ -14,7 +14,12 @@ import { Response } from '@adobe/fetch';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
 import { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
-import { extractRouteParams, findMatchedRouteKey, resolveRouteCapability } from './route-utils.js';
+import {
+  extractParamNamesInOrder,
+  extractRouteParams,
+  findMatchedRouteKey,
+  resolveRouteCapability,
+} from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
 import { findFacsResourceBinding, normalizeImsOrgId } from './facs-state-layer.js';
 
@@ -176,7 +181,7 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * }}} opts
  * @returns {Function} A wrapped handler.
  */
-export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
+export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {} } = {}) {
   if (!routeFacsCapabilities || typeof routeFacsCapabilities !== 'object') {
     throw new Error('facsWrapper: routeFacsCapabilities is required');
   }
@@ -205,6 +210,47 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
   const aliasLookupsPerProduct = buildAliasLookupsPerProduct(
     routeFacsCapabilities.PRODUCTS_FACS_RESOURCE_PARAM_ALIASES,
   );
+
+  // Secondary resource resolution (opt-in per product) — see
+  // platform/decisions/facs-wrapper-secondary-resource-param.md. A product may
+  // declare a SECONDARY resource param the wrapper falls back to when no PRIMARY
+  // resource resolves for a route (e.g. LLMO site routes carrying `:siteId`,
+  // whose authorization is decided against the site's brands). The grant/deny
+  // decision is delegated to a resolver the consuming service registers by key in
+  // `secondaryResolvers`, so the shared wrapper stays product/route-agnostic.
+  // Absent config → no secondary behavior (byte-identical to before).
+  //
+  //   PRODUCTS_FACS_SECONDARY_RESOURCE: {
+  //     LLMO: { resourceType: 'site', aliases: ['siteId'], resolver: 'llmoSiteToBrands' },
+  //   }
+  //   secondaryResolvers: { llmoSiteToBrands: async (context, args) => boolean }
+  const secondaryConfig = routeFacsCapabilities.PRODUCTS_FACS_SECONDARY_RESOURCE;
+  const secondaryResolverKeyByProduct = new Map();
+  const secondaryAliasSpec = {};
+  if (secondaryConfig && typeof secondaryConfig === 'object') {
+    for (const [product, cfg] of Object.entries(secondaryConfig)) {
+      if (!cfg || typeof cfg.resourceType !== 'string'
+          || !Array.isArray(cfg.aliases) || cfg.aliases.length === 0
+          || typeof cfg.resolver !== 'string') {
+        throw new Error(
+          `facsWrapper: PRODUCTS_FACS_SECONDARY_RESOURCE.${product} must be `
+          + '{ resourceType: string, aliases: string[], resolver: string }',
+        );
+      }
+      // Fail fast at construction if a declared resolver is not registered — a
+      // request-time miss would silently fail-closed and be hard to diagnose.
+      if (typeof secondaryResolvers[cfg.resolver] !== 'function') {
+        throw new Error(
+          `facsWrapper: secondary resolver '${cfg.resolver}' for product `
+          + `'${product}' is not registered in secondaryResolvers`,
+        );
+      }
+      secondaryAliasSpec[product] = { [cfg.resourceType]: cfg.aliases };
+      secondaryResolverKeyByProduct.set(product.toUpperCase(), cfg.resolver);
+    }
+  }
+  // Reuse the alias→resourceType inversion (per product) for the secondary map.
+  const secondaryAliasLookupsPerProduct = buildAliasLookupsPerProduct(secondaryAliasSpec);
 
   return async (request, context) => {
     const { log } = context;
@@ -405,6 +451,90 @@ export function facsWrapper(fn, { routeFacsCapabilities } = {}) {
     });
 
     if (!resource) {
+      // (6b) Secondary resource fallback (opt-in per product). Before deferring,
+      // check whether THIS route is scoped to the product's SECONDARY resource
+      // (e.g. LLMO `:siteId`). If so, the wrapper — not the controller — decides
+      // authorization via the registered resolver. Routes that carry no secondary
+      // param (collection endpoints like list-sites) fall through to the defer
+      // below, where `context.attributes.facs` lets the controller ReBAC-filter.
+      const secondaryAliasLookup = secondaryAliasLookupsPerProduct.get(upperProduct);
+      if (secondaryAliasLookup && secondaryAliasLookup.size > 0) {
+        // A route is secondary-scoped iff one of its declared PATH params is a
+        // secondary alias. LLMO's secondary is the `:siteId` path param, so
+        // "route declares the secondary" ⟺ "value present on a matched route".
+        const secondaryParamName = extractParamNamesInOrder(routePattern)
+          .find((name) => secondaryAliasLookup.has(name));
+        if (secondaryParamName) {
+          const secondaryResourceType = secondaryAliasLookup.get(secondaryParamName);
+          // A matched route always carries a non-empty value for every declared PATH
+          // param (route-utils drops empty segments and requires equal segment counts,
+          // so a request missing the value fails to match and never reaches here). A
+          // secondary-scoped route therefore always resolves a value — the ADR's
+          // "absent → fail-closed" contract holds structurally, not via a runtime
+          // check. Resolver presence is guaranteed by the construction-time validation.
+          const secondaryResourceId = routeParams[secondaryParamName];
+          const resolverFn = secondaryResolvers[secondaryResolverKeyByProduct.get(upperProduct)];
+
+          let granted;
+          try {
+            granted = await resolverFn(context, {
+              resourceType: secondaryResourceType,
+              resourceId: String(secondaryResourceId),
+              capability: routeCapability,
+              product: upperProduct,
+              subjectId: subjectUserId,
+              orgId: normalizedOrgId,
+            });
+          } catch (e) {
+            // (b) Resolver error → fail-closed.
+            log.error({
+              tag: 'facs',
+              deny: 'secondary-resolver-error',
+              method,
+              suffix,
+              capability: routeCapability,
+              product: productCode,
+              resourceType: secondaryResourceType,
+              resourceId: String(secondaryResourceId),
+              user: subjectUserId,
+              err: e.message,
+            }, 'FACS denied: secondary resolver threw — failing closed');
+            return forbidden('Forbidden');
+          }
+
+          if (granted === true) {
+            log.info({
+              tag: 'facs',
+              grant: 'secondary-resolver',
+              method,
+              suffix,
+              capability: routeCapability,
+              product: productCode,
+              resourceType: secondaryResourceType,
+              resourceId: String(secondaryResourceId),
+              user: subjectUserId,
+              org: normalizedOrgId,
+            }, 'FACS grant: secondary resolver authorized the request');
+            return fn(request, context);
+          }
+
+          log.warn({
+            tag: 'facs',
+            deny: 'secondary-resolver',
+            method,
+            suffix,
+            capability: routeCapability,
+            product: productCode,
+            resourceType: secondaryResourceType,
+            resourceId: String(secondaryResourceId),
+            user: subjectUserId,
+            org: normalizedOrgId,
+          }, 'FACS denied: secondary resolver did not authorize the request');
+          return forbidden('Forbidden');
+        }
+      }
+
+      // (6c) No secondary scope for this route → defer to the controller.
       // Reaching here means the session is FACS-enrolled (passed the internal,
       // internal-org and LD-flag gates) and resource-scoped (the JWT short-circuit
       // at step 5 did not fire, so the caller lacks the org-wide capability), yet

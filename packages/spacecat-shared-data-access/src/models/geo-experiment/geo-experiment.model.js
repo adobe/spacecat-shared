@@ -61,6 +61,7 @@ class GeoExperiment extends BaseModel {
   static METADATA_KEYS = {
     SCHEDULE_CONFIG: 'scheduleConfig',
     IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
+    VALIDATION: 'validation',
   };
 
   /**

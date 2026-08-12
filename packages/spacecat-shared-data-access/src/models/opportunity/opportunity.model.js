@@ -40,7 +40,11 @@ class Opportunity extends BaseModel {
     RESOLVED: 'RESOLVED',
   };
 
+  // SITES-49175 — `SITE` makes explicit the previously-implicit scope so V1
+  // and V2 writers stamp the same `scopeType='site'` value, unblocking the
+  // partial unique index on `(siteId, type)`.
   static SCOPE_TYPES = {
+    SITE: 'site',
     BRAND: 'brand',
   };
 

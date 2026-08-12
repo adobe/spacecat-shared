@@ -805,28 +805,24 @@ export default class SeoClient {
 
     const token = await this._getSemrushToken();
 
-    // scope=ROOT_DOMAIN ignores the path in `url` (scope=SUBFOLDER is rejected, HTTP 400), so we
-    // send the hostname as `url` and scope sub-paths via a server-side target_url LIKE clause.
-    let urlParam;
+    // scope=ROOT_DOMAIN ignores the path in `url` (scope=SUBFOLDER is rejected, HTTP 400),
+    // so scope a sub-path via a server-side target_url LIKE clause instead.
     let subPathClause = '';
     try {
       const { hostname, pathname } = new URL(prependSchema(url));
-      urlParam = stripWWW(hostname);
       const path = pathname.replace(/\/$/, ''); // /foo == /foo/; root ('/') → no clause
       if (path) {
-        subPathClause = ` AND target_url LIKE '%${urlParam}${path}%'`;
+        subPathClause = ` AND target_url LIKE '%${stripWWW(hostname)}${path}%'`;
       }
     } catch {
       this.log.warn(`[SEO] Could not parse URL "${url}"; querying whole domain with no sub-path scope`);
-      urlParam = url;
     }
 
     const notLike = LOW_VALUE_HOSTS.map((h) => `AND source_url NOT LIKE '%${h}%'`).join(' ');
-    // response_code is the SOURCE page's code (always 200) — a no-op, intentionally omitted.
-    const filter = `is_nofollow=false AND is_lost=false AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}${subPathClause}`;
+    const filter = `is_nofollow=false AND is_lost=false AND response_code=200 AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}${subPathClause}`;
 
     const params = new URLSearchParams({
-      url: urlParam,
+      url,
       scope: 'ROOT_DOMAIN',
       limit: String(FETCH_LIMIT),
       order_by: 'domain_score',

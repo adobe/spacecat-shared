@@ -7223,4 +7223,246 @@ describe('TokowakaClient', () => {
       expect(urls[0]).to.include('/page2');
     });
   });
+
+  describe('setApplyStaleForSuggestions', () => {
+    let fetchConfigStub;
+    let uploadConfigStub;
+    let invalidateCdnCacheStub;
+    let saveManyStub;
+
+    function makeDeployedSuggestion(id, urlPath) {
+      return {
+        getId: () => id,
+        getData: () => ({ url: `https://example.com${urlPath}`, edgeDeployed: Date.now() }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+      };
+    }
+
+    beforeEach(() => {
+      fetchConfigStub = sinon.stub(client, 'fetchConfig');
+      uploadConfigStub = sinon.stub(client, 'uploadConfig').resolves('s3-path');
+      invalidateCdnCacheStub = sinon.stub(client, 'invalidateCdnCache').resolves([]);
+      saveManyStub = client.dataAccess.Suggestion.saveMany;
+    });
+
+    it('sets applyStale on the matching patch and mirrors it onto suggestion.data', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        patches: [{ suggestionId: 'sugg-1', op: 'replace' }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true, updatedBy: 'user@example.com' },
+      );
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      const [, uploadedConfig] = uploadConfigStub.firstCall.args;
+      expect(uploadedConfig.patches[0].applyStale).to.equal(true);
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      expect(s1.setData).to.have.been.calledWith(sinon.match({ applyStale: true }));
+      expect(s1.setUpdatedBy).to.have.been.calledWith('user@example.com');
+      expect(saveManyStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.deep.equal([s1]);
+      expect(result.failedSuggestions).to.have.length(0);
+    });
+
+    it('clears applyStale from the matching patch and removes it from suggestion.data', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        patches: [{ suggestionId: 'sugg-1', op: 'replace', applyStale: true }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: false },
+      );
+
+      const [, uploadedConfig] = uploadConfigStub.firstCall.args;
+      expect(uploadedConfig.patches[0]).to.not.have.property('applyStale');
+      expect(s1.setData).to.have.been.calledWith(sinon.match((data) => !('applyStale' in data)));
+    });
+
+    it('skips the S3 upload but still saves the suggestion when the patch already matches', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        patches: [{ suggestionId: 'sugg-1', op: 'replace', applyStale: true }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true },
+      );
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+      expect(saveManyStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.deep.equal([s1]);
+    });
+
+    it('skips the S3 upload but still saves the suggestion when clearing an already-unset flag', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        patches: [{ suggestionId: 'sugg-1', op: 'replace' }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: false },
+      );
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(invalidateCdnCacheStub).to.not.have.been.called;
+      expect(saveManyStub).to.have.been.calledOnce;
+      expect(result.succeededSuggestions).to.deep.equal([s1]);
+    });
+
+    it('fails the suggestion when the URL has no existing config', async () => {
+      fetchConfigStub.resolves(null);
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true },
+      );
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.deep.equal([
+        { suggestion: s1, reason: 'No patch found for suggestion', statusCode: 400 },
+      ]);
+    });
+
+    it('fails suggestions with no matching patch on their URL', async () => {
+      fetchConfigStub.resolves({
+        url: 'https://example.com/page1',
+        patches: [{ suggestionId: 'other-sugg', op: 'replace' }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true },
+      );
+
+      expect(uploadConfigStub).to.not.have.been.called;
+      expect(saveManyStub).to.not.have.been.called;
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.deep.equal([
+        { suggestion: s1, reason: 'No patch found for suggestion', statusCode: 400 },
+      ]);
+    });
+
+    it('fails pattern/domain-wide suggestions without fetching any config', async () => {
+      const patternSugg = {
+        getId: () => 'dw-1',
+        getData: () => ({ isDomainWide: true, allowedRegexPatterns: ['/.*'] }),
+      };
+
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [patternSugg],
+        { applyStale: true },
+      );
+
+      expect(fetchConfigStub).to.not.have.been.called;
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.deep.equal([
+        {
+          suggestion: patternSugg,
+          reason: 'Only per-URL suggestions support applyStale',
+          statusCode: 400,
+        },
+      ]);
+    });
+
+    it('only invalidates CDN for URLs that actually changed', async () => {
+      fetchConfigStub.onFirstCall().resolves({
+        patches: [{ suggestionId: 'sugg-1' }],
+      });
+      fetchConfigStub.onSecondCall().resolves({
+        patches: [{ suggestionId: 'sugg-2', applyStale: true }],
+      });
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const s2 = makeDeployedSuggestion('sugg-2', '/page2');
+      await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1, s2],
+        { applyStale: true },
+      );
+
+      expect(uploadConfigStub).to.have.been.calledOnce;
+      expect(invalidateCdnCacheStub).to.have.been.calledOnce;
+      const { urls } = invalidateCdnCacheStub.firstCall.args[0];
+      expect(urls).to.have.length(1);
+      expect(urls[0]).to.include('/page1');
+    });
+
+    it('logs and fails remaining suggestions on that URL when fetchConfig throws', async () => {
+      fetchConfigStub.rejects(new Error('S3 transient error'));
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true },
+      );
+
+      expect(result.succeededSuggestions).to.have.length(0);
+      expect(result.failedSuggestions).to.deep.equal([
+        { suggestion: s1, reason: 'Internal server error', statusCode: 500 },
+      ]);
+    });
+
+    it('logs a warning and still returns success when CDN invalidation throws', async () => {
+      fetchConfigStub.resolves({
+        patches: [{ suggestionId: 'sugg-1' }],
+      });
+      invalidateCdnCacheStub.rejects(new Error('CDN rate limit'));
+
+      const s1 = makeDeployedSuggestion('sugg-1', '/page1');
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [s1],
+        { applyStale: true },
+      );
+
+      expect(result.succeededSuggestions).to.deep.equal([s1]);
+      expect(log.warn).to.have.been.called;
+    });
+
+    it('returns empty results and never fetches config when given no suggestions', async () => {
+      const result = await client.setApplyStaleForSuggestions(
+        mockSite,
+        mockOpportunity,
+        [],
+        { applyStale: true },
+      );
+
+      expect(fetchConfigStub).to.not.have.been.called;
+      expect(result).to.deep.equal({ succeededSuggestions: [], failedSuggestions: [] });
+    });
+  });
 });

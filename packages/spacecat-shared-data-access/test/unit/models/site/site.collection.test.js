@@ -658,6 +658,38 @@ describe('SiteCollection', () => {
       expect(chain.order.secondCall).to.have.been.calledWithExactly('id', { ascending: false });
     });
 
+    it('defaults an explicit orderBy without a direction to ascending', async () => {
+      setupChain({ data: [], error: null });
+
+      await instance.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        { orderBy: { attribute: 'baseURL' }, limit: 10 },
+      );
+
+      expect(chain.order.firstCall).to.have.been.calledWithExactly('base_url', { ascending: true });
+      expect(chain.order.secondCall).to.have.been.calledWithExactly('id', { ascending: true });
+    });
+
+    it('throws DataAccessError on an unknown orderBy attribute', async () => {
+      setupChain({ data: [], error: null });
+
+      await expect(instance.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        { orderBy: { attribute: 'notAColumn' }, limit: 10 },
+      )).to.be.rejectedWith(DataAccessError, 'unknown orderBy attribute: notAColumn');
+      expect(chain.order).to.not.have.been.called;
+    });
+
+    it('throws DataAccessError on an invalid orderBy direction', async () => {
+      setupChain({ data: [], error: null });
+
+      await expect(instance.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        { orderBy: { attribute: 'baseURL', direction: 'sideways' }, limit: 10 },
+      )).to.be.rejectedWith(DataAccessError, 'invalid orderBy direction: sideways');
+      expect(chain.order).to.not.have.been.called;
+    });
+
     it('honors the exact limit passed (no silent cap or +1) via range', async () => {
       setupChain({ data: [], error: null });
 

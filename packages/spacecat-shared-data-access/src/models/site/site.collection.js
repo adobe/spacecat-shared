@@ -281,14 +281,26 @@ class SiteCollection extends BaseCollection {
 
     // Ordering mirrors base.collection #queryPage: a primary sort (default
     // updatedAt desc) plus a stable id tiebreaker so page boundaries never
-    // straddle equal sort keys.
+    // straddle equal sort keys. An explicit orderBy is validated the same way
+    // Site.all does — a clear error beats an opaque PostgREST 400 (unknown
+    // column) or a silently-wrong sort direction.
     const hasOrderBy = hasText(orderBy?.attribute);
-    const orderField = hasOrderBy
-      ? toDbField(orderBy.attribute, this.fieldMaps.toDbMap)
-      : 'updated_at';
-    const ascending = hasOrderBy
-      ? String(orderBy.direction).toLowerCase() !== 'desc'
-      : false;
+    let orderField = 'updated_at';
+    let ascending = false;
+    if (hasOrderBy) {
+      const { toDbMap } = this.fieldMaps;
+      if (!Object.prototype.hasOwnProperty.call(toDbMap, orderBy.attribute)) {
+        throw new DataAccessError(`unknown orderBy attribute: ${orderBy.attribute}`, this);
+      }
+      const direction = orderBy.direction === undefined
+        ? 'asc'
+        : String(orderBy.direction).toLowerCase();
+      if (direction !== 'asc' && direction !== 'desc') {
+        throw new DataAccessError(`invalid orderBy direction: ${orderBy.direction}`, this);
+      }
+      orderField = toDbField(orderBy.attribute, toDbMap);
+      ascending = direction === 'asc';
+    }
     query = query.order(orderField, { ascending });
     const idField = this.fieldMaps.toDbMap[this.idName];
     if (idField !== orderField) {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.20.0...@adobe/spacecat-shared-data-access-v4.21.0) (2026-08-13)
+
+### Features
+
+* **data-access:** paginated sites query filtered by entitlement tier/productCode ([#1877](https://github.com/adobe/spacecat-shared/issues/1877)) ([00e5e59](https://github.com/adobe/spacecat-shared/commit/00e5e592f1d4990e1578deb8287e84f3f0d0cf1b))
+
 ## [@adobe/spacecat-shared-data-access-v4.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.19.0...@adobe/spacecat-shared-data-access-v4.20.0) (2026-08-12)
 
 ### Features

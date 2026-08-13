@@ -115,8 +115,11 @@ export function getTokowakaMetaconfigS3Path(url, logger, isPreview = false) {
     const urlObj = new URL(url);
     const normalizedHostName = getHostName(urlObj, logger);
     const prefix = isPreview ? 'preview/opportunities' : 'opportunities';
+    const subpath = urlObj.pathname === '/' ? '' : urlObj.pathname.replace(/\/+$/, '');
 
-    return `${prefix}/${normalizedHostName}/config`;
+    return subpath
+      ? `${prefix}/${normalizedHostName}${subpath}/config`
+      : `${prefix}/${normalizedHostName}/config`;
   } catch (error) {
     logger.error(`Error generating metaconfig S3 path for URL ${url}: ${error.message}`);
     throw new Error(`Failed to generate metaconfig S3 path: ${error.message}`);

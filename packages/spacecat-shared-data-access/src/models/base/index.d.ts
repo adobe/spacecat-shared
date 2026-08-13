@@ -33,6 +33,7 @@ export interface QueryOptions {
   index?: string;
   limit?: number;
   order?: string;
+  orderBy?: { attribute: string; direction?: 'asc' | 'desc' };
   attributes?: string[];
   cursor?: string;
   /**

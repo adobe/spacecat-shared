@@ -17,6 +17,11 @@ import SchemaBuilder from '../base/schema.builder.js';
 import Preflight from './preflight.model.js';
 import PreflightCollection from './preflight.collection.js';
 
+// SITES-47254: `startedAt`, `result`, and `error` live only on AsyncJob now —
+// the underlying preflights table no longer carries them. Consumers fetch the
+// joined AsyncJob (e.g., `await preflight.getAsyncJob()`) for lifecycle
+// internals; `status` and `endedAt` remain here as a denormalized cache the
+// projector keeps in sync.
 const schema = new SchemaBuilder(Preflight, PreflightCollection)
   .addReference('belongs_to', 'Site', [], { required: true })
   .addReference('belongs_to', 'AsyncJob', [], { required: true })
@@ -30,34 +35,22 @@ const schema = new SchemaBuilder(Preflight, PreflightCollection)
     required: true,
     default: Preflight.Status.IN_PROGRESS,
   })
-  // `createdBy` and `error` use type 'any' (matching neighbor `result`) because
-  // ElectroDB's `map` type requires a `properties` schema for every sub-key,
-  // and the validate function below already enforces the precise shape — a
-  // duplicate `properties` declaration adds nothing. Declaring `type: 'map'`
-  // here without `properties` was the original definition and throws
-  // `InvalidAttributeDefinition` at Service construction, blocking any
-  // downstream consumer that builds a v1 `new Service(EntityRegistry.getEntities())`
-  // (e.g. spacecat-api-service `fixes.test.js`).
+  // `createdBy` uses type 'any' because ElectroDB's `map` type requires a
+  // `properties` schema for every sub-key, and the validate function below
+  // already enforces the precise shape — a duplicate `properties` declaration
+  // adds nothing. Declaring `type: 'map'` here without `properties` was the
+  // original definition and throws `InvalidAttributeDefinition` at Service
+  // construction, blocking any downstream consumer that builds a v1
+  // `new Service(EntityRegistry.getEntities())` (e.g. spacecat-api-service
+  // `fixes.test.js`).
   .addAttribute('createdBy', {
     type: 'any',
     required: true,
     validate: (value) => isObject(value) && typeof value.email === 'string' && value.email.length > 0,
   })
-  .addAttribute('startedAt', {
-    type: 'string',
-    validate: (value) => !value || isIsoDate(value),
-  })
   .addAttribute('endedAt', {
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
-  })
-  .addAttribute('result', {
-    type: 'any',
-    validate: (value) => !value || isObject(value),
-  })
-  .addAttribute('error', {
-    type: 'any',
-    validate: (value) => !value || (isObject(value) && typeof value.code === 'string' && value.code.length > 0 && typeof value.message === 'string' && value.message.length > 0),
   });
 
 export default schema.build();

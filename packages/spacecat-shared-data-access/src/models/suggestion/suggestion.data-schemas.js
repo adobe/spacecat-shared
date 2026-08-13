@@ -436,15 +436,30 @@ export const DATA_SCHEMAS = {
       },
     },
   },
+  // Sitemap has two data shapes from the audit worker:
+  // 1. URL-type (type='url'): sitemapUrl + pageUrl identify a probed page issue
+  // 2. Error-type (type='error'): site/sitemap infrastructure failures; sitemapUrl may be empty
   [OPPORTUNITY_TYPES.SITEMAP]: {
     schema: Joi.object({
-      sitemapUrl: Joi.string().uri().required(),
-      pageUrl: Joi.string().uri().required(),
       type: Joi.string().valid('url', 'error').optional(),
+      error: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().required(),
+        otherwise: Joi.string().optional(),
+      }),
+      sitemapUrl: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().uri().allow('').optional(),
+        otherwise: Joi.string().uri().required(),
+      }),
+      pageUrl: Joi.when('type', {
+        is: 'error',
+        then: Joi.string().uri().allow('').optional(),
+        otherwise: Joi.string().uri().required(),
+      }),
       statusCode: Joi.number().optional(),
-      urlsSuggested: Joi.string().uri().optional(),
-      recommendedAction: Joi.string().optional(),
-      error: Joi.string().optional(),
+      urlsSuggested: Joi.string().uri().allow('').optional(),
+      recommendedAction: Joi.string().allow('').optional(),
       aggregationKey: Joi.string().allow(null).optional(),
     }).unknown(true),
     projections: {
@@ -504,6 +519,13 @@ export const DATA_SCHEMAS = {
       },
     },
   },
+  // Field ownership:
+  // - validation — written by import-worker's validate-site.js after running the S3-vs-live
+  //   content comparison for this suggestion's URL, only for suggestions reached via a
+  //   geoExperimentId-triggered validation call (the bulk/automatic hourly job does not write
+  //   per-suggestion status). status is a plain boolean; reason is only present when status is
+  //   false. reason is a free-form string (not a fixed enum here) so import-worker can evolve
+  //   its reason vocabulary without a schema change in this package.
   [OPPORTUNITY_TYPES.PRERENDER]: {
     schema: Joi.object({
       url: Joi.string().uri().required(),
@@ -514,6 +536,11 @@ export const DATA_SCHEMAS = {
       prerenderedHtmlKey: Joi.string().optional(),
       organicTraffic: Joi.number().optional(),
       aggregationKey: Joi.string().allow(null).optional(),
+      validation: Joi.object({
+        status: Joi.boolean().optional(),
+        reason: Joi.string().optional(),
+        validatedAt: Joi.string().isoDate().optional(),
+      }).optional(),
     }).unknown(true),
     projections: {
       minimal: {

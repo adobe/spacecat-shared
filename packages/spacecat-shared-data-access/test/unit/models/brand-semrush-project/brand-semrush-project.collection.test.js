@@ -16,6 +16,8 @@ import sinonChai from 'sinon-chai';
 import sinon from 'sinon';
 
 import BrandSemrushProject from '../../../../src/models/brand-semrush-project/brand-semrush-project.model.js';
+import DataAccessError from '../../../../src/errors/data-access.error.js';
+import { DEFAULT_PAGE_SIZE } from '../../../../src/util/postgrest.utils.js';
 
 import { createElectroMocks } from '../../util.js';
 
@@ -165,6 +167,188 @@ describe('BrandSemrushProjectCollection', () => {
       expect(stub.firstCall.args[0]).to.deep.equal({
         semrushProjectId: mockRecord.semrushProjectId,
       });
+    });
+  });
+
+  describe('allByOrganizationId', () => {
+    const organizationId = 'a1b2c3d4-0000-4000-8000-000000000001';
+
+    function setupPostgrestChain(result) {
+      const rangeStub = sinon.stub().resolves(result);
+      // .order() is chained twice (brand_id, then semrush_project_id as a
+      // deterministic secondary sort) — the stub must return an object whose
+      // own `order` also resolves to itself so both calls in the chain work,
+      // matching @supabase/postgrest-js's real `order()` (returns `this`).
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+      return {
+        selectStub, eqStub, isStub, orderStub, rangeStub,
+      };
+    }
+
+    it('queries the embedded brands join, filters tombstones by default, and maps rows to identity DTOs', async () => {
+      const { selectStub, eqStub, isStub } = setupPostgrestChain({
+        data: [{
+          brand_id: mockRecord.brandId,
+          semrush_project_id: mockRecord.semrushProjectId,
+          semrush_location_id: mockRecord.geoTargetId,
+          language: mockRecord.languageCode,
+          site_id: 'a1b2c3d4-0000-4000-8000-000000000002',
+          brands: {
+            organization_id: organizationId,
+            semrush_sub_workspace_id: 'sub-ws-1',
+          },
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(selectStub).to.have.been.calledWithMatch('brands!brand_to_semrush_projects_brand_id_fkey!inner');
+      expect(eqStub).to.have.been.calledWith('brands.organization_id', organizationId);
+      expect(isStub).to.have.been.calledWith('deleted_at', null);
+      expect(results).to.deep.equal([{
+        brandId: mockRecord.brandId,
+        semrushProjectId: mockRecord.semrushProjectId,
+        geoTargetId: mockRecord.geoTargetId,
+        languageCode: mockRecord.languageCode,
+        siteId: 'a1b2c3d4-0000-4000-8000-000000000002',
+        organizationId,
+        semrushSubWorkspaceId: 'sub-ws-1',
+      }]);
+    });
+
+    it('does not filter tombstones when includeDeleted is true', async () => {
+      const { isStub, orderStub } = setupPostgrestChain({ data: [], error: null });
+
+      await instance.allByOrganizationId(organizationId, { includeDeleted: true });
+
+      expect(isStub).to.not.have.been.called;
+      expect(orderStub).to.have.been.calledWith('brand_id');
+    });
+
+    it('defaults null site_id / missing brands embed to null in the DTO', async () => {
+      setupPostgrestChain({
+        data: [{
+          brand_id: mockRecord.brandId,
+          semrush_project_id: mockRecord.semrushProjectId,
+          semrush_location_id: mockRecord.geoTargetId,
+          language: mockRecord.languageCode,
+          site_id: null,
+          brands: null,
+        }],
+        error: null,
+      });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results[0].siteId).to.be.null;
+      expect(results[0].organizationId).to.be.null;
+      expect(results[0].semrushSubWorkspaceId).to.be.null;
+    });
+
+    it('returns an empty array when no rows exist', async () => {
+      setupPostgrestChain({ data: [], error: null });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('returns an empty array when data is null', async () => {
+      setupPostgrestChain({ data: null, error: null });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.deep.equal([]);
+    });
+
+    it('paginates when results exceed page size', async () => {
+      const page1 = Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        brand_id: `brand-${i}`,
+        semrush_project_id: `proj-${i}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
+      }));
+      const page2 = [{
+        brand_id: `brand-${DEFAULT_PAGE_SIZE}`,
+        semrush_project_id: `proj-${DEFAULT_PAGE_SIZE}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
+      }];
+
+      const rangeStub = sinon.stub();
+      rangeStub.onFirstCall().resolves({ data: page1, error: null });
+      rangeStub.onSecondCall().resolves({ data: page2, error: null });
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.have.lengthOf(DEFAULT_PAGE_SIZE + 1);
+      expect(rangeStub).to.have.been.calledTwice;
+      expect(rangeStub.firstCall.args).to.deep.equal([0, DEFAULT_PAGE_SIZE - 1]);
+      // eslint-disable-next-line max-len
+      expect(rangeStub.secondCall.args).to.deep.equal([DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE * 2 - 1]);
+    });
+
+    it('truncates at the MAX_ORG_ROWS safety cap and logs a warning instead of paginating forever', async () => {
+      const MAX_ORG_ROWS = 50_000;
+      const fullPage = () => Array.from({ length: DEFAULT_PAGE_SIZE }, (_, i) => ({
+        brand_id: `brand-${i}`,
+        semrush_project_id: `proj-${i}`,
+        semrush_location_id: 2840,
+        language: 'en',
+        site_id: null,
+        brands: { organization_id: organizationId, semrush_sub_workspace_id: null },
+      }));
+      // Every page is a FULL page, so without the cap this loop never
+      // terminates on its own (data.length >= DEFAULT_PAGE_SIZE forever).
+      const rangeStub = sinon.stub().callsFake(async () => ({ data: fullPage(), error: null }));
+      const orderStub = sinon.stub();
+      orderStub.returns({ range: rangeStub, order: orderStub });
+      const isStub = sinon.stub().returns({ order: orderStub });
+      const eqStub = sinon.stub().returns({ is: isStub, order: orderStub });
+      const selectStub = sinon.stub().returns({ eq: eqStub });
+      instance.postgrestService.from = sinon.stub().returns({ select: selectStub });
+
+      const results = await instance.allByOrganizationId(organizationId);
+
+      expect(results).to.have.lengthOf(MAX_ORG_ROWS);
+      expect(rangeStub.callCount).to.equal(MAX_ORG_ROWS / DEFAULT_PAGE_SIZE);
+      expect(mockLogger.warn).to.have.been.calledOnce;
+      expect(mockLogger.warn.firstCall.args[0]).to.include(`truncated at ${MAX_ORG_ROWS} rows`);
+    });
+
+    it('throws DataAccessError when organizationId is missing', async () => {
+      await expect(instance.allByOrganizationId(null))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+      await expect(instance.allByOrganizationId(''))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required');
+    });
+
+    it('throws DataAccessError when organizationId is not a valid UUID', async () => {
+      await expect(instance.allByOrganizationId('not-a-uuid'))
+        .to.be.rejectedWith(DataAccessError, 'organizationId is required and must be a valid UUID');
+    });
+
+    it('throws DataAccessError on PostgREST error', async () => {
+      setupPostgrestChain({ data: null, error: { message: 'boom' } });
+
+      await expect(instance.allByOrganizationId(organizationId))
+        .to.be.rejectedWith(DataAccessError, 'Failed to query mapping rows by organization');
     });
   });
 });

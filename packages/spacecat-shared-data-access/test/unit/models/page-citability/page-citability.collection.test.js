@@ -13,6 +13,7 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import sinonChai from 'sinon-chai';
+import sinon from 'sinon';
 
 import PageCitability from '../../../../src/models/page-citability/page-citability.model.js';
 
@@ -61,6 +62,29 @@ describe('PageCitabilityCollection', () => {
       expect(instance.log).to.equal(mockLogger);
 
       expect(model).to.be.an('object');
+    });
+  });
+
+  describe('create', () => {
+    it('delegates to super.create upserting on the unique url column', async () => {
+      // Stub BaseCollection.prototype.create (the super) to capture the delegation args.
+      const prototype = Object.getPrototypeOf(Object.getPrototypeOf(instance));
+      const superCreateStub = prototype.create;
+      const created = { record: mockRecord };
+      const createSpy = sinon.stub().resolves(created);
+      prototype.create = createSpy;
+
+      try {
+        const result = await instance.create(mockRecord);
+
+        expect(result).to.equal(created);
+        expect(createSpy).to.have.been.calledOnceWithExactly(
+          mockRecord,
+          { upsert: true, onConflict: 'url' },
+        );
+      } finally {
+        prototype.create = superCreateStub;
+      }
     });
   });
 

@@ -12,6 +12,8 @@
 
 // siteId values reference sites.fixture.js
 // asyncJobId values reference async-jobs.fixture.js
+// Lifecycle fields started_at / result / error live on async_jobs only
+// (SITES-47254) — fetched via getAsyncJob() when needed.
 const preflights = [
   {
     preflightId: 'a1b2c3d4-0001-4000-8000-000000000001',
@@ -22,7 +24,6 @@ const preflights = [
     createdBy: { email: 'user1@example.com', displayName: 'User One' },
     createdAt: '2025-06-01T10:00:00.000Z',
     updatedAt: '2025-06-01T10:00:00.000Z',
-    startedAt: '2025-06-01T10:00:01.000Z',
   },
   {
     preflightId: 'a1b2c3d4-0002-4000-8000-000000000002',
@@ -33,9 +34,7 @@ const preflights = [
     createdBy: { email: 'user2@example.com', displayName: 'User Two' },
     createdAt: '2025-06-01T11:00:00.000Z',
     updatedAt: '2025-06-01T11:05:00.000Z',
-    startedAt: '2025-06-01T11:00:01.000Z',
     endedAt: '2025-06-01T11:05:00.000Z',
-    result: { opportunities: [{ type: 'broken-backlinks', count: 3 }] },
   },
   {
     preflightId: 'a1b2c3d4-0003-4000-8000-000000000003',
@@ -46,9 +45,7 @@ const preflights = [
     createdBy: { email: 'user3@example.com', displayName: 'User Three' },
     createdAt: '2025-06-02T09:00:00.000Z',
     updatedAt: '2025-06-02T09:01:00.000Z',
-    startedAt: '2025-06-02T09:00:01.000Z',
     endedAt: '2025-06-02T09:01:00.000Z',
-    error: { code: 'ERR_SCAN_TIMEOUT', message: 'Scan timed out after 60s' },
   },
 ];
 

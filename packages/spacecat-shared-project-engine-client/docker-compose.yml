@@ -1,0 +1,25 @@
+# Local one-command boot of the Project Engine mock over HTTPS.
+#
+#   docker compose up --build
+#   curl -ksf https://localhost:8443/enterprise/projects/api/__dump | jq
+#
+# Bound to 127.0.0.1 ONLY: the __* control routes are unauthenticated and /__dump dumps the whole
+# store, so the mock must never be reachable off-loopback (see docs/mock-docker.md, "Security").
+name: project-engine-client-mock
+
+services:
+  project-engine-client-mock:
+    build:
+      context: .
+    image: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:local
+    ports:
+      - "127.0.0.1:8443:8443"
+    environment:
+      # Named startup seed: empty-workspace | workspace-with-data (default). See docs/mock-usage.md.
+      MOCK_SEED: ${MOCK_SEED:-workspace-with-data}
+    healthcheck:
+      test: ["CMD", "curl", "-ksf", "https://localhost:8443/enterprise/projects/api/__dump"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s

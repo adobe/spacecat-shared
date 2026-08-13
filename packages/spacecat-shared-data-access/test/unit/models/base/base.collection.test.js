@@ -2322,6 +2322,34 @@ describe('BaseCollection', () => {
       );
       expect(upserted.record.someKey).to.equal('b');
       expect(upsert).to.have.been.calledOnce;
+      // default conflict target is the primary id, mapped to snake_case
+      expect(upsert.firstCall.args[1]).to.deep.equal({ onConflict: 'mock_entity_model_id' });
+    });
+
+    it('upserts on a custom onConflict target mapped through #toDbField in PostgREST mode', async () => {
+      const maybeSingle = stub()
+        .resolves({ data: { some_key: 'c', some_other_key: 11 }, error: null });
+      const select = stub().returns({ maybeSingle });
+      const upsert = stub().returns({ select });
+      const insert = stub().returns({ select });
+      const fromStub = stub().returns({ insert, upsert });
+      const instance = createInstance(
+        { from: fromStub },
+        mockEntityRegistry,
+        richIndexes,
+        mockLogger,
+        richAttributes,
+      );
+
+      const upserted = await instance.create(
+        { someKey: 'c', someOtherKey: 11 },
+        { upsert: true, onConflict: 'someOtherKey' },
+      );
+
+      expect(upserted.record.someKey).to.equal('c');
+      expect(upsert).to.have.been.calledOnce;
+      // onConflict must be mapped from camelCase to snake_case via #toDbField
+      expect(upsert.firstCall.args[1]).to.deep.equal({ onConflict: 'some_other_key' });
     });
 
     it('validates create payload errors for PostgREST mode', async () => {

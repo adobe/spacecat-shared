@@ -108,12 +108,20 @@ export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
 
       if (isObject(routeCapabilities)) {
         const requiredCapability = resolveRouteCapability(context, routeCapabilities);
-        if (!hasText(requiredCapability)) {
+        // A route maps to either a single capability string or an array of acceptable
+        // capabilities, in which case the consumer needs to hold at least one of them
+        // (e.g. a route reachable by both `site:read` and `site:readAll`). Normalize to
+        // an array and drop empty entries so a malformed `[]` / `['']` mapping can't
+        // silently disable the check.
+        const acceptedCapabilities = (
+          Array.isArray(requiredCapability) ? requiredCapability : [requiredCapability]
+        ).filter((cap) => hasText(cap));
+        if (acceptedCapabilities.length === 0) {
           log.warn(`[s2s] Route ${context.pathInfo?.method} ${context.pathInfo?.suffix} is not allowed for S2S consumers`);
           return new Response('Forbidden', { status: 403 });
         }
-        if (!capabilities.includes(requiredCapability)) {
-          log.warn(`[s2s] Consumer "${clientId}" is missing required capability: ${requiredCapability}`);
+        if (!acceptedCapabilities.some((cap) => capabilities.includes(cap))) {
+          log.warn(`[s2s] Consumer "${clientId}" is missing a required capability (one of: ${acceptedCapabilities.join(', ')})`);
           return new Response('Forbidden', { status: 403 });
         }
       }

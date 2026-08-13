@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.3...@adobe/spacecat-shared-html-analyzer-v1.3.4) (2026-07-22)
+
+### Bug Fixes
+
+* add .playkit-player to VIDEO_PLAYER_SELECTORS ([#1838](https://github.com/adobe/spacecat-shared/issues/1838)) ([9339b63](https://github.com/adobe/spacecat-shared/commit/9339b6309305cc75e0653b8e364922c99769766a))
+
+## [@adobe/spacecat-shared-html-analyzer-v1.3.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.2...@adobe/spacecat-shared-html-analyzer-v1.3.3) (2026-06-10)
+
+### Bug Fixes
+
+* add Cookiebot (CybotCookiebotDialog) cookie banner detection ([#1658](https://github.com/adobe/spacecat-shared/issues/1658)) ([3ca78c0](https://github.com/adobe/spacecat-shared/commit/3ca78c0c7c5d448e1b30d6a4e49750f01dcca822))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.3.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.1...@adobe/spacecat-shared-html-analyzer-v1.3.2) (2026-05-29)
 
 ### Bug Fixes

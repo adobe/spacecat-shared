@@ -428,8 +428,25 @@ class BaseCollection {
       this.#logAndThrowError(`Failed to query [${this.entityName}]: query proxy [${options.index}] not found`);
     }
 
-    const orderFields = this.#getOrderFields(indexName, keys);
-    const ascending = options.order === 'asc';
+    const hasExplicitOrderBy = isObject(options.orderBy) && hasText(options.orderBy.attribute);
+    let explicitAscending;
+    if (hasExplicitOrderBy) {
+      const { toDbMap } = this.fieldMaps;
+      if (!Object.prototype.hasOwnProperty.call(toDbMap, options.orderBy.attribute)) {
+        this.#logAndThrowError(`Failed to query [${this.entityName}]: unknown orderBy attribute [${options.orderBy.attribute}]`);
+      }
+      const direction = options.orderBy.direction === undefined
+        ? 'asc'
+        : String(options.orderBy.direction).toLowerCase();
+      if (direction !== 'asc' && direction !== 'desc') {
+        this.#logAndThrowError(`Failed to query [${this.entityName}]: invalid orderBy direction [${options.orderBy.direction}]`);
+      }
+      explicitAscending = direction === 'asc';
+    }
+    const orderFields = hasExplicitOrderBy
+      ? [this.#toDbField(options.orderBy.attribute)]
+      : this.#getOrderFields(indexName, keys);
+    const ascending = hasExplicitOrderBy ? explicitAscending : options.order === 'asc';
     let query = this.postgrestService
       .from(this.tableName)
       .select(select);
@@ -731,7 +748,7 @@ class BaseCollection {
     return this.#queryByIndexKeys(keys, { ...options, limit: 1 });
   }
 
-  async create(item, { upsert = false } = {}) {
+  async create(item, { upsert = false, onConflict } = {}) {
     if (!isNonEmptyObject(item)) {
       const message = `Failed to create [${this.entityName}]: data is required`;
       this.log.error(message);
@@ -751,7 +768,7 @@ class BaseCollection {
 
       const prepared = this.#prepareItem(item);
       const payload = this.#toDbRecord(prepared);
-      const conflictKey = this.#toDbField(this.idName);
+      const conflictKey = this.#toDbField(onConflict ?? this.idName);
 
       let query = this.postgrestService.from(this.tableName);
       query = upsert ? query.upsert(payload, { onConflict: conflictKey }) : query.insert(payload);

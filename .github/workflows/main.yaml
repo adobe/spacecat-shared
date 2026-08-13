@@ -51,18 +51,18 @@ jobs:
           persist-credentials: 'false'
 
       - name: Verify SR_NO_NPM_AUTH guard consistency
-        # The @semantic-release/npm gate (process.env.SR_NO_NPM_AUTH === 'true') must
-        # stay consistent across all .releaserc.cjs files while the workflow's
-        # SR_NO_NPM_AUTH env var is declared. After OIDC publishing is verified working
-        # (per SITES-42702 rollback policy: 2 successful releases), the cleanup PR
-        # atomically removes (a) the env var declaration below, (b) the strict guard
-        # from every .releaserc.cjs. Phase is auto-detected — no marker file required.
+        # @semantic-release/npm must be skipped in the Test-job dry-run: that job has no
+        # npm publish auth (OIDC works only in the release job, which has id-token: write
+        # + the npm-publish environment), so the plugin's verifyConditions npm-whoami would
+        # fail here. The skip is driven by SR_NO_NPM_AUTH: 'true' on the dry-run step below,
+        # gated in every .releaserc.cjs. This is PERMANENT, not a bootstrap shim — #1592
+        # added SR_NO_NPM_AUTH in the same change that removed NPM_TOKEN from the dry-run.
+        # This step enforces that the env var AND the guard in every .releaserc.cjs stay
+        # present; neither may be removed (doing so red-lines the dry-run on every PR).
         #
-        # Phase detection uses a YAML-key-anchored regex on the SR_NO_NPM_AUTH env var
-        # declaration. The pattern (indented key + 'true' | "true" | true) is robust to
-        # quote-style reformatting from Prettier/yamllint and is syntactically distinct
-        # from the JS strict-equality this step looks for in configs, so it cannot
-        # self-reference. The JS guard pattern likewise accepts both quote styles.
+        # The anchored regex (indented key + 'true' | "true" | true) is robust to quote-style
+        # reformatting from Prettier/yamllint and is syntactically distinct from the JS
+        # strict-equality this step looks for in configs, so it cannot self-reference.
         run: |
           set -euo pipefail
           shopt -s nullglob
@@ -79,33 +79,29 @@ jobs:
             [ -f "$f" ] || { echo "FAIL: expected config not found or not a regular file: $f"; exit 1; }
           done
 
-          # Phase 1 anchor: YAML mapping `<indent>SR_NO_NPM_AUTH: 'true' | "true" | true`
-          # at end-of-value (no trailing chars that would denote a different key/value).
-          if grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+('true'|\"true\"|true)[[:space:]]*\$" .github/workflows/main.yaml; then
-            # Phase 1 (shim active): every .releaserc.cjs must include the strict guard.
-            # Accept both JS quote styles so Prettier reformats don't cause spurious fails.
-            missing=$(grep -L -E "SR_NO_NPM_AUTH === ['\"]true['\"]" "${files[@]}" || true)
-            if [ -n "$missing" ]; then
-              echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
-              echo "$missing"
-              echo ""
-              echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
-              echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
-              exit 1
-            fi
-          else
-            # Phase 2 (shim removed from workflow): no .releaserc.cjs may still reference
-            # SR_NO_NPM_AUTH. Catches a partial cleanup that leaves leftover guards in
-            # some configs after the env var was removed.
-            leftover=$(grep -l "SR_NO_NPM_AUTH" "${files[@]}" || true)
-            if [ -n "$leftover" ]; then
-              echo "FAIL: SR_NO_NPM_AUTH removed from workflow env but still referenced in:"
-              echo "$leftover"
-              echo ""
-              echo "Cleanup is partial. Remove every SR_NO_NPM_AUTH reference from these"
-              echo "files to complete the OIDC bootstrap cleanup."
-              exit 1
-            fi
+          # The SR_NO_NPM_AUTH skip is permanent (see comment above). Enforce BOTH legs:
+          # the workflow env var must stay declared, and every .releaserc.cjs must keep the
+          # matching guard. Removing either breaks the dry-run.
+          #
+          # Anchor: YAML mapping `<indent>SR_NO_NPM_AUTH: 'true' | "true" | true` at
+          # end-of-value (no trailing chars that would denote a different key/value).
+          if ! grep -qE "^[[:space:]]+SR_NO_NPM_AUTH:[[:space:]]+('true'|\"true\"|true)[[:space:]]*\$" .github/workflows/main.yaml; then
+            echo "FAIL: SR_NO_NPM_AUTH: 'true' is missing from the dry-run step env."
+            echo ""
+            echo "It is required and permanent — the Test-job dry-run has no npm publish auth,"
+            echo "so @semantic-release/npm must be skipped there. Restore it; do not remove it."
+            exit 1
+          fi
+          # Every .releaserc.cjs must include the strict guard. Accept both JS quote styles
+          # so Prettier reformats don't cause spurious fails.
+          missing=$(grep -L -E "SR_NO_NPM_AUTH === ['\"]true['\"]" "${files[@]}" || true)
+          if [ -n "$missing" ]; then
+            echo "FAIL: SR_NO_NPM_AUTH guard missing in:"
+            echo "$missing"
+            echo ""
+            echo "Each .releaserc.cjs must gate @semantic-release/npm on:"
+            echo "  ...(process.env.SR_NO_NPM_AUTH === 'true' ? [] : [\"@semantic-release/npm\"]),"
+            exit 1
           fi
 
       - name: Set up JDK 17
@@ -121,6 +117,34 @@ jobs:
         env:
           MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
 
+      - name: Verify package-lock.json is in sync
+        # Lockfile drift guard. semantic-release bumps each package's
+        # package.json + CHANGELOG on release but does NOT regenerate the root
+        # package-lock.json (the @semantic-release/git `assets` list in every
+        # .releaserc.cjs is package.json + CHANGELOG.md only). When a released
+        # workspace version later crosses a consumer's exact internal pin (e.g.
+        # cloud-manager-client -> spacecat-shared-ims-client), the lock loses
+        # the matching resolution and EVERY branch then fails `npm ci` with
+        # "Missing <pkg>@<ver> from lock file" — a main-wide breakage that first
+        # surfaces on unrelated PRs. Regenerate the lock with the same pinned
+        # npm (11.13.0, installed by the Setup Node & NPM composite above) and
+        # fail if it changed, so drift is caught on the PR that introduces it.
+        # The Release job keeps main's lock in sync after every release (see the
+        # "Sync package-lock.json after release" step), so on a healthy main
+        # this regeneration is a no-op.
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --package-lock-only --ignore-scripts
+          if ! git diff --quiet -- package-lock.json; then
+            echo "FAIL: package-lock.json is out of sync with the workspace package.json files."
+            echo "      Fix: run 'npm install --package-lock-only' locally and commit package-lock.json."
+            echo "----- drift -----"
+            git --no-pager diff -- package-lock.json
+            exit 1
+          fi
+          echo "OK: package-lock.json is in sync."
+
       - name: Lint, Test, Coverage Upload
         uses: ./.github/actions/lint-test-coverage
         with:
@@ -133,8 +157,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
           # SR_NO_NPM_AUTH skips @semantic-release/npm in the plugin chain (see all .releaserc.cjs).
-          # Remove this env var AND the matching guard from every .releaserc.cjs after 2 successful
-          # OIDC releases on main confirm publishing works without a token (tracked in SITES-42702).
+          # PERMANENT, not a bootstrap shim: this dry-run has no npm publish auth (OIDC is
+          # release-job-only), so @semantic-release/npm's verifyConditions npm-whoami would fail
+          # here without it. #1592 added it in the same change that removed NPM_TOKEN from this
+          # step. Do not remove (the "Verify SR_NO_NPM_AUTH guard consistency" step enforces it).
           SR_NO_NPM_AUTH: 'true'
 
   release:
@@ -200,6 +226,73 @@ jobs:
         run: npm run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+
+      - name: Sync package-lock.json after release
+        # semantic-release bumps the released package versions but does not
+        # regenerate the root package-lock.json (see the Test job's drift
+        # guard). Left unsynced, the lock's resolutions for internal exact pins
+        # go stale the moment a released workspace version crosses a consumer's
+        # pin, breaking `npm ci` on every branch. Regenerate the lock against
+        # the just-published versions and, if it changed, commit it straight to
+        # main with [skip ci] (GitHub natively skips workflow runs for commits
+        # whose head message contains [skip ci], so this triggers no new CI or
+        # release run). Best-effort: this must NEVER fail a release — the
+        # packages are already published and the Test-job drift guard is the
+        # backstop — hence continue-on-error. If the push loses a race it is
+        # left for the next PR's drift guard to surface.
+        if: success()
+        continue-on-error: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # continue-on-error keeps this step from failing a release, which also
+          # means a failure is otherwise invisible. Surface ANY failure (regen,
+          # commit, or the push+rebase retry) as a workflow ::warning:: + run
+          # summary line so the operator sees it without digging through logs;
+          # the next PR's drift guard is still the backstop (RELEASE-RUNBOOK
+          # Failure mode 7). errexit makes a failed `npm install` an honest red
+          # mark instead of a false "already in sync" — the `if ! git push`
+          # retry below is errexit-safe (the negated condition suppresses it).
+          trap 'echo "::warning title=package-lock sync after release failed::Lockfile sync did not complete; see RELEASE-RUNBOOK Failure mode 7. The next PR drift guard will surface residual drift."; echo "package-lock.json sync after release failed — see RELEASE-RUNBOOK Failure mode 7." >> "$GITHUB_STEP_SUMMARY"' ERR
+          npm install --package-lock-only --ignore-scripts
+          if git diff --quiet -- package-lock.json; then
+            echo "OK: package-lock.json already in sync; nothing to commit."
+            exit 0
+          fi
+          echo "package-lock.json drifted after release; committing a sync commit to main."
+          git config user.name "semantic-release-bot"
+          git config user.email "semantic-release-bot@martynus.net"
+          git add package-lock.json
+          # `chore(release):` subject so the release-job skip guard above also
+          # skips this commit (belt-and-suspenders alongside the native [skip ci]
+          # skip), matching how that guard is documented.
+          git commit -m "chore(release): sync package-lock.json after release [skip ci]"
+          # Authenticate via http.extraHeader (base64 Basic auth) rather than
+          # embedding the token in the remote URL. git echoes the remote URL in
+          # push/pull error output, so a URL-embedded token can leak into logs if
+          # Actions' secret masking misses the exact substring; the header value
+          # is never echoed. Mirrors how actions/checkout injects credentials.
+          # Pre-mask the base64 form (which is NOT auto-masked, being a distinct
+          # string from the raw secret) before it can reach any log line.
+          auth_b64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          echo "::add-mask::${auth_b64}"
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          git_auth() { git -c "http.extraheader=AUTHORIZATION: basic ${auth_b64}" "$@"; }
+          # Releases are serialized (concurrency: npm-publish-main), so a race is
+          # unlikely, but retry once against the latest main just in case. KNOWN
+          # LIMITATION: a SECOND concurrent push landing within this retry window
+          # still loses — by design we do not loop. continue-on-error keeps it
+          # from failing the release, the ERR trap surfaces a ::warning::, and the
+          # residual drift is recovered via the next PR's drift guard +
+          # RELEASE-RUNBOOK Failure mode 7 (the manual lockfile-only PR).
+          if ! git_auth push "${remote}" HEAD:main; then
+            echo "push rejected; rebasing on latest main and retrying once."
+            git_auth pull --rebase "${remote}" main
+            git_auth push "${remote}" HEAD:main
+          fi
+          echo "Pushed package-lock.json sync to main."
 
       - name: Surface failure pointer to release runbook
         # On failure OR in-progress cancellation, write a pointer to the runbook

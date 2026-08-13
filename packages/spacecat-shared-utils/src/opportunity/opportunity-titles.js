@@ -60,6 +60,9 @@ export const OPPORTUNITY_TITLES = {
   // LLMO / content quality
   'llm-blocked': 'LLM Blocked',
   'llm-error-pages': 'LLM Error Pages',
+  'llm-error-pages-404': 'Agentic Traffic 404s Analysis',
+  'llm-error-pages-403': 'Agentic Traffic 403s Analysis',
+  'llm-error-pages-5xx': 'Agentic Traffic 5XXs Analysis',
   faqs: 'FAQs',
   'related-urls': 'Related URLs',
   toc: 'Table of Contents',

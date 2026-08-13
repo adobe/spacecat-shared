@@ -70,6 +70,7 @@ const COOKIE_BANNER_ID_SELECTORS = [
   '#onetrust-consent-sdk', '#onetrust-banner-sdk',
   '#tc-privacy-wrapper',
   '[id^="CybotCookiebot"]',
+  '#CybotCookiebotDialog',
 ];
 
 const COOKIE_BANNER_ARIA_SELECTORS = [
@@ -98,6 +99,7 @@ const VIDEO_PLAYER_SELECTORS = [
   '.jwplayer', // JW Player
   '.mejs-container', // MediaElement.js
   '.flowplayer', // Flowplayer
+  '.playkit-player', // Kaltura PlayKit
 ].join(', ');
 
 /**

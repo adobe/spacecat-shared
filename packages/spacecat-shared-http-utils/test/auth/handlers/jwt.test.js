@@ -331,5 +331,111 @@ describe('SpacecatJWTHandler', () => {
       expect(result.hasScope('read_only_admin')).to.be.true;
       expect(result.hasOrganization(`${orgId}@AdobeId`)).to.be.true;
     });
+
+    describe('payload scopes[] fan-out (SITES-46454)', () => {
+      it('maps an allow-listed scope into AuthInfo so hasScope returns true', async () => {
+        const token = await createToken(createTokenPayload({
+          user_id: 'cross-product-user',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          scopes: ['sites:list:cross_product'],
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        expect(result.hasScope('sites:list:cross_product')).to.be.true;
+      });
+
+      it('ignores an unknown scope and warns', async () => {
+        const token = await createToken(createTokenPayload({
+          user_id: 'unknown-scope-user',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          scopes: ['something:else'],
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        expect(result.hasScope('something:else')).to.be.false;
+        expect(logStub.warn.calledWithMatch(/ignoring unknown payload scope/)).to.be.true;
+      });
+
+      it('refuses to source reserved names from payload scopes[] (admin)', async () => {
+        // is_admin is false; the only way admin could appear on AuthInfo would be via
+        // an illegal payload scopes[] entry. The handler must NOT produce it.
+        const token = await createToken(createTokenPayload({
+          user_id: 'evil-token',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          scopes: ['admin'],
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        expect(result.isAdmin()).to.be.false; // unchanged: is_admin=false
+        const adminScopes = result.getScopes().filter((s) => s.name === 'admin');
+        expect(adminScopes).to.have.lengthOf(0);
+        expect(logStub.warn.calledWithMatch(/ignoring unknown payload scope/)).to.be.true;
+      });
+
+      it('refuses to source reserved names from payload scopes[] (read_only_admin, user)', async () => {
+        const token = await createToken(createTokenPayload({
+          user_id: 'evil-token-2',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          scopes: ['read_only_admin', 'user'],
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        // is_read_only_admin is unset, so read_only_admin must not appear via scopes[]
+        expect(result.hasScope('read_only_admin')).to.be.false;
+        // The 'user' scope still appears, but only from the tenant fan-out (with its
+        // domains/subScopes shape) — not from the bare name in payload.scopes[].
+        const userScopes = result.getScopes().filter((s) => s.name === 'user');
+        expect(userScopes).to.have.lengthOf(1);
+        expect(userScopes[0]).to.have.property('domains');
+      });
+
+      it('handles missing/empty scopes claim without error', async () => {
+        const token = await createToken(createTokenPayload({
+          user_id: 'no-scopes-user',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          // no scopes claim
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        expect(result.hasScope('sites:list:cross_product')).to.be.false;
+      });
+
+      it('drops non-string entries with a warn (defensive)', async () => {
+        const token = await createToken(createTokenPayload({
+          user_id: 'non-string-user',
+          is_admin: false,
+          tenants: [{ id: 'org-1', subServices: [] }],
+          scopes: [null, 42, 'sites:list:cross_product'],
+        }));
+        context.pathInfo = { headers: { authorization: `Bearer ${token}` } };
+
+        const result = await handler.checkAuth({}, context);
+
+        expect(result).to.be.instanceof(AuthInfo);
+        // Only the valid entry survives.
+        expect(result.hasScope('sites:list:cross_product')).to.be.true;
+        expect(logStub.warn.callCount).to.be.at.least(2);
+      });
+    });
   });
 });

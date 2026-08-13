@@ -52,6 +52,10 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
   .addIndex(
     { composite: ['organizationId'] },
     { composite: ['updatedAt'] },
+  )
+  .addIndex(
+    { composite: ['externalUserId'] },
+    { composite: ['updatedAt'] },
   );
 
 export default schema.build();

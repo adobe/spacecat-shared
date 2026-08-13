@@ -35,10 +35,7 @@ describe('PreflightModel', () => {
       url: 'https://www.example.com/page1',
       status: 'IN_PROGRESS',
       createdBy: { email: 'user1@example.com', displayName: 'User One' },
-      startedAt: '2025-06-01T10:00:01.000Z',
       endedAt: null,
-      result: null,
-      error: null,
       createdAt: '2025-06-01T10:00:00.000Z',
       updatedAt: '2025-06-01T10:00:00.000Z',
     };
@@ -115,17 +112,6 @@ describe('PreflightModel', () => {
     });
   });
 
-  describe('startedAt', () => {
-    it('gets startedAt', () => {
-      expect(instance.getStartedAt()).to.equal('2025-06-01T10:00:01.000Z');
-    });
-
-    it('sets startedAt', () => {
-      instance.setStartedAt('2025-06-01T10:00:05.000Z');
-      expect(instance.getStartedAt()).to.equal('2025-06-01T10:00:05.000Z');
-    });
-  });
-
   describe('endedAt', () => {
     it('gets endedAt', () => {
       expect(instance.getEndedAt()).to.be.null;
@@ -134,30 +120,6 @@ describe('PreflightModel', () => {
     it('sets endedAt', () => {
       instance.setEndedAt('2025-06-01T10:05:00.000Z');
       expect(instance.getEndedAt()).to.equal('2025-06-01T10:05:00.000Z');
-    });
-  });
-
-  describe('result', () => {
-    it('gets result', () => {
-      expect(instance.getResult()).to.be.null;
-    });
-
-    it('sets result', () => {
-      const result = { opportunities: [{ type: 'broken-backlinks', count: 3 }] };
-      instance.setResult(result);
-      expect(instance.getResult()).to.deep.equal(result);
-    });
-  });
-
-  describe('error', () => {
-    it('gets error', () => {
-      expect(instance.getError()).to.be.null;
-    });
-
-    it('sets error', () => {
-      const error = { code: 'ERR_SCAN_TIMEOUT', message: 'Scan timed out after 60s' };
-      instance.setError(error);
-      expect(instance.getError()).to.deep.equal(error);
     });
   });
 

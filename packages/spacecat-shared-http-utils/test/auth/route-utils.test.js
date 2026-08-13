@@ -13,7 +13,9 @@
 import { expect } from 'chai';
 
 import {
+  extractParamNamesInOrder,
   extractRouteParams,
+  findMatchedRouteKey,
   guardNonEmptyRouteCapabilities,
   resolveRouteCapability,
 } from '../../src/auth/route-utils.js';
@@ -214,6 +216,58 @@ describe('route-utils', () => {
     it('throws when routeCapabilities is a string', () => {
       expect(() => guardNonEmptyRouteCapabilities('testWrapper', 'GET /sites'))
         .to.throw('testWrapper: routeCapabilities must be a non-empty object');
+    });
+  });
+
+  describe('findMatchedRouteKey', () => {
+    const routeMap = {
+      'GET /sites': 'site:read',
+      'GET /sites/:siteId': 'site:read',
+      'POST /sites/:siteId/audits': 'audit:write',
+    };
+
+    it('returns the exact-match key when present', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal('GET /sites');
+    });
+
+    it('returns the matched parameterised key', () => {
+      const context = { pathInfo: { method: 'GET', suffix: '/sites/abc-123' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal('GET /sites/:siteId');
+    });
+
+    it('returns null when no key matches', () => {
+      const context = { pathInfo: { method: 'DELETE', suffix: '/sites/abc-123' } };
+      expect(findMatchedRouteKey(context, routeMap)).to.equal(null);
+    });
+
+    it('returns null when method is missing', () => {
+      expect(findMatchedRouteKey({ pathInfo: { suffix: '/sites' } }, routeMap)).to.equal(null);
+    });
+
+    it('returns null when path is missing', () => {
+      expect(findMatchedRouteKey({ pathInfo: { method: 'GET' } }, routeMap)).to.equal(null);
+    });
+  });
+
+  describe('extractParamNamesInOrder', () => {
+    it('returns param names in declaration order', () => {
+      expect(extractParamNamesInOrder('GET /v2/orgs/:spaceCatId/brands/:brandId'))
+        .to.deep.equal(['spaceCatId', 'brandId']);
+    });
+
+    it('returns an empty array when the route has no params', () => {
+      expect(extractParamNamesInOrder('GET /sites')).to.deep.equal([]);
+    });
+
+    it('returns an empty array for non-string input', () => {
+      expect(extractParamNamesInOrder(undefined)).to.deep.equal([]);
+      expect(extractParamNamesInOrder(null)).to.deep.equal([]);
+      expect(extractParamNamesInOrder(42)).to.deep.equal([]);
+    });
+
+    it('returns an empty array for a string without "METHOD /path" shape', () => {
+      expect(extractParamNamesInOrder('no-space-here')).to.deep.equal([]);
     });
   });
 });

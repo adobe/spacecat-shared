@@ -139,6 +139,44 @@ describe('ImsClient', () => {
       expect(orgDetails.admins).to.have.length(2);
       expect(orgDetails.admins[0].email).to.equal('test-user-1@example.com');
       expect(orgDetails.admins[1].email).to.equal('test-user-2@example.com');
+
+      expect(orgDetails.groups).to.deep.equal([
+        { ident: GROUP_1_ID, name: 'Administrators', role: 'GRP_ADMIN' },
+        { ident: GROUP_2_ID, name: 'Developers', role: 'GRP_ADMIN' },
+      ]);
+    });
+
+    it('normalizes the org group catalog and drops entries with no ident', async () => {
+      mockImsTokenResponse()
+        // Mock the request for the organization's product context
+        .post('/ims/fetch_pc_by_org/v1')
+        .reply(200, IMS_FETCH_PC_BY_ORG_RESPONSE)
+        // Mock the request for the organization's details — non-admin groups so no
+        // member endpoints are hit; one group names via `groupName`, the other via `name`,
+        // and a third has no ident so it must be excluded from the catalog
+        .get(`/ims/organizations/${testOrgId}/v2`)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, {
+          orgName: 'Example Org Human Readable Name',
+          orgType: 'Enterprise',
+          countryCode: 'CA',
+          groups: [
+            { groupName: 'Developers', role: 'GRP_MEMBER', ident: '111' },
+            { name: 'Marketing', role: 'GRP_MEMBER', ident: '222' },
+            // No ident — must be filtered out of the returned catalog
+            { groupName: 'Ghost Group', role: 'GRP_MEMBER' },
+          ],
+        });
+
+      const orgDetails = await client.getImsOrganizationDetails(testOrgId);
+
+      expect(orgDetails.admins).to.be.an('array');
+      expect(orgDetails.admins).to.have.length(0);
+      // `groupName` and `name` both map to `name`; the identless group is dropped
+      expect(orgDetails.groups).to.deep.equal([
+        { ident: '111', name: 'Developers', role: 'GRP_MEMBER' },
+        { ident: '222', name: 'Marketing', role: 'GRP_MEMBER' },
+      ]);
     });
 
     it('should handle IMS service token request failures', async () => {
@@ -150,6 +188,56 @@ describe('ImsClient', () => {
         .reply(500);
 
       await expect(client.getImsOrganizationDetails('123456@AdobeOrg')).to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 500');
+    });
+
+    it('v2 mint failure includes error field from response body when present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_grant',
+          error_description: 'Authorization code expired',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 400 - invalid_grant');
+    });
+
+    it('v2 mint failure includes message field from response body when error field absent', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(401, {
+          message: 'Client credentials rejected',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401 - Client credentials rejected');
+    });
+
+    it('v2 mint failure prefers error field over message field when both present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_grant',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 401 - invalid_grant');
+    });
+
+    it('v2 mint failure with non-JSON response body falls back to status-only message', async () => {
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v4')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getImsOrganizationDetails('123456@AdobeOrg'))
+        .to.be.rejectedWith('IMS getServiceAccessToken request failed with status: 502');
     });
 
     it('should handle IMS service token request v3', async () => {
@@ -193,6 +281,79 @@ describe('ImsClient', () => {
         .reply(500);
 
       await expect(client.getServiceAccessTokenV3()).to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 500');
+    });
+
+    it('v3 mint failure includes error field from response body when present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_scope',
+          error_description: 'Invalid scope value',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 400 - invalid_scope');
+    });
+
+    it('v3 mint failure includes message field from response body when error field absent', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(403, {
+          message: 'Client not authorized for client_credentials grant',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 403 - Client not authorized for client_credentials grant');
+    });
+
+    it('v3 mint failure prefers error field over message field when both are present', async () => {
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_client',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 401 - invalid_client');
+    });
+
+    it('v3 mint failure with non-JSON response body falls back to status-only message', async () => {
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getServiceAccessTokenV3())
+        .to.be.rejectedWith('IMS getServiceAccessTokenV3 request failed with status: 502');
+    });
+
+    it('v3 mint failure truncates response-body detail at 200 chars', async () => {
+      // Defense-in-depth bound on the appended error detail per @solaris007
+      // review — if IMS ever returns an unexpectedly verbose `error` or
+      // `message`, the thrown message stays bounded. Tests the v3 path as a
+      // proxy for all three mint sites (logic is identical).
+      const overlongDetail = 'x'.repeat(500);
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, { error: overlongDetail });
+
+      try {
+        await client.getServiceAccessTokenV3();
+        expect.fail('expected getServiceAccessTokenV3 to throw');
+      } catch (e) {
+        const truncatedDetail = 'x'.repeat(200);
+        expect(e.message).to.equal(
+          `IMS getServiceAccessTokenV3 request failed with status: 400 - ${truncatedDetail}`,
+        );
+        expect(e.message).to.not.include('x'.repeat(201));
+      }
     });
 
     it('should handle IMS product context request failures', async () => {
@@ -255,6 +416,7 @@ describe('ImsClient', () => {
       const orgDetails = await client.getImsOrganizationDetails(testOrgId2);
       expect(orgDetails.admins).to.be.an('array');
       expect(orgDetails.admins).to.have.length(0);
+      expect(orgDetails.groups).to.deep.equal([]);
     });
 
     it('should handle IMS organizations with no users in a group', async () => {
@@ -279,6 +441,128 @@ describe('ImsClient', () => {
       const orgDetails = await client.getImsOrganizationDetails(testOrgId);
       expect(orgDetails.admins).to.be.an('array');
       expect(orgDetails.admins).to.have.length(0);
+    });
+  });
+
+  describe('getGroupMembers', () => {
+    const testOrgId = '1234567890ABCDEF12345678@AdobeOrg';
+    const testGroupId = '987654321';
+    const membersPath = `/ims/organizations/${testOrgId}/groups/${testGroupId}/members`;
+    let client;
+
+    beforeEach(() => {
+      client = ImsClient.createFrom(mockContext);
+      client.retryBaseDelayMs = 0;
+    });
+
+    it('throws when imsOrgId is missing', async () => {
+      await expect(client.getGroupMembers('', testGroupId)).to.be.rejectedWith('imsOrgId param is required.');
+    });
+
+    it('throws when groupId is missing', async () => {
+      await expect(client.getGroupMembers(testOrgId, '')).to.be.rejectedWith('groupId param is required.');
+    });
+
+    it('returns the normalized members of the group', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, IMS_FETCH_GROUP_1_MEMBERS_RESPONSE);
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.deep.equal([
+        { email: 'test-user-1@example.com', firstName: 'Test', lastName: 'User 1' },
+      ]);
+    });
+
+    it('falls back to username when a member has no email', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, {
+          items: [
+            { username: 'fallback-user@example.com', firstName: 'Fallback', lastName: 'User' },
+          ],
+        });
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.deep.equal([
+        { email: 'fallback-user@example.com', firstName: 'Fallback', lastName: 'User' },
+      ]);
+    });
+
+    it('filters out members whose email domain is in the ignore list', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, {
+          items: [
+            { email: 'ignored@techacct.adobe.com', firstName: 'Ignored', lastName: 'User' },
+            { email: 'kept@example.com', firstName: 'Kept', lastName: 'User' },
+          ],
+        });
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.deep.equal([
+        { email: 'kept@example.com', firstName: 'Kept', lastName: 'User' },
+      ]);
+    });
+
+    it('filters out a member with neither email nor username', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, {
+          items: [
+            // No email and no username — no usable key, so it is dropped
+            { firstName: 'No', lastName: 'Contact' },
+            { email: 'kept@example.com', firstName: 'Kept', lastName: 'User' },
+          ],
+        });
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.deep.equal([
+        { email: 'kept@example.com', firstName: 'Kept', lastName: 'User' },
+      ]);
+    });
+
+    it('de-dupes members with duplicate emails', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        .reply(200, {
+          items: [
+            { email: 'dupe@example.com', firstName: 'First', lastName: 'Entry' },
+            { email: 'dupe@example.com', firstName: 'Second', lastName: 'Entry' },
+          ],
+        });
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.have.length(1);
+      expect(members[0].email).to.equal('dupe@example.com');
+      // Later entries overwrite earlier ones with the same email
+      expect(members[0].firstName).to.equal('Second');
+    });
+
+    it('returns an empty array when the members payload is malformed', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query({ client_id: mockContext.env.IMS_CLIENT_ID })
+        // `items` is present but not an array (malformed IMS response)
+        .reply(200, { items: { not: 'an array' } });
+
+      const members = await client.getGroupMembers(testOrgId, testGroupId);
+      expect(members).to.deep.equal([]);
+    });
+
+    it('throws when the members endpoint responds non-ok', async () => {
+      mockImsTokenResponse()
+        .get(membersPath)
+        .query(true)
+        .reply(404);
+
+      await expect(client.getGroupMembers(testOrgId, testGroupId))
+        .to.be.rejectedWith('IMS getUsersByImsGroupId request failed with status: 404');
     });
   });
 
@@ -346,6 +630,60 @@ describe('ImsClient', () => {
       await expect(client.getServicePrincipalAccessToken(orgId)).to.be.rejectedWith(
         'IMS getServicePrincipalAccessToken request failed with status: 500',
       );
+    });
+
+    it('service-principal mint failure includes error field from response body when present', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(400, {
+          error: 'invalid_scope',
+          error_description: 'Invalid scope value',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 400 - invalid_scope');
+    });
+
+    it('service-principal mint failure includes message field from response body when error field absent', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(403, {
+          message: 'Org-scoped grant not configured',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 403 - Org-scoped grant not configured');
+    });
+
+    it('service-principal mint failure prefers error field over message field when both present', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .reply(401, {
+          error: 'invalid_client',
+          message: 'This should be ignored',
+        });
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 401 - invalid_client');
+    });
+
+    it('service-principal mint failure with non-JSON response body falls back to status-only message', async () => {
+      const orgId = '1234567890ABCDEF12345678@AdobeOrg';
+      // 5xx responses retry — mock all 3 attempts
+      nock(`https://${DUMMY_HOST}`)
+        .post('/ims/token/v3')
+        .query(true)
+        .times(3)
+        .reply(502, 'Bad Gateway');
+
+      await expect(client.getServicePrincipalAccessToken(orgId))
+        .to.be.rejectedWith('IMS getServicePrincipalAccessToken request failed with status: 502');
     });
   });
 

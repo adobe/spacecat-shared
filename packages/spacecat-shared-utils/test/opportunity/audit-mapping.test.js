@@ -38,6 +38,14 @@ describe('audit-mapping', () => {
         'form-accessibility',
       ]);
     });
+
+    it('maps llm-error-pages to the three bucket subtypes', () => {
+      expect(AUDIT_OPPORTUNITY_MAP['llm-error-pages']).to.deep.equal([
+        'llm-error-pages-404',
+        'llm-error-pages-403',
+        'llm-error-pages-5xx',
+      ]);
+    });
   });
 
   describe('getOpportunitiesForAudit', () => {
@@ -67,6 +75,12 @@ describe('audit-mapping', () => {
 
     it('returns empty array for an opportunity with no matching audit', () => {
       expect(getAuditsForOpportunity('nonexistent-opportunity')).to.deep.equal([]);
+    });
+
+    it('resolves llm-error-pages subtype back to the parent audit', () => {
+      expect(getAuditsForOpportunity('llm-error-pages-404')).to.deep.equal(['llm-error-pages']);
+      expect(getAuditsForOpportunity('llm-error-pages-403')).to.deep.equal(['llm-error-pages']);
+      expect(getAuditsForOpportunity('llm-error-pages-5xx')).to.deep.equal(['llm-error-pages']);
     });
   });
 

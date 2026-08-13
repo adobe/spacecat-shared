@@ -1,0 +1,14 @@
+# Caddy terminates TLS on :8443 with the build-time self-signed cert and reverse-proxies to the
+# plain-HTTP Counterfact mock on 127.0.0.1:4010 (mock/run.js default MOCK_PORT). This is the only
+# reason Caddy is in the image: api-service's transport requires an https origin.
+{
+	# No automatic HTTPS / ACME — we serve an explicit baked cert on a fixed port.
+	auto_https off
+	# Disable the admin API; nothing should reconfigure this server at runtime.
+	admin off
+}
+
+https://:8443 {
+	tls /etc/tls/cert.pem /etc/tls/key.pem
+	reverse_proxy 127.0.0.1:4010
+}

@@ -12,6 +12,13 @@
 
 import type { BaseCollection, BaseModel } from '../base';
 
+// Note on nullable return types: `postgrest.utils.js::normalizeModelValue()`
+// maps DB NULL → JS `undefined` (the key is skipped on `this.record`
+// entirely), so auto-generated getters return `T | undefined` — never
+// `T | null` — for nullable columns. Callers checking `=== null` on these
+// will silently miss the unfinished-job branch. Existing declarations
+// that read `... | null` predate this PR; the lifecycle additions below
+// match the runtime contract.
 export interface AsyncJob extends BaseModel {
     getStatus(): string;
     getResultLocation(): string;
@@ -20,6 +27,8 @@ export interface AsyncJob extends BaseModel {
     getError(): { code: string; message: string; details?: object } | null;
     getMetadata(): object | null;
     getRecordExpiressAt(): number;
+    getStartedAt(): string | undefined;
+    getEndedAt(): string | undefined;
     setStatus(status: string): void;
     setResultLocation(location: string): void;
     setResultType(type: string): void;
@@ -27,6 +36,8 @@ export interface AsyncJob extends BaseModel {
     setError(error: { code: string; message: string; details?: object }): void;
     setMetadata(metadata: object): void;
     setExpiresAt(expiresAt: number): void;
+    setStartedAt(startedAt: string): void;
+    setEndedAt(endedAt: string): void;
 }
 
 export interface AsyncJobCollection extends BaseCollection<AsyncJob> {

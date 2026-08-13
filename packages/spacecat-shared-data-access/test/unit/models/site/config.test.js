@@ -13,7 +13,7 @@
 import { expect } from 'chai';
 
 import {
-  Config, validateConfiguration,
+  Config, validateConfiguration, CDN_LOGS_FILTER_KEYS,
 } from '../../../../src/models/site/config.js';
 import { registerLogger } from '../../../../src/util/logger-registry.js';
 
@@ -174,16 +174,20 @@ describe('Config Tests', () => {
       expect(config.getHandlers()).to.be.undefined;
     });
 
-    it('logs error when validation fails and logger is available', () => {
+    it('logs a warning when validation fails and logger is available', () => {
       // Create a mock logger
       const mockLogger = {};
 
-      // Spy on the logger error method
-      let loggedError = null;
+      // Spy on the logger warn method (recoverable fallback -> warn, not error)
+      let loggedWarning = null;
       let loggedData = null;
-      mockLogger.error = (message, data) => {
-        loggedError = message;
+      let errorCalled = false;
+      mockLogger.warn = (message, data) => {
+        loggedWarning = message;
         loggedData = data;
+      };
+      mockLogger.error = () => {
+        errorCalled = true;
       };
 
       // Register the mock logger
@@ -214,8 +218,9 @@ describe('Config Tests', () => {
         },
       });
 
-      // Should have logged the error
-      expect(loggedError).to.equal('Site configuration validation failed, using provided data');
+      // Should have logged a warning (recoverable fallback), not an error
+      expect(errorCalled).to.equal(false);
+      expect(loggedWarning).to.equal('Site configuration validation failed, using provided data');
       expect(loggedData).to.have.property('error');
       expect(loggedData).to.have.property('invalidConfig');
       expect(loggedData.invalidConfig).to.deep.equal(invalidData);
@@ -1879,6 +1884,37 @@ describe('Config Tests', () => {
       });
     });
 
+    describe('updateLlmoShowWww', () => {
+      it('should create llmo config if it does not exist and set showWww', () => {
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.brand).to.be.undefined;
+      });
+
+      it('should update showWww when llmo config already exists', () => {
+        // First create llmo config
+        config.updateLlmoConfig('/old/folder', 'oldBrand');
+
+        // Then update showWww
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+        expect(llmoConfig.dataFolder).to.equal('/old/folder'); // Should preserve existing dataFolder
+      });
+
+      it('should update showWww multiple times', () => {
+        config.updateLlmoShowWww(true);
+        config.updateLlmoShowWww(false);
+        config.updateLlmoShowWww(true);
+
+        const llmoConfig = config.getLlmoConfig();
+        expect(llmoConfig.showWww).to.equal(true);
+      });
+    });
+
     describe('getLlmoHumanQuestions', () => {
       it('should return undefined when llmo questions do not exist', () => {
         expect(config.getLlmoHumanQuestions()).to.be.undefined;
@@ -2573,7 +2609,7 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/', '/content/'] },
+            { key: 'url', value: ['/api/', '/content/'] },
           ],
         },
       };
@@ -2587,8 +2623,8 @@ describe('Config Tests', () => {
           dataFolder: '/test',
           brand: 'testBrand',
           cdnlogsFilter: [
-            { key: 'path', value: ['/api/'], type: 'include' },
-            { key: 'status_code', value: ['404'], type: 'exclude' },
+            { key: 'url', value: ['/api/'], type: 'include' },
+            { key: 'host', value: ['example.com'], type: 'exclude' },
           ],
         },
       };
@@ -2614,11 +2650,79 @@ describe('Config Tests', () => {
     it('should be able to update cdnlogsFilter', () => {
       const config = Config();
       const cdnlogsFilter = [
-        { key: 'path', value: ['/api/'], type: 'include' },
-        { key: 'status_code', value: ['200'], type: 'exclude' },
+        { key: 'url', value: ['/api/'], type: 'include' },
+        { key: 'host', value: ['example.com'], type: 'exclude' },
       ];
       config.updateLlmoCdnlogsFilter(cdnlogsFilter);
       expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+
+    it('accepts every allowed cdnlogsFilter key', () => {
+      CDN_LOGS_FILTER_KEYS.forEach((key) => {
+        const config = Config();
+        const cdnlogsFilter = [{ key, value: ['x'], type: 'include' }];
+        config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+        expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+      });
+    });
+
+    it('normalizes an uppercase cdnlogsFilter key to lowercase', () => {
+      const config = Config();
+      config.updateLlmoCdnlogsFilter([
+        { key: 'X_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal([
+        { key: 'x_forwarded_host', value: ['example.com'], type: 'include' },
+      ]);
+    });
+
+    it('rejects a cdnlogsFilter value string that exceeds the length cap', () => {
+      const config = Config();
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: 'url', value: ['a'.repeat(501)], type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter value string at the length cap', () => {
+      const config = Config();
+      const cdnlogsFilter = [{ key: 'url', value: ['a'.repeat(500)], type: 'include' }];
+      config.updateLlmoCdnlogsFilter(cdnlogsFilter);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(cdnlogsFilter);
+    });
+
+    it('rejects a cdnlogsFilter with more than 50 entries', () => {
+      const config = Config();
+      const entries = Array.from({ length: 51 }, () => ({ key: 'url', value: ['x'], type: 'include' }));
+      expect(() => config.updateLlmoCdnlogsFilter(entries)).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter with exactly 50 entries', () => {
+      const config = Config();
+      const entries = Array.from({ length: 50 }, () => ({ key: 'url', value: ['x'], type: 'include' }));
+      config.updateLlmoCdnlogsFilter(entries);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(entries);
+    });
+
+    it('rejects a cdnlogsFilter entry with more than 100 values', () => {
+      const config = Config();
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: 'url', value: Array.from({ length: 101 }, () => 'x'), type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
+    });
+
+    it('accepts a cdnlogsFilter entry with exactly 100 values', () => {
+      const config = Config();
+      const filter = [{ key: 'url', value: Array.from({ length: 100 }, () => 'x'), type: 'include' }];
+      config.updateLlmoCdnlogsFilter(filter);
+      expect(config.getLlmoCdnlogsFilter()).to.deep.equal(filter);
+    });
+
+    it('rejects a cdnlogsFilter key that is not on the allowlist (VULN-37491)', () => {
+      const config = Config();
+      const maliciousKey = "url, '(?i)(x)')) UNION ALL SELECT CONCAT('https://x?s=', CAST(current_schema AS VARCHAR)), CAST(1 AS BIGINT) -- ";
+      expect(() => config.updateLlmoCdnlogsFilter([
+        { key: maliciousKey, value: ['x'], type: 'include' },
+      ])).to.throw('CDN logs filter validation error');
     });
   });
 
@@ -2771,6 +2875,32 @@ describe('Config Tests', () => {
     });
   });
 
+  describe('LLMO Show Www', () => {
+    it('accepts a valid showWww boolean via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: true,
+        },
+      };
+      const validated = validateConfiguration(config);
+      expect(validated.llmo.showWww).to.equal(true);
+    });
+
+    it('rejects a non-boolean showWww value via validateConfiguration', () => {
+      const config = {
+        llmo: {
+          dataFolder: '/test',
+          brand: 'testBrand',
+          showWww: 'not-a-boolean',
+        },
+      };
+      expect(() => validateConfiguration(config))
+        .to.throw(/Configuration validation error: "llmo\.showWww" must be a boolean/);
+    });
+  });
+
   describe('Tokowaka Config', () => {
     it('creates a Config with tokowakaConfig property', () => {
       const data = {
@@ -2845,6 +2975,18 @@ describe('Config Tests', () => {
       const data = {
         edgeOptimizeConfig: {
           enabled: true,
+        },
+      };
+      const config = Config(data);
+      expect(config.getEdgeOptimizeConfig()).to.deep.equal(data.edgeOptimizeConfig);
+    });
+
+    it('creates a Config with edgeOptimizeConfig routingEnabled property', () => {
+      const data = {
+        edgeOptimizeConfig: {
+          opted: 1,
+          routingEnabled: 1700000000000,
+          enabled: 1700000000000,
         },
       };
       const config = Config(data);
@@ -3097,13 +3239,40 @@ describe('Config Tests', () => {
             storeCode: 'main_store',
             storeViewCode: 'default',
             hostName: 'example.com',
-            magentoEndpoint: 'https://magento.example.com/graphql',
-            magentoAPIKey: 'api-key-123',
+            catalogFieldConfig: {
+              name: { enabled: true, maxLength: 50 },
+              description: { enabled: false },
+            },
           },
         },
       };
       const config = Config(data);
       expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('strips legacy magento fields from existing records', () => {
+      const config = Config({
+        commerceLlmoConfig: {
+          store1: {
+            environmentId: 'env-123',
+            websiteCode: 'base',
+            storeCode: 'main_store',
+            storeViewCode: 'default',
+            hostName: 'example.com',
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'api-key-123',
+          },
+        },
+      });
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({
+        store1: {
+          environmentId: 'env-123',
+          websiteCode: 'base',
+          storeCode: 'main_store',
+          storeViewCode: 'default',
+          hostName: 'example.com',
+        },
+      });
     });
 
     it('has undefined commerceLlmoConfig in default config', () => {
@@ -3154,7 +3323,7 @@ describe('Config Tests', () => {
         commerceLlmoConfig: {
           store1: {
             environmentId: 'env-123',
-            magentoEndpoint: 'https://magento.example.com/graphql',
+            hostName: 'example.com',
           },
         },
       });

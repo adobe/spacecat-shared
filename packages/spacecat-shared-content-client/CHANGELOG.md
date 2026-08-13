@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-content-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.9.3...@adobe/spacecat-shared-content-client-v1.10.0) (2026-08-03)
+
+### Features
+
+* **content-client:** dual Google Drive service-account with fallback ([#1849](https://github.com/adobe/spacecat-shared/issues/1849)) ([c18c98e](https://github.com/adobe/spacecat-shared/commit/c18c98e6db617f600c69ec12dbc3de9c069a3c6b)), closes [#72](https://github.com/adobe/spacecat-shared/issues/72)
+
 ## [@adobe/spacecat-shared-content-client-v1.9.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-content-client-v1.9.2...@adobe/spacecat-shared-content-client-v1.9.3) (2026-05-30)
 
 ### Bug Fixes

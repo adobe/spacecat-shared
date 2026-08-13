@@ -13,7 +13,7 @@
 import { execFileSync } from 'child_process';
 import {
   existsSync, mkdirSync, mkdtempSync, readdirSync,
-  readlinkSync, rmSync, statfsSync, writeFileSync,
+  readlinkSync, rmSync, statfsSync, statSync, writeFileSync,
 } from 'fs';
 import os from 'os';
 import path from 'path';
@@ -21,10 +21,13 @@ import { hasText, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
 import { ImsClient } from '@adobe/spacecat-shared-ims-client';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { archiveFolder, extract } from 'zip-lib';
+import yauzl from 'yauzl';
 
 const GIT_BIN = process.env.GIT_BIN_PATH || '/opt/bin/git';
 const CLONE_DIR_PREFIX = 'cm-repo-';
 const PATCH_FILE_PREFIX = 'cm-patch-';
+const DEFAULT_HEADROOM_FACTOR = 1.25;
+const DEFAULT_MAX_ENTRIES = 100_000;
 
 // Per-operation timeout for git commands (clone, push, pull, commit, etc.).
 // Override via GIT_OPERATION_TIMEOUT_MS env var. Defaults to 10 min so large
@@ -49,6 +52,39 @@ export const CM_REPO_TYPE = Object.freeze({
  * and attach the corresponding Basic-auth extraheader scope.
  */
 export const GIT_CLOUD_MANAGER_HOST = 'git.cloudmanager.adobe.com';
+
+/**
+ * Transient-failure retry policy for CM Repo API pull-request creation.
+ * A single retry after a short wait rides out brief 5xx/429/network blips
+ * without masking permanent failures — 4xx responses other than 429 are
+ * treated as permanent and are not retried.
+ */
+const CM_PR_MAX_ATTEMPTS = 2;
+const CM_PR_RETRY_DELAY_MS = 1500;
+
+/** true for HTTP statuses worth retrying (server errors + rate limiting). */
+const isTransientStatus = (status) => status >= 500 || status === 429;
+
+const sleep = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+/**
+ * Extracts the lower-cased hostname from a repository URL, or '' if it cannot
+ * be parsed. Provider detection matches on the hostname (never the path) so a
+ * provider domain embedded in the repo path — e.g.
+ * https://bitbucket.org/team/github.com-mirror — can't be misclassified.
+ *
+ * @param {string} repoUrl - External repository URL
+ * @returns {string} Lower-cased hostname, or '' if unparseable
+ */
+const extractRepoHost = (repoUrl) => {
+  try {
+    return new URL(repoUrl).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+};
 
 /**
  * Returns true for any repo type that tunnels through the CM repo service
@@ -93,6 +129,34 @@ function parseS3Path(s3Path) {
     throw new Error(`Invalid S3 path: ${s3Path}. Expected format: s3://bucket/key`);
   }
   return { bucket: parsed.hostname, key: parsed.pathname.slice(1) };
+}
+
+/**
+ * Reads a ZIP's central directory (metadata only — no decompression) and
+ * returns the total uncompressed size and entry count. Used to size an
+ * extraction before committing disk to it.
+ * @param {string} zipFilePath
+ * @returns {Promise<{ uncompressedBytes: number, entryCount: number }>}
+ */
+function readArchiveExtractedSize(zipFilePath) {
+  return new Promise((resolve, reject) => {
+    yauzl.open(zipFilePath, { lazyEntries: true }, (err, zipfile) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      let uncompressedBytes = 0;
+      let entryCount = 0;
+      zipfile.on('entry', (entry) => {
+        uncompressedBytes += entry.uncompressedSize;
+        entryCount += 1;
+        zipfile.readEntry();
+      });
+      zipfile.on('end', () => resolve({ uncompressedBytes, entryCount }));
+      zipfile.on('error', reject);
+      zipfile.readEntry();
+    });
+  });
 }
 
 export default class CloudManagerClient {
@@ -909,6 +973,13 @@ export default class CloudManagerClient {
     }
 
     const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    // Explicitly pass the ref as the last argument so `git pull` fetches and
+    // merges that branch. Without it, `git pull <url>` merges the remote's
+    // default branch (its HEAD) into the checked-out branch, which can
+    // conflict with — or silently diverge from — the branch we actually want.
+    if (hasText(ref)) {
+      pullArgs.push(ref);
+    }
     // Always pull the parent only — never `--recurse-submodules` — so a
     // submodule failure can't take down the parent pull. Submodules are
     // populated below in a path whose errors are caught and logged.
@@ -941,6 +1012,33 @@ export default class CloudManagerClient {
   }
 
   /**
+   * Throws unless /tmp has room for `requiredBytes * headroomFactor`.
+   * Uses statfsSync `bavail` (blocks usable by unprivileged processes),
+   * which is the space actually writable, not the raw free count.
+   * @param {number} requiredBytes - Bytes the operation needs on /tmp.
+   * @param {object} [opts]
+   * @param {number} [opts.headroomFactor=1.25] - fs overhead + git pull growth.
+   */
+  // eslint-disable-next-line class-methods-use-this
+  assertTmpSpace(requiredBytes, { headroomFactor = DEFAULT_HEADROOM_FACTOR } = {}) {
+    if (!Number.isFinite(requiredBytes) || requiredBytes <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid requiredBytes (${requiredBytes})`);
+    }
+    if (!Number.isFinite(headroomFactor) || headroomFactor <= 0) {
+      throw new Error(`Cannot check /tmp space: invalid headroomFactor (${headroomFactor})`);
+    }
+    const { bsize, bavail } = statfsSync(os.tmpdir());
+    const usableBytes = bsize * bavail;
+    const neededBytes = requiredBytes * headroomFactor;
+    if (usableBytes < neededBytes) {
+      throw new Error(
+        `Insufficient /tmp space: need ~${Math.round(neededBytes / (1024 * 1024))} MB, `
+        + `have ${Math.round(usableBytes / (1024 * 1024))} MB`,
+      );
+    }
+  }
+
+  /**
    * Extracts a ZIP buffer into a new unique temp directory.
    * Used to restore a previously-zipped repository from S3
    * for incremental updates (checkout + pull) instead of a full clone.
@@ -952,6 +1050,54 @@ export default class CloudManagerClient {
     const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
     try {
       await extract(zipBuffer, extractPath, { safeSymlinksOnly: true });
+      this.log.info(`Repository extracted to ${extractPath}`);
+      this.#logTmpDiskUsage('unzip');
+      return extractPath;
+    } catch (error) {
+      rmSync(extractPath, { recursive: true, force: true });
+      throw new Error(`Failed to unzip repository: ${error.message}`);
+    }
+  }
+
+  /**
+   * Extracts a ZIP file (by path) into a new unique temp directory, streaming
+   * from disk so memory stays flat regardless of archive size. Before
+   * extracting, reads the central directory and rejects archives whose
+   * extracted size would not fit /tmp, or that exceed the entry-count cap.
+   * @param {string} zipFilePath - Path to the ZIP file on disk.
+   * @param {object} [opts]
+   * @param {number} [opts.maxEntries=100000]
+   * @param {number} [opts.headroomFactor=1.25]
+   * @returns {Promise<string>} Path to the extracted repository.
+   */
+  async unzipRepositoryFromFile(
+    zipFilePath,
+    { maxEntries = DEFAULT_MAX_ENTRIES, headroomFactor = DEFAULT_HEADROOM_FACTOR } = {},
+  ) {
+    if (!Number.isFinite(maxEntries) || maxEntries < 0) {
+      throw new Error(`Cannot unzip: invalid maxEntries (${maxEntries})`);
+    }
+    const { uncompressedBytes, entryCount } = await readArchiveExtractedSize(zipFilePath);
+    if (entryCount > maxEntries) {
+      throw new Error(`Refusing to extract archive: ${entryCount} entries exceeds cap of ${maxEntries}`);
+    }
+    // Peak /tmp footprint = archive on disk + extracted tree coexisting.
+    const archiveBytes = statSync(zipFilePath).size;
+    // Each extracted file occupies at least one full filesystem block, so a repo
+    // of many small files (e.g. an un-gc'd .git) needs more disk than the raw
+    // content sum. Add a per-entry block cushion so the guard reflects real
+    // on-disk footprint, not just content size.
+    const { bsize } = statfsSync(os.tmpdir());
+    const footprintBytes = archiveBytes + uncompressedBytes + (entryCount * bsize);
+    this.assertTmpSpace(footprintBytes, { headroomFactor });
+
+    const extractPath = mkdtempSync(path.join(os.tmpdir(), CLONE_DIR_PREFIX));
+    try {
+      // The uncompressed-size guard above is a sound ceiling only because zip-lib
+      // extracts via yauzl with the default validateEntrySizes:true, which aborts
+      // if an entry's actual bytes exceed its declared uncompressedSize. Keep
+      // zip-lib pinned so this invariant holds.
+      await extract(zipFilePath, extractPath, { safeSymlinksOnly: true });
       this.log.info(`Repository extracted to ${extractPath}`);
       this.#logTmpDiskUsage('unzip');
       return extractPath;
@@ -984,23 +1130,32 @@ export default class CloudManagerClient {
   #PR_PATH_BY_PROVIDER = Object.freeze({
     [CM_REPO_TYPE.GITHUB]: (n) => `/pull/${n}`,
     [CM_REPO_TYPE.GITLAB]: (n) => `/-/merge_requests/${n}`,
+    [CM_REPO_TYPE.AZURE_DEVOPS]: (n) => `/pullrequest/${n}`,
+    [CM_REPO_TYPE.BITBUCKET]: (n) => `/pull-requests/${n}`,
   });
 
   /**
    * Builds the pull request URL from the external repo URL and PR number.
-   * Detects the git provider from the repo URL to use the correct path format.
-   * Returns null if the provider is not recognized.
+   * Detects the git provider from the repo URL's hostname to use the correct
+   * path format. Returns null if the provider is not recognized.
    *
    * @param {string} repoUrl - External repository URL (e.g. https://github.com/owner/repo.git)
    * @param {string} externalNumber - PR/MR number from the CM API response
    * @returns {string|null} Full pull request URL, or null if provider is unsupported
    */
   #buildPullRequestUrl(repoUrl, externalNumber) {
+    // Detect the provider from the hostname only — never the path — so a
+    // provider domain embedded in the repo path can't cause a misclassification.
+    const host = extractRepoHost(repoUrl);
     let provider = null;
-    if (repoUrl.includes('github.com') || repoUrl.includes('github.')) {
+    if (host.includes('github.')) {
       provider = CM_REPO_TYPE.GITHUB;
-    } else if (repoUrl.includes('gitlab.com') || repoUrl.includes('gitlab.')) {
+    } else if (host.includes('gitlab.')) {
       provider = CM_REPO_TYPE.GITLAB;
+    } else if (host.includes('dev.azure.com') || host.includes('visualstudio.com')) {
+      provider = CM_REPO_TYPE.AZURE_DEVOPS;
+    } else if (host.includes('bitbucket.org')) {
+      provider = CM_REPO_TYPE.BITBUCKET;
     }
 
     const pathBuilder = provider && this.#PR_PATH_BY_PROVIDER[provider];
@@ -1034,7 +1189,7 @@ export default class CloudManagerClient {
 
     this.log.info(`Creating PR for program=${programId}, repo=${repositoryId}: ${title}`);
 
-    const response = await fetch(url, {
+    const fetchOptions = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1048,11 +1203,50 @@ export default class CloudManagerClient {
         destinationBranch,
         description,
       }),
-    });
+    };
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Pull request creation failed: ${response.status} - ${errorText}`);
+    // Attempt the create, retrying ONCE on a transient failure (5xx / 429 /
+    // network error) after a short wait. Permanent failures (4xx other than
+    // 429) throw immediately without a retry.
+    let response;
+    for (let attempt = 1; attempt <= CM_PR_MAX_ATTEMPTS; attempt += 1) {
+      response = undefined;
+      let transient = false;
+      let failureDetail;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        response = await fetch(url, fetchOptions);
+        if (response.ok) {
+          break;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        const errorText = await response.text();
+        failureDetail = `HTTP ${response.status} - ${errorText}`;
+        transient = isTransientStatus(response.status);
+        if (!transient) {
+          throw new Error(`Pull request creation failed: ${failureDetail}`);
+        }
+      } catch (err) {
+        // Re-throw permanent HTTP failures immediately; a thrown fetch (network
+        // /timeout) has no response and is treated as transient.
+        if (response && !transient) {
+          throw err;
+        }
+        transient = true;
+        failureDetail = err.message;
+      }
+
+      if (attempt >= CM_PR_MAX_ATTEMPTS) {
+        throw new Error(
+          `Pull request creation failed after ${CM_PR_MAX_ATTEMPTS} attempts: ${failureDetail}`,
+        );
+      }
+      this.log.warn(
+        `Transient failure creating PR (attempt ${attempt}/${CM_PR_MAX_ATTEMPTS}): ${failureDetail}. `
+        + `Retrying in ${CM_PR_RETRY_DELAY_MS}ms.`,
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(CM_PR_RETRY_DELAY_MS);
     }
 
     const result = await response.json();

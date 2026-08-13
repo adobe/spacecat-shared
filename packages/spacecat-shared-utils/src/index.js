@@ -70,9 +70,16 @@ export {
   getSpacecatRequestHeaders,
   ensureHttps,
   urlMatchesFilter,
+  getBaseURLPathPrefix,
   hasNonWWWSubdomain,
   toggleWWWHostname,
   wwwUrlResolver,
+  isWithinSiteScope,
+  filterBySiteScope,
+  toPathname,
+  hasSamePathname,
+  allHaveSamePathname,
+  isPathPatternWithinSiteScope,
 } from './url-helpers.js';
 
 export {
@@ -123,7 +130,7 @@ export {
   getSpacecatBotIps,
   formatAllowlistMessage,
 } from './bot-blocker-detect/bot-blocker-detect.js';
-export { prettifyLogForwardingConfig } from './cdn-helpers.js';
+export { prettifyLogForwardingConfig, CLOUDFLARE_LOGPUSH_FIELDS } from './cdn-helpers.js';
 
 export {
   buildAggregationKey,

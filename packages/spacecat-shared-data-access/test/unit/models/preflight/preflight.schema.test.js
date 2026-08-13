@@ -22,19 +22,34 @@ describe('Preflight Schema', () => {
 
   // ElectroDB's `map` type requires a `properties` schema. Declaring a Map
   // attribute without `properties` (as the original Preflight schema did for
-  // `createdBy` and `error`) throws `InvalidAttributeDefinition` at
-  // `new Service(...)` time, which silently breaks any downstream test or
-  // runtime path that instantiates the full entity registry via electrodb's
-  // v1 Service constructor (e.g. spacecat-api-service `fixes.test.js`). The
-  // `validate` function already enforces the precise shape, so `any` is the
-  // minimal correct type here — matching the neighbor `result` attribute.
+  // `createdBy`) throws `InvalidAttributeDefinition` at `new Service(...)`
+  // time, which silently breaks any downstream test or runtime path that
+  // instantiates the full entity registry via electrodb's v1 Service
+  // constructor (e.g. spacecat-api-service `fixes.test.js`). The `validate`
+  // function already enforces the precise shape, so `any` is the minimal
+  // correct type here.
   describe('attribute types (regression guard for ElectroDB Service construction)', () => {
     it('declares createdBy as type "any" (not "map") so Service construction succeeds', () => {
       expect(attributes.createdBy.type).to.equal('any');
     });
+  });
 
-    it('declares error as type "any" (not "map") so Service construction succeeds', () => {
-      expect(attributes.error.type).to.equal('any');
+  // SITES-47254: startedAt / result / error live on async_jobs only — fetched
+  // via getAsyncJob() when needed. The Preflight schema must not re-declare
+  // them as attributes (else PostgREST select=* would 400 against the new
+  // table shape, and auto-generated getters would shadow the AsyncJob source
+  // of truth).
+  describe('attribute surface (regression guard for SITES-47254)', () => {
+    it('does not declare a startedAt attribute', () => {
+      expect(attributes).to.not.have.property('startedAt');
+    });
+
+    it('does not declare a result attribute', () => {
+      expect(attributes).to.not.have.property('result');
+    });
+
+    it('does not declare an error attribute', () => {
+      expect(attributes).to.not.have.property('error');
     });
   });
 
@@ -65,40 +80,6 @@ describe('Preflight Schema', () => {
 
     it('rejects a non-object value', () => {
       expect(attributes.createdBy.validate('user@example.com')).to.be.false;
-    });
-  });
-
-  describe('error attribute', () => {
-    it('accepts null (error is optional)', () => {
-      expect(attributes.error.validate(null)).to.be.true;
-    });
-
-    it('accepts undefined (error is optional)', () => {
-      expect(attributes.error.validate(undefined)).to.be.true;
-    });
-
-    it('accepts a valid object with code and message', () => {
-      expect(attributes.error.validate({ code: 'ERR_TIMEOUT', message: 'Scan timed out' })).to.be.true;
-    });
-
-    it('rejects an object with empty code', () => {
-      expect(attributes.error.validate({ code: '', message: 'Scan timed out' })).to.be.false;
-    });
-
-    it('rejects an object with empty message', () => {
-      expect(attributes.error.validate({ code: 'ERR_TIMEOUT', message: '' })).to.be.false;
-    });
-
-    it('rejects an object with non-string code', () => {
-      expect(attributes.error.validate({ code: 0, message: 'Scan timed out' })).to.be.false;
-    });
-
-    it('rejects an object with non-string message', () => {
-      expect(attributes.error.validate({ code: 'ERR_TIMEOUT', message: 42 })).to.be.false;
-    });
-
-    it('rejects a non-object value', () => {
-      expect(attributes.error.validate('ERR_TIMEOUT')).to.be.false;
     });
   });
 

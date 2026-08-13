@@ -12,6 +12,7 @@
 
 import type { AsyncJob, BaseCollection, BaseModel, Site } from '../index.js';
 
+// SITES-47254: startedAt/result/error live on AsyncJob — fetch via getAsyncJob().
 export interface Preflight extends BaseModel {
     getSiteId(): string;
     getSite(): Promise<Site>;
@@ -20,18 +21,14 @@ export interface Preflight extends BaseModel {
     getUrl(): string;
     getStatus(): string;
     getCreatedBy(): { email: string; displayName?: string };
-    getStartedAt(): string | null;
-    getEndedAt(): string | null;
-    getResult(): object | null;
-    getError(): { code: string; message: string } | null;
+    // `string | undefined` (not `| null`) because normalizeModelValue maps
+    // DB NULL → undefined on read — see AsyncJob/index.d.ts header.
+    getEndedAt(): string | undefined;
 
     setUrl(url: string): Preflight;
     setStatus(status: 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED'): Preflight;
     setCreatedBy(createdBy: { email: string; displayName?: string }): Preflight;
-    setStartedAt(startedAt: string): Preflight;
     setEndedAt(endedAt: string): Preflight;
-    setResult(result: object): Preflight;
-    setError(error: { code: string; message: string }): Preflight;
 }
 
 export interface PreflightCollection extends BaseCollection<Preflight> {

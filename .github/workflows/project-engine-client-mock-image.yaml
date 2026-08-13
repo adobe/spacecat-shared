@@ -1,0 +1,107 @@
+name: Project Engine Client Mock Image
+
+# Build + push the runnable mock image to GHCR when @adobe/spacecat-shared-project-engine-client
+# releases.
+#
+# semantic-release-monorepo tags each release `@adobe/spacecat-shared-project-engine-client-vX.Y.Z`
+# and (via @semantic-release/github) publishes a matching GitHub Release — both authored by
+# main.yaml's release job with the ADOBE_BOT_GITHUB_TOKEN PAT (which, unlike the default
+# GITHUB_TOKEN, DOES trigger downstream workflows).
+#
+# We key off `release: published`, NOT the tag push. @semantic-release/git tags the
+# `chore(release): X.Y.Z [skip ci]` commit, and GitHub suppresses every push-triggered workflow —
+# a tag push included — when the head commit message contains `[skip ci]`. So an `on: push: tags:`
+# trigger here silently never fires: that is exactly why v1.3.0's image was never built and had to
+# be recovered by hand via workflow_dispatch. A `release` event is not a push event, so `[skip ci]`
+# does not apply; it fires once per published release and pins the image to the published npm
+# version. `release` fires for EVERY package in the monorepo, so the job is gated on the
+# tag-name prefix below.
+#
+# Deliberately separate from main.yaml (mirroring project-engine-mock-e2e.yaml): main.yaml carries
+# the npm Trusted Publisher binding, and an image-build failure must never be able to touch the npm
+# release/publish path. This workflow never publishes to npm and has no npm/OIDC auth.
+permissions: {}
+
+on:
+  release:
+    types: [published]
+  # Manual rebuild for a specific already-published version (incident recovery / first publish).
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build, e.g. 1.2.0 (no leading v)'
+        required: true
+
+concurrency:
+  # Serialize per ref; never cancel an in-flight push (a half-pushed manifest is worse than a wait).
+  group: project-engine-client-mock-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-push:
+    name: Build & push mock image
+    # `release` fires for all 21 packages; only act on this package's releases. workflow_dispatch
+    # (manual recovery) always passes. github.event.release is absent on dispatch, so the
+    # startsWith operand is the empty string there — harmless, the OR short-circuits first.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.event.release.tag_name, '@adobe/spacecat-shared-project-engine-client-v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write   # push to ghcr.io/adobe/spacecat-shared-project-engine-client-mock
+    steps:
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Resolve version
+        id: ver
+        shell: bash
+        # All ${{ }} values are passed via env (never inlined into the script body) so neither a
+        # workflow_dispatch input nor any GitHub-context value can be interpolated as shell.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            # Strip the package-name tag prefix: @adobe/…-client-v1.2.0 -> 1.2.0
+            VERSION="${RELEASE_TAG##*-v}"
+          fi
+          # Anchored both ends: the image tag must be exactly X.Y.Z — reject any trailing junk
+          # (a malformed tag or pre-release suffix) rather than minting a surprising image tag.
+          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "FAIL: could not parse a semver from '${RELEASE_TAG:-$VERSION}'"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Building image version $VERSION"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: packages/spacecat-shared-project-engine-client
+          push: true
+          # Only an immutable, exact X.Y.Z tag that pins to the published npm version. No `:latest`:
+          # consumers reference a known version, and a floating tag would otherwise be clobbered
+          # backwards by a workflow_dispatch recovery build of an older version.
+          tags: ghcr.io/adobe/spacecat-shared-project-engine-client-mock:${{ steps.ver.outputs.version }}
+          # Keep the manifest a plain image (no attestation manifest) so `services:`/`docker run`
+          # consumers pull a single platform cleanly.
+          provenance: false

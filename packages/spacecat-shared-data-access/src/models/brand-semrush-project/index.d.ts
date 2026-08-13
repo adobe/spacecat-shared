@@ -15,18 +15,37 @@ import type {
 } from '../index';
 
 // NOTE: `belongs_to Brand` on the schema generates `brandId` plus a
-// `getBrand()` runtime accessor, but Brand is not a registered entity in this
-// package (brand data lives in mysticat-data-service and is fetched over HTTP
-// via @adobe/spacecat-shared-brand-client). The accessor is intentionally not
-// exposed on the TypeScript surface — callers must hop to brand-client.
+// `getBrand()` runtime accessor. Brand is now a registered (minimal) entity in
+// this package, so the accessor resolves locally; it is still intentionally
+// left off this TypeScript surface, which exposes only the fields callers here
+// need (`brandId`). Rich brand data continues to live in mysticat-data-service
+// and is fetched over HTTP via @adobe/spacecat-shared-brand-client.
 export interface BrandSemrushProject extends BaseModel {
   getBrandId(): string;
   getSemrushProjectId(): string;
   getGeoTargetId(): number;
   getLanguageCode(): string;
+  getSiteId(): string | undefined;
+  getDeletedAt(): string | undefined;
   setSemrushProjectId(value: string): BrandSemrushProject;
   setGeoTargetId(value: number): BrandSemrushProject;
   setLanguageCode(value: string): BrandSemrushProject;
+  setSiteId(value: string): BrandSemrushProject;
+  setDeletedAt(value: string): BrandSemrushProject;
+}
+
+export interface BrandSemrushProjectOrgRow {
+  brandId: string;
+  semrushProjectId: string;
+  geoTargetId: number;
+  languageCode: string;
+  siteId: string | null;
+  // Expected non-null under the select's `!inner` join (which excludes
+  // non-matching parents), but kept nullable to match the defensive runtime
+  // mapping (`row.brands?.organization_id ?? null`) — see
+  // brand-semrush-project.collection.js's #fetchOrgRows.
+  organizationId: string | null;
+  semrushSubWorkspaceId: string | null;
 }
 
 export interface BrandSemrushProjectCollection extends
@@ -40,4 +59,8 @@ export interface BrandSemrushProjectCollection extends
     geoTargetId: number,
     languageCode: string,
   ): Promise<BrandSemrushProject | null>;
+  allByOrganizationId(
+    organizationId: string,
+    options?: { includeDeleted?: boolean },
+  ): Promise<BrandSemrushProjectOrgRow[]>;
 }

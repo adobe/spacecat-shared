@@ -1,3 +1,13 @@
+## [@adobe/spacecat-shared-brand-client-v1.4.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.3.1...@adobe/spacecat-shared-brand-client-v1.4.0) (2026-06-24)
+
+### Features
+
+* **brand-governance:** replace /checks with /profile endpoint in BrandGovernanceClient ([#1667](https://github.com/adobe/spacecat-shared/issues/1667)) ([49ee54c](https://github.com/adobe/spacecat-shared/commit/49ee54cb9040973e5cc68f5cb4116287a3c4719b))
+
+### Bug Fixes
+
+* **brand-client:** correct JSDoc for getBrandGuidelinesForUrl return type and add throws ([#1719](https://github.com/adobe/spacecat-shared/issues/1719)) ([59c31f3](https://github.com/adobe/spacecat-shared/commit/59c31f343089f900be2ba5488193e8a4b1556c70)), closes [#1667](https://github.com/adobe/spacecat-shared/issues/1667)
+
 ## [@adobe/spacecat-shared-brand-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-brand-client-v1.3.0...@adobe/spacecat-shared-brand-client-v1.3.1) (2026-05-29)
 
 ### Bug Fixes

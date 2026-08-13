@@ -102,6 +102,24 @@ describe('llmo-config utilities', () => {
       expect(body.transformToString).calledOnce;
     });
 
+    it('preserves claims guidance when reading configuration from S3', async () => {
+      const configWithClaims = {
+        ...validConfig,
+        claims: {
+          brandContext: 'Adobe context',
+          sentimentGuidance: 'Setup friction is unfavorable.',
+        },
+      };
+      const body = {
+        transformToString: sinon.stub().resolves(JSON.stringify(configWithClaims)),
+      };
+      s3Client.send.resolves({ Body: body, VersionId: 'claims-v1' });
+
+      const result = await readConfig(siteId, s3Client);
+
+      expect(result).deep.equals({ config: configWithClaims, exists: true, version: 'claims-v1' });
+    });
+
     it('uses provided bucket and version when options are set', async () => {
       const body = {
         transformToString: sinon.stub().resolves(JSON.stringify(validConfig)),
@@ -197,6 +215,35 @@ describe('llmo-config utilities', () => {
       expect(command.input.Key).equals(`config/llmo/${siteId}/lmmo-config.json`);
       expect(command.input.Body).equals(JSON.stringify(validConfig, null, 2));
       expect(command.input.ContentType).equals('application/json');
+    });
+
+    it('writes claims guidance to S3', async () => {
+      const configWithClaims = {
+        ...validConfig,
+        claims: {
+          brandContext: 'Adobe context',
+          sentimentGuidance: 'Setup friction is unfavorable.',
+        },
+      };
+      s3Client.send.resolves({ VersionId: 'v1' });
+
+      await writeConfig(siteId, configWithClaims, s3Client);
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.Body).equals(JSON.stringify(configWithClaims, null, 2));
+    });
+
+    it('throws LlmoConfigValidationError when claims guidance is too long', async () => {
+      const invalidConfig = {
+        ...validConfig,
+        claims: {
+          brandContext: 'x'.repeat(4001),
+        },
+      };
+
+      await expect(writeConfig(siteId, invalidConfig, s3Client))
+        .rejectedWith(LlmoConfigValidationError);
+      expect(s3Client.send).not.called;
     });
 
     it('writes the configuration to a provided bucket', async () => {

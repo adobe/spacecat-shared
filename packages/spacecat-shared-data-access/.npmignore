@@ -4,6 +4,7 @@ junit/
 test/
 docs/
 logs/
+scripts/
 test-results.xml
 renovate.json
 .*

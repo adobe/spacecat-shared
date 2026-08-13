@@ -1,0 +1,12 @@
+coverage/
+node_modules/
+junit/
+test/
+docs/
+logs/
+build/
+python/
+.counterfact/
+test-results.xml
+renovate.json
+.*

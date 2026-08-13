@@ -17,6 +17,7 @@ const brandSemrushProjects = [
     semrushProjectId: 'proj-fixture-us-en',
     geoTargetId: 2840,
     languageCode: 'en',
+    siteId: 'd4e5f6a7-1234-4abc-9def-0123456789ab',
   },
   {
     brandSemrushProjectId: '6c2f3e7b-8d6a-4b02-aa43-9f45be22e312',

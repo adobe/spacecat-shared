@@ -47,7 +47,9 @@ describe('opportunity-titles', () => {
         'product-metatags',
         'security-csp', 'security-vulnerabilities', 'security-permissions',
         'security-permissions-redundant',
-        'llm-blocked', 'llm-error-pages', 'faqs', 'related-urls', 'toc',
+        'llm-blocked', 'llm-error-pages',
+        'llm-error-pages-404', 'llm-error-pages-403', 'llm-error-pages-5xx',
+        'faqs', 'related-urls', 'toc',
         'experimentation-ess-daily', 'experimentation-ess-monthly',
         'cited-analysis', 'wikipedia-analysis', 'reddit-analysis', 'youtube-analysis',
         'info-gain',
@@ -63,6 +65,9 @@ describe('opportunity-titles', () => {
       expect(getOpportunityTitle('cwv')).to.equal('Core Web Vitals');
       expect(getOpportunityTitle('broken-backlinks')).to.equal('Broken Backlinks');
       expect(getOpportunityTitle('toc')).to.equal('Table of Contents');
+      expect(getOpportunityTitle('llm-error-pages-404')).to.equal('Agentic Traffic 404s Analysis');
+      expect(getOpportunityTitle('llm-error-pages-403')).to.equal('Agentic Traffic 403s Analysis');
+      expect(getOpportunityTitle('llm-error-pages-5xx')).to.equal('Agentic Traffic 5XXs Analysis');
     });
 
     it('falls back to Title Case for unknown type', () => {

@@ -7005,7 +7005,7 @@ describe('TokowakaClient', () => {
       expect(s1.getData()).to.have.property('applyStale', true);
     });
 
-    it('should stamp applyStale: false onto suggestion data when metadata.applyStale is absent', async () => {
+    it('should leave applyStale absent from suggestion data when metadata.applyStale is absent', async () => {
       const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
 
       deploySuggestionsStub.resolves({
@@ -7021,7 +7021,27 @@ describe('TokowakaClient', () => {
         allSuggestions: [s1],
       });
 
-      expect(s1.getData()).to.have.property('applyStale', false);
+      expect(s1.getData()).to.not.have.property('applyStale');
+    });
+
+    it('should clear a stale applyStale: true from a prior deploy when redeploying without it', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+      s1.setData({ ...s1.getData(), applyStale: true });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+        suggestionIdsHavingPatches: new Set(['s1']),
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getData()).to.not.have.property('applyStale');
     });
 
     it('should not stamp applyStale onto suggestion data when the suggestion produced no patch (e.g. prerender-only)', async () => {

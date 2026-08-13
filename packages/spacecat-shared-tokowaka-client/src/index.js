@@ -774,6 +774,7 @@ class TokowakaClient {
       return {
         succeededSuggestions: [],
         failedSuggestions: ineligibleSuggestions,
+        suggestionIdsHavingPatches: new Set(),
       };
     }
 
@@ -829,8 +830,9 @@ class TokowakaClient {
 
         // Upload to S3
         const s3Path = await this.uploadConfig(fullUrl, config);
-        // eslint-disable-next-line max-len
-        const suggestionIdsFromNewPatches = newConfig.patches.map((patch) => patch.suggestionId).filter(Boolean);
+        const suggestionIdsFromNewPatches = newConfig.patches
+          .map((patch) => patch.suggestionId)
+          .filter(Boolean);
         return { s3Path, fullUrl, suggestionIdsFromNewPatches };
       },
       URL_CONFIG_CONCURRENCY,
@@ -1518,9 +1520,14 @@ class TokowakaClient {
         const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
         // Only mirror applyStale for suggestions that actually produced a patch — e.g.
         // prerender-only suggestions deploy successfully but never generate one, so there
-        // is nothing for applyStale to keep alive.
+        // is nothing for applyStale to keep alive. Matches the edgeDeployed contract
+        // (present-when-true, absent otherwise) instead of ever writing an explicit false.
         if (suggestionIdsHavingPatches.has(s.getId())) {
-          updated.applyStale = applyStale;
+          if (applyStale) {
+            updated.applyStale = true;
+          } else {
+            delete updated.applyStale;
+          }
         }
         const statusesToExcludeFromOptimization = ['STALE', 'LAST_MOD_MISSING'];
         if (statusesToExcludeFromOptimization.includes(updated.edgeOptimizeStatus)) {

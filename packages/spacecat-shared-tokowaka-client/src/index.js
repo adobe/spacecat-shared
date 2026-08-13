@@ -741,7 +741,9 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to deploy
-   * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
+   * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions, plus
+   *   suggestionIdsHavingPatches: a Set of suggestion IDs for which a patch was actually generated
+   *   (excludes e.g. prerender-only suggestions, which deploy successfully with no patch).
    */
   async deploySuggestions(site, opportunity, suggestions, metadata = {}) {
     const { applyStale = false } = metadata;
@@ -827,17 +829,24 @@ class TokowakaClient {
 
         // Upload to S3
         const s3Path = await this.uploadConfig(fullUrl, config);
-        return { s3Path, fullUrl };
+        // eslint-disable-next-line max-len
+        const suggestionIdsFromNewPatches = newConfig.patches.map((patch) => patch.suggestionId).filter(Boolean);
+        return { s3Path, fullUrl, suggestionIdsFromNewPatches };
       },
       URL_CONFIG_CONCURRENCY,
     );
 
     const s3Paths = [];
     const deployedUrls = []; // Track URLs for batch CDN invalidation
+    // Suggestions whose deploy actually produced a patch (e.g. excludes prerender-only
+    // suggestions, which deploy successfully but never generate a patch) — used to scope
+    // the applyStale suggestion.data mirror to suggestions that have a patch to keep alive.
+    const suggestionIdsHavingPatches = new Set();
     processed.forEach((entry) => {
       if (entry) {
         s3Paths.push(entry.s3Path);
         deployedUrls.push(entry.fullUrl);
+        entry.suggestionIdsFromNewPatches.forEach((id) => suggestionIdsHavingPatches.add(id));
       }
     });
 
@@ -855,6 +864,7 @@ class TokowakaClient {
       cdnInvalidations,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
+      suggestionIdsHavingPatches,
     };
   }
 
@@ -1479,8 +1489,13 @@ class TokowakaClient {
   }
 
   /**
-   * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed,
-   * and returns { succeededSuggestions, failedSuggestions }.
+   * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed and
+   * mirrors metadata.applyStale onto suggestion.data (display-only; the functional flag lives
+   * on the S3 patch itself, set inside deploySuggestions). The applyStale mirror is scoped to
+   * suggestions in deploySuggestions()'s suggestionIdsHavingPatches — suggestions that deploy
+   * successfully without producing a patch (e.g. prerender-only) are left without the field,
+   * since there is no patch for applyStale to keep alive. Returns
+   * { succeededSuggestions, failedSuggestions }.
    * Throws if the underlying deployment throws.
    * @param {Object} site
    * @param {Object} opportunity
@@ -1495,10 +1510,18 @@ class TokowakaClient {
       // eslint-disable-next-line max-len
       const result = await this.deploySuggestions(site, opportunity, validSuggestions, metadata);
       const deploymentTimestamp = Date.now();
+      const { applyStale = false } = metadata;
+      const suggestionIdsHavingPatches = result.suggestionIdsHavingPatches ?? new Set();
 
       const succeeded = result.succeededSuggestions.map((s) => {
         const currentData = s.getData();
         const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
+        // Only mirror applyStale for suggestions that actually produced a patch — e.g.
+        // prerender-only suggestions deploy successfully but never generate one, so there
+        // is nothing for applyStale to keep alive.
+        if (suggestionIdsHavingPatches.has(s.getId())) {
+          updated.applyStale = applyStale;
+        }
         const statusesToExcludeFromOptimization = ['STALE', 'LAST_MOD_MISSING'];
         if (statusesToExcludeFromOptimization.includes(updated.edgeOptimizeStatus)) {
           delete updated.edgeOptimizeStatus;

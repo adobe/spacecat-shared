@@ -2034,6 +2034,30 @@ describe('TokowakaClient', () => {
       expect(result.succeededSuggestions).to.have.length(2);
       expect(result.failedSuggestions).to.have.length(0);
       expect(s3Client.send).to.have.been.called;
+      expect(result.suggestionIdsHavingPatches).to.deep.equal(new Set(['sugg-1', 'sugg-2']));
+    });
+
+    it('should exclude prerender suggestions from suggestionIdsHavingPatches (no patch generated)', async () => {
+      const prerenderOpportunity = {
+        getId: () => 'opp-prerender-123',
+        getType: () => 'prerender',
+      };
+      const prerenderSuggestions = [
+        {
+          getId: () => 'prerender-sugg-1',
+          getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+          getData: () => ({ url: 'https://example.com/page1' }),
+        },
+      ];
+
+      const result = await client.deploySuggestions(
+        mockSite,
+        prerenderOpportunity,
+        prerenderSuggestions,
+      );
+
+      expect(result.succeededSuggestions).to.have.length(1);
+      expect(result.suggestionIdsHavingPatches).to.deep.equal(new Set());
     });
 
     it('should throw error if metaconfig does not exist', async () => {
@@ -6959,6 +6983,84 @@ describe('TokowakaClient', () => {
       expect(deploySuggestionsStub).to.have.been.calledOnce;
       const [,, , metadata] = deploySuggestionsStub.firstCall.args;
       expect(metadata).to.deep.equal({});
+    });
+
+    it('should stamp applyStale: true onto suggestion data when metadata.applyStale is true', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+        suggestionIdsHavingPatches: new Set(['s1']),
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        metadata: { applyStale: true },
+      });
+
+      expect(s1.getData()).to.have.property('applyStale', true);
+    });
+
+    it('should stamp applyStale: false onto suggestion data when metadata.applyStale is absent', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+        suggestionIdsHavingPatches: new Set(['s1']),
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getData()).to.have.property('applyStale', false);
+    });
+
+    it('should not stamp applyStale onto suggestion data when the suggestion produced no patch (e.g. prerender-only)', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+        suggestionIdsHavingPatches: new Set(),
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        metadata: { applyStale: true },
+      });
+
+      expect(s1.getData()).to.not.have.property('applyStale');
+    });
+
+    it('should default to an empty suggestionIdsHavingPatches set when deploySuggestions omits it', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {} });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+        metadata: { applyStale: true },
+      });
+
+      expect(s1.getData()).to.not.have.property('applyStale');
     });
   });
 

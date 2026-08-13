@@ -244,7 +244,8 @@ class SiteCollection extends BaseCollection {
    *   applied to the sites table (e.g. baseURL substring / deliveryType / isLive).
    * @param {object} [options.orderBy] - `{ attribute, direction }`; defaults to
    *   `updatedAt` desc. Always followed by an `id` tiebreaker for stable paging.
-   * @param {number} [options.limit] - Max parent rows to return (exact).
+   * @param {number} [options.limit] - Max parent rows to return (exact). A
+   *   non-positive or non-integer value falls back to DEFAULT_PAGE_SIZE.
    * @param {string} [options.cursor] - Base64 offset cursor (see decodeCursor).
    * @param {boolean} [options.returnCursor] - Return `{ data, cursor }` shape.
    * @returns {Promise<Site[] | { data: Site[], cursor: string|null }>}
@@ -307,9 +308,11 @@ class SiteCollection extends BaseCollection {
       query = query.order(idField, { ascending });
     }
 
-    // Honor the exact limit (no cap, no +1) so the api-service N+1 hasMore
-    // detection stays symmetric with Site.all's postgrest path.
-    const effectiveLimit = Number.isInteger(limit) ? limit : DEFAULT_PAGE_SIZE;
+    // Honor the exact (positive) limit (no cap, no +1) so the api-service N+1
+    // hasMore detection stays symmetric with Site.all's postgrest path. A
+    // non-positive or non-integer limit falls back to DEFAULT_PAGE_SIZE so a
+    // caller-supplied 0/negative can't produce an inverted PostgREST range.
+    const effectiveLimit = Number.isInteger(limit) && limit > 0 ? limit : DEFAULT_PAGE_SIZE;
     const offset = decodeCursor(cursor);
     query = query.range(offset, offset + effectiveLimit - 1);
 

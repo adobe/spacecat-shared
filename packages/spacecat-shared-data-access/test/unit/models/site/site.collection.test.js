@@ -706,6 +706,16 @@ describe('SiteCollection', () => {
       expect(chain.range).to.have.been.calledOnceWithExactly(0, DEFAULT_PAGE_SIZE - 1);
     });
 
+    it('treats a zero or negative limit as no limit (DEFAULT_PAGE_SIZE)', async () => {
+      setupChain({ data: [], error: null });
+      await instance.allByEnrollmentFiltered({ tier: 'PAID' }, { limit: 0 });
+      expect(chain.range).to.have.been.calledOnceWithExactly(0, DEFAULT_PAGE_SIZE - 1);
+
+      setupChain({ data: [], error: null });
+      await instance.allByEnrollmentFiltered({ tier: 'PAID' }, { limit: -5 });
+      expect(chain.range).to.have.been.calledOnceWithExactly(0, DEFAULT_PAGE_SIZE - 1);
+    });
+
     it('maps rows to Site instances and strips the embedded enrollments from the record', async () => {
       setupChain({ data: [siteRow('s1'), siteRow('s2')], error: null });
 

@@ -36,8 +36,10 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     validate: (value) => value == null || Brand.STATUSES.includes(value),
   })
   // Brand → Semrush sub-workspace. Nullable (NULL = no sub-workspace
-  // connected). Same minimum guard as organizations.semrushWorkspaceId: the
-  // shared `hasText` rejects the empty string (and non-strings) while letting
+  // connected). Same minimum guard the distinct `Organization` entity applies
+  // to its own `semrushWorkspaceId` field (the brand has no such field — its
+  // deprecated mirror was removed in SITES-49202): the shared `hasText` rejects
+  // the empty string (and non-strings) while letting
   // null/undefined short-circuit. Note hasText does NOT trim, so a
   // whitespace-only value would pass — acceptable here because this column is
   // only ever written by the activate flow with a real Semrush workspace UUID,

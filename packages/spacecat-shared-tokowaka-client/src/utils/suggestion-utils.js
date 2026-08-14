@@ -197,7 +197,7 @@ export async function saveSuggestions(dataAccess, suggestions, queueContext) {
  * @returns {Object} The mutated suggestion (not yet persisted)
  */
 export function stripSuggestion(suggestion, actorFallback, updatedBy) {
-  suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
+  suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed', 'applyStale']));
   suggestion.setUpdatedBy(updatedBy ?? actorFallback);
   return suggestion;
 }

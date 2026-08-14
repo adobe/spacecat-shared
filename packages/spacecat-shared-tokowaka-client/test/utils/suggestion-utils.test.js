@@ -16,6 +16,7 @@ import {
   groupSuggestionsByUrlPath,
   filterEligibleSuggestions,
   saveSuggestions,
+  stripSuggestion,
   SUGGESTION_BULK_UPDATE_TYPE,
 } from '../../src/utils/suggestion-utils.js';
 
@@ -442,6 +443,40 @@ describe('Suggestion Utils', () => {
         expect(error.message).to.include('1 of 1701 suggestions failed');
         expect(error.message).to.include('DB error');
       }
+    });
+  });
+
+  describe('stripSuggestion', () => {
+    it('clears edgeDeployed, tokowakaDeployed and applyStale, and sets updatedBy', () => {
+      const suggestion = {
+        data: {
+          edgeDeployed: 1700000000000,
+          tokowakaDeployed: 1700000000000,
+          applyStale: true,
+          other: 'kept',
+        },
+        getData() { return this.data; },
+        setData(data) { this.data = data; },
+        setUpdatedBy: sinon.stub(),
+      };
+
+      const result = stripSuggestion(suggestion, 'tokowaka-rollback', undefined);
+
+      expect(result.getData()).to.deep.equal({ other: 'kept' });
+      expect(suggestion.setUpdatedBy.calledWith('tokowaka-rollback')).to.be.true;
+    });
+
+    it('prefers the explicit updatedBy over the fallback', () => {
+      const suggestion = {
+        data: { applyStale: true },
+        getData() { return this.data; },
+        setData(data) { this.data = data; },
+        setUpdatedBy: sinon.stub(),
+      };
+
+      stripSuggestion(suggestion, 'tokowaka-rollback', 'user@example.com');
+
+      expect(suggestion.setUpdatedBy.calledWith('user@example.com')).to.be.true;
     });
   });
 });

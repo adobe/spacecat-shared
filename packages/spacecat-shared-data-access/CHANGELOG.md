@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.1...@adobe/spacecat-shared-data-access-v4.22.0) (2026-08-14)
+
+### Features
+
+* schema changes for trial users entity to allow searching by external user id ([#1871](https://github.com/adobe/spacecat-shared/issues/1871)) ([3ecf546](https://github.com/adobe/spacecat-shared/commit/3ecf5466b41dcd32cf5dd591f8762fefd714af1f))
+
 ## [@adobe/spacecat-shared-data-access-v4.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.0...@adobe/spacecat-shared-data-access-v4.21.1) (2026-08-14)
 
 ### Bug Fixes

@@ -1,3 +1,9 @@
+## [@adobe/mysticat-shared-seo-client-v1.8.1](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.8.0...@adobe/mysticat-shared-seo-client-v1.8.1) (2026-08-12)
+
+### Bug Fixes
+
+* **seo-client:** scope broken-backlinks to sub-path via target_url filter ([#1875](https://github.com/adobe/spacecat-shared/issues/1875)) ([2a64680](https://github.com/adobe/spacecat-shared/commit/2a646806aa2d94374a58b6b13090bfbfac8397c8))
+
 ## [@adobe/mysticat-shared-seo-client-v1.8.0](https://github.com/adobe/spacecat-shared/compare/@adobe/mysticat-shared-seo-client-v1.7.0...@adobe/mysticat-shared-seo-client-v1.8.0) (2026-07-22)
 
 ### Features

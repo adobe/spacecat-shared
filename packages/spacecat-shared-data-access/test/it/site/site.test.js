@@ -627,6 +627,130 @@ describe('Site IT', async () => {
     });
   });
 
+  describe('allByEnrollmentFiltered', () => {
+    // Seeded enrollment graph (see fixtures):
+    //   78fec9c7 -> ASO/PAID        56a691db -> LLMO/PAID
+    //   5d6d4439 -> LLMO/FREE_TRIAL
+    const PAID_SITE_ASO = '78fec9c7-2141-4600-b7b1-ea5c78752b91';
+    const PAID_SITE_LLMO = '56a691db-d32e-4308-ac99-a21de0580557';
+    const FREE_TRIAL_SITE_LLMO = '5d6d4439-6659-46c2-b646-92d110fa5a52';
+    const PAID_LLMO_ENTITLEMENT = '5bc610a9-bc59-48d8-937e-4808ade2ecb1';
+
+    it('returns only sites enrolled at the given tier as hydrated Site instances', async () => {
+      const sites = await Site.allByEnrollmentFiltered({ tier: 'PAID' }, { limit: 50 });
+
+      expect(sites).to.be.an('array');
+      const ids = sites.map((s) => s.getId()).sort();
+      expect(ids).to.eql([PAID_SITE_LLMO, PAID_SITE_ASO]);
+
+      // real Site instances, with the inner-join embed stripped from the record
+      expect(sites[0].getBaseURL()).to.be.a('string');
+      expect(sites[0].record.siteEnrollments).to.be.undefined;
+      expect(sites[0].record.site_enrollments).to.be.undefined;
+    });
+
+    it('narrows the tier result by product code', async () => {
+      const sites = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID', productCode: 'LLMO' },
+        { limit: 50 },
+      );
+
+      expect(sites.map((s) => s.getId())).to.eql([PAID_SITE_LLMO]);
+    });
+
+    it('filters by product code alone (across tiers)', async () => {
+      const sites = await Site.allByEnrollmentFiltered({ productCode: 'LLMO' }, { limit: 50 });
+
+      const ids = sites.map((s) => s.getId()).sort();
+      expect(ids).to.eql([PAID_SITE_LLMO, FREE_TRIAL_SITE_LLMO]);
+    });
+
+    it('composes a caller-supplied where on the sites table', async () => {
+      const [site] = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID', productCode: 'LLMO' },
+        { limit: 1 },
+      );
+      const { hostname } = new URL(site.getBaseURL());
+
+      const matched = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID', productCode: 'LLMO' },
+        { where: (attrs, op) => op.ilike(attrs.baseURL, `%${hostname}%`), limit: 50 },
+      );
+      expect(matched.map((s) => s.getId())).to.eql([PAID_SITE_LLMO]);
+
+      const none = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID', productCode: 'LLMO' },
+        { where: (attrs, op) => op.ilike(attrs.baseURL, '%no-such-host-zzzzz%'), limit: 50 },
+      );
+      expect(none).to.eql([]);
+    });
+
+    it('paginates DISTINCT parent sites via the offset cursor (returnCursor)', async () => {
+      const orderBy = { attribute: 'siteId', direction: 'asc' };
+
+      const page1 = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        { orderBy, limit: 1, returnCursor: true },
+      );
+      expect(page1.data).to.have.lengthOf(1);
+      expect(page1.cursor).to.be.a('string');
+
+      const page2 = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        {
+          orderBy, limit: 1, cursor: page1.cursor, returnCursor: true,
+        },
+      );
+      expect(page2.data).to.have.lengthOf(1);
+
+      const page3 = await Site.allByEnrollmentFiltered(
+        { tier: 'PAID' },
+        {
+          orderBy, limit: 1, cursor: page2.cursor, returnCursor: true,
+        },
+      );
+      expect(page3.data).to.have.lengthOf(0);
+      expect(page3.cursor).to.be.null;
+
+      const seen = [page1.data[0].getId(), page2.data[0].getId()];
+      expect(new Set(seen).size).to.equal(2); // no parent-row duplication
+      expect([...seen].sort()).to.eql([PAID_SITE_LLMO, PAID_SITE_ASO]);
+    });
+
+    it('returns a parent site exactly once even with multiple matching enrollments', async () => {
+      const { SiteEnrollment } = getDataAccess();
+      // Give the ASO/PAID site a SECOND enrollment that is also tier=PAID so it
+      // has two rows matching the inner-join filter. PostgREST must nest both
+      // under one parent site row, not duplicate the site.
+      const extraEnrollment = await SiteEnrollment.create({
+        siteId: PAID_SITE_ASO,
+        entitlementId: PAID_LLMO_ENTITLEMENT,
+        updatedBy: 'system',
+      });
+
+      try {
+        const sites = await Site.allByEnrollmentFiltered({ tier: 'PAID' }, { limit: 50 });
+        const ids = sites.map((s) => s.getId());
+
+        expect(ids.filter((id) => id === PAID_SITE_ASO)).to.have.lengthOf(1);
+        expect([...ids].sort()).to.eql([PAID_SITE_LLMO, PAID_SITE_ASO]);
+      } finally {
+        await extraEnrollment.remove();
+      }
+    });
+
+    it('returns an empty array when the tier has no enrollments', async () => {
+      const sites = await Site.allByEnrollmentFiltered({ tier: 'PLG' }, { limit: 50 });
+
+      expect(sites).to.eql([]);
+    });
+
+    it('throws when neither tier nor productCode is supplied', async () => {
+      await expect(Site.allByEnrollmentFiltered({}))
+        .to.be.rejectedWith('tier or productCode is required');
+    });
+  });
+
   it('removes a site', async () => {
     const site = await Site.findById(sampleData.sites[0].getId());
 

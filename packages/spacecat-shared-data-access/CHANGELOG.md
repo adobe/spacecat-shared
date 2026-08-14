@@ -1,3 +1,21 @@
+## [@adobe/spacecat-shared-data-access-v4.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.20.0...@adobe/spacecat-shared-data-access-v4.21.0) (2026-08-13)
+
+### Features
+
+* **data-access:** paginated sites query filtered by entitlement tier/productCode ([#1877](https://github.com/adobe/spacecat-shared/issues/1877)) ([00e5e59](https://github.com/adobe/spacecat-shared/commit/00e5e592f1d4990e1578deb8287e84f3f0d0cf1b))
+
+## [@adobe/spacecat-shared-data-access-v4.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.19.0...@adobe/spacecat-shared-data-access-v4.20.0) (2026-08-12)
+
+### Features
+
+* **data-access:** compound AND filter and orderBy column for postgrest queries ([#1874](https://github.com/adobe/spacecat-shared/issues/1874)) ([620b37e](https://github.com/adobe/spacecat-shared/commit/620b37eb1bc252c9bdd01661037de6fd7e0bfe35))
+
+## [@adobe/spacecat-shared-data-access-v4.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.18.0...@adobe/spacecat-shared-data-access-v4.19.0) (2026-08-11)
+
+### Features
+
+* add support for searching trial users by external user id ([#1869](https://github.com/adobe/spacecat-shared/issues/1869)) ([ec48340](https://github.com/adobe/spacecat-shared/commit/ec483403ac2b118abea814309079716fc516042a))
+
 ## [@adobe/spacecat-shared-data-access-v4.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.17.0...@adobe/spacecat-shared-data-access-v4.18.0) (2026-08-11)
 
 ### Features

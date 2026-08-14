@@ -308,4 +308,33 @@ describe('postgrest utils', () => {
     sinon.assert.calledOnceWithExactly(query.like, 'url', 'https://%');
     sinon.assert.calledOnceWithExactly(query.ilike, 'url', '%tenant%');
   });
+
+  it('applies compound AND by chaining each condition', () => {
+    const query = { ilike: sinon.stub().returnsThis(), eq: sinon.stub().returnsThis() };
+    const result = applyWhere(query, (attr, op) => op.and(
+      op.ilike(attr.baseURL, '%sem%'),
+      op.eq(attr.deliveryType, 'aem_edge'),
+    ), { baseURL: 'base_url', deliveryType: 'delivery_type' });
+
+    expect(result).to.equal(query);
+    sinon.assert.calledOnceWithExactly(query.ilike, 'base_url', '%sem%');
+    sinon.assert.calledOnceWithExactly(query.eq, 'delivery_type', 'aem_edge');
+  });
+
+  it('handles empty and single-condition AND', () => {
+    const query = { eq: sinon.stub().returnsThis() };
+    expect(applyWhere(query, (_a, op) => op.and(), {})).to.equal(query);
+    applyWhere(query, (attr, op) => op.and(op.eq(attr.isLive, true)), { isLive: 'is_live' });
+    sinon.assert.calledOnceWithExactly(query.eq, 'is_live', true);
+  });
+
+  it('applies a nested AND', () => {
+    const query = { eq: sinon.stub().returnsThis(), ilike: sinon.stub().returnsThis() };
+    applyWhere(query, (attr, op) => op.and(
+      op.eq(attr.isLive, true),
+      op.and(op.ilike(attr.baseURL, '%x%')),
+    ), { isLive: 'is_live', baseURL: 'base_url' });
+    sinon.assert.calledOnceWithExactly(query.eq, 'is_live', true);
+    sinon.assert.calledOnceWithExactly(query.ilike, 'base_url', '%x%');
+  });
 });

@@ -27,6 +27,13 @@ import BaseModel from '../base/base.model.js';
  * sub-workspace itself is never deleted). See serenity-docs
  * brand-semrush-provisioning-v2-phase1-sync.md §6.
  *
+ * NOTE: there is no brand-level `semrushWorkspaceId` accessor. The deprecated
+ * read-only mirror (attribute, index, `findBySemrushWorkspaceId`,
+ * `allBySemrushWorkspaceId`, `setSemrushWorkspaceId`) was removed in SITES-49202;
+ * `semrushSubWorkspaceId` above is the write-of-record. The identically-named
+ * `Organization.semrushWorkspaceId` is a DISTINCT field and stays — do not
+ * reintroduce a brand mirror by symbol-name sweep.
+ *
  * @class Brand
  * @extends BaseModel
  */

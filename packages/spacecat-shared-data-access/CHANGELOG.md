@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.0...@adobe/spacecat-shared-data-access-v4.21.1) (2026-08-14)
+
+### Bug Fixes
+
+* **data-access:** publish brand semrushWorkspaceId mirror removal (SITES-49202) ([#1880](https://github.com/adobe/spacecat-shared/issues/1880)) ([80a296a](https://github.com/adobe/spacecat-shared/commit/80a296af1b4f49ffa66aba80d677a5e6b42f3856)), closes [#1867](https://github.com/adobe/spacecat-shared/issues/1867) [#1867](https://github.com/adobe/spacecat-shared/issues/1867) [#1867](https://github.com/adobe/spacecat-shared/issues/1867)
+
 ## [@adobe/spacecat-shared-data-access-v4.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.20.0...@adobe/spacecat-shared-data-access-v4.21.0) (2026-08-13)
 
 ### Features

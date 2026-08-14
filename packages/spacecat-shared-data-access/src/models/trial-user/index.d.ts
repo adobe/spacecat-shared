@@ -53,7 +53,17 @@ export interface TrialUserCollection extends BaseCollection<TrialUser> {
     Promise<TrialUser | null>;
   findByOrganizationId(organizationId: string): Promise<TrialUser | null>;
   findByEmailId(emailId: string): Promise<TrialUser | null>;
+  /**
+   * externalUserId is optional and not enforced unique (no DB unique constraint), so this
+   * returns one arbitrary match when multiple trial users share the same externalUserId.
+   * Use allByExternalUserId if you need every matching record.
+   */
   findByExternalUserId(externalUserId: string): Promise<TrialUser | null>;
+  /**
+   * externalUserId is optional and not enforced unique (no DB unique constraint), so this
+   * returns one arbitrary match when multiple trial users share the same externalUserId.
+   * Use allByExternalUserIdAndUpdatedAt if you need every matching record.
+   */
   findByExternalUserIdAndUpdatedAt(
     externalUserId: string,
     updatedAt: string

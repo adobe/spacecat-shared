@@ -53,6 +53,11 @@ const schema = new SchemaBuilder(TrialUser, TrialUserCollection)
     { composite: ['organizationId'] },
     { composite: ['updatedAt'] },
   )
+  // externalUserId is not enforced unique (no DB unique constraint) and is optional, so
+  // findByExternalUserId only returns one arbitrary match. Prefer allByExternalUserId
+  // unless the caller can guarantee uniqueness for their use case.
+  // Note: this schema is now at 4 of the 5-index cap enforced by SchemaBuilder
+  // (#buildIndexes) - budget the next lookup index accordingly.
   .addIndex(
     { composite: ['externalUserId'] },
     { composite: ['updatedAt'] },

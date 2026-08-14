@@ -29,10 +29,10 @@ import BaseModel from '../base/base.model.js';
  *
  * NOTE: there is no brand-level `semrushWorkspaceId` accessor. The deprecated
  * read-only mirror (attribute, index, `findBySemrushWorkspaceId`,
- * `allBySemrushWorkspaceId`, `setSemrushWorkspaceId`) was removed in SITES-49202;
- * `semrushSubWorkspaceId` above is the write-of-record. The identically-named
- * `Organization.semrushWorkspaceId` is a DISTINCT field and stays — do not
- * reintroduce a brand mirror by symbol-name sweep.
+ * `allBySemrushWorkspaceId`, `setSemrushWorkspaceId`) was removed in SITES-49202
+ * (PR #1867); `semrushSubWorkspaceId` above is the canonical field (source of
+ * truth). The identically-named `Organization.semrushWorkspaceId` is a DISTINCT
+ * field and stays — do not reintroduce a brand mirror by symbol-name sweep.
  *
  * @class Brand
  * @extends BaseModel

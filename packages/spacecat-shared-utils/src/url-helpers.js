@@ -609,7 +609,12 @@ export function siteIdentityFromUrlString(value) {
   const raw = value.trim();
   // A leading '/' is a path, not a site. Without this, prepending a scheme makes
   // `new URL()` read the first segment as the host and '/just/a/path' yields the
-  // nonsense identity 'just/a/path'. '//host/path' is scheme-relative and stays.
+  // nonsense identity 'just/a/path'.
+  //
+  // '//host/path' is scheme-relative and DOES name a site, so it is let through:
+  // it has no '://', so it becomes 'https:////host/path', and the WHATWG parser
+  // skips the run of slashes after the scheme and reads 'host' as the hostname.
+  // The corpus pins that result.
   if (raw.startsWith('/') && !raw.startsWith('//')) {
     return null;
   }

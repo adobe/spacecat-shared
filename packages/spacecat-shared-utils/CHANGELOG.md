@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.126.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.2...@adobe/spacecat-shared-utils-v1.126.0) (2026-08-17)
+
+### Features
+
+* **utils:** add siteIdentityFromUrlString for path-preserving site identity ([#1882](https://github.com/adobe/spacecat-shared/issues/1882)) ([b1ffe93](https://github.com/adobe/spacecat-shared/commit/b1ffe9328a4b1c1b9e2f6d92ab6f5ee993eab675))
+
 ## [@adobe/spacecat-shared-utils-v1.125.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.1...@adobe/spacecat-shared-utils-v1.125.2) (2026-08-12)
 
 ### Bug Fixes

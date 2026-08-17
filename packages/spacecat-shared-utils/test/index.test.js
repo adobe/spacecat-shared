@@ -137,6 +137,7 @@ describe('Index Exports', () => {
     'isPathPatternWithinSiteScope',
     'toggleWWWHostname',
     'toPathname',
+    'siteIdentityFromUrlString',
     'hasSamePathname',
     'allHaveSamePathname',
     'tracingFetch',

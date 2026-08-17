@@ -178,6 +178,15 @@ export declare function canonicalizeUrl(
 export declare function composeBaseURL(domain: string): string;
 
 /**
+ * Derives a stable "site identity" (lowercased host + normalized path, no
+ * scheme/credentials/port/query/fragment) from a URL-ish string. Preserves the
+ * path so subpath-scoped sites are distinguishable. Returns null if unparseable.
+ * @param value - A URL or host(/path) string, with or without scheme.
+ * @returns The site identity, or null if unparseable.
+ */
+export declare function siteIdentityFromUrlString(value: string): string | null;
+
+/**
  * Composes an audit URL by applying a series of transformations to the given url.
  * @param {string} url - The url to compose the audit URL from.
  * @param {string} [userAgent] - Optional user agent to use in the audit URL.

@@ -60,6 +60,7 @@ export { instrumentAWSClient, getTraceId, addTraceIdHeader } from './xray.js';
 export {
   canonicalizeUrl,
   composeBaseURL,
+  siteIdentityFromUrlString,
   composeAuditURL,
   prependSchema,
   stripPort,

@@ -20,6 +20,7 @@ import {
   canonicalizeUrl,
   composeAuditURL,
   composeBaseURL,
+  siteIdentityFromUrlString,
   prependSchema,
   stripPort,
   stripTrailingDot,
@@ -158,6 +159,57 @@ describe('URL Utility Functions', () => {
     it('should handle edge cases', () => {
       expect(composeBaseURL('')).to.equal('https://');
       expect(composeBaseURL('example')).to.equal('https://example');
+    });
+  });
+
+  describe('siteIdentityFromUrlString', () => {
+    it('keeps the host and preserves the path', () => {
+      expect(siteIdentityFromUrlString('https://www.nba.com/kings/')).to.equal('www.nba.com/kings');
+      expect(siteIdentityFromUrlString('nba.com/kings')).to.equal('nba.com/kings');
+      expect(siteIdentityFromUrlString('shangri-la.com/hongkong/kerry')).to.equal('shangri-la.com/hongkong/kerry');
+      expect(siteIdentityFromUrlString('quickbooks.intuit.com/au')).to.equal('quickbooks.intuit.com/au');
+    });
+
+    it('returns host-only (no trailing slash) for path-free URLs, matching a bare host', () => {
+      expect(siteIdentityFromUrlString('https://example.com')).to.equal('example.com');
+      expect(siteIdentityFromUrlString('https://example.com/')).to.equal('example.com');
+      expect(siteIdentityFromUrlString('example.com')).to.equal('example.com');
+      expect(siteIdentityFromUrlString('us.kisqali.com')).to.equal('us.kisqali.com');
+    });
+
+    it('strips a single trailing slash so /a/ and /a agree', () => {
+      expect(siteIdentityFromUrlString('experian.co.uk/business/')).to.equal('experian.co.uk/business');
+      expect(siteIdentityFromUrlString('experian.co.uk/business')).to.equal('experian.co.uk/business');
+    });
+
+    it('preserves a trailing .html (SITES-49656 — page vs section are distinct)', () => {
+      expect(siteIdentityFromUrlString('oklahoma.gov/omes.html')).to.equal('oklahoma.gov/omes.html');
+      expect(siteIdentityFromUrlString('oklahoma.gov/omes')).to.equal('oklahoma.gov/omes');
+    });
+
+    it('lowercases the host but leaves the path case-sensitive', () => {
+      expect(siteIdentityFromUrlString('HTTPS://Shop.Example.COM/UK/En')).to.equal('shop.example.com/UK/En');
+    });
+
+    it('strips scheme, userinfo, port, query and fragment', () => {
+      expect(siteIdentityFromUrlString('https://user:pass@shop.example.com:8443/uk?a=1&b=2#frag'))
+        .to.equal('shop.example.com/uk');
+      expect(siteIdentityFromUrlString('http://example.com:8080/shop')).to.equal('example.com/shop');
+    });
+
+    it('does not collapse www against the apex', () => {
+      expect(siteIdentityFromUrlString('www.example.com')).to.equal('www.example.com');
+      expect(siteIdentityFromUrlString('example.com')).to.equal('example.com');
+    });
+
+    it('returns null on empty or unparseable input', () => {
+      expect(siteIdentityFromUrlString('')).to.equal(null);
+      expect(siteIdentityFromUrlString('   ')).to.equal(null);
+      expect(siteIdentityFromUrlString(undefined)).to.equal(null);
+      expect(siteIdentityFromUrlString(null)).to.equal(null);
+      expect(siteIdentityFromUrlString('http://')).to.equal(null);
+      // parses successfully but yields an empty hostname
+      expect(siteIdentityFromUrlString('file:///etc/passwd')).to.equal(null);
     });
   });
 

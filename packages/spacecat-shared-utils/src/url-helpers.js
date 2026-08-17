@@ -88,6 +88,53 @@ function composeBaseURL(domain) {
 }
 
 /**
+ * Derives a stable "site identity" from a URL-ish string: the lowercased host
+ * plus its normalized path, with no scheme, credentials, port, query or
+ * fragment. Unlike {@link composeBaseURL} (which also strips the path and
+ * `www.`), this preserves the path so two sites on the same host but different
+ * subpaths — e.g. `nba.com/kings` vs `nba.com/knicks` — yield distinct
+ * identities. It mirrors how Semrush normalizes `settings.ai.primary_url`.
+ *
+ * Normalization rules (fixed by tests, not left to callers):
+ * - The host is lowercased; the path is left case-sensitive.
+ * - Scheme, userinfo, port, query and fragment are stripped.
+ * - A single trailing slash is removed (`example.com/a/` -> `example.com/a`),
+ *   so a bare host and a bare-root URL agree (`example.com`).
+ * - A trailing `.html` is preserved — `example.com/x.html` (one page) and
+ *   `example.com/x` (a section) are deliberately distinct (SITES-49656).
+ * - `www.` is NOT collapsed against the apex, matching the `domain` derivation.
+ * - Returns `null` on unparseable input, so call sites keep their null handling.
+ *
+ * @param {string} value - A URL or host(/path) string, with or without scheme.
+ * @returns {string|null} The site identity, or `null` if unparseable.
+ */
+function siteIdentityFromUrlString(value) {
+  if (!hasText(value)) {
+    return null;
+  }
+  const trimmed = value.trim();
+  // Detect an existing scheme case-insensitively (prependSchema is
+  // case-sensitive); parse everything through URL so credentials/port/query/
+  // fragment fall away for free.
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+  try {
+    const url = new URL(withScheme);
+    const host = url.hostname.toLowerCase();
+    if (!host) {
+      return null;
+    }
+    const pathname = url.pathname.endsWith('/')
+      ? url.pathname.slice(0, -1)
+      : url.pathname;
+    return `${host}${pathname}`;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Composes an audit URL by applying a series of transformations to the given url.
  * @param {string} url - The url to compose the audit URL from.
  * @param {string} [userAgent] - Optional user agent to use in the audit URL.
@@ -705,6 +752,7 @@ export {
   getSpacecatRequestHeaders,
   resolveCanonicalUrl,
   composeBaseURL,
+  siteIdentityFromUrlString,
   composeAuditURL,
   prependSchema,
   stripPort,

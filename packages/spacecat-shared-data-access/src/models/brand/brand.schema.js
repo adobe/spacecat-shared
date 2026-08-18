@@ -49,15 +49,6 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
     type: 'string',
     validate: (value) => value == null || hasText(value),
   })
-  // Nullable JSONB blob holding deferred Semrush provisioning data for a
-  // pending (draft) brand. Maps to brands.pending_semrush_provisioning
-  // (migration 20260618120000). Validated loosely here (object-or-null); the
-  // DB CHECK enforces the object shape and the controller owns field-level
-  // validation and the activate-flow consumption semantics.
-  .addAttribute('pendingSemrushProvisioning', {
-    type: 'any',
-    validate: (value) => value == null || (typeof value === 'object' && !Array.isArray(value)),
-  })
   // Uniqueness guarantee on the write-of-record column
   // (brands.semrush_sub_workspace_id, mysticat-data-service migration
   // 20260702091920), so findBySemrushSubWorkspaceId returns at most one row.

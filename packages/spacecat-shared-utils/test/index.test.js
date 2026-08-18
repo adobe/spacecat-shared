@@ -31,6 +31,7 @@ describe('Index Exports', () => {
     'CLOUDFLARE_LOGPUSH_FIELDS',
     'composeAuditURL',
     'composeBaseURL',
+    'siteIdentityFromUrlString',
     'dateAfterDays',
     'deepEqual',
     'DEFAULT_CPC_VALUE',

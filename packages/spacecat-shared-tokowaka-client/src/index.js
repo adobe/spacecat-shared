@@ -741,7 +741,9 @@ class TokowakaClient {
    * @param {Object} site - Site entity
    * @param {Object} opportunity - Opportunity entity
    * @param {Array} suggestions - Array of suggestion entities to deploy
-   * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions
+   * @returns {Promise<Object>} - Deployment result with succeeded/failed suggestions, plus
+   *   suggestionIdsHavingPatches: a Set of suggestion IDs for which a patch was actually generated
+   *   (excludes e.g. prerender-only suggestions, which deploy successfully with no patch).
    */
   async deploySuggestions(site, opportunity, suggestions, metadata = {}) {
     const { applyStale = false } = metadata;
@@ -772,6 +774,7 @@ class TokowakaClient {
       return {
         succeededSuggestions: [],
         failedSuggestions: ineligibleSuggestions,
+        suggestionIdsHavingPatches: new Set(),
       };
     }
 
@@ -827,17 +830,25 @@ class TokowakaClient {
 
         // Upload to S3
         const s3Path = await this.uploadConfig(fullUrl, config);
-        return { s3Path, fullUrl };
+        const suggestionIdsFromNewPatches = newConfig.patches
+          .map((patch) => patch.suggestionId)
+          .filter(Boolean);
+        return { s3Path, fullUrl, suggestionIdsFromNewPatches };
       },
       URL_CONFIG_CONCURRENCY,
     );
 
     const s3Paths = [];
     const deployedUrls = []; // Track URLs for batch CDN invalidation
+    // Suggestions whose deploy actually produced a patch (e.g. excludes prerender-only
+    // suggestions, which deploy successfully but never generate a patch) — used to scope
+    // the applyStale suggestion.data mirror to suggestions that have a patch to keep alive.
+    const suggestionIdsHavingPatches = new Set();
     processed.forEach((entry) => {
       if (entry) {
         s3Paths.push(entry.s3Path);
         deployedUrls.push(entry.fullUrl);
+        entry.suggestionIdsFromNewPatches.forEach((id) => suggestionIdsHavingPatches.add(id));
       }
     });
 
@@ -855,6 +866,7 @@ class TokowakaClient {
       cdnInvalidations,
       succeededSuggestions: eligibleSuggestions,
       failedSuggestions: ineligibleSuggestions,
+      suggestionIdsHavingPatches,
     };
   }
 
@@ -1479,8 +1491,13 @@ class TokowakaClient {
   }
 
   /**
-   * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed,
-   * and returns { succeededSuggestions, failedSuggestions }.
+   * Deploys per-URL suggestions via deploySuggestions(), stamps them with edgeDeployed and
+   * mirrors metadata.applyStale onto suggestion.data (display-only; the functional flag lives
+   * on the S3 patch itself, set inside deploySuggestions). The applyStale mirror is scoped to
+   * suggestions in deploySuggestions()'s suggestionIdsHavingPatches — suggestions that deploy
+   * successfully without producing a patch (e.g. prerender-only) are left without the field,
+   * since there is no patch for applyStale to keep alive. Returns
+   * { succeededSuggestions, failedSuggestions }.
    * Throws if the underlying deployment throws.
    * @param {Object} site
    * @param {Object} opportunity
@@ -1495,10 +1512,23 @@ class TokowakaClient {
       // eslint-disable-next-line max-len
       const result = await this.deploySuggestions(site, opportunity, validSuggestions, metadata);
       const deploymentTimestamp = Date.now();
+      const { applyStale = false } = metadata;
+      const suggestionIdsHavingPatches = result.suggestionIdsHavingPatches ?? new Set();
 
       const succeeded = result.succeededSuggestions.map((s) => {
         const currentData = s.getData();
         const updated = { ...currentData, edgeDeployed: deploymentTimestamp };
+        // Only mirror applyStale for suggestions that actually produced a patch — e.g.
+        // prerender-only suggestions deploy successfully but never generate one, so there
+        // is nothing for applyStale to keep alive. Matches the edgeDeployed contract
+        // (present-when-true, absent otherwise) instead of ever writing an explicit false.
+        if (suggestionIdsHavingPatches.has(s.getId())) {
+          if (applyStale) {
+            updated.applyStale = true;
+          } else {
+            delete updated.applyStale;
+          }
+        }
         const statusesToExcludeFromOptimization = ['STALE', 'LAST_MOD_MISSING'];
         if (statusesToExcludeFromOptimization.includes(updated.edgeOptimizeStatus)) {
           delete updated.edgeOptimizeStatus;
@@ -1871,6 +1901,138 @@ class TokowakaClient {
         this.log.warn(`[clear-apply-stale-failed] CDN invalidation failed for ${clearedUrls.length} URL(s), S3 configs already updated: ${err.message}`, err);
       }
     }
+  }
+
+  /**
+   * Sets or clears the `applyStale` flag for already-deployed per-URL suggestions, both on the
+   * S3 patch (functional source of truth) and mirrored onto suggestion.data (display-only) —
+   * without redeploying. Pattern / domain-wide suggestions and suggestions with no matching S3
+   * patch are ineligible and returned in failedSuggestions. CDN cache is invalidated for every
+   * URL whose config was actually modified.
+   *
+   * @param {Object} site - Site entity
+   * @param {Object} opportunity - Opportunity entity
+   * @param {Array} suggestions - Suggestion entities to update (expected to already be
+   *   filtered to deployed suggestions by the caller)
+   * @param {Object} options
+   * @param {boolean} options.applyStale - true to set applyStale, false to clear it
+   * @param {string} [options.updatedBy]
+   * @returns {Promise<{ succeededSuggestions: Array, failedSuggestions: Array }>}
+   */
+  async setApplyStaleForSuggestions(
+    site,
+    opportunity,
+    suggestions,
+    { applyStale, updatedBy } = {},
+  ) {
+    const baseURL = getEffectiveBaseURL(site);
+
+    const perUrlSuggestions = suggestions.filter((s) => {
+      const data = s.getData();
+      return data?.url && !Array.isArray(data?.allowedRegexPatterns);
+    });
+
+    const failedSuggestions = suggestions
+      .filter((s) => !perUrlSuggestions.includes(s))
+      .map((s) => ({
+        suggestion: s,
+        reason: 'Only per-URL suggestions support applyStale',
+        statusCode: 400,
+      }));
+
+    if (perUrlSuggestions.length === 0) {
+      return { succeededSuggestions: [], failedSuggestions };
+    }
+
+    const suggestionsByUrl = groupSuggestionsByUrlPath(perUrlSuggestions, baseURL, this.log);
+    const updatedUrls = [];
+    const succeededIds = new Set();
+
+    for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
+      const fullUrl = new URL(urlPath, baseURL).toString();
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const existingConfig = await this.fetchConfig(fullUrl);
+        const patches = existingConfig?.patches ?? [];
+        let modified = false;
+
+        const updatedPatches = patches.map((patch) => {
+          const matchedSuggestion = urlSuggestions.find((s) => s.getId() === patch.suggestionId);
+          if (!matchedSuggestion) {
+            return patch;
+          }
+          succeededIds.add(matchedSuggestion.getId());
+
+          if (applyStale) {
+            if (patch.applyStale === true) {
+              return patch;
+            }
+            modified = true;
+            return { ...patch, applyStale: true };
+          }
+
+          if (!patch.applyStale) {
+            return patch;
+          }
+          modified = true;
+          const { applyStale: _, ...rest } = patch;
+          return rest;
+        });
+
+        urlSuggestions.forEach((s) => {
+          if (!succeededIds.has(s.getId())) {
+            failedSuggestions.push({
+              suggestion: s,
+              reason: 'No patch found for suggestion',
+              statusCode: 400,
+            });
+          }
+        });
+
+        if (modified) {
+          // eslint-disable-next-line no-await-in-loop
+          await this.uploadConfig(fullUrl, { ...existingConfig, patches: updatedPatches });
+          updatedUrls.push(fullUrl);
+        }
+      } catch (err) {
+        this.log.error(`[apply-stale-failed] Failed to process URL ${fullUrl}: ${err.message}`, err);
+        urlSuggestions.forEach((s) => {
+          if (!succeededIds.has(s.getId())) {
+            failedSuggestions.push({ suggestion: s, reason: 'Internal server error', statusCode: 500 });
+          }
+        });
+      }
+    }
+
+    const succeededSuggestions = perUrlSuggestions
+      .filter((s) => succeededIds.has(s.getId()))
+      .map((s) => {
+        const currentData = s.getData();
+        const updated = { ...currentData };
+        if (applyStale) {
+          updated.applyStale = true;
+        } else {
+          delete updated.applyStale;
+        }
+        s.setData(updated);
+        s.setUpdatedBy(updatedBy);
+        return s;
+      });
+
+    if (succeededSuggestions.length > 0) {
+      await saveSuggestions(this.dataAccess, succeededSuggestions);
+    }
+
+    if (updatedUrls.length > 0) {
+      try {
+        await this.invalidateCdnCache({ urls: updatedUrls });
+        this.log.info(`[apply-stale] Updated applyStale on ${updatedUrls.length} URL(s) and invalidated CDN`);
+      } catch (err) {
+        this.log.warn(`[apply-stale-failed] CDN invalidation failed for ${updatedUrls.length} URL(s), S3 configs already updated: ${err.message}`, err);
+      }
+    }
+
+    return { succeededSuggestions, failedSuggestions };
   }
 }
 

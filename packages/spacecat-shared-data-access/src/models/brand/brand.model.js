@@ -34,6 +34,14 @@ import BaseModel from '../base/base.model.js';
  * `Organization.semrushWorkspaceId` is a DISTINCT field and stays — do not
  * reintroduce a brand mirror by symbol-name sweep.
  *
+ * NOTE: there is also no `pendingSemrushProvisioning` attribute. That
+ * "Save as pending" staging blob (`{primaryUrl, markets, generatePrompts}`,
+ * mapped to `brands.pending_semrush_provisioning`) was removed in SITES-49448
+ * once the brand/market management model made pending brands carry no
+ * markets, models chosen per market, and the primary URL a `site_id`
+ * selection at create time — the blob's shape no longer matches anything the
+ * product writes.
+ *
  * @class Brand
  * @extends BaseModel
  */

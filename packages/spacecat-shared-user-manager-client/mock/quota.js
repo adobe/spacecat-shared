@@ -17,7 +17,7 @@
  * model the live Semrush gateway exposes at `GET /v1/workspaces/{id}/resources` and enforces on a
  * resource transfer.
  *
- * Model (live-verified 2026-07-02 against `adobe-hackathon.semrush.com`; see the
+ * Model (live-verified 2026-07-02 against `www.semrush.com`; see the
  * dynamic-allocation plan "Gate 0"):
  * - Every metered workspace holds per-product `{ used, drafted, total }` for `ai`'s `projects` and
  *   `prompts` (plus `weekly_prompts`, always `0` — provisioning is daily-only). `total` is the

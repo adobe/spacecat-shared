@@ -32,7 +32,7 @@
  * nullable in the overlay so a literal `null` passes Counterfact's request validation.
  * `children_count`/`path` are derived at read time, so they are not part of the update. Returns
  * 200 `TreeNodeResponse` and 404 `{ message: 'not found' }` for an unknown `tag_id` — both
- * verified 2026-07-01 against prod (`adobe-hackathon.semrush.com`); the vendored swagger's
+ * verified 2026-07-01 against prod (`www.semrush.com`); the vendored swagger's
  * 201/no-404 is corrected by overlay CR11/CR12. Materialized into `.counterfact/routes/` by the
  * mock runner; excluded from coverage.
  */

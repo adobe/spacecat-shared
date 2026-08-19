@@ -21,7 +21,7 @@ import { createSerenityUserManagerApiClient } from '@adobe/spacecat-shared-user-
 const client = createSerenityUserManagerApiClient({
   // origin only — the client appends `/enterprise/users/api` itself. The host is shared with
   // Project Engine (`SEMRUSH_PROJECTS_BASE_URL`), or the Counterfact mock's origin for E2E.
-  baseUrl: 'https://adobe-hackathon.semrush.com',
+  baseUrl: 'https://www.semrush.com',
   // a raw IMS JWT, or a (sync/async) getter resolved per request
   authToken: () => getCurrentImsToken(),
 });
@@ -131,6 +131,6 @@ generated types. `test/overlay.test.js` covers the overlay applier itself.
 - Pydantic v2 is the default target; switch the `--output-model-type` flag in
   `generate:pydantic` if a consumer needs v1.
 - The base host is shared with Project Engine (`SEMRUSH_PROJECTS_BASE_URL`, e.g. the dev
-  `https://adobe-hackathon.semrush.com`); only the basePath differs (`/enterprise/users/api`
+  `https://www.semrush.com`); only the basePath differs (`/enterprise/users/api`
   vs `/enterprise/projects/api`). The live API authenticates on `Authorization: Bearer <IMS>` —
   Semrush accepts the IMS bearer directly (see [Spec corrections](#spec-corrections)).

@@ -53,7 +53,7 @@ info:
 #      model.AIOBenchmarkWithCounters upstream, so this correction became redundant. Dropped.
 # CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
 #      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
-#      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
+#      against prod `www.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
 #      of a tag → 200 with the updated TreeNodeResponse). Move the response 201→200 so the type, the
 #      mock, and the live API agree. Remove if Semrush changes the status upstream.
 # CR12 aio-update-tag returns 404 (not 500) for an unknown tag id. The vendored swagger declares no

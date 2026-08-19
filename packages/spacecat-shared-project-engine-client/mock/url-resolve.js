@@ -20,7 +20,7 @@
  * its own (the route handler is coverage-excluded), the same convention as {@link tagId} /
  * `parentIdField`.
  *
- * Live contract (verified 2026-07-03 against prod `adobe-hackathon.semrush.com` — serenity-docs#25
+ * Live contract (verified 2026-07-03 against prod `www.semrush.com` — serenity-docs#25
  * §0): `primary_url` strips the scheme and a leading `www.` but PRESERVES any other subdomain and
  * the path (`http://www.lovesac.com/products` → `lovesac.com/products`; `https://blog.hubspot.com`
  * → `blog.hubspot.com`); `domain` is the registrable apex, stripping the subdomain too

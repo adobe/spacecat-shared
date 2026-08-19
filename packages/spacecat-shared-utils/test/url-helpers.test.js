@@ -1376,7 +1376,7 @@ describe('URL Utility Functions', () => {
     // and is asserted by tests/unit/test_site_identity.py. The hash below pins the two
     // together: editing either copy alone fails that copy's own suite, which is the
     // signal to sync the other. Update it deliberately when adding cases to both.
-    const CORPUS_SHA256 = '7eda5d669725b4fafe1dfc5ea81a4705d545b57bfbc3d72edd1a281c7f955575';
+    const CORPUS_SHA256 = '0fc160c95f4208f232e1770e7893821390b6df259332afc13cef41caebb0ee78';
     const corpusPath = new URL('./fixtures/site-identity-corpus.json', import.meta.url);
     const corpusRaw = readFileSync(corpusPath);
     const corpus = JSON.parse(corpusRaw);

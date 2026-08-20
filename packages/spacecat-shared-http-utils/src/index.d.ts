@@ -60,6 +60,18 @@ export interface FacsRouteCapabilities {
     string,
     { resourceType: string; aliases: string[]; resolver: string }
   >;
+  /**
+   * Per-product COMPOSITE primary resource (opt-in). When the PRIMARY resource resolves for a
+   * product listed here, the wrapper delegates the grant decision to the registered resolver
+   * named by `resolver` (see `compositeResolvers` on `facsWrapper`) instead of the plain
+   * state-layer read — used when the primary resource is scoped by an extra qualifier
+   * (e.g. ASO's (site × opportunity-type)). `resourceType` gates which resolved resource type
+   * the delegation applies to. See rebac-composite-resource-key.md.
+   */
+  PRODUCTS_FACS_COMPOSITE_RESOURCE?: Record<
+    string,
+    { resourceType: string; resolver: string }
+  >;
 }
 
 /**
@@ -80,13 +92,36 @@ export type FacsSecondaryResolver = (
 ) => Promise<boolean>;
 
 /**
+ * A composite-primary-resource resolver registered by the consuming service and referenced by
+ * key from `FacsRouteCapabilities.PRODUCTS_FACS_COMPOSITE_RESOURCE[<product>].resolver`.
+ * Owns the qualifier logic for a composite primary resource (e.g. ASO opportunity-type).
+ * Returns a tri-state: `true` → grant; `'defer'` → the wrapper sets `context.attributes.facs`
+ * and defers to the controller (collection routes that ReBAC-filter results); any other value
+ * → deny. A thrown error is treated as deny (fail-closed).
+ */
+export type FacsCompositeResolver = (
+  context: object,
+  args: {
+    resourceType: string;
+    resourceId: string;
+    capability: string;
+    product: string;
+    subjectId?: string;
+    orgId?: string;
+    routePattern?: string;
+    routeParams?: Record<string, string>;
+  },
+) => Promise<boolean | 'defer'>;
+
+/**
  * FACS authorization wrapper for the helix-shared-wrap `.with()` chain.
  * Enforces FACS permissions for external customer users per route, gated by a LaunchDarkly
  * feature flag. Internal identities and Adobe internal orgs always bypass.
  *
  * @param fn - The handler to wrap.
  * @param opts - Options containing the FACS route-capability configuration and, optionally,
- *   the secondary-resource resolvers referenced by `PRODUCTS_FACS_SECONDARY_RESOURCE`.
+ *   the secondary-resource resolvers referenced by `PRODUCTS_FACS_SECONDARY_RESOURCE` and the
+ *   composite-resource resolvers referenced by `PRODUCTS_FACS_COMPOSITE_RESOURCE`.
  * @returns A wrapped handler.
  */
 export function facsWrapper(
@@ -94,6 +129,7 @@ export function facsWrapper(
   opts: {
     routeFacsCapabilities: FacsRouteCapabilities;
     secondaryResolvers?: Record<string, FacsSecondaryResolver>;
+    compositeResolvers?: Record<string, FacsCompositeResolver>;
   },
 ): (request: Request, context: object) => Promise<Response>;
 

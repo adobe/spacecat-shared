@@ -1091,4 +1091,213 @@ describe('facsWrapper', () => {
       });
     });
   });
+
+  describe('composite primary resource resolution (opt-in)', () => {
+    // ASO's PRIMARY resource is `site`, scoped by an opportunity-type qualifier.
+    // The grant decision is delegated to a registered composite resolver.
+    const compRouteCaps = {
+      PRODUCTS_ROUTES: {
+        ASO: {
+          'GET /sites/:siteId/opportunities/:opportunityId': 'aso/can_view',
+          'GET /sites/:siteId/opportunities': 'aso/can_view',
+        },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+        ASO: { site: ['siteId'] },
+      },
+      PRODUCTS_FACS_COMPOSITE_RESOURCE: {
+        ASO: { resourceType: 'site', resolver: 'asoOpportunityComposite' },
+      },
+    };
+
+    describe('creation-time guards', () => {
+      it('throws when a composite config entry is malformed', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: {
+            PRODUCTS_ROUTES: { ASO: { 'GET /x': 'aso/can_view' } },
+            PRODUCTS_FACS_COMPOSITE_RESOURCE: { ASO: { resourceType: 'site' } },
+          },
+          compositeResolvers: { asoOpportunityComposite: async () => true },
+        })).to.throw(/PRODUCTS_FACS_COMPOSITE_RESOURCE.ASO must be/);
+      });
+
+      it('throws when the declared composite resolver is not registered', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: {},
+        })).to.throw(/composite resolver 'asoOpportunityComposite' for product 'ASO' is not registered/);
+      });
+
+      it('accepts a valid composite config with a registered resolver', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: async () => true },
+        })).to.not.throw();
+      });
+    });
+
+    describe('request-time behavior', () => {
+      let ldClient;
+      let mockedWrapper;
+      let resolverStub;
+      let findBindingStub;
+
+      beforeEach(async () => {
+        ldClient = { isFlagEnabledForIMSOrg: sandbox.stub().resolves(true) };
+        findBindingStub = sandbox.stub();
+        const mod = await esmock('../../src/auth/facs-wrapper.js', {
+          '@adobe/spacecat-shared-launchdarkly-client': {
+            LaunchDarklyClient: { createFrom: sandbox.stub().returns(ldClient) },
+          },
+          '../../src/auth/facs-state-layer.js': {
+            findFacsResourceBinding: findBindingStub,
+            normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
+          },
+        });
+        mockedWrapper = mod.facsWrapper;
+        resolverStub = sandbox.stub();
+        // No org-wide JWT grant → the wrapper reaches the resource seam.
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
+        context.dataAccess = { services: { postgrestClient: { from: () => {} } } };
+      });
+
+      function oppReq() {
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/sites/site-abc/opportunities/opp-1',
+          headers: { 'x-product': 'aso' },
+        };
+      }
+
+      function listReq() {
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/sites/site-abc/opportunities',
+          headers: { 'x-product': 'aso' },
+        };
+      }
+
+      it('grants when the composite resolver returns true (single-opportunity route)', async () => {
+        resolverStub.resolves(true);
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.calledOnce).to.be.true;
+        const [ctxArg, args] = resolverStub.firstCall.args;
+        expect(ctxArg).to.equal(context);
+        expect(args).to.include({
+          resourceType: 'site',
+          resourceId: 'site-abc',
+          capability: 'aso/can_view',
+          product: 'ASO',
+          subjectId: 'user@example.com',
+          orgId: 'CUST-ORG-123@AdobeOrg',
+        });
+        expect(args.routeParams).to.include({ siteId: 'site-abc', opportunityId: 'opp-1' });
+        expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'composite-resolver' })).to.be.true;
+        // Composite resolver decided authorization; no defer flag and no state-layer read.
+        expect(context.attributes.facs).to.equal(undefined);
+        expect(findBindingStub.called).to.be.false;
+      });
+
+      it('defers to the controller when the composite resolver returns "defer" (collection route)', async () => {
+        resolverStub.resolves('defer');
+        listReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.calledOnce).to.be.true;
+        expect(context.attributes.facs).to.deep.equal({
+          enabled: true,
+          product: 'ASO',
+          subjectId: 'user@example.com',
+        });
+        expect(logStub.info.calledWithMatch({ tag: 'facs', defer: 'composite-resolver' })).to.be.true;
+      });
+
+      it('denies (403) when the composite resolver returns false', async () => {
+        resolverStub.resolves(false);
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.warn.calledWithMatch({ tag: 'facs', deny: 'composite-resolver' })).to.be.true;
+      });
+
+      it('fails closed (403) when the composite resolver throws', async () => {
+        resolverStub.rejects(new Error('opportunity fetch failed'));
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.error.calledWithMatch({ tag: 'facs', deny: 'composite-resolver-error' })).to.be.true;
+      });
+
+      it('JWT org-wide grant short-circuits before the composite resolver runs', async () => {
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => true });
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+      });
+
+      it('skips the composite resolver when the resolved resource type does not match (falls through to state-layer)', async () => {
+        // ASO with a brand route + composite spec on `site`: the brand route resolves
+        // resourceType 'brand' ≠ 'site', so the composite hook is skipped and the plain
+        // state-layer read decides (INV-1: composite config does not change non-site routes).
+        const mixedCaps = {
+          PRODUCTS_ROUTES: {
+            ASO: {
+              'GET /brands/:brandId': 'aso/can_view',
+              'GET /sites/:siteId/opportunities/:opportunityId': 'aso/can_view',
+            },
+          },
+          PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+            ASO: { site: ['siteId'], brand: ['brandId'] },
+          },
+          PRODUCTS_FACS_COMPOSITE_RESOURCE: {
+            ASO: { resourceType: 'site', resolver: 'asoOpportunityComposite' },
+          },
+        };
+        findBindingStub.resolves({ granted_capabilities: ['aso/can_view'] });
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/brands/brand-xyz',
+          headers: { 'x-product': 'aso' },
+        };
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: mixedCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+        expect(findBindingStub.called).to.be.true;
+        expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'state-layer' })).to.be.true;
+      });
+    });
+  });
 });

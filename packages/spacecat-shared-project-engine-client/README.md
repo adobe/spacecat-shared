@@ -34,6 +34,10 @@ const { data, error } = await client.GET('/v1/countries');
 - **Retries:** `429` is retried for any method; `5xx`/network errors only for idempotent methods
   (so a POST is never replayed). Backoff is exponential with jitter, honours `Retry-After`, and is
   capped at 20s/attempt. Pass `onRetry` to observe the loop.
+- **Timeouts:** pass `requestTimeoutMs` to bound each attempt — a stalled attempt is aborted via
+  `AbortSignal.timeout` (a per-attempt deadline, combined with any caller `signal`, never
+  replacing it) and, for idempotent methods, retried. Unset (default) ⇒ no client-imposed deadline,
+  so a hung socket blocks until the platform's own limit; set this to bound it.
 - **Shape:** this is a thin factory function rather than the `CLAUDE.md` "class + factory" client
   pattern — the wrapper has no per-instance state or behaviour beyond what `openapi-fetch` already
   provides, so a class would add ceremony without value. The typed surface IS the `openapi-fetch`
@@ -46,8 +50,18 @@ version control. Semrush only provides the file (no endpoint access in the near 
 it's **Swagger 2.0** (no v3/v3.1 on offer). The vendored file is **never edited**; where it
 diverges from the live API, a generation-time overlay corrects the converted artifact instead (see
 [Spec corrections](#spec-corrections)). Refresh is **manual**: drop in the newer file, re-run
-`npm run generate`, and review the diff. There is no automated drift detection while endpoint
-access is restricted.
+`npm run generate`, and review the diff. A committed checksum lock
+(`spec/projectengine_swagger_public.yaml.sha256`) is verified by `npm run spec:verify` (wired into
+`pretest`, so CI enforces it): any re-vendor of the spec fails the build until the hash is
+explicitly regenerated with `npm run spec:lock` and reviewed. A true live-drift contract test
+against Semrush remains blocked on endpoint access.
+
+Both scripts use a **package-root-relative** path and assume the working directory is this
+package root — always invoke them via `npm run spec:verify` / `npm run spec:lock`, which npm
+runs from the package root, rather than calling `shasum -c` by hand from the monorepo root or a
+subdirectory (that yields a confusing "no such file" error). They also assume `shasum` (Perl,
+present on macOS and the `ubuntu-latest` CI runner); minimal images such as Alpine ship
+`sha256sum` instead and would need the scripts adjusted.
 
 ## Pipeline
 
@@ -144,6 +158,7 @@ Stateful endpoints (backed by the store):
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tagged` | create prompts grouped by tag name |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags` | list prompts (empty `tag_ids` lists all; otherwise OR-filter) |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/prompts` | batch-delete prompts by id |
+| `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename` | in-place text edit (id stable; `409` on a sibling-text collision; `is_updated` mirrors the live layer) |
 
 ### Test control routes (not part of the Project Engine API)
 

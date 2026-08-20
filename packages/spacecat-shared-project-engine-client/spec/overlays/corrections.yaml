@@ -53,7 +53,7 @@ info:
 #      model.AIOBenchmarkWithCounters upstream, so this correction became redundant. Dropped.
 # CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
 #      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
-#      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
+#      against prod `www.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
 #      of a tag → 200 with the updated TreeNodeResponse). Move the response 201→200 so the type, the
 #      mock, and the live API agree. Remove if Semrush changes the status upstream.
 # CR12 aio-update-tag returns 404 (not 500) for an unknown tag id. The vendored swagger declares no
@@ -85,6 +85,53 @@ info:
 #      populates them, so we mark them required (the same faithful-`required` philosophy as CR5).
 #      The query param is already `required` upstream, and auth is handled by CR2's global
 #      Auth-Data-Jwt strip + imsBearer. Remove if Semrush marks the fields required upstream.
+# CR17 aio-rename-prompt returns 409 on a text collision. Renaming a prompt onto ANOTHER
+#      prompt's exact text fails with `409 conflict` — no mutation, no duplicate (verified
+#      2026-07-14 against prod, serenity-docs#63 §2 live probe). The vendored swagger declares
+#      no 409; add it (http_server.BasicResponse) so the mock can return the live status and
+#      Counterfact response validation accepts it. Remove if Semrush declares it upstream.
+# CR18 RenamePromptRequest.new_name is nullable. Live accepts `{"new_name": null}` and applies
+#      it as the empty string — 200, prompt renamed to '' (verified 2026-07-15 against prod);
+#      the vendored plain-string type makes Counterfact's request validation 400 that input
+#      before the handler runs. Remove if Semrush marks it nullable upstream.
+# CR19 model.AIOPromptMetadataPatch's four keys are nullable. The v3 metadata write family is an
+#      RFC 7396 JSON Merge Patch (LLMO-6288 WP2 rework, delivered swagger 2026-07-20): per key,
+#      absent = keep, a string = set, an explicit JSON `null` = DELETE that key. The vendored
+#      schema types all four as plain (non-nullable) strings, so Counterfact's request validation
+#      would reject the delete case's literal `null` before any handler ran. Remove if Semrush
+#      marks them nullable upstream.
+# CR20 model.PatchAIOPromptRequest.metadata is nullable. The combined `PATCH .../aio/prompts/
+#      {prompt_id}` accepts `{ metadata: null }` to WIPE the prompt's entire metadata block (the
+#      row's `metadata` column → NULL) — a distinct, coarser operation than the per-key deletes
+#      CR19 enables. The vendored schema types `metadata` as a bare (non-nullable) `$ref`, so the
+#      wipe request would 400 at request validation before the handler runs. Expressed as
+#      `oneOf: [{type: null}, {$ref}]` rather than a `nullable` sibling of the `$ref`: Counterfact's
+#      validator is plain ajv, which has no notion of OAS `nullable` on a `$ref` — an `allOf`
+#      wrapper (the CR6/CR14 remove-then-add pattern) does not work either, because `allOf` demands
+#      EVERY branch validate, and the referenced `AIOPromptMetadataPatch` schema's own (non-null)
+#      `type: object` then rejects the very `null` the wrapper was meant to allow. `oneOf` avoids
+#      that: a `null` payload matches only the `type: null` branch, an object payload only the
+#      `$ref` branch. Remove if Semrush marks it nullable upstream.
+# CR21 model.AIOPromptCreateResult always carries id + name + is_new (`metadata` stays optional —
+#      present only when the prompt actually carries one). Both v3 create endpoints
+#      (`aio-create-prompts`, `aio-create-tagged-prompts`) always populate the three (verified
+#      against the delivered swagger's own description: "Response returns per-item {id, name,
+#      is_new, metadata}"), so this is the CR5 philosophy applied to the new response shape.
+# CR22 Declare 401 on the five v3 aio-prompt operations. Live prod returns 401 on all five when the
+#      Authorization header is missing (probed directly, Rainer review 2026-07-28), and the mock's
+#      injected bearer guard returns 401 too, but the delivered swagger declares only 400/403/500
+#      (+404/409 where applicable) — leaving the new surface inconsistent with the rest of the API
+#      (103 of 110 ops already declare 401) and dropping 401 from the generated response union. Add
+#      the 401 BasicResponse to each (the CR5/CR17 faithful-status pattern). Remove if Semrush
+#      declares 401 upstream.
+#      NB: the author-length cap on the patch paths (prod 400s a 101-char author — Rainer review)
+#      and the "at least one of name/metadata" rule on the combined PATCH are NOT added to the
+#      request schema on purpose. Prod's own swagger declares neither, and prod enforces both at the
+#      service layer returning a JSON `{message}` body; declaring them here would make Counterfact
+#      reject at the request-validation layer with a plain-text body — DIVERGING from prod's body
+#      (and openapi-typescript collapses a root-level `anyOf` of bare `required` to `unknown`,
+#      poisoning the generated type). Both are modelled in the handlers instead, which return prod's
+#      exact JSON messages (see the v3 aio/prompts handlers + stateful.js patchOne/patchMetadataBatch).
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -207,13 +254,18 @@ actions:
       required: [id]
 
   - target: "$.components.schemas['model.AIOPromptWithStatus']"
-    description: "CR5: a prompt-with-status always carries id + name + tags"
+    description: "CR5: a prompt-with-status always carries id + name"
     # `is_new` is NOT marked required: the live `by_tags` list omits it (verified
     # 2026-06-25 against prod), most likely an omit-when-false boolean. Requiring it
     # would misrepresent the live API and make the type lie. It stays an optional
     # property (the mock may still populate it; that is a spec-valid superset).
+    # `tags` is likewise NOT required (was, until 2026-07-28): prod OMITS the key
+    # entirely on an UNTAGGED prompt rather than returning `[]` (verified live, Rainer
+    # review), so a required `tags` would misrepresent the live API and force the mock
+    # to emit `[]` where live omits. The by_tags handler now omits `tags` on an untagged
+    # prompt to match; a tagged prompt still carries it (a spec-valid superset).
     update:
-      required: [id, name, tags]
+      required: [id, name]
 
   - target: "$.components.schemas['model.AIOBenchmarkWithCounters']"
     description: "CR5: a listed benchmark always carries id (the benchmark_id brand URLs attach to)"
@@ -411,3 +463,110 @@ actions:
     description: "CR16: model.ResolveURLResponse always carries domain + primary_url + is_valid"
     update:
       required: [domain, primary_url, is_valid]
+
+  # ── CR17: aio-rename-prompt returns 409 on a text collision ───────────────
+  # Live: POST /v2/.../aio/prompts/{prompt_id}/rename onto a SIBLING prompt's exact text ->
+  # 409 conflict, with no mutation and no duplicate (verified 2026-07-14 against prod,
+  # serenity-docs#63 §2 live probe). The vendored swagger declares no 409; add it
+  # (http_server.BasicResponse, the same shape as CR12's 404) so the mock can return the live
+  # status and Counterfact response validation accepts it.
+  - target: "$.paths['/v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename'].post.responses"
+    description: "CR17: add the 409 Conflict response on aio-rename-prompt (text collision)"
+    update:
+      "409":
+        description: "Conflict"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR18: RenamePromptRequest.new_name is nullable ────────────────────────
+  # Live accepts `{"new_name": null}` and applies it as the empty string — 200, prompt renamed
+  # to '' (verified 2026-07-15 against prod, same probe as the CR17 wording pin). The vendored
+  # plain-string type makes Counterfact's request validation reject that input with a 400
+  # before the stateful handler runs.
+  - target: "$.components.schemas['model.RenamePromptRequest'].properties.new_name"
+    description: "CR18: new_name accepts null (live applies it as the empty string)"
+    update:
+      nullable: true
+
+  # ── CR19: AIOPromptMetadataPatch's four keys are nullable (RFC 7396 per-key delete) ───────
+  - target: "$.components.schemas['model.AIOPromptMetadataPatch']"
+    description: "CR19: metadata-patch keys accept null (RFC 7396 delete semantics)"
+    update:
+      properties:
+        created_at: { type: string, nullable: true }
+        created_by: { type: string, nullable: true }
+        updated_at: { type: string, nullable: true }
+        updated_by: { type: string, nullable: true }
+
+  # ── CR20: PatchAIOPromptRequest.metadata is nullable (an explicit null wipes the block) ────
+  # Two actions (remove-then-add, like CR6/CR14): a bare $ref cannot take a `nullable` sibling in
+  # OAS3, so the $ref is dropped and re-expressed under `oneOf` (see the detailed comment above
+  # CR19/CR20 for why `oneOf`, not `allOf`, is the shape that actually works under plain ajv).
+  - target: "$.components.schemas['model.PatchAIOPromptRequest'].properties.metadata.$ref"
+    description: "CR20a: drop the bare $ref on PatchAIOPromptRequest.metadata"
+    remove: true
+  - target: "$.components.schemas['model.PatchAIOPromptRequest'].properties.metadata"
+    description: "CR20b: metadata accepts null (oneOf null / the patch schema) to wipe the block"
+    update:
+      oneOf:
+        - type: "null"
+        - $ref: "#/components/schemas/model.AIOPromptMetadataPatch"
+
+  # ── CR21: AIOPromptCreateResult always carries id + name + is_new ─────────────────────────
+  - target: "$.components.schemas['model.AIOPromptCreateResult']"
+    description: "CR21: a create result always carries id + name + is_new (metadata is optional)"
+    update:
+      required: [id, name, is_new]
+
+  # ── CR22: the five v3 aio-prompt operations declare 401 ───────────────────
+  # Live prod returns 401 on all five new v3 routes with no bearer (Rainer review 2026-07-28); the
+  # mock's injected auth guard returns 401 too. The delivered swagger omits 401 on these five (7 of
+  # 110 ops lack it, and these are among them), so the generated response union drops it. Add the
+  # 401 BasicResponse to each (same faithful-status pattern as CR5/CR17, same 401 shape as CR8's).
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts'].post.responses"
+    description: "CR22: aio-create-prompts declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}'].patch.responses"
+    description: "CR22: aio-patch-prompt declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/metadata'].patch.responses"
+    description: "CR22: aio-patch-prompt-metadata declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/metadata'].patch.responses"
+    description: "CR22: aio-patch-prompts-metadata-batch declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v3/workspaces/{id}/projects/{project_id}/aio/prompts/tagged'].post.responses"
+    description: "CR22: aio-create-tagged-prompts declares 401"
+    update:
+      "401":
+        description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"

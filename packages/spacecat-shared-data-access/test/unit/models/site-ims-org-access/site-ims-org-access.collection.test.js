@@ -604,4 +604,96 @@ describe('SiteImsOrgAccessCollection', () => {
       expect(createInstanceFromRowStub.callCount).to.equal(DEFAULT_PAGE_SIZE + 1);
     });
   });
+
+  describe('all (PostgREST orderBy)', () => {
+    function makeChainableQuery(result) {
+      const q = {};
+      [
+        'select', 'order', 'eq', 'gte', 'lte', 'in',
+        'is', 'like', 'ilike', 'contains', 'neq', 'range',
+      ].forEach((m) => { q[m] = sinon.stub().returns(q); });
+      q.then = (resolve) => resolve(result); // `await query` yields {data,error}
+      return q;
+    }
+
+    beforeEach(() => {
+      // createElectroMocks wires a matching ElectroDB entity by default, which would
+      // route #all() through the ElectroDB branch of #queryByIndexKeys instead of the
+      // PostgREST branch that owns #queryPage. Force the PostgREST branch the same way
+      // scrape-job.collection.test.js's "postgrest accessor parity" suite does.
+      instance.entity = undefined;
+    });
+
+    it('orders by an explicit orderBy column and direction', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'desc' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: false });
+    });
+
+    it('falls back to index-derived ordering when orderBy is absent (back-compat)', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all({}, { order: 'asc', limit: 10 });
+
+      expect(query.order.getCalls().some((c) => c.args[0] === 'updated_at')).to.equal(false);
+    });
+
+    it('orders ascending when direction is "asc"', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'asc' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: true });
+    });
+
+    it('defaults to ascending when direction is omitted', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all({}, { orderBy: { attribute: 'updatedAt' }, limit: 10 });
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: true });
+    });
+
+    it('treats direction case-insensitively ("DESC" -> descending)', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'DESC' }, limit: 10 },
+      );
+
+      sinon.assert.calledWith(query.order, 'updated_at', { ascending: false });
+    });
+
+    it('throws on an unknown orderBy attribute', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await expect(instance.all({}, { orderBy: { attribute: 'bogusField' }, limit: 10 }))
+        .to.be.rejectedWith(/unknown orderBy attribute/);
+    });
+
+    it('throws on an invalid orderBy direction', async () => {
+      const query = makeChainableQuery({ data: [], error: null });
+      instance.postgrestService.from = sinon.stub().returns(query);
+
+      await expect(instance.all(
+        {},
+        { orderBy: { attribute: 'updatedAt', direction: 'sideways' }, limit: 10 },
+      )).to.be.rejectedWith(/invalid orderBy direction/);
+    });
+  });
 });

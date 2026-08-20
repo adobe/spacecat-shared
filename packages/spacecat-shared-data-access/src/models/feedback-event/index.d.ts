@@ -53,8 +53,10 @@ export interface ReviewView {
   rejectionCategory: string | null;
   stateTransition: string | null;
   tier: string;
+  feedbackSubjectId: string | null;
   previousFix?: unknown;
   editedFix?: unknown;
+  guidanceMarkdown?: string | null;
 }
 
 /**

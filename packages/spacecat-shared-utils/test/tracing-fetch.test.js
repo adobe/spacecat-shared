@@ -322,7 +322,10 @@ describe('tracing fetch function', () => {
       await tracingFetch(url, { timeout: shortTimeout });
       throw new Error('Expected fetch to throw a timeout error');
     } catch (error) {
-      expect(error.message).to.include('timeout');
+      // The message must reflect the actual configured timeout (50ms), not a hardcoded 10000 —
+      // @adobe/fetch's TimeoutSignal keeps its ms value behind a private Symbol, so it can't be
+      // read back off the signal; it must be the value tracingFetch itself was called with.
+      expect(error.message).to.equal('Request timeout after 50ms');
       expect(error.code).to.equal('ETIMEOUT');
 
       // Check if the subsegment was properly handled
@@ -353,7 +356,7 @@ describe('tracing fetch function', () => {
       await tracingFetch(url, { timeout: shortTimeout });
       throw new Error('Expected fetch to throw a timeout error');
     } catch (error) {
-      expect(error.message).to.include('timeout');
+      expect(error.message).to.equal('Request timeout after 50ms');
       expect(error.code).to.equal('ETIMEOUT');
     }
   });

@@ -36,6 +36,7 @@ describe('FixEntityModel', () => {
       changeDetails: { field: 'title', oldValue: 'Old', newValue: 'New' },
       executedAt: '2024-01-01T00:00:00.000Z',
       executedBy: 'user123',
+      deployedAt: '2024-01-01T00:00:00.000Z',
       publishedAt: '2024-01-01T00:00:00.000Z',
       updatedAt: '2024-01-01T00:00:00.000Z',
     };
@@ -318,6 +319,42 @@ describe('FixEntityModel', () => {
 
       await expect(fix.remove()).to.be.rejectedWith('PostgREST exploded');
       expect(superRemoveStub).to.not.have.been.called;
+    });
+  });
+
+  describe('setStatus / transitionStatus guard (SITES-47091)', () => {
+    const original = process.env.STATUS_TRANSITION_ENFORCEMENT;
+
+    afterEach(() => {
+      if (original === undefined) {
+        delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      } else {
+        process.env.STATUS_TRANSITION_ENFORCEMENT = original;
+      }
+    });
+
+    it('applies an allowed transition (PENDING -> DEPLOYED) without warning', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model, mockLogger } = createElectroMocks(FixEntity, { ...mockRecord, status: 'PENDING' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.transitionStatus('DEPLOYED');
+      expect(model.record.status).to.equal('DEPLOYED');
+      expect(mockLogger.warn).to.not.have.been.called;
+    });
+
+    it('warns but still applies an illegal transition in warn mode (default)', () => {
+      delete process.env.STATUS_TRANSITION_ENFORCEMENT;
+      const { model, mockLogger } = createElectroMocks(FixEntity, { ...mockRecord, status: 'PENDING' });
+      mockLogger.warn.resetHistory(); // ignore construction-time warnings
+      model.setStatus('PUBLISHED');
+      expect(model.record.status).to.equal('PUBLISHED');
+      expect(mockLogger.warn).to.have.been.calledOnce;
+    });
+
+    it('throws on an illegal transition in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(FixEntity, { ...mockRecord, status: 'PENDING' });
+      expect(() => model.setStatus('PUBLISHED')).to.throw('FixEntity');
     });
   });
 });

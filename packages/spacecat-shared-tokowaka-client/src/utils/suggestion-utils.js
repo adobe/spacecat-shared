@@ -11,6 +11,7 @@
  */
 
 import { buildUrlMatcher } from './pattern-utils.js';
+import { normalizePath } from './s3-utils.js';
 
 /** Returns a shallow copy of obj with the specified keys removed. */
 export function omitKeys(obj, keys) {
@@ -35,7 +36,7 @@ export function isPatternSuggestion(suggestion) {
 }
 
 /**
- * Groups suggestions by URL pathname
+ * Groups suggestions by normalized URL pathname
  * @param {Array} suggestions - Array of suggestion entities
  * @param {string} baseURL - Base URL for pathname extraction
  * @param {Object} log - Logger instance
@@ -53,7 +54,7 @@ export function groupSuggestionsByUrlPath(suggestions, baseURL, log) {
 
     let urlPath;
     try {
-      urlPath = new URL(url, baseURL).pathname;
+      urlPath = normalizePath(new URL(url, baseURL).pathname);
     } catch (e) {
       log.warn(`Failed to extract pathname from URL for suggestion ${suggestion.getId()}: ${url}`);
       return acc;
@@ -92,26 +93,88 @@ export function filterEligibleSuggestions(suggestions, mapper) {
   return { eligible, ineligible };
 }
 
+// Import worker job type for a bulk suggestion field update (agnostic set/unset by id).
+export const SUGGESTION_BULK_UPDATE_TYPE = 'suggestion-bulk-update';
+
+// Max suggestion IDs per SQS message. Keeps message bodies well under the 256KB
+// SQS limit even for large batches (domain-wide coverage can hit 6-7k suggestions).
+const SQS_SUGGESTION_ID_BATCH_SIZE = 3000;
+
+function chunk(array, size) {
+  const chunks = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
 /**
  * Batch-saves suggestions using the optimal strategy based on count.
  *
  * - <= 1700: sequential chunked upsert via saveMany (chunkSize 25).
  *   ~4s for 1700 suggestions from the DB layer, but ~11s observed end-to-end
  *   from the API due to serialization, network, and Lambda overhead.
- * - > 1700: parallel individual .save() via Promise.allSettled to avoid
- *   sequential chunk bottleneck at scale.
+ * - > 1700 with no queueContext: parallel individual .save() via Promise.allSettled to
+ *   avoid sequential chunk bottleneck at scale.
+ * - > 1700 with queueContext: enqueues one or more SUGGESTION_BULK_UPDATE_TYPE jobs to the
+ *   import worker instead of saving here (the worker fetches by id and applies
+ *   queueContext.set/unset itself). Suggestion IDs are chunked into batches of
+ *   SQS_SUGGESTION_ID_BATCH_SIZE per message to stay under the SQS message size limit.
+ *   Falls back to the Promise.allSettled path above if sqs/queueUrl aren't configured or
+ *   any sendMessage fails, so a queue outage degrades rather than silently drops the save.
  *
  * @param {Object} dataAccess - Data access layer
  * @param {Array} suggestions - Suggestion entities to save
+ * @param {Object} [queueContext] - sqs, queueUrl, siteId, set/unset,
+ *   updatedBy (already resolved), log
  * @returns {Promise<void>}
  */
 const PARALLEL_SAVE_THRESHOLD = 1700;
 
-export async function saveSuggestions(dataAccess, suggestions) {
+export async function saveSuggestions(dataAccess, suggestions, queueContext) {
   if (suggestions.length === 0) {
     return;
   }
   if (suggestions.length > PARALLEL_SAVE_THRESHOLD) {
+    if (queueContext) {
+      const {
+        sqs, queueUrl, siteId, set, unset, updatedBy, log,
+      } = queueContext;
+
+      if (queueUrl && sqs) {
+        try {
+          const idBatches = chunk(
+            suggestions.map((s) => s.getId()),
+            SQS_SUGGESTION_ID_BATCH_SIZE,
+          );
+          // If any of the batches below fails, then we fallback to the save method,
+          // re-marking a suggestion is acceptable since we update the same value again
+          await Promise.all(idBatches.map((suggestionIds) => sqs.sendMessage(queueUrl, {
+            type: SUGGESTION_BULK_UPDATE_TYPE,
+            siteId,
+            suggestionIds,
+            ...(set && { set }),
+            ...(unset && { unset }),
+            updatedBy,
+          })));
+          log.info(
+            `[suggestion-bulk-update] Queued bulk update for ${suggestions.length} `
+            + `suggestion(s) in ${idBatches.length} batch(es)`,
+          );
+          return;
+        } catch (error) {
+          log.error(
+            `[suggestion-bulk-update] Failed to queue bulk update, falling back to direct save: ${error.message}`,
+          );
+        }
+      } else {
+        log.warn(
+          '[suggestion-bulk-update] SQS/IMPORT_WORKER_QUEUE_URL not configured; '
+          + `falling back to direct save for ${suggestions.length} suggestion(s)`,
+        );
+      }
+    }
+
     const results = await Promise.allSettled(suggestions.map((s) => s.save()));
     const failed = results.filter((r) => r.status === 'rejected');
     if (failed.length > 0) {
@@ -150,10 +213,11 @@ export function stripSuggestion(suggestion, actorFallback, updatedBy) {
  * @param {string|undefined} updatedBy - Explicit actor
  * @param {string[]} fieldsToStrip - Specific fields to remove
  * @param {Object} log - Logger instance
+ * @param {Object} [queueContext] - Passed through to saveSuggestions unchanged
  * @returns {Promise<void>}
  */
 // eslint-disable-next-line max-len
-export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log) {
+export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallback, updatedBy, fieldsToStrip, log, queueContext) {
   if (covered.length === 0) {
     return;
   }
@@ -162,7 +226,7 @@ export async function cleanupCoveredSuggestions(dataAccess, covered, actorFallba
     cs.setUpdatedBy(updatedBy ?? actorFallback);
   });
   try {
-    await saveSuggestions(dataAccess, covered);
+    await saveSuggestions(dataAccess, covered, queueContext);
   } catch (error) {
     // eslint-disable-next-line max-len
     log.error(`[edge-rollback-failed] Failed to clean ${covered.length} covered suggestion(s): ${error.message}`);
@@ -240,4 +304,59 @@ export function filterBatchCoveredSuggestions(validSuggestions, patternSuggestio
   });
 
   return { remaining, skippedInBatch };
+}
+
+/**
+ * Finds the suggestions in `allSuggestions` that are covered by a pattern suggestion's
+ * allowedRegexPatterns
+ *
+ * @param {Object} patternSuggestion - The domain-wide / segment pattern suggestion
+ * @param {Array<string>} allowedRegexPatterns
+ * @param {Array} allSuggestions - Full opportunity suggestion list to search
+ * @param {Set<string>} [excludeIds] - Suggestion IDs to skip (e.g. already handled in-batch)
+ * @param {Object} log - Logger instance
+ * @returns {Array} Suggestions covered by the pattern
+ */
+export function findCoveredSuggestions(
+  patternSuggestion,
+  allowedRegexPatterns,
+  allSuggestions,
+  excludeIds,
+  log,
+) {
+  const isDomainWide = patternSuggestion.getData()?.isDomainWide === true;
+  const matchers = allowedRegexPatterns.flatMap((p) => {
+    const m = buildUrlMatcher(p);
+    if (!m) {
+      // eslint-disable-next-line max-len
+      log.warn(`[edge-deploy] Pattern '${p}' for suggestion ${patternSuggestion.getId()} is invalid, skipping`);
+    }
+    return m ? [m] : [];
+  });
+
+  if (matchers.length === 0) {
+    return [];
+  }
+
+  return allSuggestions.filter((s) => {
+    if (s.getId() === patternSuggestion.getId()) {
+      return false;
+    }
+    if (excludeIds?.has(s.getId())) {
+      return false;
+    }
+    if (!isEdgeDeployableSuggestionStatus(s.getStatus())) {
+      return false;
+    }
+    if (s.getData()?.edgeDeployed) {
+      return false;
+    }
+    // Path-level pattern suggestions (not domain-wide) are fully covered by a
+    // domain-wide deployment. Other pattern suggestions (including other DW ones) are not.
+    if (isPatternSuggestion(s)) {
+      return isDomainWide && !s.getData()?.isDomainWide;
+    }
+    const url = s.getData()?.url;
+    return url && matchers.some((match) => match(url));
+  });
 }

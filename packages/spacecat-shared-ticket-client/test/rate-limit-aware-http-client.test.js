@@ -368,9 +368,13 @@ describe('RateLimitAwareHttpClient', () => {
   });
 
   describe('X-RateLimit quota headers', () => {
-    it('logs a warning when X-RateLimit-Remaining is below threshold', async () => {
+    it('logs a warning when X-RateLimit-NearLimit is true, including remaining and limit', async () => {
       const inner = {
-        fetch: sinon.stub().resolves(makeResponse(200, { 'X-RateLimit-Remaining': '500' })),
+        fetch: sinon.stub().resolves(makeResponse(200, {
+          'X-RateLimit-NearLimit': 'true',
+          'X-RateLimit-Remaining': '500',
+          'X-RateLimit-Limit': '65000',
+        })),
       };
       const log = makeLog();
       const client = new RateLimitAwareHttpClient(inner, log);
@@ -379,11 +383,28 @@ describe('RateLimitAwareHttpClient', () => {
 
       expect(log.warn.calledOnce).to.be.true;
       expect(log.warn.firstCall.args[0]).to.include('quota running low');
+      expect(log.warn.firstCall.args[1]).to.deep.include({ remaining: 500, limit: '65000' });
     });
 
-    it('does not warn when X-RateLimit-Remaining is above threshold', async () => {
+    it('warns with undefined remaining/limit when NearLimit is true but those headers are absent', async () => {
       const inner = {
-        fetch: sinon.stub().resolves(makeResponse(200, { 'X-RateLimit-Remaining': '50000' })),
+        fetch: sinon.stub().resolves(makeResponse(200, { 'X-RateLimit-NearLimit': 'true' })),
+      };
+      const log = makeLog();
+      const client = new RateLimitAwareHttpClient(inner, log);
+
+      await client.fetch('https://api.atlassian.com/issue', {});
+
+      expect(log.warn.calledOnce).to.be.true;
+      expect(log.warn.firstCall.args[1]).to.deep.include({
+        remaining: undefined,
+        limit: undefined,
+      });
+    });
+
+    it('does not warn when X-RateLimit-NearLimit is absent', async () => {
+      const inner = {
+        fetch: sinon.stub().resolves(makeResponse(200, { 'X-RateLimit-Remaining': '500' })),
       };
       const log = makeLog();
       const client = new RateLimitAwareHttpClient(inner, log);
@@ -408,10 +429,11 @@ describe('RateLimitAwareHttpClient', () => {
       expect(log.debug.firstCall.args[1]).to.deep.include({ resetAt });
     });
 
-    it('includes resetAt in the low-quota warning when both headers are present', async () => {
+    it('includes resetAt in the low-quota warning when NearLimit and Reset are present', async () => {
       const resetAt = '2026-06-23T10:00:00Z';
       const inner = {
         fetch: sinon.stub().resolves(makeResponse(200, {
+          'X-RateLimit-NearLimit': 'true',
           'X-RateLimit-Remaining': '100',
           'X-RateLimit-Reset': resetAt,
         })),

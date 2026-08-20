@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { expect, use } from 'chai';
 import sinonChai from 'sinon-chai';
 import nock from 'nock';
@@ -34,6 +36,7 @@ import {
   isWithinSiteScope,
   filterBySiteScope,
   toPathname,
+  siteIdentityFromUrlString,
   hasSamePathname,
   allHaveSamePathname,
   isPathPatternWithinSiteScope,
@@ -1364,6 +1367,57 @@ describe('URL Utility Functions', () => {
     it('returns empty array for non-array input', () => {
       expect(filterBySiteScope(null, 'bulk.com/uk')).to.deep.equal([]);
       expect(filterBySiteScope(undefined, 'bulk.com/uk')).to.deep.equal([]);
+    });
+  });
+
+  describe('siteIdentityFromUrlString', () => {
+    // A byte-identical copy of this corpus lives at
+    // mysticat-data-service/scripts/serenity_migration/fixtures/site_identity_corpus.json
+    // and is asserted by tests/unit/test_site_identity.py. The hash below pins the two
+    // together: editing either copy alone fails that copy's own suite, which is the
+    // signal to sync the other. Update it deliberately when adding cases to both.
+    const CORPUS_SHA256 = '0fc160c95f4208f232e1770e7893821390b6df259332afc13cef41caebb0ee78';
+    const corpusPath = new URL('./fixtures/site-identity-corpus.json', import.meta.url);
+    const corpusRaw = readFileSync(corpusPath);
+    const corpus = JSON.parse(corpusRaw);
+
+    it('matches the corpus shared with the Python implementation', () => {
+      const actual = createHash('sha256').update(corpusRaw).digest('hex');
+      expect(actual).to.equal(
+        CORPUS_SHA256,
+        'site-identity corpus changed: sync mysticat-data-service\'s copy and update CORPUS_SHA256 in both suites',
+      );
+    });
+
+    corpus.cases.forEach(({ input, identity, why }) => {
+      it(`${JSON.stringify(input)} -> ${JSON.stringify(identity)} (${why})`, () => {
+        expect(siteIdentityFromUrlString(input)).to.equal(identity);
+      });
+    });
+
+    it('returns null for non-string input', () => {
+      expect(siteIdentityFromUrlString(null)).to.equal(null);
+      expect(siteIdentityFromUrlString(undefined)).to.equal(null);
+      expect(siteIdentityFromUrlString(42)).to.equal(null);
+      expect(siteIdentityFromUrlString({})).to.equal(null);
+    });
+
+    it('gives sibling subpath sites on one host distinct identities', () => {
+      const root = siteIdentityFromUrlString('https://nba.com');
+      const kings = siteIdentityFromUrlString('https://nba.com/kings');
+      const knicks = siteIdentityFromUrlString('https://nba.com/knicks');
+      expect(new Set([root, kings, knicks]).size).to.equal(3);
+      expect(kings).to.not.equal(root);
+    });
+
+    it('is a no-op against the host for path-free site URLs', () => {
+      // The invariant that makes this safe for the 12,486 path-free sites in prod:
+      // for a base URL with no path, the identity equals the bare hostname that
+      // the `domain` derivation already produces today.
+      ['https://example.com', 'https://www.example.com', 'http://sub.example.co.uk']
+        .forEach((url) => {
+          expect(siteIdentityFromUrlString(url)).to.equal(new URL(url).hostname);
+        });
     });
   });
 

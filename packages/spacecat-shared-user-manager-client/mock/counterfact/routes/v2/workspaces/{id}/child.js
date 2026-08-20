@@ -34,7 +34,12 @@ export function POST($) {
     };
   }
   const ai = body?.resources?.ai ?? {};
-  if (!context.quota.canAllocate(path.id, ai)) {
+  // Only meter when the parent is metered (has a resources record); an unmetered parent keeps the
+  // legacy unlimited behaviour so existing seeds/flows are unaffected. A carve moves the allocation
+  // out of the parent's `total` and gives the new child its own `{ used:0, total: alloc }` (see
+  // live: a child carve decrements the master pool — see the dynamic-allocation plan Gate 0).
+  const metered = context.quota.resources(path.id) !== null;
+  if (metered && !context.quota.canCarve(path.id, ai)) {
     return {
       status: 422,
       body: context.factories.createBasicResponseMock({
@@ -43,13 +48,17 @@ export function POST($) {
       contentType: 'application/json',
     };
   }
-  context.quota.draw(path.id, ai);
-  // The created child mirrors the live workspaceResponse exactly (no extra `resources` field —
-  // the live API does not echo the allocation here; it is tracked via the parent pool draw above).
+  // The created child mirrors the live workspaceResponse exactly (no extra `resources` field — the
+  // live API does not echo the allocation here; it is tracked via the resources records above).
   const created = context.ops.workspaces.create(context.factories.createWorkspaceMock({
     title: body?.title ?? 'Child Workspace',
     parent_id: path.id,
     status: 'created',
   }));
+  if (metered) {
+    // Fresh child has no resources → applyTransfer carves exactly `ai` from the parent and sets the
+    // child's absolute totals.
+    context.quota.applyTransfer(path.id, created.id, ai);
+  }
   return $.response[200].json(created);
 }

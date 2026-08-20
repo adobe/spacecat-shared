@@ -73,6 +73,75 @@ describe('TrialUser IT', async () => {
     );
   });
 
+  it('gets a trial user by external user id', async () => {
+    const sampleTrialUser = sampleData.trialUsers[0];
+    const externalUserId = sampleTrialUser.getExternalUserId();
+
+    const trialUser = await TrialUser.findByExternalUserId(externalUserId);
+
+    expect(trialUser).to.be.an('object');
+    expect(trialUser.getExternalUserId()).to.equal(externalUserId);
+    expect(
+      sanitizeTimestamps(trialUser.toJSON()),
+    ).to.eql(
+      sanitizeTimestamps(sampleTrialUser.toJSON()),
+    );
+  });
+
+  it('returns null when no trial user matches the external user id', async () => {
+    const trialUser = await TrialUser.findByExternalUserId('nonexistent-id');
+
+    expect(trialUser).to.be.null;
+  });
+
+  it('gets all/one trial users sharing an externalUserId, pinning the arbitrary-match contract', async () => {
+    const organizationId = sampleData.organizations[0].getId();
+    const sharedExternalUserId = 'ext-user-shared';
+
+    const first = await TrialUser.create({
+      organizationId,
+      emailId: 'shared1@example.com',
+      externalUserId: sharedExternalUserId,
+      status: 'INVITED',
+      updatedBy: 'system',
+    });
+    const second = await TrialUser.create({
+      organizationId,
+      emailId: 'shared2@example.com',
+      externalUserId: sharedExternalUserId,
+      status: 'INVITED',
+      updatedBy: 'system',
+    });
+
+    const allMatches = await TrialUser.allByExternalUserId(sharedExternalUserId);
+    expect(allMatches).to.be.an('array');
+    expect(allMatches.map((trialUser) => trialUser.getId())).to.have.members([
+      first.getId(),
+      second.getId(),
+    ]);
+
+    const singleMatch = await TrialUser.findByExternalUserId(sharedExternalUserId);
+    expect(singleMatch).to.be.an('object');
+    expect([first.getId(), second.getId()]).to.include(singleMatch.getId());
+
+    const secondUpdatedAt = second.getUpdatedAt();
+
+    const allByUpdatedAt = await TrialUser.allByExternalUserIdAndUpdatedAt(
+      sharedExternalUserId,
+      secondUpdatedAt,
+    );
+    expect(allByUpdatedAt).to.be.an('array');
+    expect(allByUpdatedAt.length).to.equal(1);
+    expect(allByUpdatedAt[0].getId()).to.equal(second.getId());
+
+    const findByUpdatedAt = await TrialUser.findByExternalUserIdAndUpdatedAt(
+      sharedExternalUserId,
+      secondUpdatedAt,
+    );
+    expect(findByUpdatedAt).to.be.an('object');
+    expect(findByUpdatedAt.getId()).to.equal(second.getId());
+  });
+
   it('gets all trial users by organization id', async () => {
     const sampleTrialUser = sampleData.trialUsers[0];
     const organizationId = sampleTrialUser.getOrganizationId();

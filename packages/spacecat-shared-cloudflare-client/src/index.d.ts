@@ -31,6 +31,7 @@ export interface CloudflareAccount {
 export interface CloudflareZone {
   id: string;
   name: string;
+  status: string;
 }
 
 export interface WorkerRoute {
@@ -51,6 +52,42 @@ export interface PaginationOptions {
 
 export interface ZoneListOptions extends PaginationOptions {
   accountId?: string;
+}
+
+export interface LogpushOwnershipChallenge {
+  filename: string;
+  valid: boolean;
+  message?: string;
+}
+
+export interface LogpushOutputOptions {
+  field_names?: string[];
+  timestamp_format?: string;
+  sample_rate?: number;
+  [key: string]: unknown;
+}
+
+export interface LogpushJob {
+  id: number;
+  dataset: string;
+  enabled: boolean;
+  name?: string;
+  destination_conf: string;
+  output_options?: LogpushOutputOptions;
+  frequency?: string;
+  last_complete?: string;
+  last_error?: string;
+  error_message?: string;
+  [key: string]: unknown;
+}
+
+export interface CreateLogpushJobPayload {
+  dataset: string;
+  destination_conf: string;
+  ownership_challenge: string;
+  name?: string;
+  output_options?: LogpushOutputOptions;
+  enabled?: boolean;
 }
 
 export default class CloudflareClient {
@@ -77,9 +114,20 @@ export default class CloudflareClient {
 
   listZones(options?: ZoneListOptions): Promise<CloudflareZone[]>;
 
+  getZone(zoneId: string): Promise<CloudflareZone>;
+
   listRoutes(zoneId: string): Promise<WorkerRoute[]>;
 
   addRoute(zoneId: string, pattern: string, scriptName: string): Promise<WorkerRoute>;
 
   deleteRoute(zoneId: string, routeId: string): Promise<object>;
+
+  requestLogpushOwnership(
+    zoneId: string,
+    destinationConf: string,
+  ): Promise<LogpushOwnershipChallenge>;
+
+  listLogpushJobs(zoneId: string, dataset: string): Promise<LogpushJob[]>;
+
+  createLogpushJob(zoneId: string, payload: CreateLogpushJobPayload): Promise<LogpushJob>;
 }

@@ -35,7 +35,7 @@ describe('BrandCollection', () => {
     brandId: 'c3e1a4b6-2a8e-4d61-8b03-7d0a1d6b3201',
     name: 'Collection Test Brand',
     status: 'active',
-    semrushWorkspaceId: 'sub-ws-collection',
+    semrushSubWorkspaceId: 'sub-ws-collection',
   };
 
   beforeEach(() => {
@@ -65,17 +65,11 @@ describe('BrandCollection', () => {
     });
   });
 
-  // The addAllIndex(['semrushWorkspaceId']) generates these accessors; assert
+  // The addAllIndex(['semrushSubWorkspaceId']) generates these accessors; assert
   // them so a schema typo that drops the index fails here rather than silently
-  // breaking the 403-drift pointer-repair path. Kept for BC lookups against
-  // the deprecated mirror column.
+  // breaking the 403-drift pointer-repair path.
   describe('auto-generated index accessors', () => {
-    it('exposes allBySemrushWorkspaceId and findBySemrushWorkspaceId', () => {
-      expect(instance.allBySemrushWorkspaceId).to.be.a('function');
-      expect(instance.findBySemrushWorkspaceId).to.be.a('function');
-    });
-
-    // Symmetric addAllIndex(['semrushSubWorkspaceId']) for the write-of-record
+    // addAllIndex(['semrushSubWorkspaceId']) for the write-of-record
     // column — spacecat-api-service call sites resolve brands by this.
     it('exposes allBySemrushSubWorkspaceId and findBySemrushSubWorkspaceId', () => {
       expect(instance.allBySemrushSubWorkspaceId).to.be.a('function');

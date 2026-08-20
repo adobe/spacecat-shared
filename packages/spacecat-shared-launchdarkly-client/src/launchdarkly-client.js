@@ -141,16 +141,25 @@ class LaunchDarklyClient {
   }
 
   /**
-   * Evaluates a feature flag for a given context
+   * Evaluates a feature flag for a given context.
+   *
+   * Fails open: if the LaunchDarkly client cannot be initialized (e.g. an LD
+   * outage causes the initialization timeout to reject) or flag evaluation
+   * throws, this returns {@link defaultValue} instead of propagating the error.
+   * Callers can therefore treat the SDK as a best-effort dependency.
    * @param {string} flagKey - The feature flag key
    * @param {Object} context - The LaunchDarkly context (user/application context)
-   * @param {*} defaultValue - Default value if flag evaluation fails
-   * @returns {Promise<*>} The evaluated flag value
+   * @param {*} defaultValue - Default value returned if initialization or flag
+   *   evaluation fails
+   * @returns {Promise<*>} The evaluated flag value, or defaultValue on any error
    */
   async variation(flagKey, context, defaultValue) {
-    await this.init();
-
     try {
+      // init() is inside the try/catch so that a LaunchDarkly outage (e.g. the
+      // initialization timeout rejecting) fails open and returns defaultValue,
+      // rather than propagating and taking down callers such as /auth/login.
+      await this.init();
+
       const value = await this.client.variation(flagKey, context, defaultValue);
       this.log.debug(`Flag "${flagKey}" evaluated to:`, value);
       return value;
@@ -161,7 +170,11 @@ class LaunchDarklyClient {
   }
 
   /**
-   * Check if a feature flag is enabled for a specific IMS organization
+   * Check if a feature flag is enabled for a specific IMS organization.
+   *
+   * Fails safe: returns false if the LaunchDarkly SDK is unavailable or flag
+   * evaluation fails (see {@link variation}), so an LD outage never blocks
+   * callers on the request path.
    * @param {string} flagKey - The feature flag key
    * @param {string} imsOrgId - The IMS organization ID
    * @param {string} [userKey='anonymous'] - Optional user key for tracking

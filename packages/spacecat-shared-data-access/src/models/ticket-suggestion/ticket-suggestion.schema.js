@@ -29,7 +29,10 @@ const schema = new SchemaBuilder(TicketSuggestion, TicketSuggestionCollection)
     type: 'string', required: false, readOnly: true, postgrestIgnore: true,
   })
   .addAttribute('updatedBy', { type: 'string', required: false, postgrestIgnore: true })
-  .addReference('belongs_to', 'Ticket')
+  // Sort key uses createdAt (not the default updatedAt) because ticket_suggestions is
+  // append-only — the table has no updated_at column, so ORDER BY updated_at would
+  // cause PostgREST to error on allByTicketId queries.
+  .addReference('belongs_to', 'Ticket', ['createdAt'])
   .addAttribute('suggestionId', {
     type: 'string',
     required: true,

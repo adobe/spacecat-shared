@@ -1,3 +1,51 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.2...@adobe/spacecat-shared-tokowaka-client-v1.23.3) (2026-08-06)
+
+### Bug Fixes
+
+* optimize edge deploy/rollback api ([#1865](https://github.com/adobe/spacecat-shared/issues/1865)) ([269d29f](https://github.com/adobe/spacecat-shared/commit/269d29f293b254f2ba34ad932118e898e0b7f954))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.1...@adobe/spacecat-shared-tokowaka-client-v1.23.2) (2026-07-29)
+
+### Bug Fixes
+
+* llmo-6614 add suggestions batching to sqs messages in edge flows ([#1854](https://github.com/adobe/spacecat-shared/issues/1854)) ([30b635f](https://github.com/adobe/spacecat-shared/commit/30b635f5a24dfa02a02ccf72350c8d006de37911))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.0...@adobe/spacecat-shared-tokowaka-client-v1.23.1) (2026-07-29)
+
+### Bug Fixes
+
+* **LLMO-5751:** clear LAST_MOD_MISSING status on redeploy, like STALE ([#1848](https://github.com/adobe/spacecat-shared/issues/1848)) ([86f199c](https://github.com/adobe/spacecat-shared/commit/86f199c0310b7744f583840f862a17f4de03b887))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.1...@adobe/spacecat-shared-tokowaka-client-v1.23.0) (2026-07-28)
+
+### Features
+
+* **LLMO-5751:** treat last_mod_missing suggestions as stale in FastlyKVClient ([#1847](https://github.com/adobe/spacecat-shared/issues/1847)) ([2860e05](https://github.com/adobe/spacecat-shared/commit/2860e05af0dd7db7b3ef59fa52c80fd5301f5d53))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.22.0...@adobe/spacecat-shared-tokowaka-client-v1.22.1) (2026-07-28)
+
+### Bug Fixes
+
+* **tokowaka-client:** revert listAllLastModMissingKeys addition ([#1846](https://github.com/adobe/spacecat-shared/issues/1846)) ([65eceb4](https://github.com/adobe/spacecat-shared/commit/65eceb4fd8a9379d20a76d457c827058deb5ab0f)), closes [#1842](https://github.com/adobe/spacecat-shared/issues/1842)
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.1...@adobe/spacecat-shared-tokowaka-client-v1.22.0) (2026-07-27)
+
+### Features
+
+* **LLMO-5751:** add listAllLastModMissingKeys to FastlyKVClient ([#1842](https://github.com/adobe/spacecat-shared/issues/1842)) ([df611c3](https://github.com/adobe/spacecat-shared/commit/df611c34d431ba57c152c2f3bd0d7afad07e8970))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.21.0...@adobe/spacecat-shared-tokowaka-client-v1.21.1) (2026-07-15)
+
+### Bug Fixes
+
+* utility for marking suggestions as covered ([#1810](https://github.com/adobe/spacecat-shared/issues/1810)) ([2709d47](https://github.com/adobe/spacecat-shared/commit/2709d4741bfe2968dfb481ceedf3e283525f5e71))
+
+## [@adobe/spacecat-shared-tokowaka-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.20.0...@adobe/spacecat-shared-tokowaka-client-v1.21.0) (2026-07-14)
+
+### Features
+
+* **tokowaka-client:** offload covered-marking saves to import worker queue above threshold ([#1802](https://github.com/adobe/spacecat-shared/issues/1802)) ([ad1fe43](https://github.com/adobe/spacecat-shared/commit/ad1fe433b4628c38ef0d2d4f4008c2932b5981e0))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.19.1...@adobe/spacecat-shared-tokowaka-client-v1.20.0) (2026-06-27)
 
 ### Features

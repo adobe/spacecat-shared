@@ -434,6 +434,29 @@ describe('LaunchDarklyClient', () => {
       // Reset for other tests
       mockClient.variation.resolves(true);
     });
+
+    it('should return default value when initialization fails (LD outage)', async () => {
+      const customLog = {
+        info: sinon.stub(),
+        error: sinon.stub(),
+        debug: sinon.stub(),
+        warn: sinon.stub(),
+      };
+      const client = new LaunchDarklyClient({ sdkKey: testSdkKey }, customLog);
+      const context = { kind: 'user', key: 'test-user' };
+      const initError = new Error('Initialization failed');
+
+      mockClient.waitForInitialization.rejects(initError);
+
+      const result = await client.variation('test-flag', context, false);
+
+      expect(result).to.be.false;
+      expect(mockClient.variation).to.not.have.been.called;
+      expect(customLog.error).to.have.been.calledWith('Error evaluating flag "test-flag":', initError);
+
+      // Reset for other tests
+      mockClient.waitForInitialization.resolves();
+    });
   });
 
   describe('isFlagEnabledForIMSOrg', () => {

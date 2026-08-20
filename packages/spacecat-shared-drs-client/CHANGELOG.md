@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.13.0...@adobe/spacecat-shared-drs-client-v1.14.0) (2026-07-16)
+
+
+### Features
+
+* **drs-client:** generic createSchedule with fixed cadences + tenant-isolation guards ([#1816](https://github.com/adobe/spacecat-shared/issues/1816)) ([5d1480b](https://github.com/adobe/spacecat-shared/commit/5d1480b3addf96a5c62a3042303aa50f413ab166))
+
 # [@adobe/spacecat-shared-drs-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.12.1...@adobe/spacecat-shared-drs-client-v1.13.0) (2026-06-25)
 
 

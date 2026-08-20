@@ -43,9 +43,29 @@ export interface TrialUserCollection extends BaseCollection<TrialUser> {
   allByProviderAndExternalUserId(provider: ProviderType, externalId: string): Promise<TrialUser[]>;
   allByOrganizationId(organizationId: string): Promise<TrialUser[]>;
   allByEmailId(emailId: string): Promise<TrialUser[]>;
+  allByExternalUserId(externalUserId: string): Promise<TrialUser[]>;
+  allByExternalUserIdAndUpdatedAt(
+    externalUserId: string,
+    updatedAt: string
+  ): Promise<TrialUser[]>;
   findByProvider(provider: ProviderType): Promise<TrialUser | null>;
   findByProviderAndExternalUserId(provider: ProviderType, externalId: string):
     Promise<TrialUser | null>;
   findByOrganizationId(organizationId: string): Promise<TrialUser | null>;
   findByEmailId(emailId: string): Promise<TrialUser | null>;
+  /**
+   * externalUserId is optional and not enforced unique (no DB unique constraint), so this
+   * returns one arbitrary match when multiple trial users share the same externalUserId.
+   * Use allByExternalUserId if you need every matching record.
+   */
+  findByExternalUserId(externalUserId: string): Promise<TrialUser | null>;
+  /**
+   * externalUserId is optional and not enforced unique (no DB unique constraint), so this
+   * returns one arbitrary match when multiple trial users share the same externalUserId.
+   * Use allByExternalUserIdAndUpdatedAt if you need every matching record.
+   */
+  findByExternalUserIdAndUpdatedAt(
+    externalUserId: string,
+    updatedAt: string
+  ): Promise<TrialUser | null>;
 }

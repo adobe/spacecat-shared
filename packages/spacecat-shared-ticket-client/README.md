@@ -63,7 +63,7 @@ const client = TicketClientFactory.create(
 ```javascript
 const result = await client.createTicket({
   projectKey: 'ASO',
-  issueType: 'Task',            // optional, defaults to 'Task'
+  issueType: 'Task',            // required — resolve a valid type via listIssueTypes()
   summary: 'Fix colour contrast on homepage hero',
   description: 'The hero banner fails WCAG AA contrast ratio.\n\nSee https://example.com/audit for details.',
   labels: ['a11y', 'mysticat'],  // optional

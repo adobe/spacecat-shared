@@ -40,6 +40,10 @@ export interface Configuration {
   isHandlerEnabledForOrg(type: string, org: Organization): boolean;
   isHandlerEnabledForSite(type: string, site: Site): boolean;
   registerAudit(type: string, enabledByDefault?: boolean, interval?: string, productCodes?: string[]): void;
+  replaceHandlerEnabledDisabled(
+    type: string,
+    data: { enabled?: { sites?: string[]; orgs?: string[] }; disabled?: { sites?: string[]; orgs?: string[] } }
+  ): void;
   save(): Promise<Configuration>;
   setHandlers(handlers: object): void;
   setJobs(jobs: object[]): void;
@@ -56,8 +60,30 @@ export interface Configuration {
   updateQueues(queues: object): void;
 }
 
+export interface ConfigurationVersion {
+  versionId: string;
+  lastModified: string;
+  isLatest: boolean;
+  size: number;
+  updatedBy?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface ConfigurationVersionsPage {
+  versions: ConfigurationVersion[];
+  isTruncated: boolean;
+  nextKeyMarker: string | null;
+  nextVersionIdMarker: string | null;
+}
+
 export interface ConfigurationCollection {
   create(data: object): Promise<Configuration>;
   findByVersion(version: string): Promise<Configuration | null>;
   findLatest(): Promise<Configuration | null>;
+  listVersions(options?: {
+    limit?: number;
+    keyMarker?: string;
+    versionIdMarker?: string;
+    detail?: boolean;
+  }): Promise<ConfigurationVersionsPage>;
 }

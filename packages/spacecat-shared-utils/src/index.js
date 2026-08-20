@@ -77,6 +77,7 @@ export {
   isWithinSiteScope,
   filterBySiteScope,
   toPathname,
+  siteIdentityFromUrlString,
   hasSamePathname,
   allHaveSamePathname,
   isPathPatternWithinSiteScope,
@@ -130,7 +131,7 @@ export {
   getSpacecatBotIps,
   formatAllowlistMessage,
 } from './bot-blocker-detect/bot-blocker-detect.js';
-export { prettifyLogForwardingConfig } from './cdn-helpers.js';
+export { prettifyLogForwardingConfig, CLOUDFLARE_LOGPUSH_FIELDS } from './cdn-helpers.js';
 
 export {
   buildAggregationKey,

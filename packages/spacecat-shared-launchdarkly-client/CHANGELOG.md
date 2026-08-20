@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-launchdarkly-client-v1.3.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.3.0...@adobe/spacecat-shared-launchdarkly-client-v1.3.1) (2026-07-13)
+
+### Bug Fixes
+
+* **launchdarkly-client:** document fail-open contract for variation/isFlagEnabledForIMSOrg ([#1808](https://github.com/adobe/spacecat-shared/issues/1808)) ([1c37b82](https://github.com/adobe/spacecat-shared/commit/1c37b82383f49217d560e99d4b264d1f18eaf2a5)), closes [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1800](https://github.com/adobe/spacecat-shared/issues/1800) [#1803](https://github.com/adobe/spacecat-shared/issues/1803) [#1803](https://github.com/adobe/spacecat-shared/issues/1803)
+
 ## [@adobe/spacecat-shared-launchdarkly-client-v1.3.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-launchdarkly-client-v1.2.2...@adobe/spacecat-shared-launchdarkly-client-v1.3.0) (2026-06-15)
 
 ### Features

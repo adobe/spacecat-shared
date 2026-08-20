@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-utils-v1.126.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.2...@adobe/spacecat-shared-utils-v1.126.0) (2026-08-17)
+
+### Features
+
+* **utils:** add siteIdentityFromUrlString for path-preserving site identity ([#1882](https://github.com/adobe/spacecat-shared/issues/1882)) ([b1ffe93](https://github.com/adobe/spacecat-shared/commit/b1ffe9328a4b1c1b9e2f6d92ab6f5ee993eab675))
+
+## [@adobe/spacecat-shared-utils-v1.125.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.1...@adobe/spacecat-shared-utils-v1.125.2) (2026-08-12)
+
+### Bug Fixes
+
+* **akamai-client:** configurable rule-tree timeout + patchRuleTree + accurate timeout message ([#1864](https://github.com/adobe/spacecat-shared/issues/1864)) ([2aec2be](https://github.com/adobe/spacecat-shared/commit/2aec2bee822a10232d82acee484114a718900720)), closes [adobe/spacecat-api-service#3013](https://github.com/adobe/spacecat-api-service/issues/3013) [adobe/spacecat-api-service#3013](https://github.com/adobe/spacecat-api-service/issues/3013)
+
+## [@adobe/spacecat-shared-utils-v1.125.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.0...@adobe/spacecat-shared-utils-v1.125.1) (2026-08-03)
+
+### Bug Fixes
+
+* **bot-blocker:** exclude Cloudflare JS Detections script from challenge-platform pattern (SITES-49160) ([#1861](https://github.com/adobe/spacecat-shared/issues/1861)) ([07f0370](https://github.com/adobe/spacecat-shared/commit/07f0370d8a6cb1856b2ac1432458b015ed14d8c8))
+
+## [@adobe/spacecat-shared-utils-v1.125.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.1...@adobe/spacecat-shared-utils-v1.125.0) (2026-07-17)
+
+### Features
+
+* **cloudflare-client:** export CLOUDFLARE_LOGPUSH_FIELDS (LLMO-5869) ([#1796](https://github.com/adobe/spacecat-shared/issues/1796)) ([477a604](https://github.com/adobe/spacecat-shared/commit/477a604cdd1c89dbb3a70e33eead740a07e53adb))
+
 ## [@adobe/spacecat-shared-utils-v1.124.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.124.0...@adobe/spacecat-shared-utils-v1.124.1) (2026-07-03)
 
 ### Bug Fixes

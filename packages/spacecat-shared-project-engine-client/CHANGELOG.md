@@ -1,3 +1,69 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.0...@adobe/spacecat-shared-project-engine-client-v1.18.1) (2026-08-04)
+
+### Bug Fixes
+
+* **project-engine-client:** by_tags mock defaults omitted sort_dir to descending (LLMO-6666) ([#1862](https://github.com/adobe/spacecat-shared/issues/1862)) ([44f64d8](https://github.com/adobe/spacecat-shared/commit/44f64d897b8f08b59ef5ff87311305ef720c7df7)), closes [#1859](https://github.com/adobe/spacecat-shared/issues/1859)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.17.0...@adobe/spacecat-shared-project-engine-client-v1.18.0) (2026-08-03)
+
+### Features
+
+* **project-engine-client:** honour sort_field / sort_dir on the by_tags mock (LLMO-6666) ([#1859](https://github.com/adobe/spacecat-shared/issues/1859)) ([edd2030](https://github.com/adobe/spacecat-shared/commit/edd20301f895da9e050ca33cd981059605a29380))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.16.0...@adobe/spacecat-shared-project-engine-client-v1.17.0) (2026-07-29)
+
+### Features
+
+* **project-engine-client:** expose v3 prompt-metadata write facade (LLMO-6288) ([#1853](https://github.com/adobe/spacecat-shared/issues/1853)) ([60a7001](https://github.com/adobe/spacecat-shared/commit/60a700137362d3bcffb522435c1b6f948f6bd8d3)), closes [#2877](https://github.com/adobe/spacecat-shared/issues/2877)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.15.0...@adobe/spacecat-shared-project-engine-client-v1.16.0) (2026-07-28)
+
+### Features
+
+* **project-engine-client:** mock the prompt *-with-metadata write surface (LLMO-6288) ([#1818](https://github.com/adobe/spacecat-shared/issues/1818)) ([ca9e119](https://github.com/adobe/spacecat-shared/commit/ca9e119a6dbc4cc16fcccd4716057c0d3cceb945)), closes [serenity-docs#35](https://github.com/adobe/serenity-docs/issues/35)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.14.0...@adobe/spacecat-shared-project-engine-client-v1.15.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** mock authorship root source→origin + legacy seed (LLMO-6273) ([3ead32b](https://github.com/adobe/spacecat-shared/commit/3ead32b1f126b3f15d1acac0f86209929b0aad73))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.13.0...@adobe/spacecat-shared-project-engine-client-v1.14.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** ProjectEngineApiError typed errors in the facade seam (LLMO-5978) ([#1824](https://github.com/adobe/spacecat-shared/issues/1824)) ([7ab364d](https://github.com/adobe/spacecat-shared/commit/7ab364d457c8d109326b3fd674152720d353c79d))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.13.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.12.0...@adobe/spacecat-shared-project-engine-client-v1.13.0) (2026-07-20)
+
+### Features
+
+* **project-engine-client:** intent-named facade over the openapi-fetch client (LLMO-5977) ([#1823](https://github.com/adobe/spacecat-shared/issues/1823)) ([eef51fd](https://github.com/adobe/spacecat-shared/commit/eef51fd950b49e6a2b5c040d544f44a7491c756d))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.12.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.11.0...@adobe/spacecat-shared-project-engine-client-v1.12.0) (2026-07-16)
+
+### Features
+
+* **project-engine-client:** add requestTimeoutMs per-attempt request deadline (LLMO-5979) ([#1819](https://github.com/adobe/spacecat-shared/issues/1819)) ([f745d3c](https://github.com/adobe/spacecat-shared/commit/f745d3c1ec436c70290f46c86a4c9f9885359dcb))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.11.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.10.1...@adobe/spacecat-shared-project-engine-client-v1.11.0) (2026-07-15)
+
+### Features
+
+* **project-engine-client:** mock the in-place prompt rename with 409 on text collision ([#1814](https://github.com/adobe/spacecat-shared/issues/1814)) ([816e613](https://github.com/adobe/spacecat-shared/commit/816e61315dcc5351d3494d26c0e354918ca750e0))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.10.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.10.0...@adobe/spacecat-shared-project-engine-client-v1.10.1) (2026-07-13)
+
+### Bug Fixes
+
+* **project-engine-client:** enforce https:// on the brand_urls mock ([#1778](https://github.com/adobe/spacecat-shared/issues/1778)) ([46c4860](https://github.com/adobe/spacecat-shared/commit/46c48604834162415046af8a2aaca4fa12b60940)), closes [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [serenity-docs#25](https://github.com/adobe/serenity-docs/issues/25) [#2748](https://github.com/adobe/spacecat-shared/issues/2748) [#737](https://github.com/adobe/spacecat-shared/issues/737) [#2748](https://github.com/adobe/spacecat-shared/issues/2748) [#737](https://github.com/adobe/spacecat-shared/issues/737) [#2748](https://github.com/adobe/spacecat-shared/issues/2748)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.10.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.9.0...@adobe/spacecat-shared-project-engine-client-v1.10.0) (2026-07-10)
+
+### Features
+
+* **project-engine-client:** model dimension-root tags in the mock ([#1799](https://github.com/adobe/spacecat-shared/issues/1799)) ([5d482a1](https://github.com/adobe/spacecat-shared/commit/5d482a1dd2262d7c1341925ab7f29cb2ab5cb381))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.9.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.8.0...@adobe/spacecat-shared-project-engine-client-v1.9.0) (2026-07-06)
 
 ### Features

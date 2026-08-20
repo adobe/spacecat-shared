@@ -12,7 +12,12 @@
 
 import { expect } from 'chai';
 import sinon from 'sinon';
-import { groupSuggestionsByUrlPath, filterEligibleSuggestions, saveSuggestions } from '../../src/utils/suggestion-utils.js';
+import {
+  groupSuggestionsByUrlPath,
+  filterEligibleSuggestions,
+  saveSuggestions,
+  SUGGESTION_BULK_UPDATE_TYPE,
+} from '../../src/utils/suggestion-utils.js';
 
 describe('Suggestion Utils', () => {
   describe('groupSuggestionsByUrlPath', () => {
@@ -98,6 +103,40 @@ describe('Suggestion Utils', () => {
 
       // Should skip sugg-1 due to URL parsing error
       expect(Object.keys(result)).to.have.lengthOf(0); // Both fail due to invalid base
+    });
+
+    it('should merge trailing-slash and non-trailing-slash variants of the same path', () => {
+      const suggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({ url: 'https://example.com/page1' }),
+        },
+        {
+          getId: () => 'sugg-2',
+          getData: () => ({ url: 'https://example.com/page1/' }),
+        },
+      ];
+
+      const result = groupSuggestionsByUrlPath(suggestions, 'https://example.com', log);
+
+      // "/page1" and "/page1/" resolve to the same S3 object, so they share one group.
+      expect(Object.keys(result)).to.have.lengthOf(1);
+      expect(result).to.have.property('/page1');
+      expect(result['/page1']).to.have.lengthOf(2);
+    });
+
+    it('should preserve the root path "/" (no trailing slash stripping)', () => {
+      const suggestions = [
+        {
+          getId: () => 'sugg-1',
+          getData: () => ({ url: 'https://example.com/' }),
+        },
+      ];
+
+      const result = groupSuggestionsByUrlPath(suggestions, 'https://example.com', log);
+
+      expect(result).to.have.property('/');
+      expect(result['/']).to.have.lengthOf(1);
     });
   });
 
@@ -217,6 +256,187 @@ describe('Suggestion Utils', () => {
       }));
       try {
         await saveSuggestions(dataAccess, items);
+        expect.fail('should have thrown');
+      } catch (error) {
+        expect(error.message).to.include('1 of 1701 suggestions failed');
+        expect(error.message).to.include('DB error');
+      }
+    });
+
+    it('should enqueue a bulk update job instead of saving when queueContext is provided', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().resolves() },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        set: { coveredByDomainWide: 'pattern-sugg-id' },
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(dataAccess.Suggestion.saveMany.called).to.be.false;
+      expect(items[0].save.called).to.be.false;
+      expect(queueContext.sqs.sendMessage.calledOnce).to.be.true;
+      const [queueUrl, payload] = queueContext.sqs.sendMessage.firstCall.args;
+      expect(queueUrl).to.equal('https://sqs.example.com/queue');
+      expect(payload).to.deep.equal({
+        type: SUGGESTION_BULK_UPDATE_TYPE,
+        siteId: 'site-1',
+        suggestionIds: items.map((s) => s.getId()),
+        set: { coveredByDomainWide: 'pattern-sugg-id' },
+        updatedBy: 'system',
+      });
+      expect(queueContext.log.info.calledOnce).to.be.true;
+    });
+
+    it('should include unset instead of set when queueContext.unset is provided', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().resolves() },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        unset: ['coveredByDomainWide'],
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      const [, payload] = queueContext.sqs.sendMessage.firstCall.args;
+      expect(payload.set).to.be.undefined;
+      expect(payload.unset).to.deep.equal(['coveredByDomainWide']);
+    });
+
+    it('splits suggestionIds into multiple SQS messages when count exceeds the batch size', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 6500 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().resolves() },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        set: { coveredByDomainWide: 'pattern-sugg-id' },
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(queueContext.sqs.sendMessage.callCount).to.equal(3);
+      const batches = queueContext.sqs.sendMessage.getCalls().map((call) => call.args[1]);
+      expect(batches[0].suggestionIds).to.have.lengthOf(3000);
+      expect(batches[1].suggestionIds).to.have.lengthOf(3000);
+      expect(batches[2].suggestionIds).to.have.lengthOf(500);
+      expect(batches[0].suggestionIds).to.deep.equal(items.slice(0, 3000).map((s) => s.getId()));
+      batches.forEach((payload) => {
+        expect(payload.type).to.equal(SUGGESTION_BULK_UPDATE_TYPE);
+        expect(payload.siteId).to.equal('site-1');
+        expect(payload.set).to.deep.equal({ coveredByDomainWide: 'pattern-sugg-id' });
+      });
+      expect(items[0].save.called).to.be.false;
+      expect(queueContext.log.info.calledOnce).to.be.true;
+      expect(queueContext.log.info.firstCall.args[0]).to.include('3 batch(es)');
+    });
+
+    it('falls back to direct save when queueUrl is not configured', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().resolves() },
+        queueUrl: undefined,
+        siteId: 'site-1',
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(queueContext.sqs.sendMessage.called).to.be.false;
+      expect(queueContext.log.warn.calledOnce).to.be.true;
+      expect(queueContext.log.warn.firstCall.args[0]).to.include('SQS/IMPORT_WORKER_QUEUE_URL not configured');
+      expect(items[0].save.calledOnce).to.be.true;
+      expect(items[1700].save.calledOnce).to.be.true;
+      expect(dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('falls back to direct save when sqs is not configured', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: undefined,
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(queueContext.log.warn.calledOnce).to.be.true;
+      expect(queueContext.log.warn.firstCall.args[0]).to.include('SQS/IMPORT_WORKER_QUEUE_URL not configured');
+      expect(items[0].save.calledOnce).to.be.true;
+    });
+
+    it('falls back to direct save when sqs.sendMessage rejects', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().rejects(new Error('SQS unavailable')) },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      await saveSuggestions(dataAccess, items, queueContext);
+
+      expect(queueContext.log.error.calledOnce).to.be.true;
+      expect(queueContext.log.error.firstCall.args[0]).to.include('Failed to queue bulk update');
+      expect(queueContext.log.error.firstCall.args[0]).to.include('SQS unavailable');
+      expect(items[0].save.calledOnce).to.be.true;
+      expect(items[1700].save.calledOnce).to.be.true;
+      expect(dataAccess.Suggestion.saveMany.called).to.be.false;
+    });
+
+    it('throws when the direct-save fallback also fails after a queue failure', async () => {
+      const dataAccess = { Suggestion: { saveMany: sinon.stub() } };
+      const items = Array.from({ length: 1701 }, (_, i) => ({
+        getId: () => `sugg-${i}`,
+        save: i === 0
+          ? sinon.stub().rejects(new Error('DB error'))
+          : sinon.stub().resolves(),
+      }));
+      const queueContext = {
+        sqs: { sendMessage: sinon.stub().rejects(new Error('SQS unavailable')) },
+        queueUrl: 'https://sqs.example.com/queue',
+        siteId: 'site-1',
+        updatedBy: 'system',
+        log: { warn: sinon.stub(), info: sinon.stub(), error: sinon.stub() },
+      };
+
+      try {
+        await saveSuggestions(dataAccess, items, queueContext);
         expect.fail('should have thrown');
       } catch (error) {
         expect(error.message).to.include('1 of 1701 suggestions failed');

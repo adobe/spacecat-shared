@@ -79,16 +79,19 @@ export const EXPORT_EXCLUDED_REJECTION_CATEGORIES = Object.freeze([
 ]);
 
 /**
- * Customer-derived fields stripped from the JSONL export for organizations with
- * `training_opt_in = false`. Verdict / signal / category / identity metadata
- * still ship. snake_case to match the JSONL row shape (and the feedback_event
- * DB columns) — {@link toJsonlRow} uses this list to do the stripping, so the
- * opt-out boundary is single-sourced here.
+ * HUMAN-authored fields stripped from the JSONL export for organizations with
+ * `training_opt_in = false`: the reviewer's written feedback (`detail_markdown`)
+ * and their hand-corrected patch (`edited_fix`). The AI-generated fields — the
+ * issue context (`guidance_markdown`) and the generated patch (`previous_fix`) —
+ * are ALWAYS exported (the Learning Agent needs the issue + generated patch to
+ * map a verdict to what was generated), as are verdict / signal / category /
+ * identity metadata. snake_case to match the JSONL row shape (and the
+ * feedback_event DB columns) — {@link toJsonlRow} uses this list to do the
+ * stripping, so the opt-out boundary is single-sourced here (SITES-43974).
  */
 export const OPT_OUT_STRIPPED_FIELDS = Object.freeze([
-  'previous_fix',
-  'edited_fix',
   'detail_markdown',
+  'edited_fix',
 ]);
 
 /**
@@ -163,11 +166,17 @@ export function toReviewView(row, { includePatches = false } = {}) {
     rejectionCategory: row.rejection_category ?? null,
     stateTransition: row.state_transition ?? null,
     tier: row.tier,
+    // Sub-item id (e.g. a CWV issue) this review is about; the Backoffice groups
+    // its per-issue "previous feedback" table on it. Always in the base view (the
+    // UI filters on it) — not gated behind includePatches. Null for
+    // whole-suggestion reviews.
+    feedbackSubjectId: row.feedback_subject_id ?? null,
   };
 
   if (includePatches) {
     view.previousFix = row.previous_fix ?? null;
     view.editedFix = row.edited_fix ?? null;
+    view.guidanceMarkdown = row.guidance_markdown ?? null;
   }
 
   return view;
@@ -175,14 +184,21 @@ export function toReviewView(row, { includePatches = false } = {}) {
 
 /**
  * Whether a raw `feedback_event` row should be exported to the Learning Agent
- * corpus. `product_bug` rejections are excluded (routed to Jira); NULL-category
- * rows ARE exported. See {@link EXPORT_EXCLUDED_REJECTION_CATEGORIES}.
+ * corpus. Two gates (SITES-43974):
+ *   1. It must carry a generated code patch (`previous_fix`). The corpus is
+ *      code-patch feedback; text-guidance-only reviews (no patch) are retained
+ *      in Postgres but NOT exported — reserved for a future text-guidance corpus.
+ *   2. `product_bug` rejections are excluded (routed to Jira). NULL-category rows
+ *      (approvals / uncategorised) ARE exported. See
+ *      {@link EXPORT_EXCLUDED_REJECTION_CATEGORIES}.
  *
  * @param {object} row - a raw feedback_event row from PostgREST.
  * @returns {boolean} true if the row should be exported.
  */
 export function shouldExport(row) {
-  return !EXPORT_EXCLUDED_REJECTION_CATEGORIES.includes(row.rejection_category);
+  const hasCodePatch = row.previous_fix != null;
+  return hasCodePatch
+    && !EXPORT_EXCLUDED_REJECTION_CATEGORIES.includes(row.rejection_category);
 }
 
 /**
@@ -190,8 +206,10 @@ export function shouldExport(row) {
  * object — the canonical Learning Agent export contract. The row mirrors the
  * feedback_event columns (snake_case), stamped with {@link SCHEMA_VERSION} and
  * the derived `verdict`. For organizations that have NOT opted into training,
- * the customer-derived fields in {@link OPT_OUT_STRIPPED_FIELDS} are nulled;
- * verdict / signal / category / identity metadata still ship (§10.5.7).
+ * the HUMAN-authored fields in {@link OPT_OUT_STRIPPED_FIELDS} are nulled; the
+ * AI-generated issue context (`guidance_markdown`) + generated patch
+ * (`previous_fix`) and the verdict / signal / category / identity metadata still
+ * ship (§10.5.7).
  *
  * This is the single source of truth for the JSONL row shape — the exporter
  * (spacecat-jobs-dispatcher) calls it rather than re-deriving the contract.
@@ -218,6 +236,7 @@ export function toJsonlRow(row, { optedIn = false } = {}) {
     state_transition: row.state_transition ?? null,
     tier: row.tier,
     detail_markdown: row.detail_markdown ?? null,
+    guidance_markdown: row.guidance_markdown ?? null,
     previous_fix: row.previous_fix ?? null,
     edited_fix: row.edited_fix ?? null,
   };

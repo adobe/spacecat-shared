@@ -224,6 +224,9 @@ describe('OpportunityCollection', () => {
       const { scopeType } = schema.getAttributes();
       expect(scopeType.validate('page')).to.be.false;
       expect(scopeType.validate('brand')).to.be.true;
+      // SITES-49175 — SITE added to SCOPE_TYPES; site-scoped opportunities
+      // can now stamp scopeType explicitly rather than leaving it NULL.
+      expect(scopeType.validate('site')).to.be.true;
       expect(scopeType.validate(null)).to.be.true;
     });
 

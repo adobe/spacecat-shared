@@ -10,12 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import { isIsoDate, isNonEmptyObject } from '@adobe/spacecat-shared-utils';
+import { isIsoDate } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import FixEntity from './fix-entity.model.js';
 import FixEntityCollection from './fix-entity.collection.js';
 import Suggestion from '../suggestion/suggestion.model.js';
+import { validateChangeDetails } from './change-details.schema.js';
 
 const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
   .addReference('has_many', 'FixEntitySuggestion', ['updatedAt'], { removeDependents: true })
@@ -32,6 +33,14 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
   })
+  // SITES-47997/48823 — the DEPLOYED moment (written/confirmed to author),
+  // distinct from executedAt (apply executed) and publishedAt (live). Maps to
+  // the fix_entities.deployed_at column; stamped by mystique on the -> DEPLOYED
+  // transition. Optional (null for rows created before the column).
+  .addAttribute('deployedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
   .addAttribute('publishedAt', {
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
@@ -39,7 +48,10 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
   .addAttribute('changeDetails', {
     type: 'any',
     required: true,
-    validate: (value) => isNonEmptyObject(value),
+    // Reader-tolerant: legacy freeform (v1) records keep the non-empty guard;
+    // schemaVersion:2 records are validated against the canonical shape
+    // (SITES-47997, ADR adobe/mysticat-architecture#200).
+    validate: (value) => validateChangeDetails(value),
   })
   .addAttribute('status', {
     type: Object.values(FixEntity.STATUSES),

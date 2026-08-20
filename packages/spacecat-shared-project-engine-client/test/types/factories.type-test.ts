@@ -29,6 +29,8 @@ import {
   createAIOTagMock,
   createAIOTagLeafMock,
   createUrlResolveMock,
+  createRenamePromptResponseMock,
+  createPromptCreateResultMock,
 } from '../../mock/factories.js';
 import type { components } from '../../src/index.js';
 
@@ -66,14 +68,14 @@ void updatedProject;
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
 // 1e. the AIO tag factory (the GET /aio/tags list item + persisted shape).
-const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'category:X' });
+const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'Running Shoes' });
 void aioTag.prompts_count;
 void aioTag;
 // @ts-expect-error — keyword_count is a TreeNodeResponse field, not on AIOTag.
 createAIOTagMock({ keyword_count: 0 });
-// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors (1-level tree).
+// 1e-nested: a child tag carries parent_id + a path[] of AIOTagLeaf ancestors, root-first.
 type AIOTagLeaf = components['schemas']['model.AIOTagLeaf'];
-const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category:X' });
+const tagLeaf: AIOTagLeaf = createAIOTagLeafMock({ id: 'tag-root', name: 'category' });
 const childTag: AIOTag = createAIOTagMock({
   id: 'tag-child', name: 'Trail', parent_id: 'tag-root', path: [tagLeaf],
 });
@@ -103,6 +105,23 @@ void resolveFields;
 createUrlResolveMock({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
 // @ts-expect-error — is_valid is a boolean, not a string.
 createUrlResolveMock({ is_valid: 'yes' });
+
+// 1g. the rename-prompt result factory (the aio-rename-prompt 200 body).
+type RenamePromptResponse = components['schemas']['model.RenamePromptResponse'];
+const renamed: RenamePromptResponse = createRenamePromptResponseMock({ is_updated: false });
+void renamed;
+// @ts-expect-error — is_updated is a boolean, not a string.
+createRenamePromptResponseMock({ is_updated: 'yes' });
+
+// 1h. the v3 create-result factory (LLMO-6288 WP2 rework, overlay CR21 requires id/name/is_new;
+// metadata stays optional — a dedupe hit's preserved value or a new prompt's supplied one).
+type PromptCreateResult = components['schemas']['model.AIOPromptCreateResult'];
+const createResult: PromptCreateResult = createPromptCreateResultMock({
+  metadata: { created_by: 'a@x' },
+});
+void createResult.metadata;
+// @ts-expect-error — is_new is a boolean, not a string.
+createPromptCreateResultMock({ is_new: 'yes' });
 
 // 2. Partial overrides of real fields are accepted.
 createProjectMock({ name: 'Acme' });

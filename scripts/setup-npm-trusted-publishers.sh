@@ -253,6 +253,7 @@ echo ""
 
 PACKAGES=(
   "@adobe/mysticat-shared-seo-client"
+  "@adobe/spacecat-shared-akamai-client"
   "@adobe/spacecat-shared-athena-client"
   "@adobe/spacecat-shared-brand-client"
   "@adobe/spacecat-shared-cloud-manager-client"
@@ -272,6 +273,7 @@ PACKAGES=(
   "@adobe/spacecat-shared-scrape-client"
   "@adobe/spacecat-shared-slack-client"
   "@adobe/spacecat-shared-splunk-client"
+  "@adobe/spacecat-shared-ticket-client"
   "@adobe/spacecat-shared-tier-client"
   "@adobe/spacecat-shared-tokowaka-client"
   "@adobe/spacecat-shared-user-manager-client"

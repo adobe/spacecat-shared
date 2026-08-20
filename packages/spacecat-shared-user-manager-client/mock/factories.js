@@ -30,8 +30,22 @@
 /** @typedef {Schemas['handlers.WorkspaceCheckResponse']} WorkspaceStatus */
 /** @typedef {Schemas['handlers.workspaceDeleteResponse']} WorkspaceDeleteResponse */
 /** @typedef {Schemas['http_server.BasicResponse']} BasicResponse */
+/* eslint-disable camelcase, max-len */
+/** @typedef {Schemas['page-engine-backend_internal_usermanager_core_domain.NewWorkspaceResources']} WorkspaceResources */
+/** @typedef {Schemas['page-engine-backend_internal_usermanager_core_domain.UsedLimit']} UsedLimit */
+/** @typedef {Schemas['page-engine-backend_internal_usermanager_core_domain.Tier']} Tier */
+/* eslint-enable camelcase, max-len */
 
 const uuid = () => globalThis.crypto.randomUUID();
+
+/**
+ * A per-dimension `{ used, drafted, total }` triple, zero-filled then overridden.
+ * @param {Partial<UsedLimit>} [o]
+ * @returns {UsedLimit}
+ */
+const usedLimit = (o = {}) => ({
+  used: 0, drafted: 0, total: 0, ...o,
+});
 
 /**
  * A workspace (`handlers.workspaceResponse`) — the entity returned by `createSubworkspace` and
@@ -89,4 +103,38 @@ export const createWorkspaceDeleteResponseMock = (overrides = {}) => ({
 export const createBasicResponseMock = (overrides = {}) => ({
   message: '',
   ...overrides,
+});
+
+/**
+ * Workspace AI resources (`NewWorkspaceResources`) — the body of the `getWorkspaceResources` reads
+ * (`/resources` and `/parent/resources`, the consumer's dynamic-allocation reads). Carries the
+ * per-product `{ used, drafted, total }` under `product_resources.ai.resources` (`projects`,
+ * `prompts`, `weekly_prompts`) plus a `general` block, mirroring the live gold-tier shape (verified
+ * 2026-07-02). Each AI dimension defaults to a zeroed triple; pass a partial to set `used`/`total`.
+ * `weekly_prompts` stays zeroed — provisioning is daily-only.
+ * @param {{ projects?: Partial<UsedLimit>, prompts?: Partial<UsedLimit>,
+ *   weeklyPrompts?: Partial<UsedLimit>, tier?: Tier }} [input]
+ * @returns {WorkspaceResources}
+ */
+export const createWorkspaceResourcesMock = ({
+  projects = {}, prompts = {}, weeklyPrompts = {}, tier,
+} = {}) => ({
+  general: {
+    resources: {
+      users: usedLimit(),
+      service_credits: usedLimit(),
+      api_units: usedLimit(),
+      service_units: usedLimit(),
+    },
+  },
+  product_resources: {
+    ai: {
+      tier: tier ?? { id: 'gold', name: 'gold', rank: 30 },
+      resources: {
+        projects: usedLimit(projects),
+        prompts: usedLimit(prompts),
+        weekly_prompts: usedLimit(weeklyPrompts),
+      },
+    },
+  },
 });

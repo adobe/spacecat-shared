@@ -46,9 +46,26 @@ export class ImsClient {
    *               firstName: string,
    *               lastName: string,
    *             }[],
+   *       groups: {
+   *               ident: string,
+   *               name: string,
+   *               role: string,
+   *             }[],
    *     }>} The organization details.
    */
   getImsOrganizationDetails(imsOrgId: string): Promise<object>;
+
+  /**
+   * Returns the normalized members of a single IMS organization group.
+   * @param {string} imsOrgId The IMS organization ID.
+   * @param {string} groupId The IMS group ident.
+   * @returns {Promise<object[]>} The de-duped, allow-filtered group members.
+   * @throws {Error} If a param is missing or the IMS request fails.
+   */
+  getGroupMembers(
+    imsOrgId: string,
+    groupId: string,
+  ): Promise<{ email: string; firstName: string; lastName: string }[]>;
 
   /**
    * Returns the user profile for the given IMS access token.

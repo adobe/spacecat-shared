@@ -40,8 +40,8 @@ describe('mock Context', () => {
   it('exposes the shared tagId helper for the tag-minting routes', () => {
     const ctx = new Context();
     // The helper mints an opaque, URL-safe, deterministic id (#1760); Context just re-exposes it.
-    expect(ctx.tagId('category:Running Shoes')).to.equal(tagId('category:Running Shoes'));
-    expect(ctx.tagId('category:Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
+    expect(ctx.tagId('Running Shoes')).to.equal(tagId('Running Shoes'));
+    expect(ctx.tagId('Running Shoes')).to.match(/^tag-[0-9a-f]{16}$/);
   });
 
   it('exposes the shared parentIdField helper for the tag routes', () => {
@@ -57,6 +57,20 @@ describe('mock Context', () => {
       .to.deep.equal({ domain: 'lovesac.com', primary_url: 'lovesac.com', is_valid: true });
     // …and an invalid one yields {} (→ the empty/invalid factory default).
     expect(ctx.resolveUrl('not a url')).to.deep.equal({});
+  });
+
+  it('exposes the shared sortPromptsByMetadata helper for the by_tags route', () => {
+    const ctx = new Context();
+    // Context just re-exposes the pure sort; the wire key sort_field reorders on the metadata
+    // timestamp, and the ignored `sort` key falls through to store order (LLMO-6666).
+    const list = [
+      { id: 'b', metadata: { created_at: '2026-02-01T00:00:00Z' } },
+      { id: 'a', metadata: { created_at: '2026-01-01T00:00:00Z' } },
+    ];
+    expect(ctx.sortPromptsByMetadata(list, { sortField: 'metadata.created_at', sortDir: 'asc' })
+      .map((p) => p.id)).to.deep.equal(['a', 'b']);
+    expect(ctx.sortPromptsByMetadata(list, { sort: 'metadata.created_at' })
+      .map((p) => p.id)).to.deep.equal(['b', 'a']);
   });
 
   it('exposes the ai-model catalog for the catalog route + add-path resolution', () => {

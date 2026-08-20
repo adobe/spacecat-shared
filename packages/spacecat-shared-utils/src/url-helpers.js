@@ -570,6 +570,73 @@ export function toPathname(url) {
 }
 
 /**
+ * Normalizes a site URL or bare domain to its identity: lowercased host plus the
+ * normalized path, with scheme, credentials, port, query and fragment removed.
+ *
+ * This is the value that distinguishes sibling subpath sites on one host, and the
+ * value a Semrush project's `settings.ai.primary_url` should carry. It is NOT the
+ * value for a Semrush project's `domain`, which must be a bare FQDN — a path there
+ * is rejected upstream with a 400.
+ *
+ * The result is deliberately scheme-less, because that is the form the upstream
+ * stores: a `primary_url` sent as `https://shop.example.com/uk` reads back as
+ * `shop.example.com/uk`. Returning the scheme-ful spelling would make every
+ * drift comparison report a difference that isn't there, and re-write the same
+ * value forever.
+ *
+ * Normalization rules, in order:
+ * 1. Lowercase the host; leave the path case-sensitive (`/OMES` and `/omes` may
+ *    be different pages on a case-sensitive origin).
+ * 2. Drop scheme, userinfo, port, query and fragment.
+ * 3. Strip a single trailing slash, so `experian.co.uk/business/` and
+ *    `experian.co.uk/business` agree — both spellings exist in prod, and the
+ *    upstream normalizes them the same way.
+ * 4. Do NOT strip a trailing `.html`: `example.com/abc.html` scopes a site to one
+ *    page and `example.com/abc` to a whole section, and both spellings are live.
+ * 5. Do NOT collapse `www.` versus apex — they are distinct sites.
+ * 6. Return null when unparseable, so call sites keep one null check.
+ *
+ * The missing-scheme handling matches `hostnameFromUrlString` in
+ * spacecat-api-service, so the host both derive is always the same string.
+ *
+ * @param {string} value - a full URL or a bare `host[/path]`.
+ * @returns {string|null} e.g. "quickbooks.intuit.com/au", or null when unparseable.
+ */
+export function siteIdentityFromUrlString(value) {
+  if (!hasText(value)) {
+    return null;
+  }
+  const raw = value.trim();
+  // A leading '/' is a path, not a site. Without this, prepending a scheme makes
+  // `new URL()` read the first segment as the host and '/just/a/path' yields the
+  // nonsense identity 'just/a/path'.
+  //
+  // '//host/path' is scheme-relative and DOES name a site, so it is let through:
+  // it has no '://', so it becomes 'https:////host/path', and the WHATWG parser
+  // skips the run of slashes after the scheme and reads 'host' as the hostname.
+  // The corpus pins that result.
+  if (raw.startsWith('/') && !raw.startsWith('//')) {
+    return null;
+  }
+  let parsed;
+  try {
+    parsed = new URL(raw.includes('://') ? raw : `https://${raw}`);
+  } catch {
+    return null;
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (!host) {
+    return null;
+  }
+  // A root URL's pathname is '/', which this reduces to '' — so a path-free site
+  // yields exactly the bare host, keeping the 12,486 path-free sites unchanged.
+  const path = parsed.pathname.endsWith('/')
+    ? parsed.pathname.slice(0, -1)
+    : parsed.pathname;
+  return `${host}${path}`;
+}
+
+/**
  * Checks whether two domain-based URLs share the same normalized pathname.
  * Both arguments must be domain-based URLs (with or without schema). Comparison is
  * case-insensitive and ignores trailing slashes on non-root paths.

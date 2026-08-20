@@ -146,6 +146,17 @@ export declare function stripTrailingSlash(url: string): string;
 export declare function stripWWW(url: string): string;
 
 /**
+ * Normalizes a site URL or bare domain to its identity: lowercased host plus the
+ * normalized path, with scheme, credentials, port, query and fragment removed.
+ * Strips a single trailing slash, preserves a trailing '.html', and does not
+ * collapse 'www.' versus apex. This is the value a Semrush project's
+ * `settings.ai.primary_url` carries — NOT its `domain`, which must be a bare FQDN.
+ * @param value - A full URL or a bare `host[/path]`.
+ * @returns The identity (e.g. "quickbooks.intuit.com/au"), or null when unparseable.
+ */
+export declare function siteIdentityFromUrlString(value: string): string | null;
+
+/**
  * Canonicalizes a URL by removing protocol, www prefix, and trailing slash
  * for comparison and matching purposes.
  * Optionally strips query parameters and fragments.
@@ -358,6 +369,8 @@ export function tracingFetch(url: string | Request, options?: RequestOptions): P
 export const SPACECAT_USER_AGENT: string;
 
 export function prettifyLogForwardingConfig(payload: object): object;
+
+export const CLOUDFLARE_LOGPUSH_FIELDS: readonly string[];
 
 export function isoCalendarWeek(date: Date): ISOCalendarWeek;
 

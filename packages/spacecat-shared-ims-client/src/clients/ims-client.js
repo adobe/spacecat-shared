@@ -126,38 +126,63 @@ export default class ImsClient extends ImsBaseClient {
     return group.items || [];
   }
 
-  async #getUsersInAdminGroup(imsOrgId, groups) {
-    if (!Array.isArray(groups)) {
+  /**
+   * Normalizes a raw array of IMS user "items" into the reduced shape we care about,
+   * de-duping by email and filtering out disallowed email domains. Users without a
+   * usable email fall back to their username.
+   *
+   * De-dupe is keyed by email address and is last-write-wins: when multiple items share
+   * the same email, the last one encountered replaces earlier ones.
+   *
+   * @param {object[]} items - The raw IMS user items.
+   * @returns {{email: string, firstName: string, lastName: string}[]} The normalized,
+   *   allow-filtered, de-duped members.
+   */
+  static #normalizeGroupMembers(items) {
+    if (!Array.isArray(items)) {
       return [];
     }
 
     // Store users by their email address initially to de-dupe the entries
     const users = {};
-    for (const group of groups) {
-      // Only process Administrators groups
-      if (group?.role === 'GRP_ADMIN') {
-        // eslint-disable-next-line no-await-in-loop
-        const groupUsers = await this.#getUsersByImsGroupId(imsOrgId, group?.ident);
-        for (const user of groupUsers) {
-          // Fallback to username if email is not set
-          const newUser = { ...user };
-          if (!hasText(newUser.email)) {
-            newUser.email = newUser.username;
-          }
-          if (emailAddressIsAllowed(newUser.email)) {
-            // Reduce fields in user object to those we need
-            users[newUser.email] = {
-              email: newUser.email,
-              firstName: newUser.firstName,
-              lastName: newUser.lastName,
-            };
-          }
-        }
+    for (const user of items) {
+      const newUser = { ...user };
+      // Fallback to username if email is not set
+      if (!hasText(newUser.email)) {
+        newUser.email = newUser.username;
+      }
+      if (emailAddressIsAllowed(newUser.email)) {
+        // Reduce fields in user object to those we need
+        users[newUser.email] = {
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+        };
       }
     }
 
     // Transform the object "map" back to a de-duped array
     return Object.keys(users).map((email) => users[email]);
+  }
+
+  async #getUsersInAdminGroup(imsOrgId, groups) {
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+
+    // Gather the raw user items across every Administrators group, then normalize once so
+    // de-dupe and allow-filtering are applied across group boundaries.
+    const allItems = [];
+    for (const group of groups) {
+      // Only process Administrators groups
+      if (group?.role === 'GRP_ADMIN') {
+        // eslint-disable-next-line no-await-in-loop
+        const groupUsers = await this.#getUsersByImsGroupId(imsOrgId, group?.ident);
+        allItems.push(...groupUsers);
+      }
+    }
+
+    return ImsClient.#normalizeGroupMembers(allItems);
   }
 
   async getServiceAccessToken() {
@@ -322,6 +347,16 @@ export default class ImsClient extends ImsBaseClient {
     const admins = await this.#getUsersInAdminGroup(imsOrgId, orgDetails?.groups);
     this.log.debug(`IMS Org ID ${imsOrgId} has ${admins.length} known admin users.`); // remove?
 
+    // Expose the org's group catalog so consumers can discover and enumerate groups.
+    // Drop entries with no usable ident so consumers never receive an undefined group id.
+    const groups = (orgDetails?.groups || [])
+      .filter((group) => hasText(group.ident))
+      .map((group) => ({
+        ident: group.ident,
+        name: group.groupName || group.name,
+        role: group.role,
+      }));
+
     return {
       imsOrgId,
       tenantId,
@@ -329,7 +364,31 @@ export default class ImsClient extends ImsBaseClient {
       orgType: orgDetails?.orgType,
       countryCode: orgDetails?.countryCode,
       admins,
+      groups,
     };
+  }
+
+  /**
+   * Returns the normalized members of a single IMS organization group.
+   * @param {string} imsOrgId The IMS organization ID.
+   * @param {string} groupId The IMS group ident.
+   * @returns {Promise<{email: string, firstName: string, lastName: string}[]>}
+   *   The de-duped, allow-filtered group members.
+   * @throws {Error} If a param is missing or the IMS request fails.
+   * @remarks Results are capped at the IMS default page size (currently 50 members) and
+   *   are NOT paginated, so groups larger than that are silently truncated. Callers
+   *   targeting groups that may exceed the page size must account for this truncation.
+   */
+  async getGroupMembers(imsOrgId, groupId) {
+    if (!hasText(imsOrgId)) {
+      throw new Error('imsOrgId param is required.');
+    }
+    if (!hasText(groupId)) {
+      throw new Error('groupId param is required.');
+    }
+
+    const items = await this.#getUsersByImsGroupId(imsOrgId, groupId);
+    return ImsClient.#normalizeGroupMembers(items);
   }
 
   /**

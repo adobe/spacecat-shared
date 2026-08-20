@@ -28,8 +28,9 @@ import {
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
-    expect(Object.keys(SEEDS))
-      .to.include.members(['empty-workspace', 'workspace-with-data', 'two-hierarchies']);
+    expect(Object.keys(SEEDS)).to.include.members([
+      'empty-workspace', 'workspace-with-data', 'two-hierarchies', 'legacy-source-workspace',
+    ]);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
 
@@ -59,7 +60,7 @@ describe('seeds', () => {
     expect(ops.brand_urls.list({ workspaceId, projectId, benchmarkId })).to.have.length(1);
   });
 
-  it('workspace-with-data seeds a LIVE US/en market with a catalog model, tagged prompt + categories', () => {
+  it('workspace-with-data seeds a LIVE US/en market with a catalog model, tagged prompt + dimension roots', () => {
     const store = new InMemoryStore();
     store.load(SEEDS['workspace-with-data']);
     const ops = createStatefulOps(store);
@@ -77,16 +78,98 @@ describe('seeds', () => {
     const [assigned] = ops.ai_models.list({ workspaceId, projectId });
     expect(assigned.model).to.include({ key: 'search-gpt', name: 'ChatGPT' });
 
-    // the seeded prompt carries dimension:value tags; the project has a 1-level NESTED category
-    // taxonomy — a root category + a bare child linked by parent_id (#1758 / serenity-docs#21).
+    // Every tag name is BARE — no name carries a dimension prefix under the dimension-root model.
+    const tags = ops.tags.list({ workspaceId, projectId });
+    expect(tags.every((t) => !t.name.includes(':'))).to.equal(true);
+
+    // Exactly the five dimension roots sit at the root level (model spec §7 gate 2).
+    // ORDER-sensitive on purpose: the seed provisions roots in a fixed order
+    // (`dimensionRootTree` / DIMENSION_ROOTS), and this unit test controls the seed, so it
+    // asserts that exact order; the e2e uses `.have.members` (listing order isn't contractual).
+    const roots = tags.filter((t) => !t.parent_id);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
+
+    // The closed dimensions carry their full fixed vocabularies as bare children.
+    const childNamesOf = (parentId) => tags
+      .filter((t) => t.parent_id === parentId)
+      .map((t) => t.name);
+    expect(childNamesOf(SEED_IDS.intentRootTagId))
+      .to.deep.equal(['Informational', 'Task', 'Commercial', 'Transactional', 'Navigational']);
+    expect(childNamesOf(SEED_IDS.originRootTagId)).to.deep.equal(['ai', 'human']);
+    // The open `source` dimension (producing systems) carries a representative subset of the
+    // canonical vocabulary, not an exhaustive enum.
+    expect(childNamesOf(SEED_IDS.sourceRootTagId))
+      .to.deep.equal(['config', 'gsc', 'drs', 'synthetic-personas']);
+    expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
+
+    // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories
+    // including ones that collide by name with values from other dimensions.
+    expect(childNamesOf(SEED_IDS.categoryRootTagId)).to.deep.equal(['Running Shoes']);
+    const category = tags.find((t) => t.id === SEED_IDS.categoryTagId);
+    expect(category).to.include({ name: 'Running Shoes', parent_id: SEED_IDS.categoryRootTagId });
+    expect(childNamesOf(SEED_IDS.categoryTagId)).to.deep.equal(['Trail', 'human', 'gsc']);
+
+    // The sub-category `human` and the origin value `human` share a name and NOTHING else — the
+    // cross-dimension collision the model spec §7 gate 4 requires to be survivable. Similarly, the
+    // sub-category `gsc` and the source value `gsc` are distinct tags with the same name.
+    const subcategoryHuman = tags.find((t) => t.id === SEED_IDS.childCollidingTagId);
+    const originHuman = tags.find((t) => t.id === SEED_IDS.originHumanTagId);
+    expect(subcategoryHuman.name).to.equal(originHuman.name);
+    expect(subcategoryHuman.id).to.not.equal(originHuman.id);
+    expect(subcategoryHuman.parent_id).to.equal(SEED_IDS.categoryTagId);
+    expect(originHuman.parent_id).to.equal(SEED_IDS.originRootTagId);
+
+    const subcategoryGsc = tags.find((t) => t.id === SEED_IDS.childGscTagId);
+    const sourceGsc = tags.find((t) => t.id === SEED_IDS.sourceGscTagId);
+    expect(subcategoryGsc.name).to.equal(sourceGsc.name);
+    expect(subcategoryGsc.name).to.equal('gsc');
+    expect(subcategoryGsc.id).to.not.equal(sourceGsc.id);
+    expect(subcategoryGsc.parent_id).to.equal(SEED_IDS.categoryTagId);
+    expect(sourceGsc.parent_id).to.equal(SEED_IDS.sourceRootTagId);
+
+    // The seeded prompt is dual-tagged (category + sub-category) and carries one value per
+    // dimension: one closed value (origin/intent/type) and one open value (source), reusing the
+    // ids the standalone tree registered so `by_tags` correlates.
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
-      .to.deep.equal(['topic:Running Shoes', 'source:blog', 'intent:commercial', 'type:branded']);
-    const categories = ops.tags.list({ workspaceId, projectId });
-    expect(categories.map((t) => t.name)).to.deep.equal(['category:Running Shoes', 'Trail']);
-    const [root, child] = categories;
-    expect(root).to.not.have.property('parent_id'); // a root carries no parent
-    expect(child).to.include({ name: 'Trail', parent_id: SEED_IDS.categoryTagId });
+      .to.deep.equal(['Running Shoes', 'human', 'human', 'Commercial', 'config', 'branded']);
+    expect(prompt.tags.map((t) => t.id)).to.deep.equal([
+      SEED_IDS.categoryTagId,
+      SEED_IDS.childCollidingTagId,
+      SEED_IDS.originHumanTagId,
+      SEED_IDS.intentCommercialTagId,
+      SEED_IDS.sourceConfigTagId,
+      SEED_IDS.typeBrandedTagId,
+    ]);
+  });
+
+  it('legacy-source-workspace seeds the pre-rename shape: a `source` authorship root with ai/human', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['legacy-source-workspace']);
+    const ops = createStatefulOps(store);
+    const { workspaceId, projectId } = SEED_IDS;
+
+    const tags = ops.tags.list({ workspaceId, projectId });
+    // The authorship root is still named `source` (not `origin`) — the fixture api-service's
+    // tolerant resolver runs against (origin-dimension.md §7 gate 3), and it carries no `origin`.
+    const roots = tags.filter((t) => !t.parent_id);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.not.include('origin');
+
+    // Every tag id in the loaded seed is unique — mechanically locks down the UUID-reuse safety
+    // assumption. The legacy seed intentionally reuses `workspace-with-data`'s scalar ids, but the
+    // two never load together, so nothing beneath the renamed root should collide with anything.
+    expect(new Set(tags.map((t) => t.id)).size).to.equal(tags.length);
+
+    // `ai`/`human` hang off the legacy `source` root, and the prompt's authorship tag does too.
+    const childNamesOf = (parentId) => tags
+      .filter((t) => t.parent_id === parentId).map((t) => t.name);
+    expect(childNamesOf(SEED_IDS.legacySourceRootTagId)).to.deep.equal(['ai', 'human']);
+    const legacyHuman = tags.find((t) => t.id === SEED_IDS.legacySourceHumanTagId);
+    expect(legacyHuman).to.include({ name: 'human', parent_id: SEED_IDS.legacySourceRootTagId });
+
+    const [prompt] = ops.prompts.list({ workspaceId, projectId });
+    expect(prompt.tags.map((t) => t.id)).to.include(SEED_IDS.legacySourceHumanTagId);
   });
 
   it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {
@@ -190,7 +273,7 @@ describe('buildSeed', () => {
         {
           id: projectId,
           name: 'Tagged',
-          tags: [createAIOTagMock({ id: 'tag-cat', name: 'category:Running' })],
+          tags: [createAIOTagMock({ id: 'tag-cat', name: 'Running Shoes' })],
         },
       ],
     });
@@ -199,7 +282,7 @@ describe('buildSeed', () => {
     store.load(snapshot);
     const tags = createStatefulOps(store).tags.list({ workspaceId, projectId });
     expect(tags).to.have.length(1);
-    expect(tags[0]).to.include({ id: 'tag-cat', name: 'category:Running' });
+    expect(tags[0]).to.include({ id: 'tag-cat', name: 'Running Shoes' });
   });
 
   it('handles an empty workspace (no projects)', () => {

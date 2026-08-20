@@ -43,6 +43,25 @@ const transformCredentialFields = (payload) => {
 };
 
 /**
+ * Cloudflare Logpush "Logged Properties" for the byocdn-cloudflare dataset (http_requests,
+ * zone-scoped). Exported (not just embedded in CDN_TRANSFORMATIONS below) so callers building
+ * a real Logpush job payload — not just this file's human-readable config-sheet preview — have
+ * a single source of truth for the field list, e.g. `output_options.field_names` on
+ * `POST /zones/{zoneId}/logpush/jobs`. Keep in sync with any future field additions (LLMO-5811).
+ */
+export const CLOUDFLARE_LOGPUSH_FIELDS = Object.freeze([
+  'EdgeStartTimestamp',
+  'ClientRequestHost',
+  'ClientRequestURI',
+  'ClientRequestMethod',
+  'ClientRequestUserAgent',
+  'EdgeResponseStatus',
+  'ClientRequestReferer',
+  'EdgeResponseContentType',
+  'EdgeTimeToFirstByteMs',
+]);
+
+/**
  * CDN-specific transformations for log forwarding configuration preparation
  */
 const FASTLY_LOG_FORMAT = `{
@@ -125,17 +144,7 @@ const CDN_TRANSFORMATIONS = {
     'Timestamp format': 'RFC3339',
     'Sampling rate': 'All logs',
     'Organize logs into daily subfolders': 'Yes',
-    'Logged Properties': [
-      'EdgeStartTimestamp',
-      'ClientRequestHost',
-      'ClientRequestURI',
-      'ClientRequestMethod',
-      'ClientRequestUserAgent',
-      'EdgeResponseStatus',
-      'ClientRequestReferer',
-      'EdgeResponseContentType',
-      'EdgeTimeToFirstByteMs',
-    ],
+    'Logged Properties': CLOUDFLARE_LOGPUSH_FIELDS,
     'Log format': 'JSON',
     'Ownership token': payload.ownershipToken || 'token-available-after-deployment',
     HelpUrl: 'https://developers.cloudflare.com/logs/logpush/logpush-job/enable-destinations/aws-s3/',

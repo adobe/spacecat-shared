@@ -19,6 +19,7 @@ import {
   nextRetryDelayMs,
   parseRetryAfterMs,
   toTokenGetter,
+  withDeadline,
   MAX_RETRY_DELAY_MS,
 } from '../src/internal.js';
 
@@ -245,6 +246,116 @@ describe('createRetryingFetch onRetry hook', () => {
     const res = await createRetryingFetch(base, 2, 0, onRetry)('https://x', { method: 'GET' });
     expect(res.status).to.equal(200);
     expect(thenable.catch.called).to.equal(false);
+  });
+});
+
+describe('withDeadline', () => {
+  it('returns init untouched when no timeout is configured', () => {
+    const init = { method: 'GET' };
+    expect(withDeadline(init, undefined, undefined)).to.equal(init);
+    expect(withDeadline(init, undefined, 0)).to.equal(init);
+    expect(withDeadline(init, undefined, -5)).to.equal(init);
+  });
+
+  it('injects an AbortSignal deadline when requestTimeoutMs > 0 (preserving other init)', () => {
+    const out = withDeadline({ method: 'GET' }, undefined, 1000);
+    expect(out.signal).to.be.instanceOf(AbortSignal);
+    expect(out.method).to.equal('GET');
+  });
+
+  it('combines the caller signal with the timeout — a caller abort still fires', () => {
+    const controller = new AbortController();
+    const out = withDeadline(undefined, controller.signal, 10_000);
+    expect(out.signal.aborted).to.equal(false);
+    controller.abort(new Error('caller cancelled'));
+    expect(out.signal.aborted).to.equal(true);
+    expect(out.signal.reason.message).to.equal('caller cancelled');
+  });
+});
+
+describe('createRetryingFetch request timeout', () => {
+  // A base fetch that never resolves on its own — it settles only when the per-attempt signal
+  // aborts, rejecting with that signal's reason (a TimeoutError for the deadline path).
+  const hangUntilAbort = (input, init) => new Promise((_, reject) => {
+    init.signal.addEventListener('abort', () => reject(init.signal.reason));
+  });
+
+  it('aborts an attempt after requestTimeoutMs (the per-attempt deadline fires)', async () => {
+    let thrown;
+    try {
+      await createRetryingFetch(hangUntilAbort, 0, 0, undefined, 10)('https://x', { method: 'GET' });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).to.be.an.instanceOf(Error);
+    expect(thrown.name).to.equal('TimeoutError');
+  });
+
+  it('retries a timed-out idempotent attempt, then returns the eventual success', async () => {
+    let calls = 0;
+    const base = (input, init) => {
+      calls += 1;
+      // First attempt hangs until its 10ms deadline aborts it; the retry succeeds immediately.
+      return calls === 1 ? hangUntilAbort(input, init) : Promise.resolve(resp(200));
+    };
+    const res = await createRetryingFetch(base, 1, 0, undefined, 10)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(calls).to.equal(2);
+  });
+
+  it('does NOT retry a timed-out non-idempotent (POST) attempt — surfaces the timeout once', async () => {
+    let calls = 0;
+    const base = (input, init) => {
+      calls += 1;
+      return hangUntilAbort(input, init);
+    };
+    let thrown;
+    try {
+      await createRetryingFetch(base, 2, 0, undefined, 10)('https://x', { method: 'POST' });
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown.name).to.equal('TimeoutError');
+    // A POST timeout is a thrown error; the isIdempotent gate rethrows it without a replay.
+    expect(calls).to.equal(1);
+  });
+
+  it('still honours a caller-supplied signal — combined, not clobbered', async () => {
+    const controller = new AbortController();
+    // Large deadline so the caller abort (not the timeout) is what settles the request.
+    const p = createRetryingFetch(hangUntilAbort, 0, 0, undefined, 10_000)(
+      'https://x',
+      { method: 'GET', signal: controller.signal },
+    );
+    controller.abort(new Error('caller cancelled'));
+    let thrown;
+    try {
+      await p;
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown.message).to.equal('caller cancelled');
+  });
+
+  it('gives each retry attempt a fresh deadline signal (per-attempt, not one total budget)', async () => {
+    const signalsSeen = [];
+    const base = sandbox.stub().callsFake((input, init) => {
+      signalsSeen.push(init.signal);
+      return Promise.resolve(resp(signalsSeen.length < 2 ? 503 : 200));
+    });
+    const res = await createRetryingFetch(base, 2, 0, undefined, 10_000)('https://x', { method: 'GET' });
+    expect(res.status).to.equal(200);
+    expect(base.callCount).to.equal(2);
+    expect(signalsSeen[0]).to.be.instanceOf(AbortSignal);
+    expect(signalsSeen[1]).to.be.instanceOf(AbortSignal);
+    expect(signalsSeen[0]).to.not.equal(signalsSeen[1]);
+  });
+
+  it('passes init through untouched when no requestTimeoutMs is set', async () => {
+    const base = sandbox.stub().resolves(resp(200));
+    const init = { method: 'GET' };
+    await createRetryingFetch(base, 0, 0)('https://x', init);
+    expect(base.firstCall.args[1]).to.equal(init);
   });
 });
 

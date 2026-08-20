@@ -75,5 +75,14 @@ describe('TicketSuggestion Schema', () => {
       );
       expect(suggestionIdIndex).to.exist;
     });
+
+    it('belongs_to Ticket index uses createdAt as sort key (ticket_suggestions has no updated_at column)', () => {
+      const indexes = Object.values(ticketSuggestionSchema.getIndexes());
+      const ticketIndex = indexes.find(
+        (idx) => idx.pk?.composite?.includes('ticketId'),
+      );
+      expect(ticketIndex).to.exist;
+      expect(ticketIndex.sk?.composite).to.deep.equal(['createdAt']);
+    });
   });
 });

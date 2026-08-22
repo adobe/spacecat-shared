@@ -5,7 +5,7 @@
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
-    "npm": ">=10.9.0 <12.0.0"
+    "npm": ">=10.9.0 <13.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "aws-sdk-client-mock": "4.1.0",
-    "c8": "11.0.0",
+    "c8": "12.0.0",
     "chai": "6.2.2",
     "esmock": "2.7.6",
     "mocha": "11.7.6",

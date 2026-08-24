@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.1...@adobe/spacecat-shared-http-utils-v1.35.2) (2026-08-24)
+
+### Bug Fixes
+
+* bypass FACS for recognized-but-not-onboarded products ([#1893](https://github.com/adobe/spacecat-shared/issues/1893)) ([dfed793](https://github.com/adobe/spacecat-shared/commit/dfed79306e91c6bdcc110564a181372ec130f2ca))
+
 ## [@adobe/spacecat-shared-http-utils-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.0...@adobe/spacecat-shared-http-utils-v1.35.1) (2026-08-24)
 
 ### Bug Fixes

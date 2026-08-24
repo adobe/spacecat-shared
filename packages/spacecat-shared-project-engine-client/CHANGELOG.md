@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.1...@adobe/spacecat-shared-project-engine-client-v1.19.0) (2026-08-24)
+
+### Features
+
+* **project-engine-client:** support pausing and resuming projects ([#1892](https://github.com/adobe/spacecat-shared/issues/1892)) ([1c59857](https://github.com/adobe/spacecat-shared/commit/1c59857e018376703c0ccdfc69e5e9abda293969))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.0...@adobe/spacecat-shared-project-engine-client-v1.18.1) (2026-08-04)
 
 ### Bug Fixes

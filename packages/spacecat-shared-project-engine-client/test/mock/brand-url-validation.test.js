@@ -14,7 +14,7 @@ import { expect } from 'chai';
 import { brandUrlHttpsTag } from '../../mock/brand-url-validation.js';
 
 // Every value below was POSTed to the LIVE Semrush `create_brand_urls` during the 2026-07-13
-// write-probe (prod `adobe-hackathon.semrush.com`, throwaway benchmarks in the LLMO-Dev-2 dev
+// write-probe (prod `www.semrush.com`, throwaway benchmarks in the LLMO-Dev-2 dev
 // sub-workspace, serenity-docs#25), and the expectation is the tag prod actually answered with.
 // `BrandURLRequest.URL` is `required,url,startswith=https://`, evaluated in that order — so the
 // cases that matter are the ones where go's semantics differ from JS's: a case-SENSITIVE

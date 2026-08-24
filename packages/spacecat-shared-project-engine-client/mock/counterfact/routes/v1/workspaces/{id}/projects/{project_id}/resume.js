@@ -44,7 +44,7 @@ export function POST($) {
   if (!context.quota.canPublish(path.id)) {
     return {
       status: 405,
-      body: { message: 'Quota exceeded: cannot resume on an empty-units workspace' },
+      body: { message: 'Quota exceeded: cannot resume an empty-units workspace' },
       contentType: 'application/json',
     };
   }

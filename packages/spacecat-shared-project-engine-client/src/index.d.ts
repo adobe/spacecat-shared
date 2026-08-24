@@ -111,7 +111,7 @@ type TransportData<P extends keyof paths, M extends keyof paths[P]> =
   | null;
 
 /**
- * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 32 in-spec
+ * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 34 in-spec
  * Project Engine operations spacecat-api-service consumes behind verb+resource methods, so
  * consumers depend on this seam rather than the raw client's literal path strings. Each method
  * is THIN: it forwards the caller's openapi-fetch `init` to the underlying client and resolves
@@ -157,6 +157,18 @@ export interface SerenityProjectEngineTransport {
       TransportInit<'/v1/workspaces/{id}/projects/{project_id}/publish', 'post'>
     >
   ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/publish', 'post'>>;
+  /** POST /v1/workspaces/{id}/projects/{project_id}/pause — projects-pause-project */
+  pauseProject(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/pause', 'post'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/pause', 'post'>>;
+  /** POST /v1/workspaces/{id}/projects/{project_id}/resume — projects-resume-project */
+  resumeProject(
+    ...init: TransportInitParam<
+      TransportInit<'/v1/workspaces/{id}/projects/{project_id}/resume', 'post'>
+    >
+  ): Promise<TransportData<'/v1/workspaces/{id}/projects/{project_id}/resume', 'post'>>;
 
   /** GET /v1/workspaces/{id}/projects/{project_id}/ai_models — ai-list-models */
   listAiModels(

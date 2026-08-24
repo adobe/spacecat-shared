@@ -87,6 +87,15 @@ method that calls it.
 | `PATCH /v1/workspaces/{id}/projects/{project_id}` | — | partial update |
 | `DELETE /v1/workspaces/{id}/projects/{project_id}` | `deleteProject` | remove → `204` |
 | `POST /v1/workspaces/{id}/projects/{project_id}/publish` | `publishProject` | publish → `202`; **metered** (405 for an empty-units workspace); also flips every DRAFT prompt in the project (`is_new: true`) to published — see the prompt draft/publish note below |
+| `POST /v1/workspaces/{id}/projects/{project_id}/pause` | `pauseProject` | pause → `202` empty ack, **idempotent** (a second pause acks again, never conflicts); `404 { message: 'not found' }` for an unknown project id. Flips `is_paused` to `true` on the project read-view and moves nothing else — `publish_status` stays `live`, `updated_at` is not bumped |
+| `POST /v1/workspaces/{id}/projects/{project_id}/resume` | `resumeProject` | resume → `202` empty ack; **not idempotent** — `409 { message: 'project is not paused' }` on a running project; `404` for an unknown id; **metered** (405 for an empty-units workspace, checked last, and a rejected resume stays paused) |
+
+> **Pause is idempotent, resume is not** (live-verified 2026-08-24 against prod, workspace
+> `0a496c87-…`, project `997e17c3-…`). Pausing an already-paused project returns a second `202`;
+> resuming a project that is not paused returns `409 { "message": "project is not paused" }`. A bulk
+> pause can be re-run safely over the same project list; a bulk resume must track what it paused, or
+> tolerate 409s. The state is readable as `is_paused` on the v1 detail, the v1 list and the v2 list
+> (overlay CR23 adds the field, CR5 marks it required) — there is no other way to ask.
 
 ### AI models
 

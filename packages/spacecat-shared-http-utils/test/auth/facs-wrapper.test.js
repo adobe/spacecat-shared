@@ -154,6 +154,27 @@ describe('facsWrapper', () => {
         },
       })).to.throw(/declared under multiple resources for product 'LLMO'/);
     });
+
+    it('throws when a FACS_ONBOARDED_PRODUCTS entry has no PRODUCTS_ROUTES product', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['LLMO', 'AOS'], // 'AOS' is a typo for 'ASO'
+          PRODUCTS_ROUTES: {
+            LLMO: { 'GET /x': 'llmo/can_read' },
+            ASO: { 'GET /y': 'aso/view' },
+          },
+        },
+      })).to.throw(/FACS_ONBOARDED_PRODUCTS entry 'AOS' has no/);
+    });
+
+    it('does not throw when all FACS_ONBOARDED_PRODUCTS entries exist (case-insensitive)', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['llmo'], // lowercase tolerated, normalized to LLMO
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': 'llmo/can_read' } },
+        },
+      })).to.not.throw();
+    });
   });
 
   describe('CORS preflight bypass', () => {
@@ -522,6 +543,27 @@ describe('facsWrapper', () => {
       expect(result.status).to.equal(403);
       expect(result.headers.get('x-error'))
         .to.equal('x-product header required for FACS-governed routes');
+    });
+
+    it('treats an empty FACS_ONBOARDED_PRODUCTS as absent — recognized product is NOT bypassed', async () => {
+      // Regression guard for the fail-open trap: if `[]` produced a truthy empty
+      // Set, ASO (recognized, not in the set) would bypass FACS and return 200.
+      // Treating `[]` as absent keeps the gate inert, so ASO falls through to the
+      // governance gate and 403s on a route it does not own.
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: [],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ASO: { 'GET /sites/:siteId': 'aso/view' },
+        },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aso' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
     });
   });
 

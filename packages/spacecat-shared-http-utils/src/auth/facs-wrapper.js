@@ -148,7 +148,8 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *      governed by the controller-level ACL (same posture as the IMS-channel
  *      bypass). A missing or unrecognized `x-product` is NOT treated as "not
  *      onboarded" — it falls through to the governance gate below, which stays
- *      fail-closed. Inert when `FACS_ONBOARDED_PRODUCTS` is not supplied.
+ *      fail-closed. Inert when `FACS_ONBOARDED_PRODUCTS` is absent or empty (an
+ *      empty list is treated as absent, never as "bypass every product").
  *   3b. Route NOT in any product map → bypass.
  *      Route IS in some product map but `x-product` is missing / mismatched
  *      → 403 (can't pick the right policy without a matching header).
@@ -203,13 +204,36 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
 
   // Products with FACS enforcement live. A product SpaceCat recognizes (it has
   // a PRODUCTS_ROUTES entry) but that is absent from this list bypasses the FACS
-  // layer entirely — see the product-onboarding gate (step 3). Absent config →
-  // `null` → the gate is inert (no product is treated as not-onboarded), so a
-  // consumer that doesn't opt in keeps the pre-onboarding-gate behavior.
+  // layer entirely — see the product-onboarding gate (step 3). Values are
+  // case-insensitive (normalized to uppercase here).
+  //
+  // Absent OR empty → `null` → the gate is inert: no product is treated as
+  // not-onboarded, so full FACS enforcement is preserved. Empty is folded into
+  // "absent" deliberately and fail-closed: an empty Set would make the gate
+  // condition (`!onboardedProducts.has(x)`) true for EVERY recognized product,
+  // silently disabling FACS for all of them — so a misconfigured config value
+  // that resolves to `[]` must NOT open the gate. There is no "bypass everyone"
+  // shorthand; carve-outs are always explicit, per-product entries.
   const onboardedRaw = routeFacsCapabilities.FACS_ONBOARDED_PRODUCTS;
-  const onboardedProducts = Array.isArray(onboardedRaw)
+  const onboardedProducts = Array.isArray(onboardedRaw) && onboardedRaw.length > 0
     ? new Set(onboardedRaw.map((p) => String(p).toUpperCase()))
     : null;
+
+  // Fail fast on a typo'd onboarded product. An entry that names no
+  // PRODUCTS_ROUTES product is dead config (it can never match `isKnownProduct`),
+  // and — more dangerously — a typo (e.g. 'AOS' for 'ASO') means the product it
+  // was meant to name is NOT onboarded and would silently bypass FACS. Surface it
+  // at startup, consistent with the other construction-time guards below.
+  if (onboardedProducts) {
+    for (const product of onboardedProducts) {
+      if (!Object.prototype.hasOwnProperty.call(productsRoutes, product)) {
+        throw new Error(
+          `facsWrapper: FACS_ONBOARDED_PRODUCTS entry '${product}' has no `
+          + 'matching PRODUCTS_ROUTES product',
+        );
+      }
+    }
+  }
 
   // Validate every route value is a fully-qualified `<product>/<capability>`
   // string. Misconfigured maps fail at startup rather than the first request.
@@ -367,7 +391,7 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
     // (controller-level ACL still governs the route). A missing or unrecognized
     // x-product is deliberately excluded: it falls through to the governance gate
     // below, which stays fail-closed so FACS cannot be evaded with a bogus header.
-    // Inert unless the consumer supplies FACS_ONBOARDED_PRODUCTS.
+    // Inert when FACS_ONBOARDED_PRODUCTS is absent or empty (see construction).
     if (onboardedProducts && isKnownProduct && !onboardedProducts.has(productUpper)) {
       log.info({
         tag: 'facs', bypass: 'product-not-onboarded', method, suffix, product: productCode,

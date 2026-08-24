@@ -258,6 +258,13 @@ describe('AuthInfo', () => {
       expect(authInfo.hasOrganization(123)).to.be.false;
     });
 
+    it('returns false when orgId is whitespace-only (passes the guard, fails the tenant match)', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization(' ')).to.be.false;
+    });
+
     it('returns true when a tenant matches the bare orgId', () => {
       const authInfo = new AuthInfo().withProfile({
         tenants: [{ id: 'ABC123' }],

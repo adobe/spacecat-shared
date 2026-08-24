@@ -108,6 +108,7 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * ```
  * {
  *   INTERNAL_ROUTES: ['METHOD /path', ...],   // informational, ignored
+ *   FACS_ONBOARDED_PRODUCTS: ['LLMO', 'ASO'], // products with FACS live (optional)
  *   PRODUCTS_ROUTES: {
  *     LLMO: { 'METHOD /path': 'llmo/can_configure', ... }, // value: capability
  *     ASO:  { ... },
@@ -141,9 +142,17 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *      keeps the bypass self-contained: an IMS session that ever carried FACS
  *      claims stays on the evaluation ladder rather than skipping it.
  *   2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
- *   3. Route NOT in any product map → bypass.
+ *   3. Product-onboarding gate. A product SpaceCat recognizes (it has a
+ *      `PRODUCTS_ROUTES` entry) but that is absent from `FACS_ONBOARDED_PRODUCTS`
+ *      → bypass. That product is not onboarded to FACS yet; its routes stay
+ *      governed by the controller-level ACL (same posture as the IMS-channel
+ *      bypass). A missing or unrecognized `x-product` is NOT treated as "not
+ *      onboarded" — it falls through to the governance gate below, which stays
+ *      fail-closed. Inert when `FACS_ONBOARDED_PRODUCTS` is absent or empty (an
+ *      empty list is treated as absent, never as "bypass every product").
+ *   3b. Route NOT in any product map → bypass.
  *      Route IS in some product map but `x-product` is missing / mismatched
- *      → 403 (can't pick the right policy without the header).
+ *      → 403 (can't pick the right policy without a matching header).
  *   4. Per-product LaunchDarkly flag gate (off → bypass; ctor / eval fail
  *      → 503).
  *
@@ -176,6 +185,7 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
  *   INTERNAL_ROUTES?: string[],
+ *   FACS_ONBOARDED_PRODUCTS?: string[],
  *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
  *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
  * }}} opts
@@ -191,6 +201,39 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
   }
 
   const productsRoutes = routeFacsCapabilities.PRODUCTS_ROUTES;
+
+  // Products with FACS enforcement live. A product SpaceCat recognizes (it has
+  // a PRODUCTS_ROUTES entry) but that is absent from this list bypasses the FACS
+  // layer entirely — see the product-onboarding gate (step 3). Values are
+  // case-insensitive (normalized to uppercase here).
+  //
+  // Absent OR empty → `null` → the gate is inert: no product is treated as
+  // not-onboarded, so full FACS enforcement is preserved. Empty is folded into
+  // "absent" deliberately and fail-closed: an empty Set would make the gate
+  // condition (`!onboardedProducts.has(x)`) true for EVERY recognized product,
+  // silently disabling FACS for all of them — so a misconfigured config value
+  // that resolves to `[]` must NOT open the gate. There is no "bypass everyone"
+  // shorthand; carve-outs are always explicit, per-product entries.
+  const onboardedRaw = routeFacsCapabilities.FACS_ONBOARDED_PRODUCTS;
+  const onboardedProducts = Array.isArray(onboardedRaw) && onboardedRaw.length > 0
+    ? new Set(onboardedRaw.map((p) => String(p).toUpperCase()))
+    : null;
+
+  // Fail fast on a typo'd onboarded product. An entry that names no
+  // PRODUCTS_ROUTES product is dead config (it can never match `isKnownProduct`),
+  // and — more dangerously — a typo (e.g. 'AOS' for 'ASO') means the product it
+  // was meant to name is NOT onboarded and would silently bypass FACS. Surface it
+  // at startup, consistent with the other construction-time guards below.
+  if (onboardedProducts) {
+    for (const product of onboardedProducts) {
+      if (!Object.prototype.hasOwnProperty.call(productsRoutes, product)) {
+        throw new Error(
+          `facsWrapper: FACS_ONBOARDED_PRODUCTS entry '${product}' has no `
+          + 'matching PRODUCTS_ROUTES product',
+        );
+      }
+    }
+  }
 
   // Validate every route value is a fully-qualified `<product>/<capability>`
   // string. Misconfigured maps fail at startup rather than the first request.
@@ -335,9 +378,29 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
       return fn(request, context);
     }
 
-    // (3) FACS-governance gate based on x-product header + route membership.
     const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
-    const productMap = productCode ? productsRoutes[productCode.toUpperCase()] : undefined;
+    const productUpper = productCode?.toUpperCase();
+    // A product is "recognized" iff it declares a PRODUCTS_ROUTES entry (even an
+    // empty one). This distinguishes a real, not-yet-onboarded product (e.g. ACO)
+    // from a missing / typo'd / evasive x-product value — only the former bypasses.
+    const isKnownProduct = !!productUpper
+      && Object.prototype.hasOwnProperty.call(productsRoutes, productUpper);
+
+    // (3) Product-onboarding gate. A recognized product that is not in
+    // FACS_ONBOARDED_PRODUCTS is not subject to FACS enforcement yet → bypass
+    // (controller-level ACL still governs the route). A missing or unrecognized
+    // x-product is deliberately excluded: it falls through to the governance gate
+    // below, which stays fail-closed so FACS cannot be evaded with a bogus header.
+    // Inert when FACS_ONBOARDED_PRODUCTS is absent or empty (see construction).
+    if (onboardedProducts && isKnownProduct && !onboardedProducts.has(productUpper)) {
+      log.info({
+        tag: 'facs', bypass: 'product-not-onboarded', method, suffix, product: productCode,
+      }, 'FACS bypass: product not onboarded to FACS');
+      return fn(request, context);
+    }
+
+    // (3b) FACS-governance gate based on x-product header + route membership.
+    const productMap = productUpper ? productsRoutes[productUpper] : undefined;
     const routeInThisProduct = productMap && Object.keys(productMap).length > 0
       && resolveRouteCapability(context, productMap) !== null;
 
@@ -346,7 +409,9 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
         log.warn({
           tag: 'facs', method, suffix, xProduct: productCode || null,
         }, 'FACS-governed route called without matching x-product — denying');
-        return forbidden('x-product header required for FACS-governed routes');
+        return forbidden(productCode
+          ? `x-product '${productCode}' is not authorized for this FACS-governed route`
+          : 'x-product header required for FACS-governed routes');
       }
       log.info({
         tag: 'facs',

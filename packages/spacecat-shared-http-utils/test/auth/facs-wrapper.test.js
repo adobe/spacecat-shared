@@ -154,6 +154,27 @@ describe('facsWrapper', () => {
         },
       })).to.throw(/declared under multiple resources for product 'LLMO'/);
     });
+
+    it('throws when a FACS_ONBOARDED_PRODUCTS entry has no PRODUCTS_ROUTES product', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['LLMO', 'AOS'], // 'AOS' is a typo for 'ASO'
+          PRODUCTS_ROUTES: {
+            LLMO: { 'GET /x': 'llmo/can_read' },
+            ASO: { 'GET /y': 'aso/view' },
+          },
+        },
+      })).to.throw(/FACS_ONBOARDED_PRODUCTS entry 'AOS' has no/);
+    });
+
+    it('does not throw when all FACS_ONBOARDED_PRODUCTS entries exist (case-insensitive)', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['llmo'], // lowercase tolerated, normalized to LLMO
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': 'llmo/can_read' } },
+        },
+      })).to.not.throw();
+    });
   });
 
   describe('CORS preflight bypass', () => {
@@ -418,6 +439,131 @@ describe('facsWrapper', () => {
       const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
+    });
+  });
+
+  describe('product-onboarding gate (FACS_ONBOARDED_PRODUCTS)', () => {
+    // ACO is a recognized product (has a PRODUCTS_ROUTES entry) but is NOT
+    // onboarded to FACS; LLMO is. Mirrors production intent. ACO has no
+    // FT_MAC_FACS_PERMISSIONS flag, so the enforcement paths skip the LD client
+    // and need no esmock (see the 'feature flag gate' block for the mocked path).
+    const onboardingCfg = {
+      INTERNAL_ROUTES: [],
+      FACS_ONBOARDED_PRODUCTS: ['LLMO'],
+      PRODUCTS_ROUTES: {
+        LLMO: { 'GET /insights': 'llmo/can_read' },
+        ACO: { 'GET /insights': 'aco/view' },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: { LLMO: { brand: ['brandId'] } },
+    };
+
+    it('bypasses a recognized product that is not onboarded (ACO)', async () => {
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: onboardingCfg });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'product-not-onboarded' },
+        'FACS bypass: product not onboarded to FACS',
+      )).to.be.true;
+    });
+
+    it('does NOT bypass an unrecognized x-product even with FACS_ONBOARDED_PRODUCTS set (fail-closed)', async () => {
+      // 'garbage' has no PRODUCTS_ROUTES entry, so it is not "not onboarded" — it
+      // must still 403 on a route some product governs, so FACS cannot be evaded
+      // by sending a bogus header.
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'garbage' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: onboardingCfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+    });
+
+    it('does NOT apply the onboarding bypass to an onboarded product', async () => {
+      // ACO onboarded + no LD flag entry → reaches the JWT short-circuit and
+      // admits, proving the onboarding bypass did not fire for an onboarded product.
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['ACO'],
+        PRODUCTS_ROUTES: { ACO: { 'GET /insights': 'aco/view' } },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+    });
+
+    it('is inert when FACS_ONBOARDED_PRODUCTS is not supplied (recognized product reaches enforcement)', async () => {
+      const cfgNoList = {
+        INTERNAL_ROUTES: [],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ACO: { 'GET /insights': 'aco/view' },
+        },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfgNoList });
+      await wrapped({}, context);
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it("denies with a header-specific message when x-product names an onboarded product that doesn't own the route", async () => {
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['LLMO', 'ASO'],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ASO: { 'GET /sites/:siteId': 'aso/view' },
+        },
+      };
+      // ASO is onboarded (no onboarding bypass) but does not own GET /insights,
+      // which LLMO does — the governance gate denies with the mismatch message.
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aso' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(result.headers.get('x-error'))
+        .to.equal("x-product 'aso' is not authorized for this FACS-governed route");
+    });
+
+    it('keeps the "header required" message when x-product is absent on a governed route', async () => {
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['LLMO'],
+        PRODUCTS_ROUTES: { LLMO: { 'GET /insights': 'llmo/can_read' } },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(result.headers.get('x-error'))
+        .to.equal('x-product header required for FACS-governed routes');
+    });
+
+    it('treats an empty FACS_ONBOARDED_PRODUCTS as absent — recognized product is NOT bypassed', async () => {
+      // Regression guard for the fail-open trap: if `[]` produced a truthy empty
+      // Set, ASO (recognized, not in the set) would bypass FACS and return 200.
+      // Treating `[]` as absent keeps the gate inert, so ASO falls through to the
+      // governance gate and 403s on a route it does not own.
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: [],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ASO: { 'GET /sites/:siteId': 'aso/view' },
+        },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aso' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
     });
   });
 

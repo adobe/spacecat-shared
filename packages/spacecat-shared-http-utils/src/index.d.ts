@@ -43,12 +43,17 @@ export declare function forbidden(message?: string, headers?: object): Response;
  *   the route param/body/query aliases that carry that resource's id.
  * - `INTERNAL_ROUTES`: routes that bypass FACS entirely (internal / not customer-facing).
  * - `FACS_NON_RESOURCE_PARAMS`: param names that are not ReBAC resources.
+ * - `FACS_ONBOARDED_PRODUCTS`: uppercase product codes with FACS enforcement live. A
+ *   recognized product (one present in `PRODUCTS_ROUTES`) absent from this list bypasses
+ *   the FACS layer; a missing/unrecognized `x-product` still fail-closes. Omit to make the
+ *   product-onboarding gate inert (all recognized products treated as onboarded).
  */
 export interface FacsRouteCapabilities {
   PRODUCTS_ROUTES: Record<string, Record<string, string>>;
   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Record<string, Record<string, string[]>>;
   INTERNAL_ROUTES?: string[];
   FACS_NON_RESOURCE_PARAMS?: string[];
+  FACS_ONBOARDED_PRODUCTS?: string[];
   /**
    * Per-product SECONDARY resource param (opt-in). When no PRIMARY resource resolves
    * for a route, the wrapper falls back to the secondary param (identified by `aliases`)

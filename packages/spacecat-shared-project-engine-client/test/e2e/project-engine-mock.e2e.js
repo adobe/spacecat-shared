@@ -2630,6 +2630,108 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   });
 
   // ───────────────────────────────────────────────────────────────────────
+  // Pause / resume. The action pair Semrush shipped for the weekly-workspace data
+  // migration. Every assertion below mirrors a branch probed live against prod on
+  // 2026-08-24 (workspace 0a496c87-…, project 997e17c3-… "CH-de"): pause is
+  // IDEMPOTENT, resume is not, both 404 an unknown project id, and the state shows
+  // up as `is_paused` on the project read-view.
+  // ───────────────────────────────────────────────────────────────────────
+
+  const PAUSE = '/v1/workspaces/{id}/projects/{project_id}/pause';
+  const RESUME = '/v1/workspaces/{id}/projects/{project_id}/resume';
+  const GHOST_PROJECT = '11111111-1111-1111-1111-111111111111';
+
+  /** Reads a project back through the v1 detail (`draft` is a required query param). */
+  const readProject = async (projectId) => {
+    const { data } = await client.GET('/v1/workspaces/{id}/projects/{project_id}', {
+      params: { path: { id: SEED_WORKSPACE, project_id: projectId }, query: { draft: 'true' } },
+    });
+    return data;
+  };
+
+  /** Creates a running project in the seed workspace and returns it. */
+  const givenProject = async (name) => {
+    const { data } = await client.POST(PROJECTS, {
+      params: { path: { id: SEED_WORKSPACE } }, body: { name, type: 'ai' },
+    });
+    return data;
+  };
+
+  it('a fresh project reads is_paused: false (live carries the key on every read)', async () => {
+    const created = await givenProject('Pausable');
+    expect(created).to.have.property('is_paused', false);
+    expect(await readProject(created.id)).to.have.property('is_paused', false);
+    const { data: list } = await client.GET(PROJECTS, {
+      params: { path: { id: SEED_WORKSPACE } },
+    });
+    expect(list.items.find((p) => p.id === created.id)).to.have.property('is_paused', false);
+  });
+
+  it('pauses a project: 202 empty ack, is_paused flips, nothing else moves', async () => {
+    const created = await givenProject('Pausable');
+    const { response } = await client.POST(PAUSE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+    });
+    expect(response.status).to.equal(202);
+    expect(await response.text()).to.equal('');
+
+    const paused = await readProject(created.id);
+    expect(paused).to.have.property('is_paused', true);
+    // Live leaves publish_status / is_draft / updated_at untouched by a pause.
+    expect(paused).to.deep.equal({ ...created, is_paused: true });
+  });
+
+  it('pause is IDEMPOTENT: a second pause acks 202 again, never 409', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    const { response: first } = await client.POST(PAUSE, { params: { path } });
+    expect(first.status).to.equal(202);
+    const { response: second } = await client.POST(PAUSE, { params: { path } });
+    expect(second.status).to.equal(202);
+    expect(await readProject(created.id)).to.have.property('is_paused', true);
+  });
+
+  it('resumes a paused project: 202 empty ack, is_paused flips back', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    await client.POST(PAUSE, { params: { path } });
+    const { response } = await client.POST(RESUME, { params: { path } });
+    expect(response.status).to.equal(202);
+    expect(await response.text()).to.equal('');
+    expect(await readProject(created.id)).to.have.property('is_paused', false);
+  });
+
+  it('resume is NOT idempotent: resuming a running project is 409 "project is not paused"', async () => {
+    const created = await givenProject('Pausable');
+    const { response, error } = await client.POST(RESUME, {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+    });
+    expect(response.status).to.equal(409);
+    expect(error.message).to.equal('project is not paused');
+  });
+
+  it('404s an unknown project id on both actions (live { message: "not found" })', async () => {
+    const path = { id: SEED_WORKSPACE, project_id: GHOST_PROJECT };
+    for (const action of [PAUSE, RESUME]) {
+      // eslint-disable-next-line no-await-in-loop
+      const { response, error } = await client.POST(action, { params: { path } });
+      expect(response.status).to.equal(404);
+      expect(error.message).to.equal('not found');
+    }
+  });
+
+  it('meters resume: an empty-units workspace 405s, and the project stays paused', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    await client.POST(PAUSE, { params: { path } });
+    // The spec states resume re-consumes prompt limits under the publish quota check.
+    await setQuota(SEED_WORKSPACE, { prompts: 0 });
+    const { response: over } = await client.POST(RESUME, { params: { path } });
+    expect(over.status).to.equal(405);
+    expect(await readProject(created.id)).to.have.property('is_paused', true);
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
   // Bearer auth. The live gateway 401s any request lacking a usable bearer
   // credential (verified live 2026-06-25: missing header AND `Bearer <garbage>`
   // both 401). The mock mirrors that on every real route. The typed client always

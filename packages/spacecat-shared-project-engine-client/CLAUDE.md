@@ -5,7 +5,7 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
 
 - `src/` — the published surface: the raw `createSerenityProjectEngineApiClient` (an
   `openapi-fetch` client over every generated operation) **and** `createSerenityProjectEngineTransport`,
-  an intent-named facade that wraps the 32 in-spec operations spacecat-api-service consumes behind
+  an intent-named facade that wraps the 34 in-spec operations spacecat-api-service consumes behind
   verb+resource methods with a single error seam. Consumers depend on the facade; the raw client
   stays available for the remaining operations. Plus generated types (`src/generated/types.ts`).
   This is the ONLY thing that ships (`files: ["src"]`).
@@ -17,7 +17,11 @@ Counterfact **mock** used by local dev and the cross-repo e2e harness.
   endpoint inventory, seeds, control routes, quota, troubleshooting). AI-unit quota (the
   disguised-405 the live API returns for an over-allocation) is in `mock/quota.js`, set via the
   `POST /__quota` control route or `buildSeed({ quota })`, enforced on project create / prompt write
-  / publish. **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
+  / publish / resume. **Pause/resume** (`mock/pause.js`) is a pure decision table over the stored
+  project — live keeps the state in `is_paused` on the project read-view (overlay CR23), pause is
+  IDEMPOTENT and resume 409s on a running project, and both 404 an unknown project id (all
+  live-verified 2026-08-24).
+  **Bearer auth** (`mock/auth.js`) is modelled like the live gateway — every real route
   needs `Authorization: Bearer <token>` (presence, not validity) or returns `401 { detail: 'Not
   authenticated' }`; the `__*` control routes are exempt. The gate is injected onto every handler at
   the materialization seam by `injectAuthGuard` in `mock/run.js` (so no handler can forget it). A new
@@ -87,8 +91,12 @@ delete needs no helper — Counterfact serves 204 No Content without negotiating
 
 ## Spec corrections: the overlay is the single source of truth
 
-`spec/overlays/corrections.yaml` holds all corrections to the vendored swagger; the vendored
-`spec/*.yaml` is NEVER edited. Add a `CRn` action there + regenerate (`npm run generate`; or
+`spec/overlays/corrections.yaml` holds all corrections to the vendored swagger. The vendored
+`spec/*.yaml` is never hand-authored: the ONLY thing that lands in it is what Semrush ships, either
+a whole document or a delta spliced in verbatim and re-locked with `npm run spec:lock` (the README's
+"Spec source" section has the procedure and the deep-compare that evidences it). Everything else —
+including a path Semrush has deployed but not yet documented — is a `CRn` action. Add one +
+regenerate (`npm run generate`; or
 `npm run spec:convert && npm run spec:overlay` for just the mock's `build/openapi3.json`). CR5
 marks always-present response fields `required` so fixtures are enforced — keep any `required`
 claim faithful to what the live API actually returns AND what the mock's own create handlers

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.0...@adobe/spacecat-shared-http-utils-v1.35.1) (2026-08-24)
+
+### Bug Fixes
+
+* **http-utils:** guard AuthInfo.hasOrganization against a non-string orgId ([#1891](https://github.com/adobe/spacecat-shared/issues/1891)) ([b9fe735](https://github.com/adobe/spacecat-shared/commit/b9fe735bbbee790e2134b82ccb2133594b641914))
+
 ## [@adobe/spacecat-shared-http-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.34.0...@adobe/spacecat-shared-http-utils-v1.35.0) (2026-08-12)
 
 ### Features

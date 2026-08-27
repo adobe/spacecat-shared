@@ -30,6 +30,7 @@ describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
     expect(Object.keys(SEEDS)).to.include.members([
       'empty-workspace', 'workspace-with-data', 'two-hierarchies', 'legacy-source-workspace',
+      'legacy-slug-tag-names',
     ]);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
@@ -170,6 +171,47 @@ describe('seeds', () => {
 
     const [prompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.id)).to.include(SEED_IDS.legacySourceHumanTagId);
+  });
+
+  it('legacy-slug-tag-names seeds today\'s pre-rename shape: bare-slug roots, a populated `origin` root, and slug `source` children', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['legacy-slug-tag-names']);
+    const ops = createStatefulOps(store);
+    const { workspaceId, projectId } = SEED_IDS;
+
+    const tags = ops.tags.list({ workspaceId, projectId });
+    // All five bare-lowercase dimension roots are present — `origin` alongside `source`, unlike
+    // `legacy-source-workspace` (which models the OLDER, already-completed origin-rename fixture).
+    const roots = tags.filter((t) => !t.parent_id);
+    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
+
+    // Every tag id in the loaded seed is unique — the fixture intentionally reuses
+    // `workspace-with-data`'s scalar ids, but the two never load together.
+    expect(new Set(tags.map((t) => t.id)).size).to.equal(tags.length);
+
+    const childNamesOf = (parentId) => tags
+      .filter((t) => t.parent_id === parentId).map((t) => t.name);
+    // `origin` is populated exactly like today's default seed.
+    expect(childNamesOf(SEED_IDS.legacySlugOriginRootTagId)).to.deep.equal(['ai', 'human']);
+    // `source`'s children are plain (pre-rename) slugs.
+    expect(childNamesOf(SEED_IDS.legacySlugSourceRootTagId))
+      .to.deep.equal(['config', 'gsc', 'drs', 'synthetic-personas']);
+    expect(childNamesOf(SEED_IDS.legacySlugIntentRootTagId))
+      .to.deep.equal(['Informational', 'Task', 'Commercial', 'Transactional', 'Navigational']);
+    expect(childNamesOf(SEED_IDS.legacySlugTypeRootTagId)).to.deep.equal(['branded', 'non-branded']);
+    // No customer category has been authored on this fixture — it exercises the plain pre-rename
+    // shape only, not the collision cases (those live on `workspace-with-data`).
+    expect(childNamesOf(SEED_IDS.legacySlugCategoryRootTagId)).to.deep.equal([]);
+
+    // The seeded prompt carries BOTH `origin/human` and `source/config` simultaneously — the actual
+    // pre-remap state (the remap that folds them together has not been applied to this fixture).
+    const [prompt] = ops.prompts.list({ workspaceId, projectId });
+    expect(prompt.tags.map((t) => t.id)).to.deep.equal([
+      SEED_IDS.legacySlugOriginHumanTagId,
+      SEED_IDS.legacySlugIntentCommercialTagId,
+      SEED_IDS.legacySlugSourceConfigTagId,
+      SEED_IDS.legacySlugTypeBrandedTagId,
+    ]);
   });
 
   it('two-hierarchies is a superset with a second, independent live market (DE/de)', () => {

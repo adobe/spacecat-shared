@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace` \| `legacy-slug-tag-names`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -205,6 +205,19 @@ Three named seeds ship in `mock/seeds.js`:
   (origin-dimension.md §7 gate 3): a live project still carrying a `source` root, which the resolver
   must accept in place and never duplicate. Its ids are `SEED_IDS.legacySourceRootTagId` /
   `legacySourceHumanTagId`. Removed by WP-O6 once the `source` fallback is dropped.
+- **`legacy-slug-tag-names`** — today's actual production shape, before the customer-facing
+  tag-display-names rename lands: all five dimension roots are bare lowercase slugs
+  (`category`/`intent`/`origin`/`source`/`type`), `origin` is populated (`ai`/`human`) alongside a
+  `source` root carrying plain slug children, and the seeded prompt carries both `origin/human` and
+  `source/config` simultaneously (the pre-remap state). Distinct from `legacy-source-workspace`
+  above (an earlier, already-completed migration where the authorship root itself was still named
+  `source`) — here `origin` and `source` coexist exactly as they do in production today. This is the
+  fixture the tag-display-names rename's tolerant slug-or-display resolver is tested against
+  (tag-display-names.md §7 gate 3): a prompt write to this project must resolve beneath the existing
+  slug values and mint nothing. Its ids are the `SEED_IDS.legacySlug*` family (the five
+  `*RootTagId`s plus `originHumanTagId` / `intentCommercialTagId` / `sourceConfigTagId` /
+  `typeBrandedTagId`, each prefixed `legacySlug`). Removed in the contract phase once the
+  display-name rename has landed everywhere.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:

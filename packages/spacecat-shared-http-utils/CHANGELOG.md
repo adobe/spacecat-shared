@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.2...@adobe/spacecat-shared-http-utils-v1.36.0) (2026-08-27)
+
+### Features
+
+* **http-utils:** add composite primary-resource resolver hook to facsWrapper ([#1883](https://github.com/adobe/spacecat-shared/issues/1883)) ([ff4e995](https://github.com/adobe/spacecat-shared/commit/ff4e995bb30a874df476b1beada52b208b2da09f)), closes [adobe/mysticat-architecture#249](https://github.com/adobe/mysticat-architecture/issues/249) [#923](https://github.com/adobe/spacecat-shared/issues/923)
+
 ## [@adobe/spacecat-shared-http-utils-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.1...@adobe/spacecat-shared-http-utils-v1.35.2) (2026-08-24)
 
 ### Bug Fixes

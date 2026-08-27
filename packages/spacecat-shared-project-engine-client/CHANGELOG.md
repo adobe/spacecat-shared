@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.19.0...@adobe/spacecat-shared-project-engine-client-v1.20.0) (2026-08-27)
+
+### Features
+
+* **project-engine-client-mock:** add legacy-slug-tag-names seed fixture (SITES-50445) ([#1895](https://github.com/adobe/spacecat-shared/issues/1895)) ([5091924](https://github.com/adobe/spacecat-shared/commit/50919246e1204b662d66c755f875c2d60c3cb5f7)), closes [#407](https://github.com/adobe/spacecat-shared/issues/407)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.1...@adobe/spacecat-shared-project-engine-client-v1.19.0) (2026-08-24)
 
 ### Features

@@ -47,14 +47,27 @@ const { data, error } = await client.GET('/v1/countries');
 
 The spec is a **vendored file** — `spec/projectengine_swagger_public.yaml` — kept under
 version control. Semrush only provides the file (no endpoint access in the near term), and
-it's **Swagger 2.0** (no v3/v3.1 on offer). The vendored file is **never edited**; where it
-diverges from the live API, a generation-time overlay corrects the converted artifact instead (see
+it's **Swagger 2.0** (no v3/v3.1 on offer). The vendored file is **never hand-authored** — the only
+thing that ever lands in it is what Semrush ships; where it diverges from the live API, a
+generation-time overlay corrects the converted artifact instead (see
 [Spec corrections](#spec-corrections)). Refresh is **manual**: drop in the newer file, re-run
 `npm run generate`, and review the diff. A committed checksum lock
 (`spec/projectengine_swagger_public.yaml.sha256`) is verified by `npm run spec:verify` (wired into
 `pretest`, so CI enforces it): any re-vendor of the spec fails the build until the hash is
 explicitly regenerated with `npm run spec:lock` and reviewed. A true live-drift contract test
 against Semrush remains blocked on endpoint access.
+
+Semrush sometimes delivers a **delta** instead of a whole document — a short YAML carrying only the
+paths a release added. Splice those paths into the vendored file verbatim, in sorted position and in
+the file's own block style (sequences flush with their key), leaving every other byte untouched, then
+re-lock. Nothing is hand-authored, so the review evidence is a deep-compare of the spliced paths
+against the delivered YAML:
+
+```bash
+node -e "const y=require('js-yaml'),f=require('fs');
+const a=y.load(f.readFileSync('<delivered>.yaml','utf8')),b=y.load(f.readFileSync('spec/projectengine_swagger_public.yaml','utf8'));
+for (const p of Object.keys(a.paths)) console.log(p, JSON.stringify(a.paths[p])===JSON.stringify(b.paths[p]));"
+```
 
 Both scripts use a **package-root-relative** path and assume the working directory is this
 package root — always invoke them via `npm run spec:verify` / `npm run spec:lock`, which npm
@@ -101,13 +114,20 @@ pip install datamodel-code-generator
 
 ## Spec corrections
 
-The vendored swagger diverges from the live API in three places. A small OpenAPI Overlay
+The vendored swagger diverges from the live API in a number of places. A small OpenAPI Overlay
 (`spec/overlays/corrections.yaml`), applied to the converted OAS3 artifact at generation time by
-`scripts/apply-overlay.mjs`, corrects them; the vendored `spec/projectengine_swagger_public.yaml`
-is never touched.
+`scripts/apply-overlay.mjs`, corrects them; no correction is ever written into the vendored
+`spec/projectengine_swagger_public.yaml`.
 
 - **CR1 — missing endpoint.** Adds `GET /v1/ai_models` (the live global model catalog), which is
   absent from the upstream swagger.
+- **CR23 — missing response field.** Adds `is_paused` to `model.ProjectResponse`. The swagger
+  delta that shipped `pause`/`resume` added the two action paths but left the response schema
+  alone, so the generated type had no way to express whether a project is paused. Live returns the
+  key on every project read.
+- **CR24 — missing status.** Declares the `404` that `pause`/`resume` return for an unknown project
+  id. Live pause is idempotent (a second pause is another `202`); only `resume` uses the declared
+  `409`, and it does so with `{"message": "project is not paused"}`.
 - **CR2 — auth.** The spec models a required `Auth-Data-Jwt` header, but the live API authenticates
   on `Authorization: Bearer <IMS>` only — Semrush accepts the IMS bearer directly. The overlay
   removes `Auth-Data-Jwt` from every operation and adds an `imsBearer` security scheme.

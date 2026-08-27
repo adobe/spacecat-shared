@@ -156,6 +156,81 @@ class Suggestion extends BaseModel {
     return this.setStatus(to);
   }
 
+  /**
+   * Overrides the auto-generated getter to backfill `data.factId` from the
+   * real `suggestionKey` column when the stored data has no `factId` of its
+   * own. `factId` was historically the signal several JS consumers
+   * (spacecat-audit-worker's broken-links-guidance handler,
+   * spacecat-autofix-worker's mystique-router) use to detect a
+   * Mystique/V2-produced suggestion, but its real source
+   * (mysticat-projector-service) has been retired.
+   * `suggestionKey` is the projector's current,reliably-populated
+   * equivalent signal, so this fallback restores the intended behavior
+   * for every existing caller without changing their code.
+   * Never overwrites a real, already-stored `factId`.
+   *
+   * The backfilled value is synthetic, never persisted (see `setData()`
+   * below, which strips it back out on any read-modify-write round trip),
+   * and also surfaced via `toJSON()` so serialization-based consumers see it
+   * too.
+   *
+   * @returns {Object} the suggestion's data, with `factId` backfilled if absent
+   */
+  getData() {
+    const { data } = this.record;
+    if (!data?.factId && this.getSuggestionKey?.()) {
+      return { ...data, factId: this.getSuggestionKey() };
+    }
+    return data;
+  }
+
+  /**
+   * Overrides the auto-generated setter to strip a synthetic `factId` before
+   * it can be persisted. `getData()` above backfills `data.factId` from
+   * `getSuggestionKey()` at read time; a caller doing the standard
+   * read-modify-write pattern (`getData()` → merge → `setData()` → `save()`,
+   * e.g. `FixEntity#resetLinkedIssues`, tokowaka-client's suggestion
+   * deploy flows) would otherwise bake that fabricated value permanently
+   * into storage, silently turning a legacy suggestion into a fake V2 one
+   * for every future direct-row reader. A real, legitimately-stored `factId`
+   * can never equal `getSuggestionKey()` — they're different generators with
+   * different shapes (`legacy:{opp}:{sugg}` vs
+   * `site:{id}:backlink:...:referrer:...`) — so an incoming value matching
+   * it exactly is unambiguously the synthetic pass-through, safe to drop.
+   *
+   * @param {Object} value - the data to persist
+   * @returns {this}
+   */
+  setData(value) {
+    if (value && value.factId && value.factId === this.getSuggestionKey?.()) {
+      const { factId: _, ...rest } = value;
+      this.patcher.patchValue('data', rest, false);
+      return this;
+    }
+    this.patcher.patchValue('data', value, false);
+    return this;
+  }
+
+  /**
+   * Overrides the auto-generated JSON serializer so `factId`-backfilling
+   * (see `getData()`) also reaches serialization-based consumers (API
+   * responses, logs). `BaseModel#toJSON()` reads `this.record[key]` directly
+   * per attribute and never calls `getData()`, so without this override
+   * `suggestion.toJSON().data.factId` (and `JSON.stringify(suggestion)`)
+   * would stay `undefined` even when `getData().factId` is correctly
+   * backfilled.
+   *
+   * @returns {Object} the JSON representation, with `data.factId` backfilled
+   *   the same way `getData()` does
+   */
+  toJSON() {
+    const json = super.toJSON();
+    if (json.data && !json.data.factId && this.getSuggestionKey?.()) {
+      json.data = { ...json.data, factId: this.getSuggestionKey() };
+    }
+    return json;
+  }
+
   // add your customized method here
 }
 

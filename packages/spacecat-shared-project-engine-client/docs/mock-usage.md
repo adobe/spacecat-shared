@@ -178,7 +178,7 @@ Semrush-vendored `/v3` prompts API using RFC 7396 JSON Merge Patch — real, spe
 
 ## 4. Seeds
 
-Three named seeds ship in `mock/seeds.js`:
+Five named seeds ship in `mock/seeds.js`:
 
 - **`empty-workspace`** — the (child) seed workspace with no projects.
 - **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
@@ -213,8 +213,9 @@ Three named seeds ship in `mock/seeds.js`:
   above (an earlier, already-completed migration where the authorship root itself was still named
   `source`) — here `origin` and `source` coexist exactly as they do in production today. This is the
   fixture the tag-display-names rename's tolerant slug-or-display resolver is tested against
-  (tag-display-names.md §7 gate 3): a prompt write to this project must resolve beneath the existing
-  slug values and mint nothing. Its ids are the `SEED_IDS.legacySlug*` family (the five
+  (as of this writing, tag-display-names.md §7 gate 3 — the section anchor may shift before that
+  still-unmerged spec is signed off): a prompt write to this project must resolve beneath the
+  existing slug values and mint nothing. Its ids are the `SEED_IDS.legacySlug*` family (the five
   `*RootTagId`s plus `originHumanTagId` / `intentCommercialTagId` / `sourceConfigTagId` /
   `typeBrandedTagId`, each prefixed `legacySlug`). Removed in the contract phase once the
   display-name rename has landed everywhere.

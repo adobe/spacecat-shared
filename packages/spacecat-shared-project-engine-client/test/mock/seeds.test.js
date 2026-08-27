@@ -182,7 +182,13 @@ describe('seeds', () => {
     const tags = ops.tags.list({ workspaceId, projectId });
     // All five bare-lowercase dimension roots are present — `origin` alongside `source`, unlike
     // `legacy-source-workspace` (which models the OLDER, already-completed origin-rename fixture).
+    // The `LEGACY_SLUG_*` values asserted throughout this test are currently byte-identical to the
+    // live `DIMENSION_ROOTS`/`*_VALUES` constants in mock/seeds.js — that's intentional, not a
+    // copy-paste artifact: they're deliberately decoupled so this fixture keeps reading today's
+    // shape once a future rename pass rewrites the live constants in place (see seeds.js:108-119).
     const roots = tags.filter((t) => !t.parent_id);
+    // Order reflects `legacySlugDimensionRootTree()`'s insertion order, not an enforced contract —
+    // reordering the tree there is expected to reorder this assertion too.
     expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
 
     // Every tag id in the loaded seed is unique — the fixture intentionally reuses

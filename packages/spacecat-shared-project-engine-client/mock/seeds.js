@@ -113,8 +113,9 @@ const LEGACY_SOURCE_HUMAN_TAG_ID = tagId('human', LEGACY_SOURCE_ROOT_TAG_ID);
 // `ORIGIN_VALUES` / `SOURCE_VALUES` / `TYPE_VALUES`, precisely BECAUSE those are the constants plan
 // item 1 rewrites in place — a fixture built from them would silently start reading display names
 // the moment that rename lands elsewhere in this file, defeating its whole purpose as the tolerant
-// resolver's "un-migrated project" fixture (spec §7 gate 3, plan WP-D2 item 4). `intent` values are
-// out of scope for the rename (the dimension stays hidden) but are hardcoded here too, so this
+// resolver's "un-migrated project" fixture (as of this writing, spec §7 gate 3, plan WP-D2 item 4 —
+// section/item numbers may shift before that still-unmerged spec is signed off). `intent` values
+// are out of scope for the rename (the dimension stays hidden) but are hardcoded here too, so this
 // block has no dependency on the mutable constants above. Deleted in the contract phase, once the
 // display-name rename has landed everywhere and an old-vocabulary fixture is no longer meaningful.
 const LEGACY_SLUG_ROOTS = Object.freeze({
@@ -124,6 +125,9 @@ const LEGACY_SLUG_ROOTS = Object.freeze({
   source: 'source',
   type: 'type',
 });
+// Title-cased (unlike the other LEGACY_SLUG_* arrays, which are lowercase slugs): `intent` values
+// are historically title-cased in production, mirroring `INTENT_VALUES` above — not a copy-paste
+// inconsistency to "clean up".
 const LEGACY_SLUG_INTENT_VALUES = Object.freeze([
   'Informational', 'Task', 'Commercial', 'Transactional', 'Navigational',
 ]);

@@ -156,6 +156,29 @@ class Suggestion extends BaseModel {
     return this.setStatus(to);
   }
 
+  /**
+   * Overrides the auto-generated getter to backfill `data.factId` from the
+   * real `suggestionKey` column when the stored data has no `factId` of its
+   * own. `factId` was historically the signal several JS consumers
+   * (spacecat-audit-worker's broken-links-guidance handler,
+   * spacecat-autofix-worker's mystique-router) use to detect a
+   * Mystique/V2-produced suggestion, but its real source
+   * (mysticat-projector-service) has been retired.
+   * `suggestionKey` is the projector's current,reliably-populated
+   * equivalent signal, so this fallback restores the intended behavior
+   * for every existing caller without changing their code.
+   * Never overwrites a real, already-stored `factId`.
+   *
+   * @returns {Object} the suggestion's data, with `factId` backfilled if absent
+   */
+  getData() {
+    const { data } = this.record;
+    if (!data?.factId && this.getSuggestionKey?.()) {
+      return { ...data, factId: this.getSuggestionKey() };
+    }
+    return data;
+  }
+
   // add your customized method here
 }
 

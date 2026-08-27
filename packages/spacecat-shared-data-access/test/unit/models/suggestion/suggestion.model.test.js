@@ -130,6 +130,31 @@ describe('SuggestionModel', () => {
       instance.setData({ newInfo: 'updated data' });
       expect(instance.record.data).to.deep.equal({ newInfo: 'updated data' });
     });
+
+    it('backfills factId from suggestionKey when data has no factId', () => {
+      mockRecord.suggestionKey = 'site:site1:backlink:abc:referrer:def';
+      ({ model: instance } = createElectroMocks(Suggestion, mockRecord));
+
+      expect(instance.getData()).to.deep.equal({
+        info: 'sample data',
+        factId: 'site:site1:backlink:abc:referrer:def',
+      });
+    });
+
+    it('does not overwrite an existing factId with suggestionKey', () => {
+      mockRecord.suggestionKey = 'site:site1:backlink:abc:referrer:def';
+      mockRecord.data = { info: 'sample data', factId: 'legacy:op1:sug1' };
+      ({ model: instance } = createElectroMocks(Suggestion, mockRecord));
+
+      expect(instance.getData()).to.deep.equal({
+        info: 'sample data',
+        factId: 'legacy:op1:sug1',
+      });
+    });
+
+    it('leaves data unchanged when neither factId nor suggestionKey is present', () => {
+      expect(instance.getData()).to.deep.equal({ info: 'sample data' });
+    });
   });
 
   describe('SKIP_REASONS', () => {

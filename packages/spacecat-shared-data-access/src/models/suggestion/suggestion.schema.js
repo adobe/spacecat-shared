@@ -50,11 +50,6 @@ const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addAttribute('skipDetail', {
     type: 'string',
     validate: (value) => !value || (isString(value) && value.length <= 500),
-  })
-  .addAttribute('suggestionKey', {
-    type: 'string',
-    readOnly: true,
-    validate: (value) => !value || isString(value),
   });
 
 export default schema.build();

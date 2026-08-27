@@ -623,7 +623,10 @@ export const SEED_IDS = Object.freeze({
   // The pre-rename slug fixture (`legacy-slug-tag-names`, WP-D1 item 3): all five bare-slug
   // dimension roots, plus the closed/open values the seeded prompt carries pre-remap — for
   // WP-D2's tolerant slug-or-display resolver tests (spec §7 gate 3). Deleted in the contract
-  // phase alongside the seed itself.
+  // phase alongside the seed itself. Shares its scalar ids (workspaceId, projectId,
+  // aiModelId, promptId, benchmarkId, brandUrlId above) with `workspace-with-data` — safe only
+  // because the two seeds are never loaded together (see `LEGACY_SLUG_TAG_NAMES_WORKSPACE`'s
+  // doc comment for why).
   legacySlugCategoryRootTagId: LEGACY_SLUG_CATEGORY_ROOT_TAG_ID,
   legacySlugIntentRootTagId: LEGACY_SLUG_INTENT_ROOT_TAG_ID,
   legacySlugOriginRootTagId: LEGACY_SLUG_ORIGIN_ROOT_TAG_ID,

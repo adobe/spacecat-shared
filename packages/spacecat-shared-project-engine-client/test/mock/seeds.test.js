@@ -185,7 +185,8 @@ describe('seeds', () => {
     // The `LEGACY_SLUG_*` values asserted throughout this test are currently byte-identical to the
     // live `DIMENSION_ROOTS`/`*_VALUES` constants in mock/seeds.js — that's intentional, not a
     // copy-paste artifact: they're deliberately decoupled so this fixture keeps reading today's
-    // shape once a future rename pass rewrites the live constants in place (see seeds.js:108-119).
+    // shape once a future rename pass rewrites the live constants in place (see the doc comment
+    // above `LEGACY_SLUG_ROOTS` in mock/seeds.js for the full rationale).
     const roots = tags.filter((t) => !t.parent_id);
     // Order reflects `legacySlugDimensionRootTree()`'s insertion order, not an enforced contract —
     // reordering the tree there is expected to reorder this assertion too.

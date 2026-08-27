@@ -28,6 +28,12 @@ export {
   resetLoggerRegistry,
 } from './logger-registry.js';
 
+export {
+  URL_INDEX_TABLES,
+  syncUrlIndex,
+  lookupEntityIdsByUrl,
+} from './url-index.utils.js';
+
 /**
  * Datastore types that collections can use to declare their storage backend.
  * @readonly

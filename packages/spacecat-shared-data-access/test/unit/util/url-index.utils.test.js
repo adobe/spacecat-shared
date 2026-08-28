@@ -27,45 +27,59 @@ const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'wikipedia-analysis';
 
 /**
- * Builds a fake `@supabase/postgrest-js` client covering the exact chains the helper uses:
- *  - delete: from(t).delete().eq('entity_id', id) -> { error }
- *  - upsert: from(t).upsert(rows, opts)           -> { error }
- *  - select: from(t).select(cols).eq(...).in(...)  -> { data, error }
+ * Builds a fake `@supabase/postgrest-js` client covering the exact chains the helper uses.
+ * Its query builders mirror postgrest-js: `.eq(...)` is both awaitable and chainable, so a
+ * `.delete().eq(...)` can be awaited directly (clear) or extended with `.in(...)` (prune),
+ * and `.select(...).eq(...)` can be awaited (read-back) or extended with `.in(...)` (lookup).
  */
 function makeClient(config = {}) {
   const calls = {
-    deleteEq: [], upsert: [], selectIn: [],
+    upsert: [], deleteEq: [], deleteIn: [], selectEq: [], selectIn: [],
   };
-  const selectQueue = Array.isArray(config.selectResults) ? [...config.selectResults] : null;
+  const lookupQueue = Array.isArray(config.selectResults) ? [...config.selectResults] : null;
+
+  // A resolved promise (awaitable) that also exposes an `.in(...)` continuation.
+  const withIn = (result, onIn) => {
+    const promise = Promise.resolve(result);
+    promise.in = onIn;
+    return promise;
+  };
+
   const client = {
     from(table) {
       return {
-        delete() {
-          return {
-            eq(col, val) {
-              calls.deleteEq.push({ table, col, val });
-              return Promise.resolve(config.deleteResult ?? { error: null });
-            },
-          };
-        },
         upsert(rows, opts) {
           calls.upsert.push({ table, rows, opts });
           return Promise.resolve(config.upsertResult ?? { error: null });
         },
+        delete() {
+          return {
+            eq(col, val) {
+              calls.deleteEq.push({ table, col, val });
+              return withIn(config.deleteResult ?? { error: null }, (icol, arr) => {
+                calls.deleteIn.push({
+                  table, col, val, icol, arr,
+                });
+                return Promise.resolve(config.pruneResult ?? { error: null });
+              });
+            },
+          };
+        },
         select(cols) {
           return {
             eq(scol, sval) {
-              return {
-                in(icol, arr) {
-                  calls.selectIn.push({
-                    table, cols, scol, sval, icol, arr,
-                  });
-                  const res = selectQueue
-                    ? (selectQueue.shift() ?? { data: [], error: null })
-                    : (config.selectResult ?? { data: [], error: null });
-                  return Promise.resolve(res);
-                },
-              };
+              calls.selectEq.push({
+                table, cols, scol, sval,
+              });
+              return withIn(config.readBackResult ?? { data: [], error: null }, (icol, arr) => {
+                calls.selectIn.push({
+                  table, cols, scol, sval, icol, arr,
+                });
+                const res = lookupQueue
+                  ? (lookupQueue.shift() ?? { data: [], error: null })
+                  : (config.selectResult ?? { data: [], error: null });
+                return Promise.resolve(res);
+              });
             },
           };
         },
@@ -81,6 +95,16 @@ describe('url-index.utils', () => {
   });
 
   describe('syncUrlIndex', () => {
+    it('rejects a missing client', async () => {
+      await expect(syncUrlIndex(undefined, { table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID }))
+        .to.be.rejectedWith('postgrestClient is required');
+    });
+
+    it('rejects a client without a from() method', async () => {
+      await expect(syncUrlIndex({}, { table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID }))
+        .to.be.rejectedWith('postgrestClient is required');
+    });
+
     it('rejects an unknown table', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, { table: 'nope', siteId: SITE_ID, entityId: ENTITY_ID }))
@@ -118,7 +142,7 @@ describe('url-index.utils', () => {
         .to.be.rejectedWith('entityType is required');
     });
 
-    it('canonicalizes, de-duplicates, and drops non-string/empty urls before upsert', async () => {
+    it('upserts the canonical set, de-duplicating and dropping non-string/empty urls', async () => {
       const { client, calls } = makeClient();
       const written = await syncUrlIndex(client, {
         table: TABLE,
@@ -136,7 +160,6 @@ describe('url-index.utils', () => {
       });
 
       expect(written).to.equal(2);
-      expect(calls.deleteEq).to.deep.equal([{ table: TABLE, col: 'entity_id', val: ENTITY_ID }]);
       expect(calls.upsert).to.have.length(1);
       expect(calls.upsert[0].opts).to.deep.equal({ onConflict: 'entity_id,url' });
       expect(calls.upsert[0].rows).to.deep.equal([
@@ -147,22 +170,77 @@ describe('url-index.utils', () => {
           site_id: SITE_ID, entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/b',
         },
       ]);
+      expect(calls.selectEq).to.deep.equal([{
+        table: TABLE, cols: 'url', scol: 'entity_id', sval: ENTITY_ID,
+      }]);
+      expect(calls.deleteEq).to.have.length(0);
+      expect(calls.deleteIn).to.have.length(0);
     });
 
-    it('clears the entity (delete only, no upsert) when there are no valid urls', async () => {
+    it('prunes rows that are no longer in the current set', async () => {
+      const { client, calls } = makeClient({
+        readBackResult: {
+          data: [
+            { url: 'example.com/a' }, // kept
+            { url: 'example.com/old' }, // stale -> pruned
+            { url: 'example.com/gone' }, // stale -> pruned
+          ],
+          error: null,
+        },
+      });
+      const written = await syncUrlIndex(client, {
+        table: TABLE,
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        urls: ['https://example.com/a'],
+      });
+
+      expect(written).to.equal(1);
+      expect(calls.upsert).to.have.length(1);
+      expect(calls.deleteIn).to.have.length(1);
+      expect(calls.deleteIn[0]).to.include({
+        table: TABLE, col: 'entity_id', val: ENTITY_ID, icol: 'url',
+      });
+      expect(calls.deleteIn[0].arr).to.deep.equal(['example.com/old', 'example.com/gone']);
+    });
+
+    it('does not prune when nothing is stale', async () => {
+      const { client, calls } = makeClient({
+        readBackResult: { data: [{ url: 'example.com/a' }], error: null },
+      });
+      await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
+      });
+      expect(calls.deleteIn).to.have.length(0);
+    });
+
+    it('tolerates a null read-back payload', async () => {
+      const { client, calls } = makeClient({
+        readBackResult: { data: null, error: null },
+      });
+      const written = await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
+      });
+      expect(written).to.equal(1);
+      expect(calls.deleteIn).to.have.length(0);
+    });
+
+    it('clears the entity (delete only, no upsert/read-back) when there are no valid urls', async () => {
       const { client, calls } = makeClient();
       const written = await syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
       });
       expect(written).to.equal(0);
-      expect(calls.deleteEq).to.have.length(1);
+      expect(calls.deleteEq).to.deep.equal([{ table: TABLE, col: 'entity_id', val: ENTITY_ID }]);
       expect(calls.upsert).to.have.length(0);
+      expect(calls.selectEq).to.have.length(0);
     });
 
-    it('throws when the delete fails', async () => {
+    it('throws when the clear (empty-urls) delete fails', async () => {
       const { client } = makeClient({ deleteResult: { error: { message: 'del boom' } } });
       await expect(syncUrlIndex(client, {
-        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://x.com'],
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
       })).to.be.rejectedWith(`Failed to clear ${TABLE} for entity ${ENTITY_ID}: del boom`);
     });
 
@@ -172,9 +250,31 @@ describe('url-index.utils', () => {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://x.com'],
       })).to.be.rejectedWith(`Failed to sync ${TABLE} for entity ${ENTITY_ID}: ups boom`);
     });
+
+    it('throws when the read-back fails', async () => {
+      const { client } = makeClient({ readBackResult: { data: null, error: { message: 'read boom' } } });
+      await expect(syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://x.com'],
+      })).to.be.rejectedWith(`Failed to read ${TABLE} for entity ${ENTITY_ID}: read boom`);
+    });
+
+    it('throws when the prune delete fails', async () => {
+      const { client } = makeClient({
+        readBackResult: { data: [{ url: 'example.com/old' }], error: null },
+        pruneResult: { error: { message: 'prune boom' } },
+      });
+      await expect(syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
+      })).to.be.rejectedWith(`Failed to prune ${TABLE} for entity ${ENTITY_ID}: prune boom`);
+    });
   });
 
   describe('lookupEntityIdsByUrl', () => {
+    it('rejects a missing client', async () => {
+      await expect(lookupEntityIdsByUrl(undefined, { table: TABLE, siteId: SITE_ID }))
+        .to.be.rejectedWith('postgrestClient is required');
+    });
+
     it('rejects an unknown table', async () => {
       const { client } = makeClient();
       await expect(lookupEntityIdsByUrl(client, { table: 'nope', siteId: SITE_ID }))

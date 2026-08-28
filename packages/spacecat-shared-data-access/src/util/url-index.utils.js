@@ -33,6 +33,12 @@ export const URL_INDEX_TABLES = Object.freeze(['opportunity_urls', 'suggestion_u
  */
 const LOOKUP_CHUNK_SIZE = 50;
 
+function assertClient(postgrestClient) {
+  if (!postgrestClient || typeof postgrestClient.from !== 'function') {
+    throw new Error('postgrestClient is required');
+  }
+}
+
 function assertTable(table) {
   if (!URL_INDEX_TABLES.includes(table)) {
     throw new Error(`Invalid url-index table: ${table}`);
@@ -69,9 +75,9 @@ function toCanonicalSet(urls) {
 }
 
 /**
- * Replace the set of source URLs indexed for a single entity (opportunity or suggestion).
- * Deletes the entity's existing rows, then upserts the current canonical set. Passing an
- * empty `urls` array simply clears the entity's rows.
+ * Replace the set of source URLs indexed for a single entity (opportunity or suggestion);
+ * an empty `urls` array clears the entity. Ordered upsert-then-prune so a mid-way crash
+ * leaves the index over-inclusive rather than empty.
  *
  * The supplied client MUST hold the `postgrest_writer` role (the tables grant DELETE/UPDATE
  * to writer only) — i.e. `dataAccess.services.postgrestClient` in a service configured with
@@ -89,6 +95,7 @@ function toCanonicalSet(urls) {
 export async function syncUrlIndex(postgrestClient, {
   table, siteId, entityId, entityType, urls,
 } = {}) {
+  assertClient(postgrestClient);
   assertTable(table);
   assertId(siteId, 'siteId');
   assertId(entityId, 'entityId');
@@ -96,16 +103,14 @@ export async function syncUrlIndex(postgrestClient, {
 
   const canonicalUrls = toCanonicalSet(urls);
 
-  // Full replace: clear then re-insert the current set.
-  const { error: deleteError } = await postgrestClient
-    .from(table)
-    .delete()
-    .eq('entity_id', entityId);
-  if (deleteError) {
-    throw new Error(`Failed to clear ${table} for entity ${entityId}: ${deleteError.message}`);
-  }
-
   if (canonicalUrls.length === 0) {
+    const { error: clearError } = await postgrestClient
+      .from(table)
+      .delete()
+      .eq('entity_id', entityId);
+    if (clearError) {
+      throw new Error(`Failed to clear ${table} for entity ${entityId}: ${clearError.message}`);
+    }
     return 0;
   }
 
@@ -121,6 +126,31 @@ export async function syncUrlIndex(postgrestClient, {
     .upsert(rows, { onConflict: 'entity_id,url' });
   if (upsertError) {
     throw new Error(`Failed to sync ${table} for entity ${entityId}: ${upsertError.message}`);
+  }
+
+  // Delete via `.in(...)` (not a `not.in` filter) so postgrest-js escapes the values;
+  // canonical URLs keep their query strings and can contain commas.
+  const { data: existing, error: readError } = await postgrestClient
+    .from(table)
+    .select('url')
+    .eq('entity_id', entityId);
+  if (readError) {
+    throw new Error(`Failed to read ${table} for entity ${entityId}: ${readError.message}`);
+  }
+
+  const keep = new Set(canonicalUrls);
+  const staleUrls = (Array.isArray(existing) ? existing : [])
+    .map((row) => row.url)
+    .filter((url) => !keep.has(url));
+  if (staleUrls.length > 0) {
+    const { error: pruneError } = await postgrestClient
+      .from(table)
+      .delete()
+      .eq('entity_id', entityId)
+      .in('url', staleUrls);
+    if (pruneError) {
+      throw new Error(`Failed to prune ${table} for entity ${entityId}: ${pruneError.message}`);
+    }
   }
 
   return rows.length;
@@ -139,6 +169,7 @@ export async function syncUrlIndex(postgrestClient, {
  *   matched rows (the `url` is the canonical form that matched)
  */
 export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, urls } = {}) {
+  assertClient(postgrestClient);
   assertTable(table);
   assertId(siteId, 'siteId');
 

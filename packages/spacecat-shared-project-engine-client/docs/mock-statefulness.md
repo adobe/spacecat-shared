@@ -28,6 +28,8 @@ api-service calls (`src/support/serenity/handlers/*`):
 | `POST /v1/workspaces/{id}/projects` | projects | yes | **stateful** |
 | `DELETE /v1/workspaces/{id}/projects/{id}` | projects | yes | **stateful** |
 | `POST /v1/workspaces/{id}/projects/{id}/publish` | publish (action) | — | passthrough |
+| `POST /v1/workspaces/{id}/projects/{id}/pause` | projects | yes | **stateful** (sets `is_paused`; idempotent) |
+| `POST /v1/workspaces/{id}/projects/{id}/resume` | projects | yes | **stateful** (clears `is_paused`; 409 when not paused) |
 | `GET  /v1/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** |
 | `POST /v2/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** (the consumer's `addAiModel` path — list/delete have no v2 variant) |
 | `DELETE /v1/workspaces/{id}/projects/{id}/ai_models` | ai_models | yes | **stateful** |
@@ -57,7 +59,10 @@ the set). `tags` joined the set for the Categories surface: the consumer registe
 per market project — a bare-named category under the `category` dimension root (one
 `createProjectTags` per market — a category spans N projects, so the collection is scoped per
 project, never global) — and must read them back via `GET /aio/tags` even before any prompt carries
-them. The `publish` action and the `GET /v1/ai_models`
+them. The `pause`/`resume` action pair needs no collection of its own: live exposes the state as
+`is_paused` on the project read-view (overlay CR23), so it is an ordinary field on the `projects`
+entity, written through `ops.projects.update` and decided by the pure table in `mock/pause.js`.
+The `publish` action and the `GET /v1/ai_models`
 / `GET /v1/languages` reference lookups are thin hand-authored echo/catalog handlers (no store, no
 auto-stub). The store is generic, so growing the stateful set later is cheap and needs no rework —
 benchmarks + brand_urls + tags were added as ops with no store change, the live proof.
@@ -77,7 +82,9 @@ benchmarks + brand_urls + tags were added as ops with no store change, the live 
 - **Child-resource writes do not validate the parent project exists.** `POST .../ai_models`,
   `.../aio/prompts/tagged`, `.../benchmarks`, `.../brand_urls`, and `publish` write to (or meter)
   their collection without first asserting the `{project_id}` is a live project, so they succeed
-  (201/202) against a project the real API would 404. This is deliberate: quota is metered at
+  (201/202) against a project the real API would 404. `pause`/`resume` are the exception — they
+  read the project first and return the live `404 { message: 'not found' }`, because their state
+  IS a field on that project. This is deliberate: quota is metered at
   **workspace** granularity (a child write is gated by the workspace allocation, not by a project
   row), and the consumer never adds resources to a project it believes deleted. The quota E2E
   relies on it — those cases provision an allocation and write prompts/publish under freshly

@@ -39,7 +39,7 @@ a cycle guard); `delete` is a transitive cascade. The pure layer is unit-tested 
 
 ## Live-fidelity validation (replayed 2026-06-26)
 
-Every op was replayed against the **real** gateway (`adobe-hackathon.semrush.com`,
+Every op was replayed against the **real** gateway (`www.semrush.com`,
 `/enterprise/users/api` — the client's documented base URL) under a funded test parent
 workspace (a real provisioned workspace id, kept in the team's `local/` handover notes, not
 committed to this public repo) — one throwaway child, `trap`-cleaned, parent `family` asserted

@@ -53,7 +53,7 @@ info:
 #      model.AIOBenchmarkWithCounters upstream, so this correction became redundant. Dropped.
 # CR11 aio-update-tag (PATCH /v2/.../aio/tags/{tag_id}) responds 200, not 201. The vendored swagger
 #      declares the success response under 201; the live API responds 200 OK (verified 2026-07-01
-#      against prod `adobe-hackathon.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
+#      against prod `www.semrush.com`, workspace bb0f4e1c-… child, PATCH re-parent+rename
 #      of a tag → 200 with the updated TreeNodeResponse). Move the response 201→200 so the type, the
 #      mock, and the live API agree. Remove if Semrush changes the status upstream.
 # CR12 aio-update-tag returns 404 (not 500) for an unknown tag id. The vendored swagger declares no
@@ -132,6 +132,24 @@ info:
 #      (and openapi-typescript collapses a root-level `anyOf` of bare `required` to `unknown`,
 #      poisoning the generated type). Both are modelled in the handlers instead, which return prod's
 #      exact JSON messages (see the v3 aio/prompts handlers + stateful.js patchOne/patchMetadataBatch).
+# CR23 model.ProjectResponse carries `is_paused`. The pause/resume pair Semrush shipped for the
+#      weekly-workspace migration exposes its state as a boolean on the project read, but the
+#      delivered swagger added only the two action paths and left the response schema untouched, so
+#      the generated type has no way to express "is this project paused". Live returns the key on
+#      every project read — v1 detail, v1 list and v2 list (verified 2026-08-24 against prod,
+#      workspace 0a496c87-… "Brand-A": `false` while running, `true` immediately after a pause).
+#      Add the property; CR5 marks it required. Remove if Semrush ships it upstream.
+# CR24 pause/resume return 404 for an unknown project id. The delivered swagger declares 401/403/
+#      409/500 on both and no 404, but live answers `404 {"message":"not found"}` for a project id
+#      that does not exist — the same body the sibling publish/delete paths return (verified
+#      2026-08-24 against prod). Add the 404 (http_server.BasicResponse) so the mock can return the
+#      live status and Counterfact response validation accepts it — the CR12 pattern.
+#      NB the declared 409 is left on BOTH operations even though only RESUME was observed to use
+#      it. Live pause is IDEMPOTENT — pausing an already-paused project returns a second `202`, not
+#      a conflict — while resuming a project that is not paused returns
+#      `409 {"message":"project is not paused"}` (both verified 2026-08-24 against prod). Pause may
+#      still conflict in a state we have not reached, so its declared 409 is not removed; the mock
+#      simply never produces one.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -239,9 +257,13 @@ actions:
 
   # ── CR5: Require the always-present identity fields on served responses ───
   - target: "$.components.schemas['model.ProjectResponse']"
-    description: "CR5: a project response always carries id + name"
+    description: "CR5: a project response always carries id + name + is_paused"
+    # `is_paused` is the pause flag CR23 adds to the schema. Live returns it on EVERY project read —
+    # the v1 detail, the v1 list and the v2 list all carry the key, `false` on a running project
+    # (verified 2026-08-24 against prod, workspace 0a496c87-… "Brand-A") — and the mock's create
+    # handlers populate it, so it meets the same faithful-`required` bar as id/name.
     update:
-      required: [id, name]
+      required: [id, name, is_paused]
 
   - target: "$.components.schemas['model.ProjectAIModelResponse']"
     description: "CR5: an assigned model always carries id + model + prompts_count"
@@ -566,6 +588,39 @@ actions:
     update:
       "401":
         description: "Unauthorized"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+
+  # ── CR23: model.ProjectResponse carries `is_paused` ───────────────────────
+  # Live: every project read returns the key — `false` while running, `true` after a pause
+  # (verified 2026-08-24 against prod, workspace 0a496c87-…, project 997e17c3-… "CH-de", on the
+  # v1 detail, the v1 list and the v2 list). CR5 marks it required.
+  - target: "$.components.schemas['model.ProjectResponse'].properties"
+    description: "CR23: add the is_paused flag to the project read-view"
+    update:
+      is_paused:
+        type: boolean
+        description: "whether the project is paused: prompt limits released and data collection stopped, configuration and historical data preserved"
+
+  # ── CR24: pause/resume return 404 for an unknown project id ───────────────
+  # Live: `404 {"message":"not found"}` on both, same body as the sibling publish/delete paths
+  # (verified 2026-08-24 against prod). The delivered swagger declares no 404.
+  - target: "$.paths['/v1/workspaces/{id}/projects/{project_id}/pause'].post.responses"
+    description: "CR24: projects-pause-project declares 404"
+    update:
+      "404":
+        description: "Not Found"
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/http_server.BasicResponse"
+  - target: "$.paths['/v1/workspaces/{id}/projects/{project_id}/resume'].post.responses"
+    description: "CR24: projects-resume-project declares 404"
+    update:
+      "404":
+        description: "Not Found"
         content:
           application/json:
             schema:

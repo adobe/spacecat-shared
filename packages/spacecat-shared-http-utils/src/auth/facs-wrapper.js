@@ -108,6 +108,7 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * ```
  * {
  *   INTERNAL_ROUTES: ['METHOD /path', ...],   // informational, ignored
+ *   FACS_ONBOARDED_PRODUCTS: ['LLMO', 'ASO'], // products with FACS live (optional)
  *   PRODUCTS_ROUTES: {
  *     LLMO: { 'METHOD /path': 'llmo/can_configure', ... }, // value: capability
  *     ASO:  { ... },
@@ -141,9 +142,17 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *      keeps the bypass self-contained: an IMS session that ever carried FACS
  *      claims stays on the evaluation ladder rather than skipping it.
  *   2. Adobe internal IMS orgs (`FACS_EXCEPTION_INTERNAL_ORGS`) → bypass.
- *   3. Route NOT in any product map → bypass.
+ *   3. Product-onboarding gate. A product SpaceCat recognizes (it has a
+ *      `PRODUCTS_ROUTES` entry) but that is absent from `FACS_ONBOARDED_PRODUCTS`
+ *      → bypass. That product is not onboarded to FACS yet; its routes stay
+ *      governed by the controller-level ACL (same posture as the IMS-channel
+ *      bypass). A missing or unrecognized `x-product` is NOT treated as "not
+ *      onboarded" — it falls through to the governance gate below, which stays
+ *      fail-closed. Inert when `FACS_ONBOARDED_PRODUCTS` is absent or empty (an
+ *      empty list is treated as absent, never as "bypass every product").
+ *   3b. Route NOT in any product map → bypass.
  *      Route IS in some product map but `x-product` is missing / mismatched
- *      → 403 (can't pick the right policy without the header).
+ *      → 403 (can't pick the right policy without a matching header).
  *   4. Per-product LaunchDarkly flag gate (off → bypass; ctor / eval fail
  *      → 503).
  *
@@ -176,12 +185,15 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
  *   INTERNAL_ROUTES?: string[],
+ *   FACS_ONBOARDED_PRODUCTS?: string[],
  *   PRODUCTS_ROUTES: Object<string, Object<string, string>>,
  *   PRODUCTS_FACS_RESOURCE_PARAM_ALIASES?: Object<string, Object<string, string[]>>,
  * }}} opts
  * @returns {Function} A wrapped handler.
  */
-export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {} } = {}) {
+export function facsWrapper(fn, {
+  routeFacsCapabilities, secondaryResolvers = {}, compositeResolvers = {},
+} = {}) {
   if (!routeFacsCapabilities || typeof routeFacsCapabilities !== 'object') {
     throw new Error('facsWrapper: routeFacsCapabilities is required');
   }
@@ -191,6 +203,39 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
   }
 
   const productsRoutes = routeFacsCapabilities.PRODUCTS_ROUTES;
+
+  // Products with FACS enforcement live. A product SpaceCat recognizes (it has
+  // a PRODUCTS_ROUTES entry) but that is absent from this list bypasses the FACS
+  // layer entirely — see the product-onboarding gate (step 3). Values are
+  // case-insensitive (normalized to uppercase here).
+  //
+  // Absent OR empty → `null` → the gate is inert: no product is treated as
+  // not-onboarded, so full FACS enforcement is preserved. Empty is folded into
+  // "absent" deliberately and fail-closed: an empty Set would make the gate
+  // condition (`!onboardedProducts.has(x)`) true for EVERY recognized product,
+  // silently disabling FACS for all of them — so a misconfigured config value
+  // that resolves to `[]` must NOT open the gate. There is no "bypass everyone"
+  // shorthand; carve-outs are always explicit, per-product entries.
+  const onboardedRaw = routeFacsCapabilities.FACS_ONBOARDED_PRODUCTS;
+  const onboardedProducts = Array.isArray(onboardedRaw) && onboardedRaw.length > 0
+    ? new Set(onboardedRaw.map((p) => String(p).toUpperCase()))
+    : null;
+
+  // Fail fast on a typo'd onboarded product. An entry that names no
+  // PRODUCTS_ROUTES product is dead config (it can never match `isKnownProduct`),
+  // and — more dangerously — a typo (e.g. 'AOS' for 'ASO') means the product it
+  // was meant to name is NOT onboarded and would silently bypass FACS. Surface it
+  // at startup, consistent with the other construction-time guards below.
+  if (onboardedProducts) {
+    for (const product of onboardedProducts) {
+      if (!Object.prototype.hasOwnProperty.call(productsRoutes, product)) {
+        throw new Error(
+          `facsWrapper: FACS_ONBOARDED_PRODUCTS entry '${product}' has no `
+          + 'matching PRODUCTS_ROUTES product',
+        );
+      }
+    }
+  }
 
   // Validate every route value is a fully-qualified `<product>/<capability>`
   // string. Misconfigured maps fail at startup rather than the first request.
@@ -251,6 +296,54 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
   }
   // Reuse the alias→resourceType inversion (per product) for the secondary map.
   const secondaryAliasLookupsPerProduct = buildAliasLookupsPerProduct(secondaryAliasSpec);
+
+  // Composite PRIMARY resource resolution (opt-in per product) — see
+  // platform/decisions/rebac-composite-resource-key.md. A product may declare its
+  // PRIMARY resource as COMPOSITE — scoped by an extra qualifier beyond the
+  // resource id (e.g. ASO's (site × opportunity-type)). When the primary resource
+  // resolves for such a product, the wrapper delegates the grant decision to a
+  // resolver the consuming service registers by key in `compositeResolvers`; the
+  // resolver owns ALL qualifier logic (the 'all' wildcard short-circuit, the
+  // opportunity→type lookup, etc.), keeping the shared wrapper product/route-
+  // agnostic. Absent config → no composite behavior (the plain state-layer read
+  // runs, byte-identical to before).
+  //
+  //   PRODUCTS_FACS_COMPOSITE_RESOURCE: {
+  //     ASO: { resourceType: 'site', resolver: 'asoOpportunityComposite' },
+  //   }
+  //   compositeResolvers: {
+  //     asoOpportunityComposite: async (context, args) => true | false | 'defer'
+  //   }
+  //
+  // Resolver returns a TRI-STATE: `true` → grant; `'defer'` → set
+  // `context.attributes.facs` and defer to the controller (collection/list routes
+  // that must ReBAC-filter their results); anything else → deny (403). A thrown
+  // error fails closed.
+  const compositeConfig = routeFacsCapabilities.PRODUCTS_FACS_COMPOSITE_RESOURCE;
+  const compositeSpecByProduct = new Map();
+  if (compositeConfig && typeof compositeConfig === 'object') {
+    for (const [product, cfg] of Object.entries(compositeConfig)) {
+      if (!cfg || typeof cfg.resourceType !== 'string'
+          || typeof cfg.resolver !== 'string') {
+        throw new Error(
+          `facsWrapper: PRODUCTS_FACS_COMPOSITE_RESOURCE.${product} must be `
+          + '{ resourceType: string, resolver: string }',
+        );
+      }
+      // Fail fast at construction if a declared resolver is not registered — a
+      // request-time miss would silently fail-closed and be hard to diagnose.
+      if (typeof compositeResolvers[cfg.resolver] !== 'function') {
+        throw new Error(
+          `facsWrapper: composite resolver '${cfg.resolver}' for product `
+          + `'${product}' is not registered in compositeResolvers`,
+        );
+      }
+      compositeSpecByProduct.set(product.toUpperCase(), {
+        resourceType: cfg.resourceType,
+        resolver: compositeResolvers[cfg.resolver],
+      });
+    }
+  }
 
   return async (request, context) => {
     const { log } = context;
@@ -335,9 +428,29 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
       return fn(request, context);
     }
 
-    // (3) FACS-governance gate based on x-product header + route membership.
     const productCode = context.pathInfo?.headers?.[X_PRODUCT_HEADER]?.toLowerCase();
-    const productMap = productCode ? productsRoutes[productCode.toUpperCase()] : undefined;
+    const productUpper = productCode?.toUpperCase();
+    // A product is "recognized" iff it declares a PRODUCTS_ROUTES entry (even an
+    // empty one). This distinguishes a real, not-yet-onboarded product (e.g. ACO)
+    // from a missing / typo'd / evasive x-product value — only the former bypasses.
+    const isKnownProduct = !!productUpper
+      && Object.prototype.hasOwnProperty.call(productsRoutes, productUpper);
+
+    // (3) Product-onboarding gate. A recognized product that is not in
+    // FACS_ONBOARDED_PRODUCTS is not subject to FACS enforcement yet → bypass
+    // (controller-level ACL still governs the route). A missing or unrecognized
+    // x-product is deliberately excluded: it falls through to the governance gate
+    // below, which stays fail-closed so FACS cannot be evaded with a bogus header.
+    // Inert when FACS_ONBOARDED_PRODUCTS is absent or empty (see construction).
+    if (onboardedProducts && isKnownProduct && !onboardedProducts.has(productUpper)) {
+      log.info({
+        tag: 'facs', bypass: 'product-not-onboarded', method, suffix, product: productCode,
+      }, 'FACS bypass: product not onboarded to FACS');
+      return fn(request, context);
+    }
+
+    // (3b) FACS-governance gate based on x-product header + route membership.
+    const productMap = productUpper ? productsRoutes[productUpper] : undefined;
     const routeInThisProduct = productMap && Object.keys(productMap).length > 0
       && resolveRouteCapability(context, productMap) !== null;
 
@@ -346,7 +459,9 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
         log.warn({
           tag: 'facs', method, suffix, xProduct: productCode || null,
         }, 'FACS-governed route called without matching x-product — denying');
-        return forbidden('x-product header required for FACS-governed routes');
+        return forbidden(productCode
+          ? `x-product '${productCode}' is not authorized for this FACS-governed route`
+          : 'x-product header required for FACS-governed routes');
       }
       log.info({
         tag: 'facs',
@@ -564,6 +679,99 @@ export function facsWrapper(fn, { routeFacsCapabilities, secondaryResolvers = {}
         user: subjectUserId,
       }, 'FACS defer-to-controller: no ReBAC-scoped resource for this request');
       return fn(request, context);
+    }
+
+    // (6d) Composite primary resource (opt-in per product) — see
+    // platform/decisions/rebac-composite-resource-key.md. When the resolved
+    // primary resource is composite-keyed for this product, delegate the grant
+    // decision to the registered resolver (it owns the qualifier logic — e.g.
+    // ASO's opportunity-type 'all' short-circuit + opportunity→type lookup).
+    // Tri-state: true → grant; 'defer' → controller ReBAC-filters (collection
+    // routes, D4); otherwise deny. The JWT short-circuit (step 5) already ran, so
+    // this only sees callers WITHOUT an org-wide grant. Errors fail closed.
+    const compositeSpec = compositeSpecByProduct.get(upperProduct);
+    if (compositeSpec && compositeSpec.resourceType === resource.resourceType) {
+      let outcome;
+      try {
+        outcome = await compositeSpec.resolver(context, {
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          capability: routeCapability,
+          product: upperProduct,
+          subjectId: subjectUserId,
+          orgId: normalizedOrgId,
+          routePattern,
+          routeParams,
+        });
+      } catch (e) {
+        log.error({
+          tag: 'facs',
+          deny: 'composite-resolver-error',
+          method,
+          suffix,
+          capability: routeCapability,
+          product: productCode,
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          user: subjectUserId,
+          err: e.message,
+        }, 'FACS denied: composite resolver threw — failing closed');
+        return forbidden('Forbidden');
+      }
+
+      if (outcome === true) {
+        log.info({
+          tag: 'facs',
+          grant: 'composite-resolver',
+          method,
+          suffix,
+          capability: routeCapability,
+          product: productCode,
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          user: subjectUserId,
+          org: normalizedOrgId,
+        }, 'FACS grant: composite resolver authorized the request');
+        return fn(request, context);
+      }
+
+      if (outcome === 'defer') {
+        // Collection/list route under a composite product: no single qualifier to
+        // decide on — surface to the controller so it ReBAC-filters results
+        // (rebac-composite-resource-key.md D4). Same flag shape as case (6c).
+        context.attributes.facs = {
+          enabled: true,
+          product: upperProduct,
+          subjectId: subjectUserId,
+        };
+        log.info({
+          tag: 'facs',
+          defer: 'composite-resolver',
+          method,
+          suffix,
+          capability: routeCapability,
+          product: productCode,
+          resourceType: resource.resourceType,
+          resourceId: resource.resourceId,
+          org: orgId,
+          user: subjectUserId,
+        }, 'FACS defer-to-controller: composite resolver deferred for filtering');
+        return fn(request, context);
+      }
+
+      log.warn({
+        tag: 'facs',
+        deny: 'composite-resolver',
+        method,
+        suffix,
+        capability: routeCapability,
+        product: productCode,
+        resourceType: resource.resourceType,
+        resourceId: resource.resourceId,
+        user: subjectUserId,
+        org: normalizedOrgId,
+      }, 'FACS denied: composite resolver did not authorize the request');
+      return forbidden('Forbidden');
     }
 
     // (7) State-layer read. Without a postgrestClient the state layer is

@@ -71,7 +71,7 @@ function isGoParseableUrl(raw) {
  * never an import — see {@link Context}). Kept a pure function so it is unit-tested on its own (the
  * route handler is coverage-excluded), the same convention as {@link resolveUrl} / {@link tagId}.
  *
- * Live contract (write-probed 2026-07-13 against prod `adobe-hackathon.semrush.com`, throwaway
+ * Live contract (write-probed 2026-07-13 against prod `www.semrush.com`, throwaway
  * benchmarks in the LLMO-Dev-2 dev sub-workspace, serenity-docs#25): a brand URL MUST be a literal,
  * lower-case `https://` URL. `BrandURLRequest.URL` carries the go-validator tags
  * `required,url,startswith=https://`, evaluated in that order — and each tag's semantics are go's,

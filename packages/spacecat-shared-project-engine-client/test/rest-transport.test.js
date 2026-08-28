@@ -53,7 +53,7 @@ const pathParamsFor = (template) => {
 
 const resolve = (template) => template.replace(/\{(\w+)\}/g, (_, k) => PARAM_VALUES[k]);
 
-// facadeMethod — HTTP method — path template. 1:1 with the 32 operations.
+// facadeMethod — HTTP method — path template. 1:1 with the 34 operations.
 const OPERATIONS = [
   ['listLanguages', 'GET', '/v1/languages'],
   ['listGlobalAiModels', 'GET', '/v1/ai_models'],
@@ -63,6 +63,8 @@ const OPERATIONS = [
   ['updateProject', 'PATCH', '/v1/workspaces/{id}/projects/{project_id}'],
   ['deleteProject', 'DELETE', '/v1/workspaces/{id}/projects/{project_id}'],
   ['publishProject', 'POST', '/v1/workspaces/{id}/projects/{project_id}/publish'],
+  ['pauseProject', 'POST', '/v1/workspaces/{id}/projects/{project_id}/pause'],
+  ['resumeProject', 'POST', '/v1/workspaces/{id}/projects/{project_id}/resume'],
   ['listAiModels', 'GET', '/v1/workspaces/{id}/projects/{project_id}/ai_models'],
   ['deleteAiModels', 'DELETE', '/v1/workspaces/{id}/projects/{project_id}/ai_models'],
   ['listBenchmarks', 'GET', '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks'],
@@ -90,10 +92,10 @@ const OPERATIONS = [
 ];
 
 describe('createSerenityProjectEngineTransport', () => {
-  it('exposes exactly the 32 declared facade methods, all functions', () => {
+  it('exposes exactly the 34 declared facade methods, all functions', () => {
     const transport = make(sandbox.stub().resolves(json({})));
     const names = Object.keys(transport);
-    expect(names).to.have.length(32);
+    expect(names).to.have.length(34);
     expect(names.sort()).to.deep.equal(OPERATIONS.map(([n]) => n).sort());
     names.forEach((n) => expect(transport[n]).to.be.a('function'));
   });

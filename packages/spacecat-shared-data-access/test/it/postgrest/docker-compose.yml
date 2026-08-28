@@ -29,19 +29,23 @@ services:
     # v5.57.0 additionally carries the brand_to_semrush_projects site_id/soft-delete
     # and brands semrush_sub_workspace_id columns (mysticat-data-service #765).
     # v5.80.0 adds the fix_entities.deployed_at column (mysticat-data-service #869,
-    # SITES-47997/48823) that the FixEntity model now maps — the reason for this bump.
+    # SITES-47997/48823) that the FixEntity model now maps.
+    #
+    # v5.115.0 (2026-08-26): NOT a schema-driven bump — v5.80.0 was pulled from this
+    # pin because the ECR repo only retains the most recent ~15 pushed tags, and
+    # v5.80.0 had aged out. Bumped straight to the current tip rather than
+    # the oldest still-available tag (v5.104.0) since both are far past v5.80.0 and
+    # pinning to the tip buys the most runway before the next forced bump.
     #
     # To obtain or refresh the digest:
     #   aws ecr describe-images \
     #     --profile <your-profile> --region us-east-1 \
     #     --repository-name mysticat-data-service \
-    #     --image-ids imageTag=v5.80.0 \
+    #     --image-ids imageTag=v5.115.0 \
     #     --query 'imageDetails[0].imageDigest' --output text
-    #   (prior v5.57.0 digest was sha256:86e548a57d1e5390fec4db5d713574fecb092158f69f283eedf78e4ce2633e4d;
-    #    re-fetch for v5.80.0 if pinning a digest locally — CI runs without one.)
     # Then export MYSTICAT_DATA_SERVICE_DIGEST=sha256:<the-digest> before npm run test:it,
     # or set it in the .env file consumed by docker compose. Leave unset for local dev.
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.80.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.115.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
     depends_on:
       db:
         condition: service_healthy

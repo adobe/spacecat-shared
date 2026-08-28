@@ -154,6 +154,27 @@ describe('facsWrapper', () => {
         },
       })).to.throw(/declared under multiple resources for product 'LLMO'/);
     });
+
+    it('throws when a FACS_ONBOARDED_PRODUCTS entry has no PRODUCTS_ROUTES product', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['LLMO', 'AOS'], // 'AOS' is a typo for 'ASO'
+          PRODUCTS_ROUTES: {
+            LLMO: { 'GET /x': 'llmo/can_read' },
+            ASO: { 'GET /y': 'aso/view' },
+          },
+        },
+      })).to.throw(/FACS_ONBOARDED_PRODUCTS entry 'AOS' has no/);
+    });
+
+    it('does not throw when all FACS_ONBOARDED_PRODUCTS entries exist (case-insensitive)', () => {
+      expect(() => facsWrapper(handler, {
+        routeFacsCapabilities: {
+          FACS_ONBOARDED_PRODUCTS: ['llmo'], // lowercase tolerated, normalized to LLMO
+          PRODUCTS_ROUTES: { LLMO: { 'GET /x': 'llmo/can_read' } },
+        },
+      })).to.not.throw();
+    });
   });
 
   describe('CORS preflight bypass', () => {
@@ -418,6 +439,131 @@ describe('facsWrapper', () => {
       const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
+    });
+  });
+
+  describe('product-onboarding gate (FACS_ONBOARDED_PRODUCTS)', () => {
+    // ACO is a recognized product (has a PRODUCTS_ROUTES entry) but is NOT
+    // onboarded to FACS; LLMO is. Mirrors production intent. ACO has no
+    // FT_MAC_FACS_PERMISSIONS flag, so the enforcement paths skip the LD client
+    // and need no esmock (see the 'feature flag gate' block for the mocked path).
+    const onboardingCfg = {
+      INTERNAL_ROUTES: [],
+      FACS_ONBOARDED_PRODUCTS: ['LLMO'],
+      PRODUCTS_ROUTES: {
+        LLMO: { 'GET /insights': 'llmo/can_read' },
+        ACO: { 'GET /insights': 'aco/view' },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: { LLMO: { brand: ['brandId'] } },
+    };
+
+    it('bypasses a recognized product that is not onboarded (ACO)', async () => {
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: onboardingCfg });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch(
+        { tag: 'facs', bypass: 'product-not-onboarded' },
+        'FACS bypass: product not onboarded to FACS',
+      )).to.be.true;
+    });
+
+    it('does NOT bypass an unrecognized x-product even with FACS_ONBOARDED_PRODUCTS set (fail-closed)', async () => {
+      // 'garbage' has no PRODUCTS_ROUTES entry, so it is not "not onboarded" — it
+      // must still 403 on a route some product governs, so FACS cannot be evaded
+      // by sending a bogus header.
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'garbage' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: onboardingCfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+    });
+
+    it('does NOT apply the onboarding bypass to an onboarded product', async () => {
+      // ACO onboarded + no LD flag entry → reaches the JWT short-circuit and
+      // admits, proving the onboarding bypass did not fire for an onboarded product.
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['ACO'],
+        PRODUCTS_ROUTES: { ACO: { 'GET /insights': 'aco/view' } },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+    });
+
+    it('is inert when FACS_ONBOARDED_PRODUCTS is not supplied (recognized product reaches enforcement)', async () => {
+      const cfgNoList = {
+        INTERNAL_ROUTES: [],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ACO: { 'GET /insights': 'aco/view' },
+        },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aco' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfgNoList });
+      await wrapped({}, context);
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
+      expect(handler.calledOnce).to.be.true;
+    });
+
+    it("denies with a header-specific message when x-product names an onboarded product that doesn't own the route", async () => {
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['LLMO', 'ASO'],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ASO: { 'GET /sites/:siteId': 'aso/view' },
+        },
+      };
+      // ASO is onboarded (no onboarding bypass) but does not own GET /insights,
+      // which LLMO does — the governance gate denies with the mismatch message.
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aso' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(result.headers.get('x-error'))
+        .to.equal("x-product 'aso' is not authorized for this FACS-governed route");
+    });
+
+    it('keeps the "header required" message when x-product is absent on a governed route', async () => {
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: ['LLMO'],
+        PRODUCTS_ROUTES: { LLMO: { 'GET /insights': 'llmo/can_read' } },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: {} };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(result.headers.get('x-error'))
+        .to.equal('x-product header required for FACS-governed routes');
+    });
+
+    it('treats an empty FACS_ONBOARDED_PRODUCTS as absent — recognized product is NOT bypassed', async () => {
+      // Regression guard for the fail-open trap: if `[]` produced a truthy empty
+      // Set, ASO (recognized, not in the set) would bypass FACS and return 200.
+      // Treating `[]` as absent keeps the gate inert, so ASO falls through to the
+      // governance gate and 403s on a route it does not own.
+      const cfg = {
+        INTERNAL_ROUTES: [],
+        FACS_ONBOARDED_PRODUCTS: [],
+        PRODUCTS_ROUTES: {
+          LLMO: { 'GET /insights': 'llmo/can_read' },
+          ASO: { 'GET /sites/:siteId': 'aso/view' },
+        },
+      };
+      context.pathInfo = { method: 'GET', suffix: '/insights', headers: { 'x-product': 'aso' } };
+      const wrapped = facsWrapper(handler, { routeFacsCapabilities: cfg });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.info.calledWithMatch({ bypass: 'product-not-onboarded' })).to.be.false;
     });
   });
 
@@ -1088,6 +1234,215 @@ describe('facsWrapper', () => {
           product: 'LLMO',
           subjectId: 'user@example.com',
         });
+      });
+    });
+  });
+
+  describe('composite primary resource resolution (opt-in)', () => {
+    // ASO's PRIMARY resource is `site`, scoped by an opportunity-type qualifier.
+    // The grant decision is delegated to a registered composite resolver.
+    const compRouteCaps = {
+      PRODUCTS_ROUTES: {
+        ASO: {
+          'GET /sites/:siteId/opportunities/:opportunityId': 'aso/can_view',
+          'GET /sites/:siteId/opportunities': 'aso/can_view',
+        },
+      },
+      PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+        ASO: { site: ['siteId'] },
+      },
+      PRODUCTS_FACS_COMPOSITE_RESOURCE: {
+        ASO: { resourceType: 'site', resolver: 'asoOpportunityComposite' },
+      },
+    };
+
+    describe('creation-time guards', () => {
+      it('throws when a composite config entry is malformed', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: {
+            PRODUCTS_ROUTES: { ASO: { 'GET /x': 'aso/can_view' } },
+            PRODUCTS_FACS_COMPOSITE_RESOURCE: { ASO: { resourceType: 'site' } },
+          },
+          compositeResolvers: { asoOpportunityComposite: async () => true },
+        })).to.throw(/PRODUCTS_FACS_COMPOSITE_RESOURCE.ASO must be/);
+      });
+
+      it('throws when the declared composite resolver is not registered', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: {},
+        })).to.throw(/composite resolver 'asoOpportunityComposite' for product 'ASO' is not registered/);
+      });
+
+      it('accepts a valid composite config with a registered resolver', () => {
+        expect(() => facsWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: async () => true },
+        })).to.not.throw();
+      });
+    });
+
+    describe('request-time behavior', () => {
+      let ldClient;
+      let mockedWrapper;
+      let resolverStub;
+      let findBindingStub;
+
+      beforeEach(async () => {
+        ldClient = { isFlagEnabledForIMSOrg: sandbox.stub().resolves(true) };
+        findBindingStub = sandbox.stub();
+        const mod = await esmock('../../src/auth/facs-wrapper.js', {
+          '@adobe/spacecat-shared-launchdarkly-client': {
+            LaunchDarklyClient: { createFrom: sandbox.stub().returns(ldClient) },
+          },
+          '../../src/auth/facs-state-layer.js': {
+            findFacsResourceBinding: findBindingStub,
+            normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
+          },
+        });
+        mockedWrapper = mod.facsWrapper;
+        resolverStub = sandbox.stub();
+        // No org-wide JWT grant → the wrapper reaches the resource seam.
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
+        context.dataAccess = { services: { postgrestClient: { from: () => {} } } };
+      });
+
+      function oppReq() {
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/sites/site-abc/opportunities/opp-1',
+          headers: { 'x-product': 'aso' },
+        };
+      }
+
+      function listReq() {
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/sites/site-abc/opportunities',
+          headers: { 'x-product': 'aso' },
+        };
+      }
+
+      it('grants when the composite resolver returns true (single-opportunity route)', async () => {
+        resolverStub.resolves(true);
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.calledOnce).to.be.true;
+        const [ctxArg, args] = resolverStub.firstCall.args;
+        expect(ctxArg).to.equal(context);
+        expect(args).to.include({
+          resourceType: 'site',
+          resourceId: 'site-abc',
+          capability: 'aso/can_view',
+          product: 'ASO',
+          subjectId: 'user@example.com',
+          orgId: 'CUST-ORG-123@AdobeOrg',
+        });
+        expect(args.routeParams).to.include({ siteId: 'site-abc', opportunityId: 'opp-1' });
+        expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'composite-resolver' })).to.be.true;
+        // Composite resolver decided authorization; no defer flag and no state-layer read.
+        expect(context.attributes.facs).to.equal(undefined);
+        expect(findBindingStub.called).to.be.false;
+      });
+
+      it('defers to the controller when the composite resolver returns "defer" (collection route)', async () => {
+        resolverStub.resolves('defer');
+        listReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.calledOnce).to.be.true;
+        expect(context.attributes.facs).to.deep.equal({
+          enabled: true,
+          product: 'ASO',
+          subjectId: 'user@example.com',
+        });
+        expect(logStub.info.calledWithMatch({ tag: 'facs', defer: 'composite-resolver' })).to.be.true;
+      });
+
+      it('denies (403) when the composite resolver returns false', async () => {
+        resolverStub.resolves(false);
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.warn.calledWithMatch({ tag: 'facs', deny: 'composite-resolver' })).to.be.true;
+      });
+
+      it('fails closed (403) when the composite resolver throws', async () => {
+        resolverStub.rejects(new Error('opportunity fetch failed'));
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result.status).to.equal(403);
+        expect(handler.called).to.be.false;
+        expect(logStub.error.calledWithMatch({ tag: 'facs', deny: 'composite-resolver-error' })).to.be.true;
+      });
+
+      it('JWT org-wide grant short-circuits before the composite resolver runs', async () => {
+        context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => true });
+        oppReq();
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: compRouteCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+      });
+
+      it('skips the composite resolver when the resolved resource type does not match (falls through to state-layer)', async () => {
+        // ASO with a brand route + composite spec on `site`: the brand route resolves
+        // resourceType 'brand' ≠ 'site', so the composite hook is skipped and the plain
+        // state-layer read decides (INV-1: composite config does not change non-site routes).
+        const mixedCaps = {
+          PRODUCTS_ROUTES: {
+            ASO: {
+              'GET /brands/:brandId': 'aso/can_view',
+              'GET /sites/:siteId/opportunities/:opportunityId': 'aso/can_view',
+            },
+          },
+          PRODUCTS_FACS_RESOURCE_PARAM_ALIASES: {
+            ASO: { site: ['siteId'], brand: ['brandId'] },
+          },
+          PRODUCTS_FACS_COMPOSITE_RESOURCE: {
+            ASO: { resourceType: 'site', resolver: 'asoOpportunityComposite' },
+          },
+        };
+        findBindingStub.resolves({ granted_capabilities: ['aso/can_view'] });
+        context.pathInfo = {
+          method: 'GET',
+          suffix: '/brands/brand-xyz',
+          headers: { 'x-product': 'aso' },
+        };
+        const wrapped = mockedWrapper(handler, {
+          routeFacsCapabilities: mixedCaps,
+          compositeResolvers: { asoOpportunityComposite: resolverStub },
+        });
+        const result = await wrapped({}, context);
+        expect(result).to.deep.equal({ status: 200 });
+        expect(handler.calledOnce).to.be.true;
+        expect(resolverStub.called).to.be.false;
+        expect(findBindingStub.called).to.be.true;
+        expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'state-layer' })).to.be.true;
       });
     });
   });

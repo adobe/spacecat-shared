@@ -229,6 +229,74 @@ describe('AuthInfo', () => {
     });
   });
 
+  describe('hasOrganization', () => {
+    it('returns false when orgId is undefined', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization(undefined)).to.be.false;
+    });
+
+    it('returns false when orgId is null', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization(null)).to.be.false;
+    });
+
+    it('returns false when orgId is an empty string', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization('')).to.be.false;
+    });
+
+    it('returns false when orgId is not a string', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization(123)).to.be.false;
+    });
+
+    it('returns false when orgId is whitespace-only (passes the guard, fails the tenant match)', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization(' ')).to.be.false;
+    });
+
+    it('returns true when a tenant matches the bare orgId', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization('ABC123')).to.be.true;
+    });
+
+    it('returns true when a tenant matches the orgId with @AdobeOrg stripped', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'ABC123' }],
+      });
+      expect(authInfo.hasOrganization('ABC123@AdobeOrg')).to.be.true;
+    });
+
+    it('returns false when no tenant matches', () => {
+      const authInfo = new AuthInfo().withProfile({
+        tenants: [{ id: 'OTHER' }],
+      });
+      expect(authInfo.hasOrganization('ABC123@AdobeOrg')).to.be.false;
+    });
+
+    it('returns undefined when profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.hasOrganization('ABC123')).to.be.undefined;
+    });
+
+    it('returns undefined when tenants is not in profile', () => {
+      const authInfo = new AuthInfo().withProfile({});
+      expect(authInfo.hasOrganization('ABC123')).to.be.undefined;
+    });
+  });
+
   describe('hasFacsPermission', () => {
     it('returns false when there are no facs permissions', () => {
       const authInfo = new AuthInfo().withProfile({});

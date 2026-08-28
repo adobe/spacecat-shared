@@ -27,7 +27,7 @@ import { createRetryingFetch, toTokenGetter } from './internal.js';
  * @typedef {object} SerenityUserManagerApiClientOptions
  * @property {string} baseUrl Base URL of the User Manager API — the origin of
  *   `SEMRUSH_PROJECTS_BASE_URL` (the host is shared with Project Engine, e.g.
- *   `https://adobe-hackathon.semrush.com`), or the Counterfact mock's origin for E2E / local dev.
+ *   `https://www.semrush.com`), or the Counterfact mock's origin for E2E / local dev.
  *   Only `protocol//host` is used; any path is dropped and the client appends the fixed
  *   `/enterprise/users/api` prefix itself, matching the deployed api-service transport
  *   (`rest-transport.js`).

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.0...@adobe/spacecat-shared-data-access-v4.22.1) (2026-08-19)
+
+### Bug Fixes
+
+* **data-access:** remove deprecated brand pendingSemrushProvisioning attribute (SITES-49448) ([#1886](https://github.com/adobe/spacecat-shared/issues/1886)) ([3b09e0b](https://github.com/adobe/spacecat-shared/commit/3b09e0b613526030f317db5e1f74324fdeea7ff0)), closes [#5](https://github.com/adobe/spacecat-shared/issues/5) [1867/#1880](https://github.com/1867/spacecat-shared/issues/1880)
+
 ## [@adobe/spacecat-shared-data-access-v4.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.1...@adobe/spacecat-shared-data-access-v4.22.0) (2026-08-14)
 
 ### Features

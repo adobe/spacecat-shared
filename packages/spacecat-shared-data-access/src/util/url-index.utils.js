@@ -12,50 +12,42 @@
 
 import { canonicalizeUrl } from '@adobe/spacecat-shared-utils';
 
+import { DataAccessError, ValidationError } from '../errors/index.js';
+import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
+
 /**
- * Shared writer + reader for the offsite "source-URL index" tables
- * (`opportunity_urls`, `suggestion_urls`). These are pure pointer tables mapping a
- * canonical source URL to the opportunity/suggestion it backs; see the
- * `mysticat-data-service` migrations for the schema.
+ * Shared writer + reader for the "source-URL index" tables (`opportunity_urls`,
+ * `suggestion_urls`), which map a canonical source URL to the opportunity/suggestion it backs.
  *
- * Both the writer and the reader canonicalize URLs with the SAME function
- * (`canonicalizeUrl` from `@adobe/spacecat-shared-utils`), so a value written by
- * `syncUrlIndex` always matches a query normalized by `lookupEntityIdsByUrl`.
+ * Writer and reader share `canonicalizeUrl`, so the canonical form is a PERSISTED format:
+ * changing it desyncs stored rows from new lookups and requires re-syncing every row.
  */
 
-/** Tables this helper is allowed to touch (guards against accidental misuse). */
+/** Tables this helper is allowed to touch. */
 export const URL_INDEX_TABLES = Object.freeze(['opportunity_urls', 'suggestion_urls']);
 
-/**
- * PostgREST `in(...)` filters travel in the query string, so a large list can exceed the
- * URI length limit (HTTP 414). Chunk reads to stay well under it (mirrors
- * `BaseCollection.batchGetByKeys`).
- */
-const LOOKUP_CHUNK_SIZE = 50;
+/** Chunk `in(...)` reads/deletes to keep the query string under the URI limit (HTTP 414). */
+const URL_CHUNK_SIZE = 50;
 
 function assertClient(postgrestClient) {
   if (!postgrestClient || typeof postgrestClient.from !== 'function') {
-    throw new Error('postgrestClient is required');
+    throw new ValidationError('postgrestClient is required');
   }
 }
 
 function assertTable(table) {
   if (!URL_INDEX_TABLES.includes(table)) {
-    throw new Error(`Invalid url-index table: ${table}`);
+    throw new ValidationError(`Invalid url-index table: ${table}`);
   }
 }
 
 function assertId(value, name) {
   if (typeof value !== 'string' || value.length === 0) {
-    throw new Error(`${name} is required`);
+    throw new ValidationError(`${name} is required`);
   }
 }
 
-/**
- * Canonicalize, drop empties, and de-duplicate a list of raw URLs.
- * @param {string[]} urls
- * @returns {string[]} distinct canonical URLs, in first-seen order
- */
+/** Canonicalize, drop non-strings/empties, and de-duplicate (first-seen order). */
 function toCanonicalSet(urls) {
   const list = Array.isArray(urls) ? urls : [];
   const seen = new Set();
@@ -74,23 +66,70 @@ function toCanonicalSet(urls) {
   return out;
 }
 
+/** Read all indexed URLs for one entity, paginated so a `max-rows` cap can't truncate the set. */
+async function fetchIndexedUrls(postgrestClient, table, siteId, entityId) {
+  const urls = [];
+  let offset = 0;
+  let keepGoing = true;
+  while (keepGoing) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data, error } = await postgrestClient
+      .from(table)
+      .select('url')
+      .eq('site_id', siteId)
+      .eq('entity_id', entityId)
+      .order('url', { ascending: true }) // stable page boundary
+      .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+    if (error) {
+      throw new DataAccessError(`Failed to read ${table} for entity ${entityId}`, { table, entityId }, error);
+    }
+    if (!data || data.length === 0) {
+      keepGoing = false;
+    } else {
+      urls.push(...data.map((row) => row.url));
+      offset += DEFAULT_PAGE_SIZE;
+      keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+    }
+  }
+  return urls;
+}
+
 /**
- * Replace the set of source URLs indexed for a single entity (opportunity or suggestion);
- * an empty `urls` array clears the entity. Ordered upsert-then-prune so a mid-way crash
- * leaves the index over-inclusive rather than empty.
+ * Delete the given URLs for one entity, chunked (URI limit). Uses positive `.in(...)` so
+ * postgrest-js escapes values — canonical URLs can contain commas a `not.in` string would split.
+ */
+async function deleteUrls(postgrestClient, table, siteId, entityId, urlsToDelete) {
+  for (let i = 0; i < urlsToDelete.length; i += URL_CHUNK_SIZE) {
+    const chunk = urlsToDelete.slice(i, i + URL_CHUNK_SIZE);
+    // eslint-disable-next-line no-await-in-loop
+    const { error } = await postgrestClient
+      .from(table)
+      .delete()
+      .eq('site_id', siteId)
+      .eq('entity_id', entityId)
+      .in('url', chunk);
+    if (error) {
+      throw new DataAccessError(`Failed to prune ${table} for entity ${entityId}`, { table, entityId }, error);
+    }
+  }
+}
+
+/**
+ * Full-replace the source URLs indexed for one entity; an empty `urls` clears it (a non-empty
+ * input that canonicalizes to nothing throws instead of clearing).
  *
- * The supplied client MUST hold the `postgrest_writer` role (the tables grant DELETE/UPDATE
- * to writer only) — i.e. `dataAccess.services.postgrestClient` in a service configured with
- * `POSTGREST_API_KEY`.
+ * Ordered upsert -> prune (read-back, then delete stale) so a mid-run crash leaves the index
+ * over-inclusive, not empty. Assumes a SINGLE WRITER per `entityId` — concurrent syncs can
+ * race. Requires the `postgrest_writer` role. See CLAUDE.md for the `site_id` scoping caveat.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
  * @param {string} params.table - `opportunity_urls` | `suggestion_urls`
  * @param {string} params.siteId - the site the entity belongs to
  * @param {string} params.entityId - the opportunity/suggestion id
- * @param {string} params.entityType - the opportunity type (e.g. `wikipedia-analysis`)
+ * @param {string} params.entityType - the opportunity/suggestion type stored on each row
  * @param {string[]} params.urls - raw source URLs (canonicalized here)
- * @returns {Promise<number>} number of rows written
+ * @returns {Promise<number>} size of the indexed set after sync
  */
 export async function syncUrlIndex(postgrestClient, {
   table, siteId, entityId, entityType, urls,
@@ -104,12 +143,20 @@ export async function syncUrlIndex(postgrestClient, {
   const canonicalUrls = toCanonicalSet(urls);
 
   if (canonicalUrls.length === 0) {
+    // Only an explicit empty/omitted `urls` clears; a non-empty input reduced to nothing is a
+    // caller bug, not an intent to wipe the index.
+    const explicitClear = urls === undefined || urls === null
+      || (Array.isArray(urls) && urls.length === 0);
+    if (!explicitClear) {
+      throw new ValidationError(`urls contained no valid entries; pass [] to clear ${table} for entity ${entityId}`);
+    }
     const { error: clearError } = await postgrestClient
       .from(table)
       .delete()
+      .eq('site_id', siteId)
       .eq('entity_id', entityId);
     if (clearError) {
-      throw new Error(`Failed to clear ${table} for entity ${entityId}: ${clearError.message}`);
+      throw new DataAccessError(`Failed to clear ${table} for entity ${entityId}`, { table, entityId }, clearError);
     }
     return 0;
   }
@@ -125,48 +172,29 @@ export async function syncUrlIndex(postgrestClient, {
     .from(table)
     .upsert(rows, { onConflict: 'entity_id,url' });
   if (upsertError) {
-    throw new Error(`Failed to sync ${table} for entity ${entityId}: ${upsertError.message}`);
-  }
-
-  // Delete via `.in(...)` (not a `not.in` filter) so postgrest-js escapes the values;
-  // canonical URLs keep their query strings and can contain commas.
-  const { data: existing, error: readError } = await postgrestClient
-    .from(table)
-    .select('url')
-    .eq('entity_id', entityId);
-  if (readError) {
-    throw new Error(`Failed to read ${table} for entity ${entityId}: ${readError.message}`);
+    throw new DataAccessError(`Failed to sync ${table} for entity ${entityId}`, { table, entityId }, upsertError);
   }
 
   const keep = new Set(canonicalUrls);
-  const staleUrls = (Array.isArray(existing) ? existing : [])
-    .map((row) => row.url)
-    .filter((url) => !keep.has(url));
+  const existing = await fetchIndexedUrls(postgrestClient, table, siteId, entityId);
+  const staleUrls = existing.filter((url) => !keep.has(url));
   if (staleUrls.length > 0) {
-    const { error: pruneError } = await postgrestClient
-      .from(table)
-      .delete()
-      .eq('entity_id', entityId)
-      .in('url', staleUrls);
-    if (pruneError) {
-      throw new Error(`Failed to prune ${table} for entity ${entityId}: ${pruneError.message}`);
-    }
+    await deleteUrls(postgrestClient, table, siteId, entityId, staleUrls);
   }
 
   return rows.length;
 }
 
 /**
- * Look up index rows whose canonical URL matches any of the given URLs, for one site.
- * URLs are canonicalized with the same function used on write, so callers pass raw URLs.
+ * Site-scoped reverse lookup: index rows whose canonical URL matches any given URL. Callers
+ * pass raw URLs (canonicalized here, chunked over `.in()`).
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
  * @param {string} params.table - `opportunity_urls` | `suggestion_urls`
  * @param {string} params.siteId - the site to scope the lookup to
  * @param {string[]} params.urls - raw URLs to match (canonicalized here)
- * @returns {Promise<Array<{entity_id: string, entity_type: string, url: string}>>}
- *   matched rows (the `url` is the canonical form that matched)
+ * @returns {Promise<Array<{entity_id: string, entity_type: string, url: string}>>} matched rows
  */
 export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, urls } = {}) {
   assertClient(postgrestClient);
@@ -179,8 +207,8 @@ export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, url
   }
 
   const results = [];
-  for (let i = 0; i < canonicalUrls.length; i += LOOKUP_CHUNK_SIZE) {
-    const chunk = canonicalUrls.slice(i, i + LOOKUP_CHUNK_SIZE);
+  for (let i = 0; i < canonicalUrls.length; i += URL_CHUNK_SIZE) {
+    const chunk = canonicalUrls.slice(i, i + URL_CHUNK_SIZE);
     // eslint-disable-next-line no-await-in-loop
     const { data, error } = await postgrestClient
       .from(table)
@@ -188,7 +216,7 @@ export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, url
       .eq('site_id', siteId)
       .in('url', chunk);
     if (error) {
-      throw new Error(`Failed to look up ${table} for site ${siteId}: ${error.message}`);
+      throw new DataAccessError(`Failed to look up ${table} for site ${siteId}`, { table, siteId }, error);
     }
     if (Array.isArray(data)) {
       results.push(...data);

@@ -111,6 +111,28 @@ const { data, error } = await postgrestClient
 
 This is the same `@supabase/postgrest-js` `PostgrestClient` instance used internally by the entity collections. Full IDE autocomplete is available for the query builder chain.
 
+## URL Index
+
+For the source-URL index tables (`opportunity_urls`, `suggestion_urls`), do not query the client directly — use the shared `syncUrlIndex` / `lookupEntityIdsByUrl` helpers (exported from the package root) so the write and read share one canonicalization and one storage path:
+
+```js
+import { syncUrlIndex, lookupEntityIdsByUrl } from '@adobe/spacecat-shared-data-access';
+
+const { postgrestClient } = dataAccess.services;
+
+// writer (needs the postgrest_writer role): full-replace an entity's source URLs
+await syncUrlIndex(postgrestClient, {
+  table: 'opportunity_urls', siteId, entityId, entityType, urls,
+});
+
+// reader: which opportunities/suggestions are backed by these URLs?
+const matches = await lookupEntityIdsByUrl(postgrestClient, {
+  table: 'opportunity_urls', siteId, urls,
+});
+```
+
+See the package `CLAUDE.md` ("URL Index") for the canonicalization, single-writer, and site-scoping contracts.
+
 ## Field Mapping Behavior
 
 Public model API remains camelCase while Postgres/PostgREST tables are snake_case.

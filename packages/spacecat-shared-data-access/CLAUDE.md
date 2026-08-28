@@ -169,6 +169,34 @@ const { data, error } = await postgrestClient
 
 This is the same client instance used internally by entity collections — same URL, auth, and schema.
 
+## URL Index (`src/util/url-index.utils.js`)
+
+The `opportunity_urls` / `suggestion_urls` tables are pointer tables mapping a canonical source
+URL to the opportunity/suggestion it backs (a reverse URL → entity lookup). Do **not** hand-roll
+PostgREST queries against them — use the shared helpers, re-exported from the package root
+(`@adobe/spacecat-shared-data-access`):
+
+- `syncUrlIndex(postgrestClient, { table, siteId, entityId, entityType, urls })` — full-replace
+  of an entity's URLs. Upserts the canonical set, then prunes stale rows (paginated read-back +
+  chunked deletes). An empty `urls` array clears the entity; a non-empty array that canonicalizes
+  to nothing throws. Requires the **`postgrest_writer`** role (`POSTGREST_API_KEY` set).
+- `lookupEntityIdsByUrl(postgrestClient, { table, siteId, urls })` — site-scoped reverse lookup
+  returning `{ entity_id, entity_type, url }`, chunked over `.in()`.
+- `URL_INDEX_TABLES` — the `opportunity_urls` / `suggestion_urls` allow-list.
+
+Contracts to preserve:
+
+- **Canonicalization is a persisted format.** Both sides use `canonicalizeUrl` from
+  `@adobe/spacecat-shared-utils`; changing it desyncs stored rows from new lookups and requires a
+  re-sync. Keep the writer and reader services on the same version.
+- **Single writer per `entityId`.** `syncUrlIndex` is not linearizable across its separate
+  PostgREST calls; concurrent syncs of the same entity can race. A fully atomic replace needs a
+  server-side RPC in `mysticat-data-service`.
+- **Site scoping.** Reads/writes are additionally filtered by `site_id`, but the upsert conflict
+  target is `entity_id,url`; fully preventing a cross-site row flip also needs `site_id` in the DB
+  uniqueness constraint (lives in `mysticat-data-service`, along with the `postgrest_writer`
+  DELETE/UPDATE grants — the write path breaks without them).
+
 ## Common Patterns
 
 ### Collection query with WHERE clause

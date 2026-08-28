@@ -13,6 +13,8 @@
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+import { DataAccessError, ValidationError } from '../../../src/errors/index.js';
+import { DEFAULT_PAGE_SIZE } from '../../../src/util/postgrest.utils.js';
 import {
   URL_INDEX_TABLES,
   syncUrlIndex,
@@ -24,70 +26,98 @@ chaiUse(chaiAsPromised);
 const TABLE = 'opportunity_urls';
 const SITE_ID = 'site-1';
 const ENTITY_ID = 'oppty-1';
-const ENTITY_TYPE = 'wikipedia-analysis';
+const ENTITY_TYPE = 'opportunity-type';
 
 /**
- * Builds a fake `@supabase/postgrest-js` client covering the exact chains the helper uses.
- * Its query builders mirror postgrest-js: `.eq(...)` is both awaitable and chainable, so a
- * `.delete().eq(...)` can be awaited directly (clear) or extended with `.in(...)` (prune),
- * and `.select(...).eq(...)` can be awaited (read-back) or extended with `.in(...)` (lookup).
+ * Fake `@supabase/postgrest-js` client whose builder is chainable and awaitable. Each chain is
+ * classified at its terminal (upsert / clear / prune / read-back / lookup) and recorded in
+ * `calls`; results come from `config` single values or per-call queues (`readPages`, etc.).
  */
 function makeClient(config = {}) {
   const calls = {
-    upsert: [], deleteEq: [], deleteIn: [], selectEq: [], selectIn: [],
+    upsert: [], clear: [], prune: [], readBack: [], lookup: [],
   };
-  const lookupQueue = Array.isArray(config.selectResults) ? [...config.selectResults] : null;
+  const queues = {
+    readPages: Array.isArray(config.readPages) ? [...config.readPages] : null,
+    prune: Array.isArray(config.pruneResults) ? [...config.pruneResults] : null,
+    lookup: Array.isArray(config.lookupResults) ? [...config.lookupResults] : null,
+  };
+  const shiftOr = (queue, fallback) => (queue && queue.length ? queue.shift() : fallback);
+  const noError = { error: null };
+  const noRows = { data: [], error: null };
 
-  // A resolved promise (awaitable) that also exposes an `.in(...)` continuation.
-  const withIn = (result, onIn) => {
-    const promise = Promise.resolve(result);
-    promise.in = onIn;
-    return promise;
-  };
+  function terminal(state) {
+    if (state.op === 'upsert') {
+      calls.upsert.push({ table: state.table, rows: state.rows, options: state.options });
+      return Promise.resolve(config.upsertResult ?? noError);
+    }
+    if (state.op === 'delete' && state.inFilter) {
+      calls.prune.push({ table: state.table, eqs: state.eqs, urls: state.inFilter.values });
+      return Promise.resolve(shiftOr(queues.prune, config.pruneResult ?? noError));
+    }
+    if (state.op === 'delete') {
+      calls.clear.push({ table: state.table, eqs: state.eqs });
+      return Promise.resolve(config.clearResult ?? noError);
+    }
+    if (state.range) {
+      calls.readBack.push({ table: state.table, eqs: state.eqs, range: state.range });
+      return Promise.resolve(shiftOr(queues.readPages, config.readBackResult ?? noRows));
+    }
+    calls.lookup.push({
+      table: state.table, columns: state.columns, eqs: state.eqs, urls: state.inFilter?.values,
+    });
+    return Promise.resolve(shiftOr(queues.lookup, config.lookupResult ?? noRows));
+  }
+
+  function makeBuilder(state) {
+    const next = (patch) => makeBuilder({ ...state, ...patch });
+    return {
+      select(columns) {
+        return next({ op: 'select', columns });
+      },
+      delete() {
+        return next({ op: 'delete' });
+      },
+      upsert(rows, options) {
+        return terminal({
+          ...state, op: 'upsert', rows, options,
+        });
+      },
+      eq(column, value) {
+        return next({ eqs: [...state.eqs, { column, value }] });
+      },
+      in(column, values) {
+        return next({ inFilter: { column, values } });
+      },
+      order(column, options) {
+        return next({ orders: [...state.orders, { column, options }] });
+      },
+      range(from, to) {
+        return terminal({ ...state, range: { from, to } });
+      },
+      then(onFulfilled, onRejected) {
+        return terminal(state).then(onFulfilled, onRejected);
+      },
+    };
+  }
 
   const client = {
     from(table) {
-      return {
-        upsert(rows, opts) {
-          calls.upsert.push({ table, rows, opts });
-          return Promise.resolve(config.upsertResult ?? { error: null });
-        },
-        delete() {
-          return {
-            eq(col, val) {
-              calls.deleteEq.push({ table, col, val });
-              return withIn(config.deleteResult ?? { error: null }, (icol, arr) => {
-                calls.deleteIn.push({
-                  table, col, val, icol, arr,
-                });
-                return Promise.resolve(config.pruneResult ?? { error: null });
-              });
-            },
-          };
-        },
-        select(cols) {
-          return {
-            eq(scol, sval) {
-              calls.selectEq.push({
-                table, cols, scol, sval,
-              });
-              return withIn(config.readBackResult ?? { data: [], error: null }, (icol, arr) => {
-                calls.selectIn.push({
-                  table, cols, scol, sval, icol, arr,
-                });
-                const res = lookupQueue
-                  ? (lookupQueue.shift() ?? { data: [], error: null })
-                  : (config.selectResult ?? { data: [], error: null });
-                return Promise.resolve(res);
-              });
-            },
-          };
-        },
-      };
+      return makeBuilder({ table, eqs: [], orders: [] });
     },
   };
   return { client, calls };
 }
+
+const rowsFor = (list) => list.map((url) => ({ url }));
+const catchError = async (promise) => {
+  try {
+    await promise;
+    return null;
+  } catch (e) {
+    return e;
+  }
+};
 
 describe('url-index.utils', () => {
   it('exposes the allowed tables', () => {
@@ -97,52 +127,68 @@ describe('url-index.utils', () => {
   describe('syncUrlIndex', () => {
     it('rejects a missing client', async () => {
       await expect(syncUrlIndex(undefined, { table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID }))
-        .to.be.rejectedWith('postgrestClient is required');
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
     });
 
     it('rejects a client without a from() method', async () => {
       await expect(syncUrlIndex({}, { table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID }))
-        .to.be.rejectedWith('postgrestClient is required');
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
     });
 
     it('rejects an unknown table', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, { table: 'nope', siteId: SITE_ID, entityId: ENTITY_ID }))
-        .to.be.rejectedWith('Invalid url-index table: nope');
+        .to.be.rejectedWith(ValidationError, 'Invalid url-index table: nope');
     });
 
     it('rejects a missing table (no args)', async () => {
       const { client } = makeClient();
-      await expect(syncUrlIndex(client)).to.be.rejectedWith('Invalid url-index table: undefined');
+      await expect(syncUrlIndex(client)).to.be.rejectedWith(ValidationError, 'Invalid url-index table: undefined');
     });
 
     it('rejects a missing siteId', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, {
         table: TABLE, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith('siteId is required');
+      })).to.be.rejectedWith(ValidationError, 'siteId is required');
     });
 
     it('rejects an empty-string siteId', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, {
         table: TABLE, siteId: '', entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith('siteId is required');
+      })).to.be.rejectedWith(ValidationError, 'siteId is required');
     });
 
     it('rejects a missing entityId', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, { table: TABLE, siteId: SITE_ID, entityType: ENTITY_TYPE }))
-        .to.be.rejectedWith('entityId is required');
+        .to.be.rejectedWith(ValidationError, 'entityId is required');
     });
 
     it('rejects a missing entityType', async () => {
       const { client } = makeClient();
       await expect(syncUrlIndex(client, { table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID }))
-        .to.be.rejectedWith('entityType is required');
+        .to.be.rejectedWith(ValidationError, 'entityType is required');
     });
 
-    it('upserts the canonical set, de-duplicating and dropping non-string/empty urls', async () => {
+    it('throws (does not clear) when a non-empty urls has no valid entries', async () => {
+      const { client, calls } = makeClient();
+      await expect(syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: [null, 42, ''],
+      })).to.be.rejectedWith(ValidationError, 'urls contained no valid entries');
+      expect(calls.clear).to.have.length(0);
+    });
+
+    it('throws when urls is a non-array (e.g. a bare string)', async () => {
+      const { client, calls } = makeClient();
+      await expect(syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: 'https://example.com/a',
+      })).to.be.rejectedWith(ValidationError, 'urls contained no valid entries');
+      expect(calls.clear).to.have.length(0);
+    });
+
+    it('upserts the canonical set (de-duplicated, non-string/empty dropped), scoped by site', async () => {
       const { client, calls } = makeClient();
       const written = await syncUrlIndex(client, {
         table: TABLE,
@@ -161,7 +207,7 @@ describe('url-index.utils', () => {
 
       expect(written).to.equal(2);
       expect(calls.upsert).to.have.length(1);
-      expect(calls.upsert[0].opts).to.deep.equal({ onConflict: 'entity_id,url' });
+      expect(calls.upsert[0].options).to.deep.equal({ onConflict: 'entity_id,url' });
       expect(calls.upsert[0].rows).to.deep.equal([
         {
           site_id: SITE_ID, entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/a',
@@ -170,147 +216,192 @@ describe('url-index.utils', () => {
           site_id: SITE_ID, entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/b',
         },
       ]);
-      expect(calls.selectEq).to.deep.equal([{
-        table: TABLE, cols: 'url', scol: 'entity_id', sval: ENTITY_ID,
-      }]);
-      expect(calls.deleteEq).to.have.length(0);
-      expect(calls.deleteIn).to.have.length(0);
+      expect(calls.readBack).to.have.length(1);
+      expect(calls.readBack[0].eqs).to.deep.equal([
+        { column: 'site_id', value: SITE_ID },
+        { column: 'entity_id', value: ENTITY_ID },
+      ]);
+      expect(calls.prune).to.have.length(0);
     });
 
-    it('prunes rows that are no longer in the current set', async () => {
+    it('prunes stale rows, chunked at 50, scoped by site and entity', async () => {
+      const stale = Array.from({ length: 51 }, (_, i) => `example.com/old-${i}`);
       const { client, calls } = makeClient({
-        readBackResult: {
-          data: [
-            { url: 'example.com/a' }, // kept
-            { url: 'example.com/old' }, // stale -> pruned
-            { url: 'example.com/gone' }, // stale -> pruned
-          ],
-          error: null,
-        },
+        readPages: [{ data: rowsFor(['example.com/a', ...stale]), error: null }],
       });
       const written = await syncUrlIndex(client, {
-        table: TABLE,
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        urls: ['https://example.com/a'],
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
       });
 
       expect(written).to.equal(1);
-      expect(calls.upsert).to.have.length(1);
-      expect(calls.deleteIn).to.have.length(1);
-      expect(calls.deleteIn[0]).to.include({
-        table: TABLE, col: 'entity_id', val: ENTITY_ID, icol: 'url',
-      });
-      expect(calls.deleteIn[0].arr).to.deep.equal(['example.com/old', 'example.com/gone']);
+      expect(calls.prune).to.have.length(2);
+      expect(calls.prune[0].urls).to.have.length(50);
+      expect(calls.prune[1].urls).to.have.length(1);
+      expect(calls.prune[0].eqs).to.deep.equal([
+        { column: 'site_id', value: SITE_ID },
+        { column: 'entity_id', value: ENTITY_ID },
+      ]);
+      // exactly the stale set, in read order
+      expect([...calls.prune[0].urls, ...calls.prune[1].urls]).to.deep.equal(stale);
     });
 
-    it('does not prune when nothing is stale', async () => {
+    it('prunes exactly 50 stale rows in a single chunk (boundary)', async () => {
+      const stale = Array.from({ length: 50 }, (_, i) => `example.com/old-${i}`);
       const { client, calls } = makeClient({
-        readBackResult: { data: [{ url: 'example.com/a' }], error: null },
+        readPages: [{ data: rowsFor(['example.com/a', ...stale]), error: null }],
       });
       await syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
       });
-      expect(calls.deleteIn).to.have.length(0);
+      expect(calls.prune).to.have.length(1);
+      expect(calls.prune[0].urls).to.have.length(50);
     });
 
-    it('tolerates a null read-back payload', async () => {
+    it('paginates the read-back until a short page, then prunes across pages', async () => {
+      const page1 = rowsFor(Array.from({ length: DEFAULT_PAGE_SIZE }, () => 'example.com/keep'));
       const { client, calls } = makeClient({
-        readBackResult: { data: null, error: null },
+        readPages: [
+          { data: page1, error: null }, // full page -> fetch another
+          { data: rowsFor(['example.com/stale']), error: null }, // short page -> stop
+        ],
       });
-      const written = await syncUrlIndex(client, {
+      await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/keep'],
+      });
+      expect(calls.readBack).to.have.length(2);
+      expect(calls.readBack[0].range).to.deep.equal({ from: 0, to: DEFAULT_PAGE_SIZE - 1 });
+      expect(calls.readBack[1].range).to.deep.equal({
+        from: DEFAULT_PAGE_SIZE, to: (2 * DEFAULT_PAGE_SIZE) - 1,
+      });
+      expect(calls.prune).to.have.length(1);
+      expect(calls.prune[0].urls).to.deep.equal(['example.com/stale']);
+    });
+
+    it('does not prune when nothing is stale', async () => {
+      const { client, calls } = makeClient({
+        readPages: [{ data: rowsFor(['example.com/a']), error: null }],
+      });
+      await syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
       });
-      expect(written).to.equal(1);
-      expect(calls.deleteIn).to.have.length(0);
+      expect(calls.prune).to.have.length(0);
     });
 
-    it('clears the entity (delete only, no upsert/read-back) when there are no valid urls', async () => {
+    it('supports the suggestion_urls table', async () => {
+      const { client, calls } = makeClient({
+        readPages: [{ data: rowsFor(['example.com/a', 'example.com/old']), error: null }],
+      });
+      await syncUrlIndex(client, {
+        table: 'suggestion_urls', siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
+      });
+      expect(calls.upsert[0].table).to.equal('suggestion_urls');
+      expect(calls.readBack[0].table).to.equal('suggestion_urls');
+      expect(calls.prune[0].table).to.equal('suggestion_urls');
+    });
+
+    it('clears the entity (delete only, no upsert/read-back), scoped by site, on an empty array', async () => {
       const { client, calls } = makeClient();
       const written = await syncUrlIndex(client, {
-        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: [],
       });
       expect(written).to.equal(0);
-      expect(calls.deleteEq).to.deep.equal([{ table: TABLE, col: 'entity_id', val: ENTITY_ID }]);
+      expect(calls.clear).to.deep.equal([{
+        table: TABLE,
+        eqs: [{ column: 'site_id', value: SITE_ID }, { column: 'entity_id', value: ENTITY_ID }],
+      }]);
       expect(calls.upsert).to.have.length(0);
-      expect(calls.selectEq).to.have.length(0);
+      expect(calls.readBack).to.have.length(0);
     });
 
-    it('throws when the clear (empty-urls) delete fails', async () => {
-      const { client } = makeClient({ deleteResult: { error: { message: 'del boom' } } });
-      await expect(syncUrlIndex(client, {
-        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith(`Failed to clear ${TABLE} for entity ${ENTITY_ID}: del boom`);
+    it('throws DataAccessError with cause when the clear delete fails', async () => {
+      const cause = { message: 'del boom' };
+      const { client } = makeClient({ clearResult: { error: cause } });
+      const err = await catchError(syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: [],
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to clear ${TABLE} for entity ${ENTITY_ID}`);
+      expect(err.cause).to.equal(cause);
     });
 
-    it('throws when the upsert fails', async () => {
-      const { client } = makeClient({ upsertResult: { error: { message: 'ups boom' } } });
-      await expect(syncUrlIndex(client, {
+    it('throws DataAccessError with cause when the upsert fails', async () => {
+      const cause = { message: 'ups boom' };
+      const { client } = makeClient({ upsertResult: { error: cause } });
+      const err = await catchError(syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://x.com'],
-      })).to.be.rejectedWith(`Failed to sync ${TABLE} for entity ${ENTITY_ID}: ups boom`);
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to sync ${TABLE} for entity ${ENTITY_ID}`);
+      expect(err.cause).to.equal(cause);
     });
 
-    it('throws when the read-back fails', async () => {
-      const { client } = makeClient({ readBackResult: { data: null, error: { message: 'read boom' } } });
-      await expect(syncUrlIndex(client, {
+    it('throws DataAccessError with cause when the read-back fails', async () => {
+      const cause = { message: 'read boom' };
+      const { client } = makeClient({ readPages: [{ data: null, error: cause }] });
+      const err = await catchError(syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://x.com'],
-      })).to.be.rejectedWith(`Failed to read ${TABLE} for entity ${ENTITY_ID}: read boom`);
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to read ${TABLE} for entity ${ENTITY_ID}`);
+      expect(err.cause).to.equal(cause);
     });
 
-    it('throws when the prune delete fails', async () => {
+    it('throws DataAccessError with cause when the prune delete fails', async () => {
+      const cause = { message: 'prune boom' };
       const { client } = makeClient({
-        readBackResult: { data: [{ url: 'example.com/old' }], error: null },
-        pruneResult: { error: { message: 'prune boom' } },
+        readPages: [{ data: rowsFor(['example.com/old']), error: null }],
+        pruneResults: [{ error: cause }],
       });
-      await expect(syncUrlIndex(client, {
+      const err = await catchError(syncUrlIndex(client, {
         table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: ['https://example.com/a'],
-      })).to.be.rejectedWith(`Failed to prune ${TABLE} for entity ${ENTITY_ID}: prune boom`);
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to prune ${TABLE} for entity ${ENTITY_ID}`);
+      expect(err.cause).to.equal(cause);
     });
   });
 
   describe('lookupEntityIdsByUrl', () => {
     it('rejects a missing client', async () => {
       await expect(lookupEntityIdsByUrl(undefined, { table: TABLE, siteId: SITE_ID }))
-        .to.be.rejectedWith('postgrestClient is required');
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
     });
 
     it('rejects an unknown table', async () => {
       const { client } = makeClient();
       await expect(lookupEntityIdsByUrl(client, { table: 'nope', siteId: SITE_ID }))
-        .to.be.rejectedWith('Invalid url-index table: nope');
+        .to.be.rejectedWith(ValidationError, 'Invalid url-index table: nope');
     });
 
     it('rejects a missing siteId', async () => {
       const { client } = makeClient();
       await expect(lookupEntityIdsByUrl(client, { table: TABLE, urls: ['https://x.com'] }))
-        .to.be.rejectedWith('siteId is required');
+        .to.be.rejectedWith(ValidationError, 'siteId is required');
     });
 
     it('returns [] without querying when there are no valid urls', async () => {
       const { client, calls } = makeClient();
       const rows = await lookupEntityIdsByUrl(client, { table: TABLE, siteId: SITE_ID, urls: [null, ''] });
       expect(rows).to.deep.equal([]);
-      expect(calls.selectIn).to.have.length(0);
+      expect(calls.lookup).to.have.length(0);
     });
 
-    it('queries by canonical url and returns matched rows', async () => {
+    it('queries by canonical url, scoped by site, and returns matched rows', async () => {
       const { client, calls } = makeClient({
-        selectResult: { data: [{ entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/a' }], error: null },
+        lookupResult: { data: [{ entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/a' }], error: null },
       });
       const rows = await lookupEntityIdsByUrl(client, {
         table: TABLE, siteId: SITE_ID, urls: ['https://www.Example.com/a/'],
       });
       expect(rows).to.deep.equal([{ entity_id: ENTITY_ID, entity_type: ENTITY_TYPE, url: 'example.com/a' }]);
-      expect(calls.selectIn).to.have.length(1);
-      expect(calls.selectIn[0]).to.include({
-        table: TABLE, cols: 'entity_id, entity_type, url', scol: 'site_id', sval: SITE_ID, icol: 'url',
-      });
-      expect(calls.selectIn[0].arr).to.deep.equal(['example.com/a']);
+      expect(calls.lookup).to.have.length(1);
+      expect(calls.lookup[0].columns).to.equal('entity_id, entity_type, url');
+      expect(calls.lookup[0].eqs).to.deep.equal([{ column: 'site_id', value: SITE_ID }]);
+      expect(calls.lookup[0].urls).to.deep.equal(['example.com/a']);
     });
 
     it('tolerates a null data payload', async () => {
-      const { client } = makeClient({ selectResult: { data: null, error: null } });
+      const { client } = makeClient({ lookupResult: { data: null, error: null } });
       const rows = await lookupEntityIdsByUrl(client, {
         table: TABLE, siteId: SITE_ID, urls: ['https://x.com'],
       });
@@ -320,26 +411,38 @@ describe('url-index.utils', () => {
     it('chunks the lookup at 50 urls and concatenates results', async () => {
       const urls = Array.from({ length: 51 }, (_, i) => `https://example.com/p${i}`);
       const { client, calls } = makeClient({
-        selectResults: [
+        lookupResults: [
           { data: [{ entity_id: 'a', entity_type: ENTITY_TYPE, url: 'example.com/p0' }], error: null },
           { data: [{ entity_id: 'b', entity_type: ENTITY_TYPE, url: 'example.com/p50' }], error: null },
         ],
       });
       const rows = await lookupEntityIdsByUrl(client, { table: TABLE, siteId: SITE_ID, urls });
-      expect(calls.selectIn).to.have.length(2);
-      expect(calls.selectIn[0].arr).to.have.length(50);
-      expect(calls.selectIn[1].arr).to.have.length(1);
+      expect(calls.lookup).to.have.length(2);
+      expect(calls.lookup[0].urls).to.have.length(50);
+      expect(calls.lookup[1].urls).to.have.length(1);
       expect(rows).to.deep.equal([
         { entity_id: 'a', entity_type: ENTITY_TYPE, url: 'example.com/p0' },
         { entity_id: 'b', entity_type: ENTITY_TYPE, url: 'example.com/p50' },
       ]);
     });
 
-    it('throws when a lookup query fails', async () => {
-      const { client } = makeClient({ selectResult: { data: null, error: { message: 'sel boom' } } });
-      await expect(lookupEntityIdsByUrl(client, {
+    it('sends a single chunk for exactly 50 urls (boundary)', async () => {
+      const urls = Array.from({ length: 50 }, (_, i) => `https://example.com/p${i}`);
+      const { client, calls } = makeClient();
+      await lookupEntityIdsByUrl(client, { table: TABLE, siteId: SITE_ID, urls });
+      expect(calls.lookup).to.have.length(1);
+      expect(calls.lookup[0].urls).to.have.length(50);
+    });
+
+    it('throws DataAccessError with cause when a lookup query fails', async () => {
+      const cause = { message: 'sel boom' };
+      const { client } = makeClient({ lookupResult: { data: null, error: cause } });
+      const err = await catchError(lookupEntityIdsByUrl(client, {
         table: TABLE, siteId: SITE_ID, urls: ['https://x.com'],
-      })).to.be.rejectedWith(`Failed to look up ${TABLE} for site ${SITE_ID}: sel boom`);
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to look up ${TABLE} for site ${SITE_ID}`);
+      expect(err.cause).to.equal(cause);
     });
   });
 });

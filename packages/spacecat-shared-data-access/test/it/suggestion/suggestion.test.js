@@ -222,6 +222,27 @@ describe('Suggestion IT', async () => {
     });
   });
 
+  it('creates a suggestion with suggestionKey and reads it back through PostgREST', async () => {
+    const opportunity = sampleData.opportunities[0];
+    const suggestionKey = 'site:site1:backlink:abc:referrer:def';
+
+    const { createdItems } = await opportunity.addSuggestions([{
+      type: 'REDIRECT_UPDATE',
+      rank: 0,
+      status: 'NEW',
+      data: { foo: 'bar' },
+      suggestionKey,
+      updatedBy: 'system',
+    }]);
+
+    expect(createdItems).to.be.an('array').with.length(1);
+    const [created] = createdItems;
+    expect(created.getSuggestionKey()).to.equal(suggestionKey);
+
+    const stored = await Suggestion.findById(created.getId());
+    expect(stored.getSuggestionKey()).to.equal(suggestionKey);
+  });
+
   it('updates the status of multiple suggestions', async () => {
     const suggestions = sampleData.suggestions.slice(0, 3);
     const originalUpdatedAt = suggestions[0].getUpdatedAt();

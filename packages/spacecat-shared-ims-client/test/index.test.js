@@ -17,5 +17,9 @@ describe('index', async () => {
     const index = await import('../src/index.js');
     expect(index).to.have.property('ImsClient');
     expect(index).to.have.property('imsClientWrapper');
+    expect(index).to.have.property('ImsPromiseClient');
+    expect(index).to.have.property('PromiseTokenSession');
+    expect(index).to.have.property('NeedsReauthError');
+    expect(index).to.have.property('createPromiseTokenSession');
   });
 });

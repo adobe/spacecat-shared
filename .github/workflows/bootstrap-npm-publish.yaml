@@ -1,0 +1,285 @@
+name: Bootstrap NPM Publish
+
+# One-off manual workflow for a brand-new workspace package that is still
+# `"private": true` (the state every new package starts in — see
+# packages/spacecat-shared-example/package.json). OIDC Trusted Publishing
+# (.github/workflows/main.yaml) cannot authenticate a package's first-ever
+# publish: npm only lets you register a trust binding for a package that
+# already exists on the registry. This workflow performs that one manual
+# publish using the ADOBE_BOT_NPM_TOKEN classic token, then flips the
+# package's `private` field off so ordinary merges to `main` pick it up in
+# the normal OIDC release flow from then on.
+#
+# After a successful run, the workflow opens a draft PR adding the package to
+# the PACKAGES array in scripts/setup-npm-trusted-publishers.sh. That PR is
+# source-only — merging it does NOT register the trust binding. One manual
+# step remains:
+#   1. Review and merge the draft PR.
+#   2. Run scripts/setup-npm-trusted-publishers.sh (as adobe-bot, with gh CLI
+#      auth) to actually register the OIDC trust binding for the package.
+#   3. Future merges to main publish it via the normal main.yaml release job.
+#
+# See docs/RELEASE-RUNBOOK.md and scripts/setup-npm-trusted-publishers.sh for
+# the OIDC trust model this workflow bootstraps into.
+
+permissions: {}
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_dir:
+        description: "Directory name under packages/ (e.g. spacecat-shared-akamai-client)"
+        required: true
+      confirm_package_name:
+        description: "Type the full npm package name (e.g. @adobe/spacecat-shared-akamai-client) to confirm — must match package.json exactly"
+        required: true
+
+jobs:
+  bootstrap-publish:
+    name: Bootstrap Publish
+    runs-on: ubuntu-latest
+    # main-only, same as the routine release job — the deployment_branch_policy
+    # on this environment is the server-side enforcement (see RELEASE-RUNBOOK
+    # FM-5 preflight table). Recommend scoping ADOBE_BOT_NPM_TOKEN to this
+    # environment (Settings -> Environments -> npm-publish -> Secrets) rather
+    # than adding it as a repo-wide secret, so it is not readable from any
+    # workflow run that doesn't declare this environment.
+    environment: npm-publish
+    concurrency:
+      # Share the release job's lock: a routine release and a bootstrap
+      # publish must never run at the same time (both write to main / npm).
+      group: npm-publish-main
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    env:
+      MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN: ${{ secrets.MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN }}
+    steps:
+      - name: Reject non-main ref
+        # Belt-and-suspenders: workflow_dispatch can technically be invoked
+        # against any ref via the API. The npm-publish environment's
+        # deployment_branch_policy is the real enforcement; this just fails
+        # fast with a clear message instead of an opaque environment-gate error.
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "ERROR: this workflow must be run on main (got ${{ github.ref }})."
+          exit 1
+
+      - name: Check out
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: 'false'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Update NPM
+        run: npm install -g npm@11.13.0
+
+      - name: Configure Git auth for private Mysticat types repo
+        run: |
+          git config --global url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "https://github.com/adobe/mysticat-data-service"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "ssh://git@github.com/adobe/mysticat-data-service"
+          git config --global --add url."https://x-access-token:${MYSTICAT_DATA_SERVICE_REPO_READ_TOKEN}@github.com/adobe/mysticat-data-service".insteadOf "git@github.com:adobe/mysticat-data-service"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate target package
+        id: pkg
+        env:
+          PACKAGE_DIR: ${{ inputs.package_dir }}
+          CONFIRM_NAME: ${{ inputs.confirm_package_name }}
+        run: |
+          set -euo pipefail
+          PKG_JSON="packages/${PACKAGE_DIR}/package.json"
+
+          if [ ! -f "$PKG_JSON" ]; then
+            echo "ERROR: $PKG_JSON does not exist."
+            exit 1
+          fi
+
+          PKG_NAME=$(node -p "require('./${PKG_JSON}').name")
+          PKG_VERSION=$(node -p "require('./${PKG_JSON}').version")
+          PKG_PRIVATE=$(node -p "require('./${PKG_JSON}').private === true")
+
+          if [ "$PKG_NAME" != "$CONFIRM_NAME" ]; then
+            echo "ERROR: confirm_package_name ('$CONFIRM_NAME') does not match"
+            echo "       $PKG_JSON's name field ('$PKG_NAME'). Refusing to proceed."
+            exit 1
+          fi
+
+          if [ "$PKG_PRIVATE" != "true" ]; then
+            echo "ERROR: $PKG_JSON is not marked \"private\": true."
+            echo "       This workflow is only for a package's first-ever publish."
+            echo "       If it's already public, use the normal main.yaml release"
+            echo "       flow (or scripts/setup-npm-trusted-publishers.sh if it just"
+            echo "       needs its OIDC trust binding registered)."
+            exit 1
+          fi
+
+          if npm view "$PKG_NAME" version >/dev/null 2>&1; then
+            echo "ERROR: $PKG_NAME already exists on the npm registry."
+            echo "       This workflow is only for a package that has NEVER been"
+            echo "       published. Registering the OIDC trust binding for an"
+            echo "       already-published package is done via"
+            echo "       scripts/setup-npm-trusted-publishers.sh, not this workflow."
+            exit 1
+          fi
+
+          echo "pkg_json=$PKG_JSON" >> "$GITHUB_OUTPUT"
+          echo "pkg_name=$PKG_NAME" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "OK: $PKG_NAME@$PKG_VERSION at packages/${PACKAGE_DIR} is unpublished and private:true."
+
+      - name: Flip private:true off and commit to main
+        env:
+          PKG_JSON: ${{ steps.pkg.outputs.pkg_json }}
+          PKG_NAME: ${{ steps.pkg.outputs.pkg_name }}
+          PKG_VERSION: ${{ steps.pkg.outputs.pkg_version }}
+          GH_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          node -e '
+            const fs = require("fs");
+            const path = process.env.PKG_JSON;
+            const pkg = JSON.parse(fs.readFileSync(path, "utf8"));
+            delete pkg.private;
+            fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n");
+          '
+
+          if git diff --quiet -- "$PKG_JSON"; then
+            echo "ERROR: expected $PKG_JSON to change after removing \"private\": true."
+            exit 1
+          fi
+
+          git config user.name "adobe-bot"
+          git config user.email "grp-oss-admin@adobe.com"
+          git add "$PKG_JSON"
+          git commit -m "chore(release): enable npm publish for ${PKG_NAME} [skip ci]"
+
+          # Same header-based auth pattern as main.yaml's package-lock sync step —
+          # avoids the token appearing in any URL that git might echo on error.
+          auth_b64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          echo "::add-mask::${auth_b64}"
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          git -c "http.extraheader=AUTHORIZATION: basic ${auth_b64}" push "${remote}" HEAD:main
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ADOBE_BOT_NPM_TOKEN }}
+          PKG_DIR: ${{ inputs.package_dir }}
+          PKG_NAME: ${{ steps.pkg.outputs.pkg_name }}
+          PKG_VERSION: ${{ steps.pkg.outputs.pkg_version }}
+        run: |
+          set -euo pipefail
+          npm publish --access public --workspace "packages/${PKG_DIR}"
+          echo "Published ${PKG_NAME}@${PKG_VERSION}."
+
+      - name: Open PR to register OIDC trust for the new package
+        # Editing scripts/setup-npm-trusted-publishers.sh does NOT itself call
+        # `npm trust` — it only updates the input list the script iterates
+        # over. Someone still has to run the script as adobe-bot after this
+        # PR merges (see docs/RELEASE-RUNBOOK.md "Bootstrapping a new
+        # package's first publish"). Opened as a draft per repo convention —
+        # a human decides when it's ready for review.
+        id: trust_pr
+        env:
+          GH_TOKEN: ${{ secrets.ADOBE_BOT_GITHUB_TOKEN }}
+          PKG_NAME: ${{ steps.pkg.outputs.pkg_name }}
+          PACKAGE_DIR: ${{ inputs.package_dir }}
+        run: |
+          set -euo pipefail
+          SCRIPT=scripts/setup-npm-trusted-publishers.sh
+          BRANCH="chore/npm-trust-${PACKAGE_DIR}"
+
+          node -e '
+            const fs = require("fs");
+            const path = process.env.SCRIPT;
+            const pkgName = process.env.PKG_NAME;
+            const text = fs.readFileSync(path, "utf8");
+
+            const startMarker = "PACKAGES=(\n";
+            const startIdx = text.indexOf(startMarker);
+            if (startIdx === -1) throw new Error("PACKAGES=( marker not found");
+            const afterStart = startIdx + startMarker.length;
+            const endIdx = text.indexOf("\n)\n", afterStart);
+            if (endIdx === -1) throw new Error("closing \")\" for PACKAGES not found");
+
+            const entries = text.slice(afterStart, endIdx)
+              .split("\n")
+              .map((l) => l.trim())
+              .filter(Boolean)
+              .map((l) => l.replace(/^"|"$/g, ""));
+
+            if (entries.includes(pkgName)) {
+              throw new Error(`${pkgName} is already in PACKAGES`);
+            }
+            entries.push(pkgName);
+            entries.sort();
+
+            const newBlock = entries.map((e) => `  "${e}"`).join("\n");
+            fs.writeFileSync(path, text.slice(0, afterStart) + newBlock + text.slice(endIdx));
+          '
+
+          if git diff --quiet -- "$SCRIPT"; then
+            echo "ERROR: expected $SCRIPT to change after adding ${PKG_NAME}."
+            exit 1
+          fi
+
+          git config user.name "adobe-bot"
+          git config user.email "grp-oss-admin@adobe.com"
+          git checkout -b "$BRANCH"
+          git add "$SCRIPT"
+          git commit -m "chore(release): add ${PKG_NAME} to npm trust publishers list"
+
+          auth_b64="$(printf 'x-access-token:%s' "${GH_TOKEN}" | base64 | tr -d '\n')"
+          echo "::add-mask::${auth_b64}"
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          git -c "http.extraheader=AUTHORIZATION: basic ${auth_b64}" push "${remote}" "${BRANCH}"
+
+          BODY_FILE=$(mktemp)
+          cat > "$BODY_FILE" <<EOF
+          Follow-up to the \`Bootstrap NPM Publish\` workflow run that published
+          \`${PKG_NAME}\` for the first time.
+
+          This PR only adds \`${PKG_NAME}\` to the \`PACKAGES\` array in
+          \`scripts/setup-npm-trusted-publishers.sh\`. Merging it does **not**
+          register the OIDC trust binding by itself — after merge, someone with
+          adobe-bot npm credentials and gh CLI auth still needs to run:
+
+          \`\`\`bash
+          ./scripts/setup-npm-trusted-publishers.sh
+          \`\`\`
+
+          See docs/RELEASE-RUNBOOK.md, "Bootstrapping a new package's first publish".
+          EOF
+
+          pr_url=$(gh pr create --draft --base main --head "$BRANCH" \
+            --title "chore: register OIDC trust for ${PKG_NAME}" \
+            --body-file "$BODY_FILE")
+          echo "trust_pr_url=${pr_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Next steps
+        env:
+          PKG_NAME: ${{ steps.pkg.outputs.pkg_name }}
+          TRUST_PR_URL: ${{ steps.trust_pr.outputs.trust_pr_url }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Bootstrap publish complete: ${PKG_NAME}
+
+          Opened draft PR to register OIDC trust: ${TRUST_PR_URL}
+
+          Remaining steps to bring this package into the normal OIDC release flow:
+
+          1. Review and merge that PR.
+          2. Run \`scripts/setup-npm-trusted-publishers.sh\` as \`adobe-bot\` (npm
+             login + gh CLI auth) to actually register the OIDC trust binding —
+             merging the PR only updates the input list, it does not call
+             \`npm trust\`.
+          3. From the next merge to \`main\` touching this package, releases publish
+             automatically via the normal \`main.yaml\` release job.
+          EOF

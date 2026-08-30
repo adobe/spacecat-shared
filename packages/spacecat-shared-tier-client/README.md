@@ -129,6 +129,52 @@ async function createEntitlement() {
 createEntitlement();
 ```
 
+### `entitlement.tier_changed` event (opt-in, best-effort)
+
+`createEntitlement` is the single choke point where an entitlement tier changes. It emits an
+**`entitlement.tier_changed`** domain event on an actual transition — a fresh create
+(`from: null`) or a tier change on an existing entitlement (`from: prevTier`). No event is
+emitted when the tier is unchanged (or when an existing PAID entitlement is left as-is), or
+when only a site enrollment is added to an existing entitlement.
+
+Emission is **opt-in** and **best-effort**, so existing consumers are unaffected:
+
+- It is a **no-op** unless the context provides both the shared SQS helper (`context.sqs`,
+  from `sqsWrapper`) **and** an `ENTITLEMENT_EVENTS_QUEUE_URL` env var.
+- A publish failure is logged and swallowed — it never fails `createEntitlement`/`save`.
+
+```javascript
+import TierClient, { ENTITLEMENT_TIER_CHANGED } from '@adobe/spacecat-shared-tier-client';
+
+// context.sqs is provided by sqsWrapper in every SpaceCat Lambda.
+const context = {
+  dataAccess: { /* ... */ },
+  log: { info: console.log, error: console.error, warn: console.warn },
+  sqs, // shared SQS helper
+  env: { ENTITLEMENT_EVENTS_QUEUE_URL: 'https://sqs.../entitlement-events' },
+};
+```
+
+Payload (`EntitlementTierChangedEvent`):
+
+```jsonc
+{
+  "type": "entitlement.tier_changed",
+  "entitlementId": "…",
+  "organizationId": "…",
+  "productCode": "LLMO",
+  "siteId": "…|null",
+  "enrollmentId": "…|null",
+  "from": "FREE_TRIAL|null",
+  "to": "PAID",
+  "occurredAt": "2026-07-17T00:00:00.000Z"
+}
+```
+
+This is target-architecture groundwork; there is no live consumer yet (current provisioning
+uses the api-service endpoint + fulfillment worker). See
+[docs/adr/0002-entitlement-tier-changed-event.md](../../docs/adr/0002-entitlement-tier-changed-event.md).
+
 ## API Reference
 
 ### Static Factory Methods
@@ -183,6 +229,8 @@ Creates entitlement for organization and site enrollment for site.
 - `tier` (string): Entitlement tier (must be a valid tier from EntitlementModel.TIERS)
 
 **Returns:** Promise<object> - Object with created entitlement and siteEnrollment
+
+Emits an `entitlement.tier_changed` event on an actual tier transition (opt-in, best-effort — see [above](#entitlementtier_changed-event-opt-in-best-effort)).
 
 ## Error Handling
 

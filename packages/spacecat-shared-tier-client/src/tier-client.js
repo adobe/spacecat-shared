@@ -12,6 +12,7 @@
 
 import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
 import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
+import { ENTITLEMENT_TIER_CHANGED, ENTITLEMENT_EVENTS_QUEUE_URL_KEY } from './events.js';
 
 const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
 /**
@@ -129,6 +130,57 @@ class TierClient {
   }
 
   /**
+   * Best-effort emission of the `entitlement.tier_changed` domain event.
+   *
+   * This is the target-architecture seam for reacting to tier transitions (see
+   * docs/adr/0002-entitlement-tier-changed-event.md). It is deliberately opt-in and
+   * best-effort:
+   * - Opt-in: it is a no-op unless the caller's context provides both `sqs` (the shared
+   *   SQS helper) and an `ENTITLEMENT_EVENTS_QUEUE_URL` env var. Existing consumers that
+   *   configure neither are unaffected.
+   * - Best-effort: a publish failure is logged and swallowed — it must never fail the
+   *   `createEntitlement`/`save` that triggered it.
+   *
+   * @param {object} params - Emission parameters.
+   * @param {object} params.entitlement - The created/updated entitlement entity.
+   * @param {string|null} params.from - Previous tier (null on a fresh create).
+   * @param {string} params.to - New tier.
+   * @param {object} [params.siteEnrollment] - Site enrollment entity, if in scope.
+   * @returns {Promise<void>}
+   */
+  async #emitTierChangedEvent({
+    entitlement, from, to, siteEnrollment,
+  }) {
+    const { sqs, env } = this.context;
+    const queueUrl = env?.[ENTITLEMENT_EVENTS_QUEUE_URL_KEY];
+
+    // Opt-in: no destination configured → no-op, keeping existing consumers unaffected.
+    if (!sqs || !hasText(queueUrl)) {
+      return;
+    }
+
+    const event = {
+      type: ENTITLEMENT_TIER_CHANGED,
+      entitlementId: entitlement.getId(),
+      organizationId: this.organization.getId(),
+      productCode: this.productCode,
+      siteId: this.site ? this.site.getId() : null,
+      enrollmentId: siteEnrollment ? siteEnrollment.getId() : null,
+      from,
+      to,
+      occurredAt: new Date().toISOString(),
+    };
+
+    try {
+      await sqs.sendMessage(queueUrl, event);
+      this.log.info(`[TierClient] Emitted ${ENTITLEMENT_TIER_CHANGED} for entitlement ${event.entitlementId} (${from} -> ${to})`);
+    } catch (error) {
+      // Best-effort: an emit failure must never fail createEntitlement/save.
+      this.log.warn(`[TierClient] Failed to emit ${ENTITLEMENT_TIER_CHANGED} for entitlement ${event.entitlementId}: ${error.message}`);
+    }
+  }
+
+  /**
    * Creates entitlement for organization and site enrollment for site.
    * If entitlement exists with different tier, updates the tier.
    * @param {string} tier - Entitlement tier.
@@ -149,25 +201,40 @@ class TierClient {
         const currentTier = existing.entitlement.getTier();
 
         // If currentTier doesn't match with given tier and is not PAID, update it
+        let tierChanged = false;
         if (currentTier !== tier && currentTier !== ENTITLEMENT_TIERS.PAID) {
           existing.entitlement.setTier(tier);
           await existing.entitlement.save();
+          tierChanged = true;
         }
 
         // If site provided but no site enrollment, create it
+        let result;
         if (this.site && !existing.siteEnrollment) {
           const siteId = this.site.getId();
           const siteEnrollment = await this.SiteEnrollment.create({
             siteId,
             entitlementId: existing.entitlement.getId(),
           });
-          return {
+          result = {
             entitlement: existing.entitlement,
             siteEnrollment,
           };
+        } else {
+          result = existing;
         }
 
-        return existing;
+        // Only emit on an actual tier transition, never on an unchanged tier.
+        if (tierChanged) {
+          await this.#emitTierChangedEvent({
+            entitlement: existing.entitlement,
+            from: currentTier,
+            to: tier,
+            siteEnrollment: result.siteEnrollment,
+          });
+        }
+
+        return result;
       }
 
       // No existing entitlement, create new one
@@ -183,6 +250,8 @@ class TierClient {
 
       // If no site provided, return entitlement only
       if (!this.site) {
+        // Fresh create is a transition from no entitlement (null) to the new tier.
+        await this.#emitTierChangedEvent({ entitlement, from: null, to: tier });
         return { entitlement };
       }
 
@@ -191,6 +260,11 @@ class TierClient {
       const siteEnrollment = await this.SiteEnrollment.create({
         siteId,
         entitlementId: entitlement.getId(),
+      });
+
+      // Fresh create is a transition from no entitlement (null) to the new tier.
+      await this.#emitTierChangedEvent({
+        entitlement, from: null, to: tier, siteEnrollment,
       });
 
       return {

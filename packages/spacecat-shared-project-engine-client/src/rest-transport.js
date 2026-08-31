@@ -275,6 +275,8 @@ export function createSerenityProjectEngineTransport(options) {
      * The vendored contract's `prompt_id` query is corrected optional (CR25,
      * overlays/corrections.yaml) — a live batch delete with no `prompt_id` at
      * all 204s and deletes exactly the requested ids.
+     * @param init openapi-fetch init (path/query params, body) forwarded to the DELETE call.
+     * @returns the parsed response body once the delete succeeds, or null for an empty body.
      */
     deleteProjectTags(init) {
       return unwrap('DELETE', client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/tags', init));

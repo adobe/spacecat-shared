@@ -89,13 +89,14 @@ const OPERATIONS = [
   ['listProjectTags', 'GET', '/v2/workspaces/{id}/projects/{project_id}/aio/tags'],
   ['createProjectTags', 'POST', '/v2/workspaces/{id}/projects/{project_id}/aio/tags'],
   ['updateProjectTag', 'PATCH', '/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}'],
+  ['deleteProjectTags', 'DELETE', '/v2/workspaces/{id}/projects/{project_id}/aio/tags'],
 ];
 
 describe('createSerenityProjectEngineTransport', () => {
-  it('exposes exactly the 34 declared facade methods, all functions', () => {
+  it('exposes exactly the 35 declared facade methods, all functions', () => {
     const transport = make(sandbox.stub().resolves(json({})));
     const names = Object.keys(transport);
-    expect(names).to.have.length(34);
+    expect(names).to.have.length(35);
     expect(names.sort()).to.deep.equal(OPERATIONS.map(([n]) => n).sort());
     names.forEach((n) => expect(transport[n]).to.be.a('function'));
   });

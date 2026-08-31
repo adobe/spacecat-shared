@@ -111,7 +111,7 @@ type TransportData<P extends keyof paths, M extends keyof paths[P]> =
   | null;
 
 /**
- * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 34 in-spec
+ * Intent-named facade over {@link SerenityProjectEngineApiClient}. Wraps the 35 in-spec
  * Project Engine operations spacecat-api-service consumes behind verb+resource methods, so
  * consumers depend on this seam rather than the raw client's literal path strings. Each method
  * is THIN: it forwards the caller's openapi-fetch `init` to the underlying client and resolves
@@ -394,6 +394,12 @@ export interface SerenityProjectEngineTransport {
       TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}', 'patch'>
     >
   ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}', 'patch'>>;
+  /** DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-delete-tags */
+  deleteProjectTags(
+    ...init: TransportInitParam<
+      TransportInit<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'delete'>
+    >
+  ): Promise<TransportData<'/v2/workspaces/{id}/projects/{project_id}/aio/tags', 'delete'>>;
 }
 
 /**

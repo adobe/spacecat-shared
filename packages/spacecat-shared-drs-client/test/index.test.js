@@ -1831,6 +1831,74 @@ describe('DrsClient', () => {
     });
   });
 
+  describe('deleteSchedule', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('deletes a schedule and returns the parsed body', async () => {
+      const scope = nock(DRS_API_URL)
+        .delete('/schedules/site-1/sched-1')
+        .reply(200, { deleted: true });
+
+      const result = await client.deleteSchedule('site-1', 'sched-1');
+      expect(result).to.eql({ deleted: true });
+      scope.done();
+    });
+
+    it('returns null for an empty/non-JSON response body', async () => {
+      const scope = nock(DRS_API_URL)
+        .delete('/schedules/site-1/sched-1')
+        .reply(204);
+
+      const result = await client.deleteSchedule('site-1', 'sched-1');
+      expect(result).to.equal(null);
+      scope.done();
+    });
+
+    it('treats a 404 as a soft success (idempotent delete)', async () => {
+      const scope = nock(DRS_API_URL)
+        .delete('/schedules/site-1/sched-1')
+        .reply(404, { message: 'not found' });
+
+      const result = await client.deleteSchedule('site-1', 'sched-1');
+      expect(result).to.eql({ message: 'not found' });
+      scope.done();
+    });
+
+    it('throws on a non-404 error status', async () => {
+      const scope = nock(DRS_API_URL)
+        .delete('/schedules/site-1/sched-1')
+        .reply(500, { message: 'boom' });
+
+      await expect(client.deleteSchedule('site-1', 'sched-1'))
+        .to.be.rejectedWith('DRS DELETE /schedules failed: 500');
+      scope.done();
+    });
+
+    it('serializes a non-string error body in the thrown message', async () => {
+      const scope = nock(DRS_API_URL)
+        .delete('/schedules/site-1/sched-1')
+        .reply(500, 'plain text failure', { 'Content-Type': 'text/plain' });
+
+      await expect(client.deleteSchedule('site-1', 'sched-1'))
+        .to.be.rejectedWith('DRS DELETE /schedules failed: 500 - plain text failure');
+      scope.done();
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(client.deleteSchedule('', 'sched-1'))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when scheduleId is missing', async () => {
+      await expect(client.deleteSchedule('site-1', ''))
+        .to.be.rejectedWith('scheduleId is required');
+    });
+  });
+
   describe('isS3Configured', () => {
     it('returns false when s3Bucket is missing', () => {
       const client = new DrsClient({

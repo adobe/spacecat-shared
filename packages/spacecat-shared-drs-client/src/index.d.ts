@@ -215,6 +215,7 @@ declare class DrsClient {
   createExperimentSchedule(params: CreateExperimentScheduleParams): Promise<ScheduleStatusResult>;
   createSchedule(params: CreateScheduleParams): Promise<ScheduleCreateResult>;
   getScheduleStatus(siteId: string, scheduleId: string): Promise<ScheduleStatusResult>;
+  deleteSchedule(siteId: string, scheduleId: string): Promise<Record<string, unknown> | null>;
   getJob(jobId: string): Promise<Record<string, unknown>>;
   listJobs(params: ListJobsParams): Promise<Record<string, unknown>[]>;
   createBrandPresenceSchedule(

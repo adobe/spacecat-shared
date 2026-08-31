@@ -53,7 +53,7 @@ const pathParamsFor = (template) => {
 
 const resolve = (template) => template.replace(/\{(\w+)\}/g, (_, k) => PARAM_VALUES[k]);
 
-// facadeMethod — HTTP method — path template. 1:1 with the 34 operations.
+// facadeMethod — HTTP method — path template. 1:1 with the 35 operations.
 const OPERATIONS = [
   ['listLanguages', 'GET', '/v1/languages'],
   ['listGlobalAiModels', 'GET', '/v1/ai_models'],

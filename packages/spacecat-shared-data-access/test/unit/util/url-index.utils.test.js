@@ -60,7 +60,9 @@ function makeClient(config = {}) {
       return Promise.resolve(config.clearResult ?? noError);
     }
     if (state.range) {
-      calls.readBack.push({ table: state.table, eqs: state.eqs, range: state.range });
+      calls.readBack.push({
+        table: state.table, eqs: state.eqs, orders: state.orders, range: state.range,
+      });
       return Promise.resolve(shiftOr(queues.readPages, config.readBackResult ?? noRows));
     }
     calls.lookup.push({
@@ -221,7 +223,21 @@ describe('url-index.utils', () => {
         { column: 'site_id', value: SITE_ID },
         { column: 'entity_id', value: ENTITY_ID },
       ]);
+      // ordered so `range()` pagination has a stable boundary
+      expect(calls.readBack[0].orders).to.deep.equal([{ column: 'url', options: { ascending: true } }]);
       expect(calls.prune).to.have.length(0);
+    });
+
+    it('chunks the upsert at 50 rows', async () => {
+      const urls = Array.from({ length: 51 }, (_, i) => `https://example.com/p${i}`);
+      const { client, calls } = makeClient();
+      const written = await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls,
+      });
+      expect(written).to.equal(51);
+      expect(calls.upsert).to.have.length(2);
+      expect(calls.upsert[0].rows).to.have.length(50);
+      expect(calls.upsert[1].rows).to.have.length(1);
     });
 
     it('prunes stale rows, chunked at 50, scoped by site and entity', async () => {
@@ -311,6 +327,26 @@ describe('url-index.utils', () => {
       }]);
       expect(calls.upsert).to.have.length(0);
       expect(calls.readBack).to.have.length(0);
+    });
+
+    it('clears the entity when urls is omitted (undefined)', async () => {
+      const { client, calls } = makeClient();
+      const written = await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
+      });
+      expect(written).to.equal(0);
+      expect(calls.clear).to.have.length(1);
+      expect(calls.upsert).to.have.length(0);
+    });
+
+    it('clears the entity when urls is null', async () => {
+      const { client, calls } = makeClient();
+      const written = await syncUrlIndex(client, {
+        table: TABLE, siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, urls: null,
+      });
+      expect(written).to.equal(0);
+      expect(calls.clear).to.have.length(1);
+      expect(calls.upsert).to.have.length(0);
     });
 
     it('throws DataAccessError with cause when the clear delete fails', async () => {

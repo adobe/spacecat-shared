@@ -26,7 +26,10 @@ import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
 /** Tables this helper is allowed to touch. */
 export const URL_INDEX_TABLES = Object.freeze(['opportunity_urls', 'suggestion_urls']);
 
-/** Chunk `in(...)` reads/deletes to keep the query string under the URI limit (HTTP 414). */
+/**
+ * Chunk every multi-row op so neither the query string (`in(...)` reads/deletes, HTTP 414) nor
+ * the request body (upserts, HTTP 413 against the ~1MB ALB limit) exceeds its limit.
+ */
 const URL_CHUNK_SIZE = 50;
 
 function assertClient(postgrestClient) {
@@ -114,6 +117,20 @@ async function deleteUrls(postgrestClient, table, siteId, entityId, urlsToDelete
   }
 }
 
+/** Upsert the given rows for one entity, chunked so the POST body stays under the payload limit. */
+async function upsertUrls(postgrestClient, table, entityId, rows) {
+  for (let i = 0; i < rows.length; i += URL_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + URL_CHUNK_SIZE);
+    // eslint-disable-next-line no-await-in-loop
+    const { error } = await postgrestClient
+      .from(table)
+      .upsert(chunk, { onConflict: 'entity_id,url' });
+    if (error) {
+      throw new DataAccessError(`Failed to sync ${table} for entity ${entityId}`, { table, entityId }, error);
+    }
+  }
+}
+
 /**
  * Full-replace the source URLs indexed for one entity; an empty `urls` clears it (a non-empty
  * input that canonicalizes to nothing throws instead of clearing).
@@ -168,12 +185,7 @@ export async function syncUrlIndex(postgrestClient, {
     url,
   }));
 
-  const { error: upsertError } = await postgrestClient
-    .from(table)
-    .upsert(rows, { onConflict: 'entity_id,url' });
-  if (upsertError) {
-    throw new DataAccessError(`Failed to sync ${table} for entity ${entityId}`, { table, entityId }, upsertError);
-  }
+  await upsertUrls(postgrestClient, table, entityId, rows);
 
   const keep = new Set(canonicalUrls);
   const existing = await fetchIndexedUrls(postgrestClient, table, siteId, entityId);
@@ -207,6 +219,8 @@ export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, url
   }
 
   const results = [];
+  // Chunked by URL count only; a chunk is not range-paginated, so it assumes each URL backs few
+  // entities and a chunk's matches stay under the PostgREST `max-rows` cap (true for this index).
   for (let i = 0; i < canonicalUrls.length; i += URL_CHUNK_SIZE) {
     const chunk = canonicalUrls.slice(i, i + URL_CHUNK_SIZE);
     // eslint-disable-next-line no-await-in-loop

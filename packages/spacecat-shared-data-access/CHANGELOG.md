@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.1...@adobe/spacecat-shared-data-access-v4.23.0) (2026-08-28)
+
+### Features
+
+* **data-access:** add suggestionKey attribute to Suggestion schema ([#1899](https://github.com/adobe/spacecat-shared/issues/1899)) ([0d6ecc3](https://github.com/adobe/spacecat-shared/commit/0d6ecc3f46984140d13bd84614e362d289106a39))
+
 ## [@adobe/spacecat-shared-data-access-v4.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.0...@adobe/spacecat-shared-data-access-v4.22.1) (2026-08-19)
 
 ### Bug Fixes

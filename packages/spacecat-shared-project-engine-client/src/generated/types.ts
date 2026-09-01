@@ -8641,9 +8641,9 @@ export interface operations {
     };
     "aio-delete-tags": {
         parameters: {
-            query: {
+            query?: {
                 /** @description prompt ID */
-                prompt_id: string;
+                prompt_id?: string;
             };
             header?: never;
             path: {

@@ -1,3 +1,27 @@
+## [@adobe/spacecat-shared-http-utils-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.2...@adobe/spacecat-shared-http-utils-v1.36.0) (2026-08-27)
+
+### Features
+
+* **http-utils:** add composite primary-resource resolver hook to facsWrapper ([#1883](https://github.com/adobe/spacecat-shared/issues/1883)) ([ff4e995](https://github.com/adobe/spacecat-shared/commit/ff4e995bb30a874df476b1beada52b208b2da09f)), closes [adobe/mysticat-architecture#249](https://github.com/adobe/mysticat-architecture/issues/249) [#923](https://github.com/adobe/spacecat-shared/issues/923)
+
+## [@adobe/spacecat-shared-http-utils-v1.35.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.1...@adobe/spacecat-shared-http-utils-v1.35.2) (2026-08-24)
+
+### Bug Fixes
+
+* bypass FACS for recognized-but-not-onboarded products ([#1893](https://github.com/adobe/spacecat-shared/issues/1893)) ([dfed793](https://github.com/adobe/spacecat-shared/commit/dfed79306e91c6bdcc110564a181372ec130f2ca))
+
+## [@adobe/spacecat-shared-http-utils-v1.35.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.0...@adobe/spacecat-shared-http-utils-v1.35.1) (2026-08-24)
+
+### Bug Fixes
+
+* **http-utils:** guard AuthInfo.hasOrganization against a non-string orgId ([#1891](https://github.com/adobe/spacecat-shared/issues/1891)) ([b9fe735](https://github.com/adobe/spacecat-shared/commit/b9fe735bbbee790e2134b82ccb2133594b641914))
+
+## [@adobe/spacecat-shared-http-utils-v1.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.34.0...@adobe/spacecat-shared-http-utils-v1.35.0) (2026-08-12)
+
+### Features
+
+* **http-utils:** secondary FACS resource param + resolver registry in facsWrapper ([#1870](https://github.com/adobe/spacecat-shared/issues/1870)) ([36ab056](https://github.com/adobe/spacecat-shared/commit/36ab0563669d9e4a0dc36544c6c86e002b6cce2b)), closes [adobe/mysticat-architecture#241](https://github.com/adobe/mysticat-architecture/issues/241) [#2947](https://github.com/adobe/spacecat-shared/issues/2947)
+
 ## [@adobe/spacecat-shared-http-utils-v1.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.33.1...@adobe/spacecat-shared-http-utils-v1.34.0) (2026-07-10)
 
 ### Features

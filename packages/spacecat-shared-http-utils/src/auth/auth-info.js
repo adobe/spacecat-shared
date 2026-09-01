@@ -103,6 +103,11 @@ export default class AuthInfo {
   hasFacsPermission(permission) { return this.getFacsPermissions().includes(permission); }
 
   hasOrganization(orgId) {
+    // Fail-closed on a missing or non-string org id, mirroring getFacsPermissions: an
+    // undefined orgId means "no access to check against", not an internal error.
+    if (typeof orgId !== 'string' || orgId.length === 0) {
+      return false;
+    }
     const [id] = orgId.split('@');
     return this.profile?.tenants?.some(
       (tenant) => tenant.id === id,

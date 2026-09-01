@@ -22,7 +22,7 @@ import { ProjectEngineApiError } from './errors.js';
 
 /**
  * Intent-named facade over the raw {@link createSerenityProjectEngineApiClient} openapi-fetch
- * client. It wraps ONLY the 32 in-spec Project Engine operations that spacecat-api-service
+ * client. It wraps ONLY the 35 in-spec Project Engine operations that spacecat-api-service
  * consumes, behind verb+resource method names, so consumers depend on this seam rather than the
  * raw client and its literal path strings. Each method is THIN: it forwards the caller's
  * openapi-fetch `init` (params.path/query, body) to `client.<METHOD>('<literal path>', init)` and
@@ -118,6 +118,14 @@ export function createSerenityProjectEngineTransport(options) {
     /** POST /v1/workspaces/{id}/projects/{project_id}/publish — projects-publish-project */
     publishProject(init) {
       return unwrap('POST', client.POST('/v1/workspaces/{id}/projects/{project_id}/publish', init));
+    },
+    /** POST /v1/workspaces/{id}/projects/{project_id}/pause — projects-pause-project */
+    pauseProject(init) {
+      return unwrap('POST', client.POST('/v1/workspaces/{id}/projects/{project_id}/pause', init));
+    },
+    /** POST /v1/workspaces/{id}/projects/{project_id}/resume — projects-resume-project */
+    resumeProject(init) {
+      return unwrap('POST', client.POST('/v1/workspaces/{id}/projects/{project_id}/resume', init));
     },
 
     // ─── /v1 AI models + benchmarks ───────────────────────────────────────────
@@ -261,6 +269,17 @@ export function createSerenityProjectEngineTransport(options) {
     /** PATCH /v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id} — aio-update-tag */
     updateProjectTag(init) {
       return unwrap('PATCH', client.PATCH('/v2/workspaces/{id}/projects/{project_id}/aio/tags/{tag_id}', init));
+    },
+    /**
+     * DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags — aio-delete-tags.
+     * The vendored contract's `prompt_id` query is corrected optional (CR25,
+     * overlays/corrections.yaml) — a live batch delete with no `prompt_id` at
+     * all 204s and deletes exactly the requested ids.
+     * @param init openapi-fetch init (path/query params, body) forwarded to the DELETE call.
+     * @returns the parsed response body once the delete succeeds, or null for an empty body.
+     */
+    deleteProjectTags(init) {
+      return unwrap('DELETE', client.DELETE('/v2/workspaces/{id}/projects/{project_id}/aio/tags', init));
     },
   };
 }

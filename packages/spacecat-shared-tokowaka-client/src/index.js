@@ -40,6 +40,7 @@ import {
 import { getEffectiveBaseURL } from './utils/site-utils.js';
 import { removePatternFromMetaconfig, addPatternsToMetaconfig } from './utils/metaconfig-utils.js';
 import { fetchHtmlWithWarmup, calculateForwardedHost } from './utils/custom-html-utils.js';
+import { mapWithConcurrency } from './utils/concurrency-utils.js';
 import {
   EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
   PRIVATE_HOST_RE,
@@ -73,6 +74,9 @@ export {
 const HTTP_BAD_REQUEST = 400;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
+
+// URLs to deploy/roll back in parallel
+const URL_CONFIG_CONCURRENCY = 5;
 
 /**
  * Tokowaka Client - Manages edge optimization configurations
@@ -786,51 +790,59 @@ class TokowakaClient {
       );
     }
 
-    // Process each URL separately
+    // Each URL has its own S3 config, so we can handle several at the same time.
+    const urlEntries = Object.entries(suggestionsByUrl);
+    const loopStart = Date.now();
+    const processed = await mapWithConcurrency(
+      urlEntries,
+      async ([urlPath, urlSuggestions]) => {
+        const fullUrl = new URL(urlPath, baseURL).toString();
+        this.log.debug(`Processing ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
+
+        // Fetch existing configuration for this URL from S3
+        const existingConfig = await this.fetchConfig(fullUrl);
+
+        // Generate configuration for this URL with eligible suggestions only
+        const newConfig = this.generateConfig(fullUrl, opportunity, urlSuggestions);
+
+        if (!newConfig) {
+          this.log.warn(`No config generated for URL: ${fullUrl}`);
+          return null;
+        }
+
+        // Check if mapper allows configs without patches (e.g., prerender-only config)
+        const allowsNoPatch = mapper.allowConfigsWithoutPatch() && newConfig.patches.length === 0;
+
+        if (!allowsNoPatch && (!newConfig.patches || newConfig.patches.length === 0)) {
+          this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
+          return null;
+        }
+
+        if (applyStale && newConfig.patches?.length > 0) {
+          newConfig.patches = newConfig.patches.map((patch) => ({ ...patch, applyStale: true }));
+        }
+
+        // Merge with existing config for this URL
+        const config = this.mergeConfigs(existingConfig, newConfig);
+
+        // Upload to S3
+        const s3Path = await this.uploadConfig(fullUrl, config);
+        return { s3Path, fullUrl };
+      },
+      URL_CONFIG_CONCURRENCY,
+    );
+
     const s3Paths = [];
     const deployedUrls = []; // Track URLs for batch CDN invalidation
-
-    for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
-      const fullUrl = new URL(urlPath, baseURL).toString();
-      this.log.debug(`Processing ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
-
-      // Fetch existing configuration for this URL from S3
-      // eslint-disable-next-line no-await-in-loop
-      const existingConfig = await this.fetchConfig(fullUrl);
-
-      // Generate configuration for this URL with eligible suggestions only
-      const newConfig = this.generateConfig(fullUrl, opportunity, urlSuggestions);
-
-      if (!newConfig) {
-        this.log.warn(`No config generated for URL: ${fullUrl}`);
-        // eslint-disable-next-line no-continue
-        continue;
+    processed.forEach((entry) => {
+      if (entry) {
+        s3Paths.push(entry.s3Path);
+        deployedUrls.push(entry.fullUrl);
       }
+    });
 
-      // Check if mapper allows configs without patches (e.g., prerender-only config)
-      const allowsNoPatch = mapper.allowConfigsWithoutPatch() && newConfig.patches.length === 0;
-
-      if (!allowsNoPatch && (!newConfig.patches || newConfig.patches.length === 0)) {
-        this.log.warn(`No eligible suggestions to deploy for URL: ${fullUrl}`);
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      if (applyStale && newConfig.patches?.length > 0) {
-        newConfig.patches = newConfig.patches.map((patch) => ({ ...patch, applyStale: true }));
-      }
-
-      // Merge with existing config for this URL
-      const config = this.mergeConfigs(existingConfig, newConfig);
-
-      // Upload to S3
-      // eslint-disable-next-line no-await-in-loop
-      const s3Path = await this.uploadConfig(fullUrl, config);
-      s3Paths.push(s3Path);
-      deployedUrls.push(fullUrl);
-    }
-
-    this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length} URLs`);
+    this.log.info(`Uploaded Tokowaka configs for ${s3Paths.length}/${urlEntries.length}`
+      + ` URL(s) in ${Date.now() - loopStart}ms (concurrency=${URL_CONFIG_CONCURRENCY})`);
 
     // Update metaconfig with deployed paths
     await this.#updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseURL);
@@ -848,16 +860,14 @@ class TokowakaClient {
 
   /**
    * Rolls back a single URL's S3 config by removing the relevant patches.
-   * Returns the number of patches removed, or 0 if nothing changed.
-   * Pushes the uploaded S3 path into s3Paths and the URL into rolledBackUrls on success.
+   * Returns { s3Path, fullUrl, removed } when a config was re-uploaded,
+   * or null when there was nothing to roll back
    * @param {string} fullUrl
    * @param {Array} urlSuggestions - Suggestions for this URL
    * @param {Object} opportunity
    * @param {Object} mapper
    * @param {string} opportunityType
-   * @param {Array} s3Paths - Accumulator array (mutated)
-   * @param {Array} rolledBackUrls - Accumulator array (mutated)
-   * @returns {Promise<number>} Number of patches removed
+   * @returns {Promise<{s3Path: string, fullUrl: string, removed: number}|null>}
    * @private
    */
   async #rollbackPerUrlConfig(
@@ -866,26 +876,22 @@ class TokowakaClient {
     opportunity,
     mapper,
     opportunityType,
-    s3Paths,
-    rolledBackUrls,
   ) {
     const existingConfig = await this.fetchConfig(fullUrl);
     if (!existingConfig) {
       this.log.warn(`No existing configuration found for URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     if (opportunityType === 'prerender') {
       this.log.info(`Rolling back prerender config for URL: ${fullUrl}`);
       const s3Path = await this.uploadConfig(fullUrl, { ...existingConfig, prerender: false });
-      s3Paths.push(s3Path);
-      rolledBackUrls.push(fullUrl);
-      return 1;
+      return { s3Path, fullUrl, removed: 1 };
     }
 
     if (!existingConfig.patches) {
       this.log.info(`No patches found in configuration for URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     const suggestionIdsToRemove = urlSuggestions.map((s) => s.getId());
@@ -897,7 +903,7 @@ class TokowakaClient {
 
     if (updatedConfig.removedCount === 0) {
       this.log.warn(`No patches found for suggestions at URL: ${fullUrl}`);
-      return 0;
+      return null;
     }
 
     this.log.info(`Removed ${updatedConfig.removedCount} patches for URL: ${fullUrl}`);
@@ -905,9 +911,7 @@ class TokowakaClient {
     delete updatedConfig.removedCount;
 
     const s3Path = await this.uploadConfig(fullUrl, updatedConfig);
-    s3Paths.push(s3Path);
-    rolledBackUrls.push(fullUrl);
-    return removed;
+    return { s3Path, fullUrl, removed };
   }
 
   /**
@@ -966,28 +970,40 @@ class TokowakaClient {
 
     // Roll back per-URL suggestions: one S3 config file per URL.
     const suggestionsByUrl = groupSuggestionsByUrlPath(eligibleSuggestions, baseURL, this.log);
+
+    // Each URL is its own file, so we can roll back several at the same time.
+    const urlEntries = Object.entries(suggestionsByUrl);
+    const loopStart = Date.now();
+    const processed = await mapWithConcurrency(
+      urlEntries,
+      async ([urlPath, urlSuggestions]) => {
+        const fullUrl = new URL(urlPath, baseURL).toString();
+        this.log.debug(`Rolling back ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
+        return this.#rollbackPerUrlConfig(
+          fullUrl,
+          urlSuggestions,
+          opportunity,
+          mapper,
+          opportunityType,
+        );
+      },
+      URL_CONFIG_CONCURRENCY,
+    );
+
     const s3Paths = [];
     const rolledBackUrls = [];
     let totalRemovedCount = 0;
-
-    for (const [urlPath, urlSuggestions] of Object.entries(suggestionsByUrl)) {
-      const fullUrl = new URL(urlPath, baseURL).toString();
-      this.log.debug(`Rolling back ${urlSuggestions.length} suggestions for URL: ${fullUrl}`);
-      // eslint-disable-next-line no-await-in-loop
-      const removed = await this.#rollbackPerUrlConfig(
-        fullUrl,
-        urlSuggestions,
-        opportunity,
-        mapper,
-        opportunityType,
-        s3Paths,
-        rolledBackUrls,
-      );
-      totalRemovedCount += removed;
-    }
+    processed.forEach((entry) => {
+      if (entry) {
+        s3Paths.push(entry.s3Path);
+        rolledBackUrls.push(entry.fullUrl);
+        totalRemovedCount += entry.removed;
+      }
+    });
 
     // eslint-disable-next-line max-len
-    this.log.info(`Updated Tokowaka configs for ${s3Paths.length} URLs, removed ${totalRemovedCount} patches total`);
+    this.log.info(`Updated Tokowaka configs for ${s3Paths.length}/${urlEntries.length} URL(s), `
+      + `removed ${totalRemovedCount} patches total in ${Date.now() - loopStart}ms (concurrency=${URL_CONFIG_CONCURRENCY})`);
 
     // Strip deployment markers and batch-save all eligible per-URL suggestions.
     const savedEligibleSuggestions = eligibleSuggestions

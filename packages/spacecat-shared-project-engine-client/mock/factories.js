@@ -171,14 +171,17 @@ export const createRenamePromptResponseMock = (overrides = {}) => ({
 });
 
 /**
- * A project (`ProjectResponse`). Required fields are `id` + `name`; the rest (type,
- * publish_status, …) are situational and omitted by default.
+ * A project (`ProjectResponse`). Required fields are `id` + `name` + `is_paused`; the rest (type,
+ * publish_status, …) are situational and omitted by default. `is_paused` defaults to `false` — a
+ * running project — and live returns the key on EVERY project read, so it is required (CR23/CR5)
+ * and every project this factory builds carries it.
  * @param {Partial<Project>} [overrides]
  * @returns {Project}
  */
 export const createProjectMock = (overrides = {}) => ({
   id: uuid(),
   name: 'Seeded Project',
+  is_paused: false,
   ...overrides,
 });
 

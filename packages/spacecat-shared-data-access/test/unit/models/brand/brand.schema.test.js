@@ -50,21 +50,6 @@ describe('Brand Schema', () => {
     });
   });
 
-  describe('semrushWorkspaceId attribute (deprecated BC mirror)', () => {
-    it('exists, is read-only, and carries no validator (mirrored by DB trigger)', () => {
-      const attr = attributes.semrushWorkspaceId;
-      expect(attr).to.exist;
-      expect(attr.required).to.not.equal(true);
-      expect(attr.readOnly).to.be.true;
-    });
-
-    // No postgrestField override: camelToSnake('semrushWorkspaceId') already
-    // produces the DB column name `semrush_workspace_id`.
-    it('uses the default camelToSnake column mapping (no override)', () => {
-      expect(attributes.semrushWorkspaceId.postgrestField).to.be.undefined;
-    });
-  });
-
   describe('semrushSubWorkspaceId attribute (write-of-record)', () => {
     it('exists with a nullable hasText validator', () => {
       const attr = attributes.semrushSubWorkspaceId;
@@ -98,45 +83,6 @@ describe('Brand Schema', () => {
     // produces the DB column name `semrush_sub_workspace_id`.
     it('uses the default camelToSnake column mapping (no override)', () => {
       expect(attributes.semrushSubWorkspaceId.postgrestField).to.be.undefined;
-    });
-  });
-
-  describe('pendingSemrushProvisioning attribute', () => {
-    it('exists with a nullable object validator', () => {
-      const attr = attributes.pendingSemrushProvisioning;
-      expect(attr).to.exist;
-      expect(attr.type).to.equal('any');
-      expect(attr.validate).to.be.a('function');
-    });
-
-    it('accepts an object (the draft provisioning blob)', () => {
-      expect(attributes.pendingSemrushProvisioning.validate({
-        primaryUrl: 'https://acme.com',
-        markets: [{ market: 'US', languageCode: 'en' }],
-      })).to.be.true;
-    });
-
-    it('accepts nullish (not a deferred draft, or cleared on activation)', () => {
-      expect(attributes.pendingSemrushProvisioning.validate(null)).to.be.true;
-      expect(attributes.pendingSemrushProvisioning.validate(undefined)).to.be.true;
-    });
-
-    it('accepts an empty object (loose by design — field validation lives in the controller)', () => {
-      expect(attributes.pendingSemrushProvisioning.validate({})).to.be.true;
-    });
-
-    it('rejects an array (must be an object)', () => {
-      expect(attributes.pendingSemrushProvisioning.validate([{ market: 'US' }])).to.be.false;
-    });
-
-    it('rejects a non-object scalar', () => {
-      expect(attributes.pendingSemrushProvisioning.validate('nope')).to.be.false;
-    });
-
-    // No postgrestField override: camelToSnake('pendingSemrushProvisioning') already
-    // produces the DB column name `pending_semrush_provisioning`.
-    it('uses the default camelToSnake column mapping (no override)', () => {
-      expect(attributes.pendingSemrushProvisioning.postgrestField).to.be.undefined;
     });
   });
 });

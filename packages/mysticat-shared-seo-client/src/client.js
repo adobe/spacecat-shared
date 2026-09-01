@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText, isValidUrl, isArray } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isValidUrl, isArray, prependSchema, stripWWW,
+} from '@adobe/spacecat-shared-utils';
 import { context as h2, h1 } from '@adobe/fetch';
 
 import { ENDPOINTS } from './endpoints.js';
@@ -803,8 +805,21 @@ export default class SeoClient {
 
     const token = await this._getSemrushToken();
 
+    // scope=ROOT_DOMAIN ignores the path in `url` (scope=SUBFOLDER is rejected, HTTP 400),
+    // so scope a sub-path via a server-side target_url LIKE clause instead.
+    let subPathClause = '';
+    try {
+      const { hostname, pathname } = new URL(prependSchema(url));
+      const path = pathname.replace(/\/$/, ''); // /foo == /foo/; root ('/') → no clause
+      if (path) {
+        subPathClause = ` AND target_url LIKE '%${stripWWW(hostname)}${path}%'`;
+      }
+    } catch {
+      this.log.warn(`[SEO] Could not parse URL "${url}"; querying whole domain with no sub-path scope`);
+    }
+
     const notLike = LOW_VALUE_HOSTS.map((h) => `AND source_url NOT LIKE '%${h}%'`).join(' ');
-    const filter = `is_nofollow=false AND is_lost=false AND response_code=200 AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}`;
+    const filter = `is_nofollow=false AND is_lost=false AND response_code=200 AND is_image=false AND is_ugc=false AND domain_score>=50 ${notLike}${subPathClause}`;
 
     const params = new URLSearchParams({
       url,
@@ -826,7 +841,7 @@ export default class SeoClient {
 
     if (!r.ok) {
       if (r.status === 404) {
-        this.log.info(`Semrush broken-links returned 404 for ${url} — no data found, returning empty result`);
+        this.log.warn(`[SEO] broken-links 404 (no data / not indexed) for ${url} — returning empty; may be transient`);
         return { result: { backlinks: [], totalCount: 0 }, fullAuditRef };
       }
       const bodyText = await r.text();

@@ -152,6 +152,7 @@ const applyWhere = (query, whereFn, toDbMap) => {
     like: (field, value) => ({ type: 'like', field, value }),
     ilike: (field, value) => ({ type: 'ilike', field, value }),
     contains: (field, value) => ({ type: 'contains', field, value }),
+    and: (...conditions) => ({ type: 'and', conditions: conditions.filter(Boolean) }),
   };
 
   const expression = whereFn(attrs, op);
@@ -159,37 +160,43 @@ const applyWhere = (query, whereFn, toDbMap) => {
     return query;
   }
 
-  switch (expression.type) {
-    case 'eq':
-      return query.eq(expression.field, expression.value);
-    case 'ne':
-      return query.neq(expression.field, expression.value);
-    case 'gt':
-      return query.gt(expression.field, expression.value);
-    case 'gte':
-      return query.gte(expression.field, expression.value);
-    case 'lt':
-      return query.lt(expression.field, expression.value);
-    case 'lte':
-      return query.lte(expression.field, expression.value);
-    case 'in':
-      return query.in(
-        expression.field,
-        Array.isArray(expression.value) ? expression.value : [expression.value],
-      );
-    case 'is':
-      return query.is(expression.field, expression.value);
-    case 'like':
-      return query.like(expression.field, expression.value);
-    case 'ilike':
-      return query.ilike(expression.field, expression.value);
-    case 'contains': {
-      const value = Array.isArray(expression.value) ? expression.value : [expression.value];
-      return query.contains(expression.field, value);
+  const applyExpr = (q, expr) => {
+    switch (expr.type) {
+      case 'and':
+        return (expr.conditions || []).reduce((acc, cond) => applyExpr(acc, cond), q);
+      case 'eq':
+        return q.eq(expr.field, expr.value);
+      case 'ne':
+        return q.neq(expr.field, expr.value);
+      case 'gt':
+        return q.gt(expr.field, expr.value);
+      case 'gte':
+        return q.gte(expr.field, expr.value);
+      case 'lt':
+        return q.lt(expr.field, expr.value);
+      case 'lte':
+        return q.lte(expr.field, expr.value);
+      case 'in':
+        return q.in(
+          expr.field,
+          Array.isArray(expr.value) ? expr.value : [expr.value],
+        );
+      case 'is':
+        return q.is(expr.field, expr.value);
+      case 'like':
+        return q.like(expr.field, expr.value);
+      case 'ilike':
+        return q.ilike(expr.field, expr.value);
+      case 'contains': {
+        const value = Array.isArray(expr.value) ? expr.value : [expr.value];
+        return q.contains(expr.field, value);
+      }
+      default:
+        throw new Error(`Unsupported where operator: ${expr.type}`);
     }
-    default:
-      throw new Error(`Unsupported where operator: ${expression.type}`);
-  }
+  };
+
+  return applyExpr(query, expression);
 };
 
 export {

@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace` \| `legacy-slug-tag-names`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -87,6 +87,15 @@ method that calls it.
 | `PATCH /v1/workspaces/{id}/projects/{project_id}` | — | partial update |
 | `DELETE /v1/workspaces/{id}/projects/{project_id}` | `deleteProject` | remove → `204` |
 | `POST /v1/workspaces/{id}/projects/{project_id}/publish` | `publishProject` | publish → `202`; **metered** (405 for an empty-units workspace); also flips every DRAFT prompt in the project (`is_new: true`) to published — see the prompt draft/publish note below |
+| `POST /v1/workspaces/{id}/projects/{project_id}/pause` | `pauseProject` | pause → `202` empty ack, **idempotent** (a second pause acks again, never conflicts); `404 { message: 'not found' }` for an unknown project id. Flips `is_paused` to `true` on the project read-view and moves nothing else — `publish_status` stays `live`, `updated_at` is not bumped |
+| `POST /v1/workspaces/{id}/projects/{project_id}/resume` | `resumeProject` | resume → `202` empty ack; **not idempotent** — `409 { message: 'project is not paused' }` on a running project; `404` for an unknown id; **metered** (405 for an empty-units workspace, checked last, and a rejected resume stays paused) |
+
+> **Pause is idempotent, resume is not** (live-verified 2026-08-24 against prod, workspace
+> `0a496c87-…`, project `997e17c3-…`). Pausing an already-paused project returns a second `202`;
+> resuming a project that is not paused returns `409 { "message": "project is not paused" }`. A bulk
+> pause can be re-run safely over the same project list; a bulk resume must track what it paused, or
+> tolerate 409s. The state is readable as `is_paused` on the v1 detail, the v1 list and the v2 list
+> (overlay CR23 adds the field, CR5 marks it required) — there is no other way to ask.
 
 ### AI models
 
@@ -169,7 +178,7 @@ Semrush-vendored `/v3` prompts API using RFC 7396 JSON Merge Patch — real, spe
 
 ## 4. Seeds
 
-Three named seeds ship in `mock/seeds.js`:
+Five named seeds ship in `mock/seeds.js`:
 
 - **`empty-workspace`** — the (child) seed workspace with no projects.
 - **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
@@ -196,6 +205,20 @@ Three named seeds ship in `mock/seeds.js`:
   (origin-dimension.md §7 gate 3): a live project still carrying a `source` root, which the resolver
   must accept in place and never duplicate. Its ids are `SEED_IDS.legacySourceRootTagId` /
   `legacySourceHumanTagId`. Removed by WP-O6 once the `source` fallback is dropped.
+- **`legacy-slug-tag-names`** — today's actual production shape, before the customer-facing
+  tag-display-names rename lands: all five dimension roots are bare lowercase slugs
+  (`category`/`intent`/`origin`/`source`/`type`), `origin` is populated (`ai`/`human`) alongside a
+  `source` root carrying plain slug children, and the seeded prompt carries both `origin/human` and
+  `source/config` simultaneously (the pre-remap state). Distinct from `legacy-source-workspace`
+  above (an earlier, already-completed migration where the authorship root itself was still named
+  `source`) — here `origin` and `source` coexist exactly as they do in production today. This is the
+  fixture the tag-display-names rename's tolerant slug-or-display resolver is tested against
+  (as of this writing, tag-display-names.md §7 gate 3 — the section anchor may shift before that
+  still-unmerged spec is signed off): a prompt write to this project must resolve beneath the
+  existing slug values and mint nothing. Its ids are the `SEED_IDS.legacySlug*` family (the five
+  `*RootTagId`s plus `originHumanTagId` / `intentCommercialTagId` / `sourceConfigTagId` /
+  `typeBrandedTagId`, each prefixed `legacySlug`). Removed in the contract phase once the
+  display-name rename has landed everywhere.
 
 Boot from a custom state with `MOCK_SEED_FILE=/path/to/snapshot.json` or replace state at runtime
 with `POST /__seed` (§5). A `Snapshot` is a plain JSON object keyed `<resource>:<scope>`:

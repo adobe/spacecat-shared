@@ -77,6 +77,7 @@ export {
   isWithinSiteScope,
   filterBySiteScope,
   toPathname,
+  siteIdentityFromUrlString,
   hasSamePathname,
   allHaveSamePathname,
   isPathPatternWithinSiteScope,

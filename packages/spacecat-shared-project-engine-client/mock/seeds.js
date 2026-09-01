@@ -105,6 +105,50 @@ const LEGACY_AUTHORSHIP_ROOT_NAME = 'source';
 const LEGACY_SOURCE_ROOT_TAG_ID = tagId(LEGACY_AUTHORSHIP_ROOT_NAME);
 const LEGACY_SOURCE_HUMAN_TAG_ID = tagId('human', LEGACY_SOURCE_ROOT_TAG_ID);
 
+// The pre-rename (bare-slug) dimension-root and value names, retained only for the
+// `legacy-slug-tag-names` seed fixture (WP-D1 item 3, tag-display-names-implementation-plan.md):
+// a project shaped exactly like production TODAY, before this spec's display-name rename lands
+// (plan item 1 — `DIMENSION_ROOTS`/`SOURCE_VALUES`/`TYPE_VALUES` above become the signed-off
+// display forms). Hardcoded as their own literals rather than derived from `DIMENSION_ROOTS` /
+// `ORIGIN_VALUES` / `SOURCE_VALUES` / `TYPE_VALUES`, precisely BECAUSE those are the constants plan
+// item 1 rewrites in place — a fixture built from them would silently start reading display names
+// the moment that rename lands elsewhere in this file, defeating its whole purpose as the tolerant
+// resolver's "un-migrated project" fixture (as of this writing, spec §7 gate 3, plan WP-D2 item 4 —
+// section/item numbers may shift before that still-unmerged spec is signed off). `intent` values
+// are out of scope for the rename (the dimension stays hidden) but are hardcoded here too, so this
+// block has no dependency on the mutable constants above. Deleted in the contract phase, once the
+// display-name rename has landed everywhere and an old-vocabulary fixture is no longer meaningful.
+const LEGACY_SLUG_ROOTS = Object.freeze({
+  category: 'category',
+  intent: 'intent',
+  origin: 'origin',
+  source: 'source',
+  type: 'type',
+});
+// Title-cased (unlike the other LEGACY_SLUG_* arrays, which are lowercase slugs): `intent` values
+// are historically title-cased in production, mirroring `INTENT_VALUES` above — not a copy-paste
+// inconsistency to "clean up".
+const LEGACY_SLUG_INTENT_VALUES = Object.freeze([
+  'Informational', 'Task', 'Commercial', 'Transactional', 'Navigational',
+]);
+const LEGACY_SLUG_ORIGIN_VALUES = Object.freeze(['ai', 'human']);
+const LEGACY_SLUG_SOURCE_VALUES = Object.freeze(['config', 'gsc', 'drs', 'synthetic-personas']);
+const LEGACY_SLUG_TYPE_VALUES = Object.freeze(['branded', 'non-branded']);
+
+const LEGACY_SLUG_CATEGORY_ROOT_TAG_ID = tagId(LEGACY_SLUG_ROOTS.category);
+const LEGACY_SLUG_INTENT_ROOT_TAG_ID = tagId(LEGACY_SLUG_ROOTS.intent);
+const LEGACY_SLUG_ORIGIN_ROOT_TAG_ID = tagId(LEGACY_SLUG_ROOTS.origin);
+const LEGACY_SLUG_SOURCE_ROOT_TAG_ID = tagId(LEGACY_SLUG_ROOTS.source);
+const LEGACY_SLUG_TYPE_ROOT_TAG_ID = tagId(LEGACY_SLUG_ROOTS.type);
+
+// The pre-remap prompt tags: `origin/human` and `source/config` coexist on one prompt (the actual
+// pre-remap state — remapping the two into one `source` value is plan §3's job, not yet applied),
+// alongside a closed `intent` and `type` value.
+const LEGACY_SLUG_ORIGIN_HUMAN_TAG_ID = tagId('human', LEGACY_SLUG_ORIGIN_ROOT_TAG_ID);
+const LEGACY_SLUG_INTENT_COMMERCIAL_TAG_ID = tagId('Commercial', LEGACY_SLUG_INTENT_ROOT_TAG_ID);
+const LEGACY_SLUG_SOURCE_CONFIG_TAG_ID = tagId('config', LEGACY_SLUG_SOURCE_ROOT_TAG_ID);
+const LEGACY_SLUG_TYPE_BRANDED_TAG_ID = tagId('branded', LEGACY_SLUG_TYPE_ROOT_TAG_ID);
+
 // H1's open taxonomy: one depth-2 category with three depth-3 sub-categories. The sub-category
 // named `human` deliberately collides by NAME with the `origin` value `human`, and `gsc`
 // collides with the `source` value `gsc` — under bare names those are two distinct tags only
@@ -277,6 +321,27 @@ const dimensionRootTree = (
     }),
   ];
 };
+
+/**
+ * The `legacy-slug-tag-names` tree (WP-D1 item 3): the five bare-slug dimension roots and the
+ * closed dimensions' full vocabularies, exactly as a project looks in production TODAY — no
+ * customer-authored category (that is `dimensionRootTree`'s job, and this fixture's whole purpose
+ * is the plain pre-rename shape, not the collision cases). Built entirely from the
+ * `LEGACY_SLUG_*` constants above, never from `DIMENSION_ROOTS` / `SOURCE_VALUES` / `TYPE_VALUES` /
+ * `ORIGIN_VALUES` — see those constants' doc comment for why.
+ * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
+ */
+const legacySlugDimensionRootTree = () => [
+  rootTag(LEGACY_SLUG_ROOTS.category),
+  rootTag(LEGACY_SLUG_ROOTS.intent),
+  rootTag(LEGACY_SLUG_ROOTS.origin),
+  rootTag(LEGACY_SLUG_ROOTS.source),
+  rootTag(LEGACY_SLUG_ROOTS.type),
+  ...LEGACY_SLUG_INTENT_VALUES.map((v) => childTag(v, LEGACY_SLUG_INTENT_ROOT_TAG_ID)),
+  ...LEGACY_SLUG_ORIGIN_VALUES.map((v) => childTag(v, LEGACY_SLUG_ORIGIN_ROOT_TAG_ID)),
+  ...LEGACY_SLUG_SOURCE_VALUES.map((v) => childTag(v, LEGACY_SLUG_SOURCE_ROOT_TAG_ID)),
+  ...LEGACY_SLUG_TYPE_VALUES.map((v) => childTag(v, LEGACY_SLUG_TYPE_ROOT_TAG_ID)),
+];
 
 /**
  * Authors one full sub-workspace hierarchy (a live market with a model, a tagged prompt, an
@@ -459,6 +524,50 @@ export const WORKSPACE_WITH_SOURCE_ROOT = Object.freeze(peHierarchy({
 }));
 
 /**
+ * The pre-rename (bare-slug) shape, as production looks TODAY: five bare-lowercase dimension roots
+ * (`category`, `intent`, `origin`, `source`, `type`), a populated `origin` root (`ai`/`human`)
+ * exactly like the default seed, and the `source` root's children as plain slugs. This is NOT
+ * `WORKSPACE_WITH_SOURCE_ROOT` above — that one is the earlier, already-completed origin-rename
+ * program's legacy fixture, where the authorship root is still literally named `source` instead of
+ * `origin` (a different migration). Here `origin` is present and populated exactly as today's
+ * default, and `source` is present alongside it with slug-named children — today's actual
+ * production taxonomy shape, before THIS spec's display-name rename (plan item 1) lands. It is the
+ * fixture WP-D2's tolerant slug-or-display resolver tests run against (spec §7 gate 3): a prompt
+ * write to this project must resolve beneath the existing slug values and mint nothing.
+ *
+ * It intentionally REUSES `workspace-with-data`'s scalar ids (workspace / project / prompt /
+ * benchmark / brand-url) — the two seeds never load together, so this is a drop-in replacement for
+ * the default, not a copy-paste slip. Built entirely from the `LEGACY_SLUG_*` constants, not
+ * `DIMENSION_ROOTS` / `SOURCE_VALUES` / `TYPE_VALUES` / `ORIGIN_VALUES` (see those constants' doc
+ * comment for why). Deleted in the contract phase, once the display-name rename has landed
+ * everywhere and an old-vocabulary fixture is no longer meaningful.
+ */
+export const LEGACY_SLUG_TAG_NAMES_WORKSPACE = Object.freeze(peHierarchy({
+  childWorkspaceId: CHILD_WORKSPACE_ID,
+  projectId: PROJECT_ID,
+  aiModelAssignmentId: AI_MODEL_ASSIGNMENT_ID,
+  name: 'Seeded Project',
+  domain: 'example.com',
+  brandName: 'Seeded Brand',
+  languageId: ENGLISH_LANGUAGE_ID,
+  countryCode: 'us',
+  locationId: US_GEO_TARGET_ID,
+  locationName: 'United States',
+  modelKey: 'search-gpt',
+  promptId: PROMPT_ID,
+  promptName: 'What is the best running shoe?',
+  promptTags: [
+    childTag('human', LEGACY_SLUG_ORIGIN_ROOT_TAG_ID),
+    childTag('Commercial', LEGACY_SLUG_INTENT_ROOT_TAG_ID),
+    childTag('config', LEGACY_SLUG_SOURCE_ROOT_TAG_ID),
+    childTag('branded', LEGACY_SLUG_TYPE_ROOT_TAG_ID),
+  ],
+  benchmarkId: BENCHMARK_ID,
+  brandUrlId: BRAND_URL_ID,
+  projectTags: legacySlugDimensionRootTree(),
+}));
+
+/**
  * All seed sets by name, for the runner to select via env/flag. Typed as a string map so a
  * runtime `MOCK_SEED` (an arbitrary string) can index it with a fallback (see {@link Context}).
  * @type {Record<string, import('./store.js').Snapshot>}
@@ -468,6 +577,7 @@ export const SEEDS = Object.freeze({
   'workspace-with-data': WORKSPACE_WITH_DATA,
   'two-hierarchies': TWO_HIERARCHIES,
   'legacy-source-workspace': WORKSPACE_WITH_SOURCE_ROOT,
+  'legacy-slug-tag-names': LEGACY_SLUG_TAG_NAMES_WORKSPACE,
 });
 
 /** Default seed loaded when none is specified. */
@@ -510,6 +620,22 @@ export const SEED_IDS = Object.freeze({
   // both the seed and these ids.
   legacySourceRootTagId: LEGACY_SOURCE_ROOT_TAG_ID,
   legacySourceHumanTagId: LEGACY_SOURCE_HUMAN_TAG_ID,
+  // The pre-rename slug fixture (`legacy-slug-tag-names`, WP-D1 item 3): all five bare-slug
+  // dimension roots, plus the closed/open values the seeded prompt carries pre-remap — for
+  // WP-D2's tolerant slug-or-display resolver tests (spec §7 gate 3). Deleted in the contract
+  // phase alongside the seed itself. Shares its scalar ids (workspaceId, projectId,
+  // aiModelId, promptId, benchmarkId, brandUrlId above) with `workspace-with-data` — safe only
+  // because the two seeds are never loaded together (see `LEGACY_SLUG_TAG_NAMES_WORKSPACE`'s
+  // doc comment for why).
+  legacySlugCategoryRootTagId: LEGACY_SLUG_CATEGORY_ROOT_TAG_ID,
+  legacySlugIntentRootTagId: LEGACY_SLUG_INTENT_ROOT_TAG_ID,
+  legacySlugOriginRootTagId: LEGACY_SLUG_ORIGIN_ROOT_TAG_ID,
+  legacySlugSourceRootTagId: LEGACY_SLUG_SOURCE_ROOT_TAG_ID,
+  legacySlugTypeRootTagId: LEGACY_SLUG_TYPE_ROOT_TAG_ID,
+  legacySlugOriginHumanTagId: LEGACY_SLUG_ORIGIN_HUMAN_TAG_ID,
+  legacySlugIntentCommercialTagId: LEGACY_SLUG_INTENT_COMMERCIAL_TAG_ID,
+  legacySlugSourceConfigTagId: LEGACY_SLUG_SOURCE_CONFIG_TAG_ID,
+  legacySlugTypeBrandedTagId: LEGACY_SLUG_TYPE_BRANDED_TAG_ID,
   // Hierarchy 2 (present only in `two-hierarchies`).
   secondParentWorkspaceId: PARENT_WORKSPACE_ID_2,
   secondWorkspaceId: CHILD_WORKSPACE_ID_2,

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.2...@adobe/spacecat-shared-tokowaka-client-v1.23.3) (2026-08-06)
+
+### Bug Fixes
+
+* optimize edge deploy/rollback api ([#1865](https://github.com/adobe/spacecat-shared/issues/1865)) ([269d29f](https://github.com/adobe/spacecat-shared/commit/269d29f293b254f2ba34ad932118e898e0b7f954))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.23.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.1...@adobe/spacecat-shared-tokowaka-client-v1.23.2) (2026-07-29)
 
 ### Bug Fixes

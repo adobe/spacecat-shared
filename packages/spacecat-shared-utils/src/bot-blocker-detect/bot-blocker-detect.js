@@ -78,7 +78,7 @@ const CHALLENGE_PATTERNS = {
     /Verifying you are human/i,
     /Please wait.*CloudFlare/i,
     /cf-turnstile/i,
-    /challenge-platform/i,
+    /challenge-platform\/(?!scripts\/jsd\/)/i,
     /cf-chl-widget/i, // Cloudflare challenge widget
     /ray\s*id.*cloudflare/i, // Cloudflare Ray ID in error pages
     /__cf_chl_tk/i, // Cloudflare challenge token

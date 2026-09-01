@@ -23,9 +23,10 @@
  * `seed()` (`POST /__seed`), and `dump()` (`GET /__dump`) — so an E2E / the cross-repo harness
  * can drive and inspect mock state between cases. It also wires {@link createQuota} as `quota`
  * (AI-unit metering; allocation set via `POST /__quota`, enforced on project/prompt create +
- * publish — the disguised-405 the live API returns for an over-allocation) and {@link authError}
- * as `authError` (bearer-auth gate; every real route guards on it, the `__*` control routes are
- * exempt — see mock/auth.js).
+ * publish — the disguised-405 the live API returns for an over-allocation),
+ * {@link pauseTransition} / {@link resumeTransition} (the pause/resume decision table), and
+ * {@link authError} as `authError` (bearer-auth gate; every real route guards on it, the `__*`
+ * control routes are exempt — see mock/auth.js).
  *
  * Startup seed precedence: an explicit `seedFile` (a JSON {@link Snapshot} path, e.g. one the
  * harness generates from the same fixtures it loads into Postgres so the workspace/project ids
@@ -40,6 +41,7 @@ import { readFileSync } from 'node:fs';
 import { InMemoryStore } from './store.js';
 import { createStatefulOps } from './stateful.js';
 import { createQuota } from './quota.js';
+import { pauseTransition, resumeTransition } from './pause.js';
 import { authError } from './auth.js';
 import { emptyAck } from './responses.js';
 import * as factories from './factories.js';
@@ -49,6 +51,7 @@ import { tagId } from './tag-id.js';
 import { parentIdField } from './parent-id.js';
 import { buildTagView } from './tag-view.js';
 import { resolveUrl } from './url-resolve.js';
+import { sortPromptsByMetadata } from './prompt-sort.js';
 import { brandUrlHttpsTag } from './brand-url-validation.js';
 import { SEEDS, DEFAULT_SEED } from './seeds.js';
 
@@ -75,6 +78,12 @@ export class Context {
     // AI-unit metering over the same store (limits live in the `quota` collection, so they ride
     // along in seed / reset / dump; usage is derived from the projects/prompts collections).
     this.quota = createQuota(this.store);
+    // The pause/resume state machine (mock/pause.js). Stateless deciders, so plain references to
+    // the pure helpers — same `$.context` lib-helper convention as `resolveUrl`. They return the
+    // status plus the `is_paused` patch the route applies through `ops.projects`; pause is
+    // idempotent, resume 409s when the project is not paused (both live-verified).
+    this.pauseTransition = pauseTransition;
+    this.resumeTransition = resumeTransition;
     // Bearer-auth gate. Stateless, so it is a plain reference to the pure guard; every real route
     // calls `context.authError($.headers)`, the `__*` control routes do not (see mock/auth.js).
     this.authError = authError;
@@ -118,6 +127,12 @@ export class Context {
     // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
     // convention as `tagId`. The consumer resolves a raw brand URL through this before writing it.
     this.resolveUrl = resolveUrl;
+    // The `by_tags` prompt-list sort (mock/prompt-sort.js). Exposed so the `.../prompts/by_tags`
+    // route orders its items on the wire `sort_field` / `sort_dir` through one pure, unit-tested
+    // function rather than inline in the coverage-excluded handler — same `$.context` lib-helper
+    // convention as `resolveUrl`. The consumer sorts the authorship read on `metadata.created_at` /
+    // `metadata.updated_at`; the wrong `sort` / `order` keys fall through to store order.
+    this.sortPromptsByMetadata = sortPromptsByMetadata;
     // The brand-URL `https://` validator (mock/brand-url-validation.js). Exposed so the
     // `POST .../brand_urls` route rejects a non-https value with the live gateway's 400 through one
     // pure, unit-tested function — same `$.context` lib-helper convention as `tagId`.

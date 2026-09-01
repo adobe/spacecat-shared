@@ -132,6 +132,19 @@ describe('SuggestionModel', () => {
     });
   });
 
+  describe('getSuggestionKey', () => {
+    it('returns undefined when no suggestionKey is set', () => {
+      expect(instance.getSuggestionKey()).to.be.undefined;
+    });
+
+    it('returns the suggestionKey when present on the record', () => {
+      mockRecord.suggestionKey = 'site:site1:backlink:abc:referrer:def';
+      ({ model: instance } = createElectroMocks(Suggestion, mockRecord));
+
+      expect(instance.getSuggestionKey()).to.equal('site:site1:backlink:abc:referrer:def');
+    });
+  });
+
   describe('SKIP_REASONS', () => {
     it('has SKIP_REASONS enum with all values', () => {
       expect(Suggestion.SKIP_REASONS).to.be.an('object');

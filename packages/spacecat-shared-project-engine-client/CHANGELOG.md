@@ -1,3 +1,33 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.20.0...@adobe/spacecat-shared-project-engine-client-v1.21.0) (2026-08-31)
+
+### Features
+
+* **project-engine-client:** expose deleteProjectTags, correct prompt_id spec drift ([#1903](https://github.com/adobe/spacecat-shared/issues/1903)) ([0afe7ba](https://github.com/adobe/spacecat-shared/commit/0afe7ba4e76ff237533f77935589329593401e83)), closes [adobe/serenity-docs#427](https://github.com/adobe/serenity-docs/issues/427)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.19.0...@adobe/spacecat-shared-project-engine-client-v1.20.0) (2026-08-27)
+
+### Features
+
+* **project-engine-client-mock:** add legacy-slug-tag-names seed fixture (SITES-50445) ([#1895](https://github.com/adobe/spacecat-shared/issues/1895)) ([5091924](https://github.com/adobe/spacecat-shared/commit/50919246e1204b662d66c755f875c2d60c3cb5f7)), closes [#407](https://github.com/adobe/spacecat-shared/issues/407)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.1...@adobe/spacecat-shared-project-engine-client-v1.19.0) (2026-08-24)
+
+### Features
+
+* **project-engine-client:** support pausing and resuming projects ([#1892](https://github.com/adobe/spacecat-shared/issues/1892)) ([1c59857](https://github.com/adobe/spacecat-shared/commit/1c59857e018376703c0ccdfc69e5e9abda293969))
+
+## [@adobe/spacecat-shared-project-engine-client-v1.18.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.18.0...@adobe/spacecat-shared-project-engine-client-v1.18.1) (2026-08-04)
+
+### Bug Fixes
+
+* **project-engine-client:** by_tags mock defaults omitted sort_dir to descending (LLMO-6666) ([#1862](https://github.com/adobe/spacecat-shared/issues/1862)) ([44f64d8](https://github.com/adobe/spacecat-shared/commit/44f64d897b8f08b59ef5ff87311305ef720c7df7)), closes [#1859](https://github.com/adobe/spacecat-shared/issues/1859)
+
+## [@adobe/spacecat-shared-project-engine-client-v1.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.17.0...@adobe/spacecat-shared-project-engine-client-v1.18.0) (2026-08-03)
+
+### Features
+
+* **project-engine-client:** honour sort_field / sort_dir on the by_tags mock (LLMO-6666) ([#1859](https://github.com/adobe/spacecat-shared/issues/1859)) ([edd2030](https://github.com/adobe/spacecat-shared/commit/edd20301f895da9e050ca33cd981059605a29380))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.16.0...@adobe/spacecat-shared-project-engine-client-v1.17.0) (2026-07-29)
 
 ### Features

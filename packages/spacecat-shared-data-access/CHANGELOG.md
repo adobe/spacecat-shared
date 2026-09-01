@@ -1,3 +1,69 @@
+## [@adobe/spacecat-shared-data-access-v4.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.1...@adobe/spacecat-shared-data-access-v4.23.0) (2026-08-28)
+
+### Features
+
+* **data-access:** add suggestionKey attribute to Suggestion schema ([#1899](https://github.com/adobe/spacecat-shared/issues/1899)) ([0d6ecc3](https://github.com/adobe/spacecat-shared/commit/0d6ecc3f46984140d13bd84614e362d289106a39))
+
+## [@adobe/spacecat-shared-data-access-v4.22.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.0...@adobe/spacecat-shared-data-access-v4.22.1) (2026-08-19)
+
+### Bug Fixes
+
+* **data-access:** remove deprecated brand pendingSemrushProvisioning attribute (SITES-49448) ([#1886](https://github.com/adobe/spacecat-shared/issues/1886)) ([3b09e0b](https://github.com/adobe/spacecat-shared/commit/3b09e0b613526030f317db5e1f74324fdeea7ff0)), closes [#5](https://github.com/adobe/spacecat-shared/issues/5) [1867/#1880](https://github.com/1867/spacecat-shared/issues/1880)
+
+## [@adobe/spacecat-shared-data-access-v4.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.1...@adobe/spacecat-shared-data-access-v4.22.0) (2026-08-14)
+
+### Features
+
+* schema changes for trial users entity to allow searching by external user id ([#1871](https://github.com/adobe/spacecat-shared/issues/1871)) ([3ecf546](https://github.com/adobe/spacecat-shared/commit/3ecf5466b41dcd32cf5dd591f8762fefd714af1f))
+
+## [@adobe/spacecat-shared-data-access-v4.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.21.0...@adobe/spacecat-shared-data-access-v4.21.1) (2026-08-14)
+
+### Bug Fixes
+
+* **data-access:** publish brand semrushWorkspaceId mirror removal (SITES-49202) ([#1880](https://github.com/adobe/spacecat-shared/issues/1880)) ([80a296a](https://github.com/adobe/spacecat-shared/commit/80a296af1b4f49ffa66aba80d677a5e6b42f3856)), closes [#1867](https://github.com/adobe/spacecat-shared/issues/1867) [#1867](https://github.com/adobe/spacecat-shared/issues/1867) [#1867](https://github.com/adobe/spacecat-shared/issues/1867)
+
+## [@adobe/spacecat-shared-data-access-v4.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.20.0...@adobe/spacecat-shared-data-access-v4.21.0) (2026-08-13)
+
+### Features
+
+* **data-access:** paginated sites query filtered by entitlement tier/productCode ([#1877](https://github.com/adobe/spacecat-shared/issues/1877)) ([00e5e59](https://github.com/adobe/spacecat-shared/commit/00e5e592f1d4990e1578deb8287e84f3f0d0cf1b))
+
+## [@adobe/spacecat-shared-data-access-v4.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.19.0...@adobe/spacecat-shared-data-access-v4.20.0) (2026-08-12)
+
+### Features
+
+* **data-access:** compound AND filter and orderBy column for postgrest queries ([#1874](https://github.com/adobe/spacecat-shared/issues/1874)) ([620b37e](https://github.com/adobe/spacecat-shared/commit/620b37eb1bc252c9bdd01661037de6fd7e0bfe35))
+
+## [@adobe/spacecat-shared-data-access-v4.19.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.18.0...@adobe/spacecat-shared-data-access-v4.19.0) (2026-08-11)
+
+### Features
+
+* add support for searching trial users by external user id ([#1869](https://github.com/adobe/spacecat-shared/issues/1869)) ([ec48340](https://github.com/adobe/spacecat-shared/commit/ec483403ac2b118abea814309079716fc516042a))
+
+## [@adobe/spacecat-shared-data-access-v4.18.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.17.0...@adobe/spacecat-shared-data-access-v4.18.0) (2026-08-11)
+
+### Features
+
+* **data-access:** add prerender validation fields to Suggestion/GeoExperiment ([#1863](https://github.com/adobe/spacecat-shared/issues/1863)) ([88b3baa](https://github.com/adobe/spacecat-shared/commit/88b3baaaedc2a9a12a48a88abb184baf85796426))
+
+## [@adobe/spacecat-shared-data-access-v4.17.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.1...@adobe/spacecat-shared-data-access-v4.17.0) (2026-08-07)
+
+### Features
+
+* **data-access:** add SITE to Opportunity.SCOPE_TYPES (SITES-49175) ([#1866](https://github.com/adobe/spacecat-shared/issues/1866)) ([c33a236](https://github.com/adobe/spacecat-shared/commit/c33a23677101ad6b6b839c5fb12f1810d1612571))
+
+## [@adobe/spacecat-shared-data-access-v4.16.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.16.0...@adobe/spacecat-shared-data-access-v4.16.1) (2026-08-03)
+
+### Bug Fixes
+
+* **data-access:** reconcile status-transition tables from SITES-47286 warn findings ([#1860](https://github.com/adobe/spacecat-shared/issues/1860)) ([237c081](https://github.com/adobe/spacecat-shared/commit/237c081feaec5368e4b08422d83087762a672fe5)), closes [#5](https://github.com/adobe/spacecat-shared/issues/5)
+
+## [@adobe/spacecat-shared-data-access-v4.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.3...@adobe/spacecat-shared-data-access-v4.16.0) (2026-07-31)
+
+### Features
+
+* **data-access:** expose deployedAt on FixEntity (SITES-47997/48823) ([#1857](https://github.com/adobe/spacecat-shared/issues/1857)) ([512d991](https://github.com/adobe/spacecat-shared/commit/512d991aaee98cad2387807193852937cede6ddd))
+
 ## [@adobe/spacecat-shared-data-access-v4.15.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.15.2...@adobe/spacecat-shared-data-access-v4.15.3) (2026-07-29)
 
 ### Bug Fixes

@@ -45,7 +45,9 @@ export const FIX_ENTITY_TRANSITIONS = {
   [STATUSES.PENDING]: [STATUSES.DEPLOYED, STATUSES.FAILED],
   [STATUSES.DEPLOYED]: [STATUSES.PUBLISHED, STATUSES.ROLLED_BACK],
   // bounded retry; the attempts cap (SITES-46548) is not enforced here.
-  [STATUSES.FAILED]: [STATUSES.PENDING],
+  // ROLLED_BACK reconciles the ADR table to api-service's existing revert rule
+  // ("ROLLED_BACK requires FAILED", fixes.js) — SITES-47286 warn finding (~6x/25d).
+  [STATUSES.FAILED]: [STATUSES.PENDING, STATUSES.ROLLED_BACK],
   [STATUSES.PUBLISHED]: [STATUSES.ROLLED_BACK],
   [STATUSES.ROLLED_BACK]: [], // terminal
 };

@@ -124,7 +124,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     'content-type': 'application/json',
     Accept: 'application/json',
   };
-  const listByTags = (tagIds, { draft, includeMetadata } = {}) => {
+  const listByTags = (tagIds, {
+    draft, includeMetadata, sortField, sortDir, sort, order,
+  } = {}) => {
     const query = {
       ...(draft ? { draft: true } : {}),
       ...(includeMetadata ? { include_metadata: true } : {}),
@@ -136,7 +138,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
           path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT },
           ...(Object.keys(query).length > 0 ? { query } : {}),
         },
-        body: { tag_ids: tagIds },
+        body: {
+          tag_ids: tagIds,
+          // The wire sort keys (`sort_field` / `sort_dir`); the ignored `sort` / `order` are also
+          // passable so a case can prove they are NOT honoured (LLMO-6666).
+          ...(sortField !== undefined ? { sort_field: sortField } : {}),
+          ...(sortDir !== undefined ? { sort_dir: sortDir } : {}),
+          ...(sort !== undefined ? { sort } : {}),
+          ...(order !== undefined ? { order } : {}),
+        },
       },
     );
   };
@@ -442,6 +452,96 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // Without `include_metadata`, the same list omits the `metadata` key entirely (default shape).
     const { data: bare } = await listByTags([], { draft: true });
     expect(bare.items.find((p) => p.id === item.id)).to.not.have.property('metadata');
+  });
+
+  // by_tags sort (LLMO-6666). Fixtures are stamped so store order matches NEITHER the created_at
+  // nor the updated_at order, so an ordering assertion fails if the keys regress (rather than
+  // passing on store order by accident — the vacuity these cases exist to remove). Results are
+  // filtered to the ids created here (the seed carries its own prompt), which preserves relative
+  // order under a stable sort.
+  describe('by_tags ordering on sort_field / sort_dir', () => {
+    // Store order [X, Y, Z]. created_at ascending → [Y, Z, X]; updated_at ascending → [X, Z, Y]:
+    // both differ from store order and from each other.
+    const FIXTURES = [
+      { name: 'sort X?', metadata: { created_at: '2026-03-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } },
+      { name: 'sort Y?', metadata: { created_at: '2026-01-01T00:00:00Z', updated_at: '2026-03-01T00:00:00Z' } },
+      { name: 'sort Z?', metadata: { created_at: '2026-02-01T00:00:00Z', updated_at: '2026-02-01T00:00:00Z' } },
+    ];
+
+    // Creates the fixtures and returns a name→id map, so a case can express expected order by the
+    // stable X/Y/Z labels rather than opaque ids.
+    const seedFixtures = async (items = FIXTURES) => {
+      const { data: created, error } = await client.POST(V3_CREATE, {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { items },
+      });
+      expect(error).to.equal(undefined);
+      const byName = new Map(created.items.map((p) => [p.name, p.id]));
+      return { ids: [...byName.values()], byName };
+    };
+    const orderedNames = (listed, byName) => {
+      const idToName = new Map([...byName].map(([n, id]) => [id, n]));
+      return listed.items.filter((p) => idToName.has(p.id)).map((p) => idToName.get(p.id));
+    };
+
+    it('orders by metadata.created_at ascending and descending', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort X?', 'sort Z?', 'sort Y?']);
+    });
+
+    it('orders by metadata.updated_at ascending and descending', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.updated_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort X?', 'sort Z?', 'sort Y?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.updated_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+    });
+
+    it('sorts even without include_metadata (order is driven by the STORED metadata)', async () => {
+      const { byName } = await seedFixtures();
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      // Items carry no metadata key (opt-in omitted) but are still ordered by the stored value.
+      expect(asc.items.filter((p) => byName.get('sort X?') === p.id)[0]).to.not.have.property('metadata');
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort Z?', 'sort X?']);
+    });
+
+    it('preserves store order when NO sort keys are sent (legacy behavior unchanged)', async () => {
+      // Backward-compat regression guard: every pre-existing consumer lists without sort keys and
+      // must see the same store order as before this change. `seedFixtures` inserts X, Y, Z in that
+      // order, so a bare list returns them in that order — the pre-change contract.
+      const { byName } = await seedFixtures();
+      const { data: def } = await listByTags([], { draft: true });
+      expect(orderedNames(def, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('ignores the WRONG keys (sort / order): returns store order, so the two shapes are distinguishable', async () => {
+      const { byName } = await seedFixtures();
+      const { data: wrong } = await listByTags([], { draft: true, sort: 'metadata.created_at', order: 'asc' });
+      expect(orderedNames(wrong, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('returns store order for an unrecognised sort_field (200, not stricter than prod)', async () => {
+      const { byName } = await seedFixtures();
+      const { data: listed, error } = await listByTags([], { draft: true, sortField: 'metadata.name', sortDir: 'asc' });
+      expect(error).to.equal(undefined);
+      expect(orderedNames(listed, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort Z?']);
+    });
+
+    it('sorts a prompt with absent metadata LAST in both directions', async () => {
+      // Store order [X, none, Y]: the unstamped prompt is created between two stamped ones.
+      const { byName } = await seedFixtures([
+        FIXTURES[0],
+        { name: 'sort none?' },
+        FIXTURES[1],
+      ]);
+      const { data: asc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'asc' });
+      expect(orderedNames(asc, byName)).to.deep.equal(['sort Y?', 'sort X?', 'sort none?']);
+      const { data: desc } = await listByTags([], { draft: true, sortField: 'metadata.created_at', sortDir: 'desc' });
+      expect(orderedNames(desc, byName)).to.deep.equal(['sort X?', 'sort Y?', 'sort none?']);
+    });
   });
 
   it('v3 create dedupe hit PRESERVES the existing stored metadata and reports is_new: false', async () => {
@@ -2527,6 +2627,108 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const usage = await res.json();
     expect(usage.projects).to.deep.equal({ limit: 3, used: 1 });
     expect(usage.prompts).to.deep.equal({ limit: 50, used: 0 });
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Pause / resume. The action pair Semrush shipped for the weekly-workspace data
+  // migration. Every assertion below mirrors a branch probed live against prod on
+  // 2026-08-24 (workspace 0a496c87-…, project 997e17c3-… "CH-de"): pause is
+  // IDEMPOTENT, resume is not, both 404 an unknown project id, and the state shows
+  // up as `is_paused` on the project read-view.
+  // ───────────────────────────────────────────────────────────────────────
+
+  const PAUSE = '/v1/workspaces/{id}/projects/{project_id}/pause';
+  const RESUME = '/v1/workspaces/{id}/projects/{project_id}/resume';
+  const GHOST_PROJECT = '11111111-1111-1111-1111-111111111111';
+
+  /** Reads a project back through the v1 detail (`draft` is a required query param). */
+  const readProject = async (projectId) => {
+    const { data } = await client.GET('/v1/workspaces/{id}/projects/{project_id}', {
+      params: { path: { id: SEED_WORKSPACE, project_id: projectId }, query: { draft: 'true' } },
+    });
+    return data;
+  };
+
+  /** Creates a running project in the seed workspace and returns it. */
+  const givenProject = async (name) => {
+    const { data } = await client.POST(PROJECTS, {
+      params: { path: { id: SEED_WORKSPACE } }, body: { name, type: 'ai' },
+    });
+    return data;
+  };
+
+  it('a fresh project reads is_paused: false (live carries the key on every read)', async () => {
+    const created = await givenProject('Pausable');
+    expect(created).to.have.property('is_paused', false);
+    expect(await readProject(created.id)).to.have.property('is_paused', false);
+    const { data: list } = await client.GET(PROJECTS, {
+      params: { path: { id: SEED_WORKSPACE } },
+    });
+    expect(list.items.find((p) => p.id === created.id)).to.have.property('is_paused', false);
+  });
+
+  it('pauses a project: 202 empty ack, is_paused flips, nothing else moves', async () => {
+    const created = await givenProject('Pausable');
+    const { response } = await client.POST(PAUSE, {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+    });
+    expect(response.status).to.equal(202);
+    expect(await response.text()).to.equal('');
+
+    const paused = await readProject(created.id);
+    expect(paused).to.have.property('is_paused', true);
+    // Live leaves publish_status / is_draft / updated_at untouched by a pause.
+    expect(paused).to.deep.equal({ ...created, is_paused: true });
+  });
+
+  it('pause is IDEMPOTENT: a second pause acks 202 again, never 409', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    const { response: first } = await client.POST(PAUSE, { params: { path } });
+    expect(first.status).to.equal(202);
+    const { response: second } = await client.POST(PAUSE, { params: { path } });
+    expect(second.status).to.equal(202);
+    expect(await readProject(created.id)).to.have.property('is_paused', true);
+  });
+
+  it('resumes a paused project: 202 empty ack, is_paused flips back', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    await client.POST(PAUSE, { params: { path } });
+    const { response } = await client.POST(RESUME, { params: { path } });
+    expect(response.status).to.equal(202);
+    expect(await response.text()).to.equal('');
+    expect(await readProject(created.id)).to.have.property('is_paused', false);
+  });
+
+  it('resume is NOT idempotent: resuming a running project is 409 "project is not paused"', async () => {
+    const created = await givenProject('Pausable');
+    const { response, error } = await client.POST(RESUME, {
+      params: { path: { id: SEED_WORKSPACE, project_id: created.id } },
+    });
+    expect(response.status).to.equal(409);
+    expect(error.message).to.equal('project is not paused');
+  });
+
+  it('404s an unknown project id on both actions (live { message: "not found" })', async () => {
+    const path = { id: SEED_WORKSPACE, project_id: GHOST_PROJECT };
+    for (const action of [PAUSE, RESUME]) {
+      // eslint-disable-next-line no-await-in-loop
+      const { response, error } = await client.POST(action, { params: { path } });
+      expect(response.status).to.equal(404);
+      expect(error.message).to.equal('not found');
+    }
+  });
+
+  it('meters resume: an empty-units workspace 405s, and the project stays paused', async () => {
+    const created = await givenProject('Pausable');
+    const path = { id: SEED_WORKSPACE, project_id: created.id };
+    await client.POST(PAUSE, { params: { path } });
+    // The spec states resume re-consumes prompt limits under the publish quota check.
+    await setQuota(SEED_WORKSPACE, { prompts: 0 });
+    const { response: over } = await client.POST(RESUME, { params: { path } });
+    expect(over.status).to.equal(405);
+    expect(await readProject(created.id)).to.have.property('is_paused', true);
   });
 
   // ───────────────────────────────────────────────────────────────────────

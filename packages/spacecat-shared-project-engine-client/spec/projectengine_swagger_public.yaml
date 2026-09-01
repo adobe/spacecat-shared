@@ -4734,6 +4734,53 @@ paths:
       summary: Update SI issue rule for project
       tags:
       - SI
+  /v1/workspaces/{id}/projects/{project_id}/pause:
+    post:
+      consumes:
+      - application/json
+      description: 'pause an AIO project: prompt limits are released and data collection
+        stops while configuration and historical data are preserved'
+      operationId: projects-pause-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: pause a project
+      tags:
+      - Projects
   /v1/workspaces/{id}/projects/{project_id}/publish:
     post:
       consumes:
@@ -4774,6 +4821,53 @@ paths:
           schema:
             $ref: '#/definitions/http_server.BasicResponse'
       summary: publish a project
+      tags:
+      - Projects
+  /v1/workspaces/{id}/projects/{project_id}/resume:
+    post:
+      consumes:
+      - application/json
+      description: 'resume a paused AIO project: re-consumes prompt limits (subject
+        to the same quota check as publishing) and data collection continues'
+      operationId: projects-resume-project
+      parameters:
+      - description: JWT Token
+        in: header
+        name: Auth-Data-Jwt
+        required: true
+        type: string
+      - description: workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: project ID
+        in: path
+        name: project_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http_server.BasicResponse'
+      summary: resume a paused project
       tags:
       - Projects
   /v1/workspaces/{id}/projects/{project_id}/segments:

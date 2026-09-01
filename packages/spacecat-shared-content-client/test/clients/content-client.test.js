@@ -1235,4 +1235,240 @@ describe('ContentClient', () => {
       await expect(client.updateImageAltText(path, imageAltText)).to.be.rejectedWith('Failed to update image alt text for path /test-path');
     });
   });
+
+  describe('dual service account fallback (Google Drive)', () => {
+    let warnLog;
+
+    const fallbackEnv = () => ({
+      ...env,
+      GDRIVE_EMAIL_FALLBACK: 'fallback-email',
+      GDRIVE_PRIVATE_KEY_FALLBACK: 'fallback\\nprivate\\nkey',
+      GDRIVE_PRIVATE_KEY_ID_FALLBACK: 'fallback-key-id',
+      GDRIVE_CLIENT_ID_FALLBACK: 'fallback-client-id',
+      GDRIVE_PROJECT_ID_FALLBACK: 'fallback-project-id',
+      GDRIVE_X509_CLIENT_CERT_URL_FALLBACK: 'fallback-cert-url',
+    });
+
+    // a realistic Google Drive SDK error carries a structured HTTP status
+    const gdriveErr = (status, msg) => Object.assign(new Error(msg), { status });
+
+    // stubs the helix SDK so the primary client is built first, the fallback client second
+    const mockDualSAClient = async (primaryClient, fallbackClient) => {
+      const contentSDK = sandbox.stub();
+      contentSDK.onCall(0).returns(primaryClient);
+      contentSDK.onCall(1).returns(fallbackClient);
+      const Client = await esmock('../../src/clients/content-client.js', {
+        '@adobe/spacecat-helix-content-sdk': { createFrom: contentSDK },
+      });
+      return { Client, contentSDK };
+    };
+
+    beforeEach(() => {
+      warnLog = { info: sandbox.spy(), debug: sandbox.spy(), warn: sandbox.spy() };
+    });
+
+    it('createFrom builds a fallback config, overriding per-SA fields and un-escaping the key', async () => {
+      const client = await ContentClient.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+      expect(client.fallbackConfig).to.deep.equal({
+        auth_provider_x509_cert_url: 'https://auth-provider.uri', // constant, reused from primary
+        auth_uri: 'https://auth.uri', // constant, reused
+        client_email: 'fallback-email', // overridden
+        client_id: 'fallback-client-id', // overridden
+        client_x509_cert_url: 'fallback-cert-url', // overridden
+        private_key: 'fallback\nprivate\nkey', // overridden AND newline-unescaped
+        private_key_id: 'fallback-key-id', // overridden
+        project_id: 'fallback-project-id', // overridden
+        token_uri: 'https://some.token.uri', // constant, reused
+        type: 'drive-type', // constant, reused
+        universe_domain: 'drive-universe-domain', // constant, reused
+      });
+      expect(client.usingFallback).to.be.false;
+    });
+
+    it('does not build a fallback config when no fallback env is set', async () => {
+      const client = await ContentClient.createFrom(context, siteConfigGoogleDrive);
+      expect(client.fallbackConfig).to.be.null;
+    });
+
+    it('retries with the fallback SA when the primary hits a sharing error (by reason phrase)', async () => {
+      // no HTTP status on this one — exercises the reason-phrase branch of the predicate
+      const primaryClient = {
+        getDocument: sandbox.stub().rejects(new Error('The caller does not have permission')),
+      };
+      const fallbackDoc = { getMetadata: sandbox.stub().resolves(sampleMetadata) };
+      const fallbackClient = { getDocument: sandbox.stub().returns(fallbackDoc) };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+      const metadata = await client.getPageMetadata('/test-path');
+
+      expect(metadata).to.deep.equal(sampleMetadata);
+      expect(contentSDK.calledTwice).to.be.true; // primary then fallback SDK client built
+      expect(client.usingFallback).to.be.true;
+      expect(fallbackClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('keeps using the fallback SA for subsequent operations once it has switched', async () => {
+      const primaryClient = { getDocument: sandbox.stub().rejects(gdriveErr(404, 'File not found')) };
+      const fallbackClient = {
+        getDocument: sandbox.stub().returns({
+          getMetadata: sandbox.stub().resolves(sampleMetadata),
+        }),
+      };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      const first = await client.getPageMetadata('/test-path');
+      const second = await client.getPageMetadata('/second-path');
+
+      expect(first).to.deep.equal(sampleMetadata);
+      expect(second).to.deep.equal(sampleMetadata); // 2nd call served by the fallback SA
+      expect(contentSDK.calledTwice).to.be.true; // not rebuilt again for the 2nd call
+      expect(primaryClient.getDocument.calledOnce).to.be.true;
+      expect(fallbackClient.getDocument.calledTwice).to.be.true;
+      expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('applies a write (updateImageAltText) through the fallback SA after a primary sharing error', async () => {
+      const primaryClient = {
+        getDocument: sandbox.stub().rejects(gdriveErr(404, 'File not found')),
+      };
+      const fallbackDoc = {
+        getMetadata: sandbox.stub().resolves(new Map()),
+        updateImageAltText: sandbox.stub().resolves({ status: 200 }),
+      };
+      const fallbackClient = { getDocument: sandbox.stub().returns(fallbackDoc) };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      const imageAltText = [{ imageUrl: 'https://example.com/image.png', altText: 'desc' }];
+      await expect(client.updateImageAltText('/test-path', imageAltText)).to.be.fulfilled;
+
+      expect(contentSDK.calledTwice).to.be.true;
+      expect(client.usingFallback).to.be.true;
+      expect(fallbackClient.getDocument.calledOnceWith('/test-path')).to.be.true;
+      // the write itself ran on the fallback SA's document
+      expect(fallbackDoc.updateImageAltText.calledOnceWith(imageAltText)).to.be.true;
+      expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('applies a redirects write through the fallback SA (append runs once, on the fallback)', async () => {
+      // the initial getRedirects() read fails on the primary, so the fallback is used for the
+      // whole operation; the append (write) must run exactly once, on the fallback file.
+      const primaryClient = { getRedirects: sandbox.stub().rejects(gdriveErr(404, 'File not found')) };
+      const fallbackRedirectsFile = {
+        get: sandbox.stub().resolves([]),
+        append: sandbox.stub().resolves({ status: 200 }),
+      };
+      const fallbackClient = { getRedirects: sandbox.stub().returns(fallbackRedirectsFile) };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      await client.updateRedirects([{ from: '/old', to: '/new' }]);
+
+      expect(contentSDK.calledTwice).to.be.true; // primary read failed, rebuilt on fallback
+      expect(client.usingFallback).to.be.true;
+      expect(primaryClient.getRedirects.calledOnce).to.be.true;
+      expect(fallbackClient.getRedirects.calledOnce).to.be.true;
+      expect(fallbackRedirectsFile.append.calledOnce).to.be.true; // written once, never replayed
+      expect(warnLog.warn.calledOnce).to.be.true;
+    });
+
+    it('does not retry or replay a write-phase failure (append error propagates)', async () => {
+      // the read (getRedirects) succeeds on the primary; only the append (write) fails. Because the
+      // write runs OUTSIDE the fallback wrapper, it is neither retried nor replayed on a second SA.
+      const redirectsFile = {
+        get: sandbox.stub().resolves([]),
+        append: sandbox.stub().rejects(gdriveErr(403, 'does not have permission')),
+      };
+      const primaryClient = { getRedirects: sandbox.stub().returns(redirectsFile) };
+      const fallbackClient = { getRedirects: sandbox.stub() };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      await expect(client.updateRedirects([{ from: '/old', to: '/new' }])).to.be.rejected;
+      expect(redirectsFile.append.calledOnce).to.be.true; // exactly one append attempt
+      expect(contentSDK.calledOnce).to.be.true; // fallback client never built
+      expect(fallbackClient.getRedirects.notCalled).to.be.true;
+      expect(warnLog.warn.notCalled).to.be.true;
+    });
+
+    it('reuses the primary value for any per-SA field whose _FALLBACK is blank', async () => {
+      const env2 = { ...fallbackEnv(), GDRIVE_PROJECT_ID_FALLBACK: '' }; // empty = not hasText
+      const client = await ContentClient.createFrom(
+        { env: env2, log: warnLog },
+        siteConfigGoogleDrive,
+      );
+      // blank _FALLBACK is skipped, so project_id falls back to the primary value
+      expect(client.fallbackConfig.project_id).to.equal('drive-project-id');
+      expect(client.fallbackConfig.client_email).to.equal('fallback-email');
+    });
+
+    it('does not retry on a non-sharing error even when a fallback is configured', async () => {
+      const primaryClient = {
+        getDocument: sandbox.stub().returns({
+          getMetadata: sandbox.stub().rejects(new Error('some random parsing error')),
+        }),
+      };
+      const fallbackClient = { getDocument: sandbox.stub() };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      await expect(client.getPageMetadata('/test-path')).to.be.rejectedWith('some random parsing error');
+      expect(contentSDK.calledOnce).to.be.true; // fallback client never built
+      expect(fallbackClient.getDocument.notCalled).to.be.true;
+      expect(warnLog.warn.notCalled).to.be.true;
+    });
+
+    it('propagates the error when both the primary and fallback SAs fail', async () => {
+      const primaryClient = { getDocument: sandbox.stub().rejects(gdriveErr(403, 'Access denied (primary)')) };
+      const fallbackClient = { getDocument: sandbox.stub().rejects(gdriveErr(403, 'Access denied (fallback)')) };
+      const { Client } = await mockDualSAClient(primaryClient, fallbackClient);
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigGoogleDrive,
+      );
+
+      await expect(client.getPageMetadata('/test-path')).to.be.rejectedWith('Access denied (fallback)');
+      expect(client.usingFallback).to.be.true;
+    });
+
+    it('does not attempt the gdrive fallback for OneDrive sites', async () => {
+      const primaryClient = { getDocument: sandbox.stub().rejects(gdriveErr(403, 'Access denied')) };
+      const fallbackClient = { getDocument: sandbox.stub() };
+      const { Client, contentSDK } = await mockDualSAClient(primaryClient, fallbackClient);
+      // OneDrive site with a stray GDRIVE fallback present in env — must be ignored
+      const client = await Client.createFrom(
+        { env: fallbackEnv(), log: warnLog },
+        siteConfigOneDrive,
+      );
+
+      await expect(client.getPageMetadata('/test-path')).to.be.rejectedWith('Access denied');
+      expect(client.fallbackConfig).to.be.null; // fallback only built for drive.google
+      expect(contentSDK.calledOnce).to.be.true;
+      expect(warnLog.warn.notCalled).to.be.true;
+    });
+  });
 });

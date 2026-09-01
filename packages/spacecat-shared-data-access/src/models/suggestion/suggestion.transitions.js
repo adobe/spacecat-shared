@@ -64,8 +64,10 @@ export const SUGGESTION_TRANSITIONS = {
   [S.SKIPPED]: [S.NEW, S.OUTDATED],
   // re-detection reopens an outdated suggestion.
   [S.OUTDATED]: [S.NEW],
-  // near-terminal: allow reopen to NEW to correct an incorrect classification (sandsinh review).
-  [S.REJECTED]: [S.NEW],
+  // near-terminal: reopen to NEW to correct a misclassification (sandsinh review), or a
+  // re-audit outdates a rejected suggestion once its issue is no longer detected
+  // (SITES-47286 warn finding: REJECTED -> OUTDATED, ~247x/25d, legitimate re-audit flow).
+  [S.REJECTED]: [S.NEW, S.OUTDATED],
 };
 
 /**

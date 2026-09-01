@@ -33,6 +33,14 @@ const schema = new SchemaBuilder(FixEntity, FixEntityCollection)
     type: 'string',
     validate: (value) => !value || isIsoDate(value),
   })
+  // SITES-47997/48823 — the DEPLOYED moment (written/confirmed to author),
+  // distinct from executedAt (apply executed) and publishedAt (live). Maps to
+  // the fix_entities.deployed_at column; stamped by mystique on the -> DEPLOYED
+  // transition. Optional (null for rows created before the column).
+  .addAttribute('deployedAt', {
+    type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
   .addAttribute('publishedAt', {
     type: 'string',
     validate: (value) => !value || isIsoDate(value),

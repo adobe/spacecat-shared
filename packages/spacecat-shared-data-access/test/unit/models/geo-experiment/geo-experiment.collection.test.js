@@ -150,4 +150,52 @@ describe('GeoExperimentCollection', () => {
       expect(result).to.deep.equal([]);
     });
   });
+
+  describe('allStuckImpactMeasurementChecks', () => {
+    it('calls all() with a where filter for status COMPLETED and phase IMPACT_MEASUREMENT_STARTED', async () => {
+      const mockExps = [{ getId: () => 'exp-1' }];
+      instance.all = stub().resolves(mockExps);
+
+      const result = await instance.allStuckImpactMeasurementChecks();
+
+      expect(result).to.equal(mockExps);
+      expect(instance.all).to.have.been.calledOnce;
+
+      const [sortKeys, options] = instance.all.getCall(0).args;
+      expect(sortKeys).to.deep.equal({});
+      expect(options.where).to.be.a('function');
+    });
+
+    it('where function produces an AND-combined eq expression on status and phase', async () => {
+      instance.all = stub().resolves([]);
+
+      await instance.allStuckImpactMeasurementChecks();
+
+      const [, options] = instance.all.getCall(0).args;
+      const attrs = new Proxy({}, { get: (_, prop) => prop });
+      const op = { eq: (field, value) => `${field}=${value}` };
+
+      const expr = options.where(attrs, op);
+      expect(expr).to.equal('status=COMPLETED AND phase=impact_measurement_started');
+    });
+
+    it('passes through caller options merged with where', async () => {
+      instance.all = stub().resolves([]);
+
+      await instance.allStuckImpactMeasurementChecks({ limit: 5, order: 'asc' });
+
+      const [, options] = instance.all.getCall(0).args;
+      expect(options.limit).to.equal(5);
+      expect(options.order).to.equal('asc');
+      expect(options.where).to.be.a('function');
+    });
+
+    it('returns empty array when no stuck experiments exist', async () => {
+      instance.all = stub().resolves([]);
+
+      const result = await instance.allStuckImpactMeasurementChecks();
+
+      expect(result).to.deep.equal([]);
+    });
+  });
 });

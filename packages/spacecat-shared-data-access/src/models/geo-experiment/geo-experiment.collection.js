@@ -60,6 +60,30 @@ class GeoExperimentCollection extends BaseCollection {
       },
     );
   }
+
+  /**
+   * Gets all geo experiments left at status COMPLETED / phase IMPACT_MEASUREMENT_STARTED — a
+   * combination that only arises when a manual impact-measurement re-trigger leaves the
+   * experiment COMPLETED (so it stays outside allActive()) but nobody has followed up with a
+   * check of the re-submitted Mystique task. Used by the experimentation engine's bounded
+   * stuck-check sweep to find and resolve abandoned re-triggers (see
+   * llmo-experimentation-engine/docs/decisions/007-manual-impact-measurement-check-completed-
+   * status.md). Same cost/indexing characteristic as allActive() above — a filtered query over
+   * all GeoExperiment records, not a dedicated secondary index.
+   *
+   * @param {object} [options={}] - Query options (limit, cursor, order).
+   * @returns {Promise<GeoExperiment[]>} Array of stuck experiments.
+   */
+  async allStuckImpactMeasurementChecks(options = {}) {
+    return this.all(
+      {},
+      {
+        ...options,
+        where: (attrs, op) => `${op.eq(attrs.status, GeoExperiment.STATUSES.COMPLETED)} AND ${
+          op.eq(attrs.phase, GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED)}`,
+      },
+    );
+  }
 }
 
 export default GeoExperimentCollection;

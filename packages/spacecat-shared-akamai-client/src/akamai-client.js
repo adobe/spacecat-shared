@@ -204,7 +204,7 @@ export default class AkamaiClient {
   }
 
   async #request(method, path, {
-    params, body, headers, timeout,
+    params, body, headers, timeout, allow404,
   } = {}) {
     const bodyStr = body ? JSON.stringify(body) : undefined;
 
@@ -270,6 +270,11 @@ export default class AkamaiClient {
     }
 
     if (!res.ok) {
+      // allow404: caller treats a 404 as "absent" rather than an error (e.g. a bounded
+      // active-version lookup for a network the property was never activated on).
+      if (allow404 && res.status === 404) {
+        return undefined;
+      }
       const text = await res.text().catch(() => '');
       throw new Error(`PAPI ${method} ${path} -> ${res.status}: ${text.slice(0, 1000)}`);
     }
@@ -411,6 +416,30 @@ export default class AkamaiClient {
       throw new Error(`PAPI returned no versions for property ${propertyId}`);
     }
     return version;
+  }
+
+  /**
+   * The version currently active on a given network, via PAPI's bounded
+   * `/versions/latest?activatedOn=NETWORK` lookup. Unlike scanning listActivations, this is
+   * independent of the property's activation-history size. Returns undefined when the property
+   * has never been activated on that network (PAPI 404, or an empty result).
+   *
+   * @param {string} propertyId
+   * @param {string} contractId
+   * @param {string} groupId
+   * @param {'STAGING'|'PRODUCTION'} network
+   * @returns {Promise<object|undefined>} the version item, or undefined if never activated
+   */
+  async getLatestVersionActivatedOn(propertyId, contractId, groupId, network) {
+    requirePropertyRef(propertyId, contractId, groupId);
+    const activatedOn = assertNetwork(network);
+    const id = encodePathSegment(propertyId);
+    this.log.info(`Fetching latest ${activatedOn}-active version for property ${propertyId}`);
+    const data = await this.#request('GET', `/papi/v1/properties/${id}/versions/latest`, {
+      params: { contractId, groupId, activatedOn },
+      allow404: true,
+    });
+    return data?.versions?.items?.[0];
   }
 
   /**

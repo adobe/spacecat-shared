@@ -957,6 +957,44 @@ export default class DrsClient {
   }
 
   /**
+   * Deletes a DRS schedule, stopping its recurring job. Idempotent: a 404 from DRS (schedule
+   * already deleted, expired, or never existed) is treated as a soft-success rather than thrown,
+   * so a retried cancel (or a cancel racing the schedule's own natural expiry) never fails.
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} scheduleId - DRS schedule ID
+   * @returns {Promise<object|null>} DRS response body, or null for an empty/non-JSON body
+   */
+  async deleteSchedule(siteId, scheduleId) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(scheduleId)) {
+      throw new Error('scheduleId is required');
+    }
+
+    this.log.info('Deleting DRS schedule', { siteId, scheduleId });
+    const { ok, status, body: payload } = await this.#requestRaw(
+      'DELETE',
+      `/schedules/${siteId}/${scheduleId}`,
+    );
+
+    if (!ok && status !== 404) {
+      const errorText = typeof payload === 'string' ? payload : JSON.stringify(payload);
+      const error = new Error(`DRS DELETE /schedules failed: ${status} - ${errorText}`);
+      error.status = status;
+      throw error;
+    }
+
+    if (status === 404) {
+      this.log.info('DRS schedule already deleted or not found', { siteId, scheduleId });
+    } else {
+      this.log.info('DRS schedule deleted', { siteId, scheduleId });
+    }
+
+    return typeof payload === 'object' ? payload : null;
+  }
+
+  /**
    * Gets job status and details.
    * @param {string} jobId - DRS job ID
    * @returns {Promise<object>} Job details

@@ -141,6 +141,15 @@ Retrieves job status and details.
 const job = await client.getJob('job-uuid');
 ```
 
+#### deleteSchedule(siteId, scheduleId)
+
+Deletes a DRS schedule, stopping its recurring job. Idempotent — a 404 from DRS (schedule already
+deleted, expired, or never existed) is treated as success rather than throwing.
+
+```js
+await client.deleteSchedule('site-uuid', 'schedule-uuid');
+```
+
 #### submitJob(params)
 
 Submits a generic job to DRS. Used internally by the higher-level methods, but available for custom job types.

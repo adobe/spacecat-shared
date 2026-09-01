@@ -180,6 +180,11 @@ PostgREST queries against them — use the shared helpers, re-exported from the 
   of an entity's URLs. Upserts the canonical set, then prunes stale rows (paginated read-back +
   chunked deletes). An empty `urls` array clears the entity; a non-empty array that canonicalizes
   to nothing throws. Requires the **`postgrest_writer`** role (`POSTGREST_API_KEY` set).
+- `syncUrlIndexMany(postgrestClient, { table, siteId, entityType, entries })` batches `syncUrlIndex`
+  over many entities in one table (`entries: [{ entityId, urls }]`, all under one `siteId` and
+  `entityType`): one bulk upsert, one batched read-back, per-entity prune. Collapses the per-entity
+  write fan-out (use it instead of `Promise.all(map(syncUrlIndex))`). Returns `Map<entityId, count>`;
+  same semantics and caveats as `syncUrlIndex`.
 - `lookupEntityIdsByUrl(postgrestClient, { table, siteId, urls })` — site-scoped reverse lookup
   returning `{ entity_id, entity_type, url }`, chunked over `.in()`.
 - `URL_INDEX_TABLES` — the `opportunity_urls` / `suggestion_urls` allow-list.

@@ -116,13 +116,20 @@ This is the same `@supabase/postgrest-js` `PostgrestClient` instance used intern
 For the source-URL index tables (`opportunity_urls`, `suggestion_urls`), do not query the client directly — use the shared `syncUrlIndex` / `lookupEntityIdsByUrl` helpers (exported from the package root) so the write and read share one canonicalization and one storage path:
 
 ```js
-import { syncUrlIndex, lookupEntityIdsByUrl } from '@adobe/spacecat-shared-data-access';
+import {
+  syncUrlIndex, syncUrlIndexMany, lookupEntityIdsByUrl,
+} from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
 
 // writer (needs the postgrest_writer role): full-replace an entity's source URLs
 await syncUrlIndex(postgrestClient, {
   table: 'opportunity_urls', siteId, entityId, entityType, urls,
+});
+
+// writer, batched: sync many entities in one table without the per-entity fan-out
+await syncUrlIndexMany(postgrestClient, {
+  table: 'suggestion_urls', siteId, entityType, entries: [{ entityId, urls }],
 });
 
 // reader: which opportunities/suggestions are backed by these URLs?

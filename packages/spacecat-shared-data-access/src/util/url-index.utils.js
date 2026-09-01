@@ -50,6 +50,15 @@ function assertId(value, name) {
   }
 }
 
+/** Only an empty/omitted `urls` clears; a non-empty input reduced to nothing throws. */
+function assertClearable(urls, table, entityId) {
+  const explicitClear = urls === undefined || urls === null
+    || (Array.isArray(urls) && urls.length === 0);
+  if (!explicitClear) {
+    throw new ValidationError(`urls contained no valid entries; pass [] to clear ${table} for entity ${entityId}`);
+  }
+}
+
 /** Canonicalize, drop non-strings/empties, and de-duplicate (first-seen order). */
 function toCanonicalSet(urls) {
   const list = Array.isArray(urls) ? urls : [];
@@ -117,8 +126,11 @@ async function deleteUrls(postgrestClient, table, siteId, entityId, urlsToDelete
   }
 }
 
-/** Upsert the given rows for one entity, chunked so the POST body stays under the payload limit. */
-async function upsertUrls(postgrestClient, table, entityId, rows) {
+/**
+ * Upsert rows into one table, chunked so the POST body stays under the payload limit. The rows may
+ * span many entities; pass `{ entityId }` on the single-entity path so a failure names the entity.
+ */
+async function upsertRows(postgrestClient, table, rows, { entityId } = {}) {
   for (let i = 0; i < rows.length; i += URL_CHUNK_SIZE) {
     const chunk = rows.slice(i, i + URL_CHUNK_SIZE);
     // eslint-disable-next-line no-await-in-loop
@@ -126,7 +138,62 @@ async function upsertUrls(postgrestClient, table, entityId, rows) {
       .from(table)
       .upsert(chunk, { onConflict: 'entity_id,url' });
     if (error) {
-      throw new DataAccessError(`Failed to sync ${table} for entity ${entityId}`, { table, entityId }, error);
+      const scope = entityId ? ` for entity ${entityId}` : '';
+      const details = entityId ? { table, entityId } : { table };
+      throw new DataAccessError(`Failed to sync ${table}${scope}`, details, error);
+    }
+  }
+}
+
+/**
+ * Read the indexed URLs for many entities at once, grouped by entity. Chunked by entity id (URI
+ * limit) and range-paginated within a chunk (max-rows), so neither cap can truncate the set.
+ */
+async function fetchIndexedUrlsForEntities(postgrestClient, table, siteId, entityIds) {
+  const byEntity = new Map(entityIds.map((id) => [id, []]));
+  for (let i = 0; i < entityIds.length; i += URL_CHUNK_SIZE) {
+    const idChunk = entityIds.slice(i, i + URL_CHUNK_SIZE);
+    let offset = 0;
+    let keepGoing = true;
+    while (keepGoing) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await postgrestClient
+        .from(table)
+        .select('entity_id, url')
+        .eq('site_id', siteId)
+        .in('entity_id', idChunk)
+        .order('entity_id', { ascending: true })
+        .order('url', { ascending: true }) // stable page boundary
+        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      if (error) {
+        throw new DataAccessError(`Failed to read ${table} for site ${siteId}`, { table, siteId }, error);
+      }
+      if (!data || data.length === 0) {
+        keepGoing = false;
+      } else {
+        for (const row of data) {
+          byEntity.get(row.entity_id).push(row.url);
+        }
+        offset += DEFAULT_PAGE_SIZE;
+        keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+      }
+    }
+  }
+  return byEntity;
+}
+
+/** Clear all rows for many entities in one table, chunked (URI limit on the entity-id `.in`). */
+async function clearEntities(postgrestClient, table, siteId, entityIds) {
+  for (let i = 0; i < entityIds.length; i += URL_CHUNK_SIZE) {
+    const idChunk = entityIds.slice(i, i + URL_CHUNK_SIZE);
+    // eslint-disable-next-line no-await-in-loop
+    const { error } = await postgrestClient
+      .from(table)
+      .delete()
+      .eq('site_id', siteId)
+      .in('entity_id', idChunk);
+    if (error) {
+      throw new DataAccessError(`Failed to clear ${table}`, { table, siteId }, error);
     }
   }
 }
@@ -160,13 +227,7 @@ export async function syncUrlIndex(postgrestClient, {
   const canonicalUrls = toCanonicalSet(urls);
 
   if (canonicalUrls.length === 0) {
-    // Only an explicit empty/omitted `urls` clears; a non-empty input reduced to nothing is a
-    // caller bug, not an intent to wipe the index.
-    const explicitClear = urls === undefined || urls === null
-      || (Array.isArray(urls) && urls.length === 0);
-    if (!explicitClear) {
-      throw new ValidationError(`urls contained no valid entries; pass [] to clear ${table} for entity ${entityId}`);
-    }
+    assertClearable(urls, table, entityId);
     const { error: clearError } = await postgrestClient
       .from(table)
       .delete()
@@ -185,7 +246,7 @@ export async function syncUrlIndex(postgrestClient, {
     url,
   }));
 
-  await upsertUrls(postgrestClient, table, entityId, rows);
+  await upsertRows(postgrestClient, table, rows, { entityId });
 
   const keep = new Set(canonicalUrls);
   const existing = await fetchIndexedUrls(postgrestClient, table, siteId, entityId);
@@ -195,6 +256,95 @@ export async function syncUrlIndex(postgrestClient, {
   }
 
   return rows.length;
+}
+
+/**
+ * Batched `syncUrlIndex` for many entities in ONE table: collapses the per-entity fan-out into a
+ * single bulk upsert, one batched read-back, and per-entity stale prune (plus a batched clear for
+ * empty entries). Same upsert-then-prune and explicit-clear semantics as `syncUrlIndex`, applied
+ * per entry. All entries share `siteId` and `entityType`. The single-writer and `postgrest_writer`
+ * caveats are identical to `syncUrlIndex`.
+ *
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
+ * @param {object} params
+ * @param {string} params.table - `opportunity_urls` | `suggestion_urls`
+ * @param {string} params.siteId - the site all entries belong to
+ * @param {string} params.entityType - the type stamped on every row
+ * @param {Array<{entityId: string, urls: string[]}>} params.entries
+ * @returns {Promise<Map<string, number>>} entityId -> size of its indexed set after sync
+ */
+export async function syncUrlIndexMany(postgrestClient, {
+  table, siteId, entityType, entries,
+} = {}) {
+  assertClient(postgrestClient);
+  assertTable(table);
+  assertId(siteId, 'siteId');
+  assertId(entityType, 'entityType');
+  if (!Array.isArray(entries)) {
+    throw new ValidationError('entries must be an array');
+  }
+
+  const counts = new Map();
+  if (entries.length === 0) {
+    return counts;
+  }
+
+  const toUpsert = [];
+  const toClear = [];
+  const seen = new Set();
+  for (const entry of entries) {
+    const { entityId, urls } = entry ?? {};
+    assertId(entityId, 'entityId');
+    if (seen.has(entityId)) {
+      throw new ValidationError(`Duplicate entityId in entries: ${entityId}`);
+    }
+    seen.add(entityId);
+
+    const canonical = toCanonicalSet(urls);
+    if (canonical.length === 0) {
+      assertClearable(urls, table, entityId);
+      toClear.push(entityId);
+      counts.set(entityId, 0);
+    } else {
+      toUpsert.push({ entityId, canonical });
+      counts.set(entityId, canonical.length);
+    }
+  }
+
+  if (toUpsert.length > 0) {
+    const rows = toUpsert.flatMap(
+      ({ entityId, canonical }) => canonical.map((url) => ({
+        site_id: siteId,
+        entity_id: entityId,
+        entity_type: entityType,
+        url,
+      })),
+    );
+    await upsertRows(postgrestClient, table, rows);
+
+    // Upsert-then-prune, batched: one read-back for all upserted entities, then delete each
+    // entity's stale rows (rare in steady state, since a stable url set has none).
+    const existingByEntity = await fetchIndexedUrlsForEntities(
+      postgrestClient,
+      table,
+      siteId,
+      toUpsert.map((e) => e.entityId),
+    );
+    for (const { entityId, canonical } of toUpsert) {
+      const keep = new Set(canonical);
+      const stale = existingByEntity.get(entityId).filter((url) => !keep.has(url));
+      if (stale.length > 0) {
+        // eslint-disable-next-line no-await-in-loop
+        await deleteUrls(postgrestClient, table, siteId, entityId, stale);
+      }
+    }
+  }
+
+  if (toClear.length > 0) {
+    await clearEntities(postgrestClient, table, siteId, toClear);
+  }
+
+  return counts;
 }
 
 /**

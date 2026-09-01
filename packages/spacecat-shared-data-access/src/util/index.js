@@ -31,6 +31,7 @@ export {
 export {
   URL_INDEX_TABLES,
   syncUrlIndex,
+  syncUrlIndexMany,
   lookupEntityIdsByUrl,
 } from './url-index.utils.js';
 

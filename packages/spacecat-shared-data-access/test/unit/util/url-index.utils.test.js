@@ -18,6 +18,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../src/util/postgrest.utils.js';
 import {
   URL_INDEX_TABLES,
   syncUrlIndex,
+  syncUrlIndexMany,
   lookupEntityIdsByUrl,
 } from '../../../src/util/url-index.utils.js';
 
@@ -35,7 +36,7 @@ const ENTITY_TYPE = 'opportunity-type';
  */
 function makeClient(config = {}) {
   const calls = {
-    upsert: [], clear: [], prune: [], readBack: [], lookup: [],
+    upsert: [], clear: [], clearMany: [], prune: [], readBack: [], lookup: [],
   };
   const queues = {
     readPages: Array.isArray(config.readPages) ? [...config.readPages] : null,
@@ -52,6 +53,12 @@ function makeClient(config = {}) {
       return Promise.resolve(config.upsertResult ?? noError);
     }
     if (state.op === 'delete' && state.inFilter) {
+      if (state.inFilter.column === 'entity_id') {
+        calls.clearMany.push({
+          table: state.table, eqs: state.eqs, entityIds: state.inFilter.values,
+        });
+        return Promise.resolve(config.clearManyResult ?? noError);
+      }
       calls.prune.push({ table: state.table, eqs: state.eqs, urls: state.inFilter.values });
       return Promise.resolve(shiftOr(queues.prune, config.pruneResult ?? noError));
     }
@@ -61,7 +68,12 @@ function makeClient(config = {}) {
     }
     if (state.range) {
       calls.readBack.push({
-        table: state.table, eqs: state.eqs, orders: state.orders, range: state.range,
+        table: state.table,
+        columns: state.columns,
+        eqs: state.eqs,
+        entityIds: state.inFilter?.values,
+        orders: state.orders,
+        range: state.range,
       });
       return Promise.resolve(shiftOr(queues.readPages, config.readBackResult ?? noRows));
     }
@@ -191,7 +203,11 @@ describe('url-index.utils', () => {
     });
 
     it('upserts the canonical set (de-duplicated, non-string/empty dropped), scoped by site', async () => {
-      const { client, calls } = makeClient();
+      // Read-back returns exactly the upserted set, so the no-prune assertion below is meaningful
+      // (nothing is stale) rather than vacuously true against an empty index.
+      const { client, calls } = makeClient({
+        readPages: [{ data: rowsFor(['example.com/a', 'example.com/b']), error: null }],
+      });
       const written = await syncUrlIndex(client, {
         table: TABLE,
         siteId: SITE_ID,
@@ -225,6 +241,7 @@ describe('url-index.utils', () => {
       ]);
       // ordered so `range()` pagination has a stable boundary
       expect(calls.readBack[0].orders).to.deep.equal([{ column: 'url', options: { ascending: true } }]);
+      // read-back matched the keep set, so nothing is stale -> no prune (the index was non-empty)
       expect(calls.prune).to.have.length(0);
     });
 
@@ -393,6 +410,325 @@ describe('url-index.utils', () => {
       }));
       expect(err).to.be.instanceOf(DataAccessError);
       expect(err.message).to.equal(`Failed to prune ${TABLE} for entity ${ENTITY_ID}`);
+      expect(err.cause).to.equal(cause);
+    });
+  });
+
+  describe('syncUrlIndexMany', () => {
+    const entry = (entityId, urls) => ({ entityId, urls });
+    const base = { table: TABLE, siteId: SITE_ID, entityType: ENTITY_TYPE };
+
+    it('rejects a missing client', async () => {
+      await expect(syncUrlIndexMany(undefined, { ...base, entries: [] }))
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
+    });
+
+    it('rejects an unknown table', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, { ...base, table: 'nope', entries: [] }))
+        .to.be.rejectedWith(ValidationError, 'Invalid url-index table: nope');
+    });
+
+    it('rejects a missing siteId', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, { table: TABLE, entityType: ENTITY_TYPE, entries: [] }))
+        .to.be.rejectedWith(ValidationError, 'siteId is required');
+    });
+
+    it('rejects a missing entityType', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, { table: TABLE, siteId: SITE_ID, entries: [] }))
+        .to.be.rejectedWith(ValidationError, 'entityType is required');
+    });
+
+    it('rejects non-array entries', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, { ...base, entries: 'nope' }))
+        .to.be.rejectedWith(ValidationError, 'entries must be an array');
+    });
+
+    it('is a no-op for empty entries', async () => {
+      const { client, calls } = makeClient();
+      const result = await syncUrlIndexMany(client, { ...base, entries: [] });
+      expect(result).to.be.instanceOf(Map);
+      expect(result.size).to.equal(0);
+      expect(calls.upsert).to.have.length(0);
+      expect(calls.clearMany).to.have.length(0);
+    });
+
+    it('rejects an entry with a missing entityId', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, {
+        ...base, entries: [{ urls: ['https://x.com'] }],
+      })).to.be.rejectedWith(ValidationError, 'entityId is required');
+    });
+
+    it('rejects a null entry', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, {
+        ...base, entries: [null],
+      })).to.be.rejectedWith(ValidationError, 'entityId is required');
+    });
+
+    it('rejects duplicate entityId', async () => {
+      const { client } = makeClient();
+      await expect(syncUrlIndexMany(client, {
+        ...base,
+        entries: [entry('e1', ['https://x.com/a']), entry('e1', ['https://x.com/b'])],
+      })).to.be.rejectedWith(ValidationError, 'Duplicate entityId in entries: e1');
+    });
+
+    it('throws (does not clear) when an entry has a non-empty urls with no valid entries', async () => {
+      const { client, calls } = makeClient();
+      await expect(syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', [null, 42, ''])],
+      })).to.be.rejectedWith(ValidationError, 'urls contained no valid entries');
+      expect(calls.clearMany).to.have.length(0);
+      expect(calls.upsert).to.have.length(0);
+    });
+
+    it('bulk-upserts across entities in one call, stamping the shared type, and returns per-entity counts', async () => {
+      const { client, calls } = makeClient({
+        readPages: [{
+          data: [
+            { entity_id: 'e1', url: 'example.com/a' },
+            { entity_id: 'e2', url: 'example.com/b' },
+          ],
+          error: null,
+        }],
+      });
+      const result = await syncUrlIndexMany(client, {
+        table: TABLE,
+        siteId: SITE_ID,
+        entityType: 'shared-type',
+        entries: [
+          entry('e1', ['https://example.com/a']),
+          entry('e2', ['https://www.example.com/b/']),
+        ],
+      });
+
+      expect([...result.entries()]).to.deep.equal([['e1', 1], ['e2', 1]]);
+      expect(calls.upsert).to.have.length(1);
+      expect(calls.upsert[0].options).to.deep.equal({ onConflict: 'entity_id,url' });
+      expect(calls.upsert[0].rows).to.deep.equal([
+        {
+          site_id: SITE_ID, entity_id: 'e1', entity_type: 'shared-type', url: 'example.com/a',
+        },
+        {
+          site_id: SITE_ID, entity_id: 'e2', entity_type: 'shared-type', url: 'example.com/b',
+        },
+      ]);
+      expect(calls.readBack).to.have.length(1);
+      expect(calls.readBack[0].entityIds).to.deep.equal(['e1', 'e2']);
+      expect(calls.readBack[0].eqs).to.deep.equal([{ column: 'site_id', value: SITE_ID }]);
+      expect(calls.readBack[0].orders).to.deep.equal([
+        { column: 'entity_id', options: { ascending: true } },
+        { column: 'url', options: { ascending: true } },
+      ]);
+      expect(calls.prune).to.have.length(0);
+      expect(calls.clearMany).to.have.length(0);
+    });
+
+    it('de-duplicates urls within an entry', async () => {
+      const { client, calls } = makeClient();
+      const result = await syncUrlIndexMany(client, {
+        ...base,
+        entries: [entry('e1', ['https://example.com/a', 'https://www.example.com/a/'])],
+      });
+      expect(result.get('e1')).to.equal(1);
+      expect(calls.upsert[0].rows).to.deep.equal([
+        {
+          site_id: SITE_ID, entity_id: 'e1', entity_type: ENTITY_TYPE, url: 'example.com/a',
+        },
+      ]);
+    });
+
+    it('chunks the bulk upsert at 50 rows', async () => {
+      const urls = Array.from({ length: 51 }, (_, i) => `https://example.com/p${i}`);
+      const { client, calls } = makeClient();
+      await syncUrlIndexMany(client, { ...base, entries: [entry('e1', urls)] });
+      expect(calls.upsert).to.have.length(2);
+      expect(calls.upsert[0].rows).to.have.length(50);
+      expect(calls.upsert[1].rows).to.have.length(1);
+    });
+
+    it('prunes stale rows per entity after the batched read-back', async () => {
+      const { client, calls } = makeClient({
+        readPages: [{
+          data: [
+            { entity_id: 'e1', url: 'example.com/a' },
+            { entity_id: 'e1', url: 'example.com/old' },
+            { entity_id: 'e2', url: 'example.com/b' },
+          ],
+          error: null,
+        }],
+      });
+      await syncUrlIndexMany(client, {
+        ...base,
+        entries: [entry('e1', ['https://example.com/a']), entry('e2', ['https://example.com/b'])],
+      });
+      expect(calls.prune).to.have.length(1);
+      expect(calls.prune[0].eqs).to.deep.equal([
+        { column: 'site_id', value: SITE_ID },
+        { column: 'entity_id', value: 'e1' },
+      ]);
+      expect(calls.prune[0].urls).to.deep.equal(['example.com/old']);
+    });
+
+    it('chunks the read-back by entity id and detects stale rows across chunks', async () => {
+      const entries = Array.from({ length: 51 }, (_, i) => entry(`e${i}`, [`https://example.com/p${i}`]));
+      // Read-back rows span BOTH id-chunks: e0/e1 in the first (50 ids), e50 in the second (1 id),
+      // with a stale extra on e0 and e50. This exercises accumulation into `byEntity` across chunks
+      // and a prune that must be grouped to the right entity in the second chunk.
+      const { client, calls } = makeClient({
+        readPages: [
+          {
+            data: [
+              { entity_id: 'e0', url: 'example.com/p0' },
+              { entity_id: 'e0', url: 'example.com/old0' }, // stale
+              { entity_id: 'e1', url: 'example.com/p1' },
+            ],
+            error: null,
+          },
+          {
+            data: [
+              { entity_id: 'e50', url: 'example.com/p50' },
+              { entity_id: 'e50', url: 'example.com/old50' }, // stale
+            ],
+            error: null,
+          },
+        ],
+      });
+      await syncUrlIndexMany(client, { ...base, entries });
+
+      expect(calls.readBack).to.have.length(2);
+      expect(calls.readBack[0].entityIds).to.have.length(50);
+      expect(calls.readBack[1].entityIds).to.have.length(1);
+      // one prune per entity with a stale row, grouped correctly across the two id-chunks
+      expect(calls.prune).to.have.length(2);
+      expect(calls.prune[0].eqs).to.deep.equal([
+        { column: 'site_id', value: SITE_ID },
+        { column: 'entity_id', value: 'e0' },
+      ]);
+      expect(calls.prune[0].urls).to.deep.equal(['example.com/old0']);
+      // e50 lives in the SECOND id-chunk -> proves accumulation isn't reset/misgrouped per chunk
+      expect(calls.prune[1].eqs).to.deep.equal([
+        { column: 'site_id', value: SITE_ID },
+        { column: 'entity_id', value: 'e50' },
+      ]);
+      expect(calls.prune[1].urls).to.deep.equal(['example.com/old50']);
+    });
+
+    it('paginates the read-back within a chunk until a short page', async () => {
+      const page1 = Array.from(
+        { length: DEFAULT_PAGE_SIZE },
+        () => ({ entity_id: 'e1', url: 'example.com/keep' }),
+      );
+      const { client, calls } = makeClient({
+        readPages: [
+          { data: page1, error: null },
+          { data: [{ entity_id: 'e1', url: 'example.com/stale' }], error: null },
+        ],
+      });
+      await syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', ['https://example.com/keep'])],
+      });
+      expect(calls.readBack).to.have.length(2);
+      expect(calls.readBack[0].range).to.deep.equal({ from: 0, to: DEFAULT_PAGE_SIZE - 1 });
+      expect(calls.readBack[1].range).to.deep.equal({
+        from: DEFAULT_PAGE_SIZE, to: (2 * DEFAULT_PAGE_SIZE) - 1,
+      });
+      expect(calls.prune[0].urls).to.deep.equal(['example.com/stale']);
+    });
+
+    it('clears entries with empty/omitted/null urls in one batched delete', async () => {
+      const { client, calls } = makeClient();
+      const result = await syncUrlIndexMany(client, {
+        ...base,
+        entries: [entry('e1', []), entry('e2', undefined), entry('e3', null)],
+      });
+      expect([...result.entries()]).to.deep.equal([['e1', 0], ['e2', 0], ['e3', 0]]);
+      expect(calls.upsert).to.have.length(0);
+      expect(calls.readBack).to.have.length(0);
+      expect(calls.clearMany).to.have.length(1);
+      expect(calls.clearMany[0].entityIds).to.deep.equal(['e1', 'e2', 'e3']);
+      expect(calls.clearMany[0].eqs).to.deep.equal([{ column: 'site_id', value: SITE_ID }]);
+    });
+
+    it('handles a mix of upsert and clear entries', async () => {
+      const { client, calls } = makeClient();
+      const result = await syncUrlIndexMany(client, {
+        ...base,
+        entries: [entry('e1', ['https://x.com/a']), entry('e2', [])],
+      });
+      expect([...result.entries()]).to.deep.equal([['e1', 1], ['e2', 0]]);
+      expect(calls.upsert).to.have.length(1);
+      expect(calls.readBack[0].entityIds).to.deep.equal(['e1']);
+      expect(calls.clearMany[0].entityIds).to.deep.equal(['e2']);
+    });
+
+    it('chunks the batched clear at 50 entity ids', async () => {
+      const entries = Array.from({ length: 51 }, (_, i) => entry(`e${i}`, []));
+      const { client, calls } = makeClient();
+      await syncUrlIndexMany(client, { ...base, entries });
+      expect(calls.clearMany).to.have.length(2);
+      expect(calls.clearMany[0].entityIds).to.have.length(50);
+      expect(calls.clearMany[1].entityIds).to.have.length(1);
+    });
+
+    it('supports the suggestion_urls table', async () => {
+      const { client, calls } = makeClient();
+      await syncUrlIndexMany(client, {
+        ...base, table: 'suggestion_urls', entries: [entry('e1', ['https://x.com/a'])],
+      });
+      expect(calls.upsert[0].table).to.equal('suggestion_urls');
+      expect(calls.readBack[0].table).to.equal('suggestion_urls');
+    });
+
+    it('throws DataAccessError when the bulk upsert fails', async () => {
+      const cause = { message: 'ups boom' };
+      const { client } = makeClient({ upsertResult: { error: cause } });
+      const err = await catchError(syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', ['https://x.com/a'])],
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to sync ${TABLE}`);
+      expect(err.cause).to.equal(cause);
+    });
+
+    it('throws DataAccessError when the read-back fails', async () => {
+      const cause = { message: 'read boom' };
+      const { client } = makeClient({ readPages: [{ data: null, error: cause }] });
+      const err = await catchError(syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', ['https://x.com/a'])],
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to read ${TABLE} for site ${SITE_ID}`);
+      expect(err.cause).to.equal(cause);
+    });
+
+    it('throws DataAccessError when a prune delete fails', async () => {
+      const cause = { message: 'prune boom' };
+      const { client } = makeClient({
+        readPages: [{ data: [{ entity_id: 'e1', url: 'example.com/old' }], error: null }],
+        pruneResults: [{ error: cause }],
+      });
+      const err = await catchError(syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', ['https://example.com/a'])],
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to prune ${TABLE} for entity e1`);
+      expect(err.cause).to.equal(cause);
+    });
+
+    it('throws DataAccessError when the batched clear fails', async () => {
+      const cause = { message: 'clear boom' };
+      const { client } = makeClient({ clearManyResult: { error: cause } });
+      const err = await catchError(syncUrlIndexMany(client, {
+        ...base, entries: [entry('e1', [])],
+      }));
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to clear ${TABLE}`);
       expect(err.cause).to.equal(cause);
     });
   });

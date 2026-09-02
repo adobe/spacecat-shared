@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.25.0...@adobe/spacecat-shared-data-access-v4.26.0) (2026-09-02)
+
+### Features
+
+* **data-access:** add GeoExperiment.PHASES.ROUTING_VALIDATION ([#1907](https://github.com/adobe/spacecat-shared/issues/1907)) ([16dab2b](https://github.com/adobe/spacecat-shared/commit/16dab2b91f7cbee7bf727674e4b6b74a6a3ff80e))
+
 ## [@adobe/spacecat-shared-data-access-v4.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.24.0...@adobe/spacecat-shared-data-access-v4.25.0) (2026-09-02)
 
 ### Features

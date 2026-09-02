@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v4.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.24.0...@adobe/spacecat-shared-data-access-v4.25.0) (2026-09-02)
+
+### Features
+
+* add url-index writer/reader (syncUrlIndex, lookupEntityIdsByUrl) ([#1896](https://github.com/adobe/spacecat-shared/issues/1896)) ([69a18c0](https://github.com/adobe/spacecat-shared/commit/69a18c0876b99915f07be84809909380fdbe077a))
+
+## [@adobe/spacecat-shared-data-access-v4.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.23.0...@adobe/spacecat-shared-data-access-v4.24.0) (2026-09-02)
+
+### Features
+
+* **data-access:** add GeoExperiment.allStuckImpactMeasurementChecks query ([#1905](https://github.com/adobe/spacecat-shared/issues/1905)) ([db0596b](https://github.com/adobe/spacecat-shared/commit/db0596b20807ae1ae6e5a9388eb68a62d8ab280b))
+
 ## [@adobe/spacecat-shared-data-access-v4.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.22.1...@adobe/spacecat-shared-data-access-v4.23.0) (2026-08-28)
 
 ### Features

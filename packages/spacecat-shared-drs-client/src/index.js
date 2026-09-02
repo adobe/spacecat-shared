@@ -12,7 +12,9 @@
 
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns';
-import { hasText, instrumentAWSClient, tracingFetch as fetch } from '@adobe/spacecat-shared-utils';
+import {
+  hasText, isNonEmptyObject, instrumentAWSClient, tracingFetch as fetch,
+} from '@adobe/spacecat-shared-utils';
 import { randomUUID } from 'crypto';
 
 const EXTERNAL_SPACECAT_PROVIDER_ID = 'external_spacecat';
@@ -954,6 +956,56 @@ export default class DrsClient {
 
     this.log.info('Getting DRS schedule status', { siteId, scheduleId, includeJobs });
     return this.#request('GET', path);
+  }
+
+  /**
+   * Field-level update of a DRS schedule (PATCH); only keys in `updates` change.
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} scheduleId - DRS schedule ID
+   * @param {object} updates - non-empty; e.g. `{ enabled: false }`
+   * @param {object} [options={}]
+   * @param {number} [options.timeout] - fetch timeout in ms
+   * @returns {Promise<object>} updated schedule payload
+   */
+  async updateSchedule(siteId, scheduleId, updates, { timeout } = {}) {
+    if (!hasText(siteId)) {
+      throw new Error('siteId is required');
+    }
+    if (!hasText(scheduleId)) {
+      throw new Error('scheduleId is required');
+    }
+    if (!isNonEmptyObject(updates)) {
+      throw new Error('updates must be a non-empty object');
+    }
+
+    if (updates.job_config) {
+      assertNoImsOrgId(updates.job_config);
+      const serialized = JSON.stringify(updates.job_config);
+      if (Buffer.byteLength(serialized, 'utf8') > MAX_JOB_CONFIG_BYTES) {
+        throw new Error(`job_config exceeds ${MAX_JOB_CONFIG_BYTES} bytes`);
+      }
+    }
+
+    this.log.info('Updating DRS schedule', { siteId, scheduleId, updatedFields: Object.keys(updates) });
+    return this.#request(
+      'PATCH',
+      `/schedules/${siteId}/${scheduleId}`,
+      updates,
+      timeout ? { timeout } : {},
+    );
+  }
+
+  /**
+   * Disables a schedule (sets `enabled: false`); wraps {@link DrsClient#updateSchedule}.
+   * @param {string} siteId - SpaceCat site ID
+   * @param {string} scheduleId - DRS schedule ID
+   * @param {object} [options={}]
+   * @param {number} [options.timeout] - fetch timeout in ms
+   * @returns {Promise<object>} updated schedule payload
+   */
+  async disableSchedule(siteId, scheduleId, options = {}) {
+    this.log.info('Disabling DRS schedule', { siteId, scheduleId });
+    return this.updateSchedule(siteId, scheduleId, { enabled: false }, options);
   }
 
   /**

@@ -456,6 +456,57 @@ describe('SuggestionModel', () => {
             expect(() => Suggestion.validateData(suggestionData, 'cwv')).to.not.throw();
           });
         });
+
+        describe('V2 (Blackboard) projection contract', () => {
+          // The mystique V2 (Blackboard) projector emits the legacy cwv /
+          // CODE_CHANGE shape PLUS an additive `data.blackboard` provenance
+          // namespace (and top-level patch fields). The read contract must
+          // accept it unchanged — the CWV data schema is `.unknown(true)` — so a
+          // projected row renders through the existing UI adapter and the ASO UI
+          // Deploy gate can key off `data.blackboard` to keep it download-only.
+          // If this ever throws, the projector -> UI contract is broken (e.g.
+          // `.unknown(true)` was dropped from the CWV data schema).
+          it('accepts a projected row with the additive data.blackboard provenance namespace', () => {
+            const projectedData = {
+              type: 'url',
+              url: 'https://www.mauriceblackburn.com.au',
+              metrics: [],
+              isCodeChangeAvailable: true,
+              jiraLink: null,
+              issues: [
+                {
+                  id: 'd6b9a3c2-5e1a-4f7c-9d2e-1b3c4d5e6f7a',
+                  type: 'lcp',
+                  title: 'Resize the hero image',
+                  value: '### Resize the hero image\n\n- **Metric**: LCP',
+                  patchContent: 'diff --git a/ui.frontend/hero.js b/ui.frontend/hero.js\n+ ...',
+                  isCodeChangeAvailable: true,
+                  status: 'NEW',
+                },
+              ],
+              patchContent: 'diff --git a/ui.frontend/hero.js b/ui.frontend/hero.js\n+ ...',
+              blackboard: {
+                schemaVersion: 1,
+                anchorFactKey: 'a_cwv_autofix_verified',
+                patches: [
+                  {
+                    issueId: 'd6b9a3c2-5e1a-4f7c-9d2e-1b3c4d5e6f7a',
+                    metric: 'lcp',
+                    hypothesisIndex: 0,
+                    patchId: 'lcp:resize-hero',
+                    autofixFactId: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+                    autofixFactVersion: 3,
+                    sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                    labImprovementPct: 23.8,
+                    ideaFingerprint: 'lcp:resize-hero:800',
+                    semanticType: 'lcp-image',
+                  },
+                ],
+              },
+            };
+            expect(() => Suggestion.validateData(projectedData, 'cwv')).to.not.throw();
+          });
+        });
       });
 
       describe('COLOR_CONTRAST opportunity type', () => {

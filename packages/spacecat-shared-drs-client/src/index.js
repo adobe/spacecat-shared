@@ -978,7 +978,15 @@ export default class DrsClient {
       throw new Error('updates must be a non-empty object');
     }
 
-    this.log.info('Updating DRS schedule', { siteId, scheduleId, updates });
+    if (updates.job_config) {
+      assertNoImsOrgId(updates.job_config);
+      const serialized = JSON.stringify(updates.job_config);
+      if (Buffer.byteLength(serialized, 'utf8') > MAX_JOB_CONFIG_BYTES) {
+        throw new Error(`job_config exceeds ${MAX_JOB_CONFIG_BYTES} bytes`);
+      }
+    }
+
+    this.log.info('Updating DRS schedule', { siteId, scheduleId, updatedFields: Object.keys(updates) });
     return this.#request(
       'PATCH',
       `/schedules/${siteId}/${scheduleId}`,
@@ -996,6 +1004,7 @@ export default class DrsClient {
    * @returns {Promise<object>} updated schedule payload
    */
   async disableSchedule(siteId, scheduleId, options = {}) {
+    this.log.info('Disabling DRS schedule', { siteId, scheduleId });
     return this.updateSchedule(siteId, scheduleId, { enabled: false }, options);
   }
 

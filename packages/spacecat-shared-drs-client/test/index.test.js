@@ -1869,11 +1869,46 @@ describe('DrsClient', () => {
 
     it('throws on a non-2xx response', async () => {
       const scope = nock(DRS_API_URL)
-        .patch('/schedules/site-1/sched-1')
+        .patch('/schedules/site-1/sched-1', { enabled: false })
         .reply(404, { message: 'not found' });
 
       await expect(client.updateSchedule('site-1', 'sched-1', { enabled: false }))
         .to.be.rejectedWith(/DRS PATCH \/schedules\/site-1\/sched-1 failed: 404/);
+      scope.done();
+    });
+
+    it('PATCHes a valid job_config through the guards', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { job_config: { priority: 'HIGH' } })
+        .reply(200, { schedule: { schedule_id: 'sched-1' } });
+
+      const result = await client.updateSchedule('site-1', 'sched-1', { job_config: { priority: 'HIGH' } });
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+
+    it('rejects a caller-supplied imsOrgId inside job_config', async () => {
+      await expect(client.updateSchedule('site-1', 'sched-1', { job_config: { ims_org_id: 'attacker-org' } }))
+        .to.be.rejectedWith(/imsOrgId/i);
+    });
+
+    it('rejects an oversized job_config', async () => {
+      const huge = { job_config: { blob: 'x'.repeat(100 * 1024 + 1) } };
+      await expect(client.updateSchedule('site-1', 'sched-1', huge))
+        .to.be.rejectedWith(/job_config exceeds/);
+    });
+
+    it('does not log the update values, only the field names', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { enabled: false })
+        .reply(200, { schedule: { schedule_id: 'sched-1' } });
+
+      await client.updateSchedule('site-1', 'sched-1', { enabled: false });
+
+      const logged = log.info.getCalls().find((c) => c.args[0] === 'Updating DRS schedule');
+      expect(logged.args[1]).to.deep.equal({
+        siteId: 'site-1', scheduleId: 'sched-1', updatedFields: ['enabled'],
+      });
       scope.done();
     });
 
@@ -1923,6 +1958,18 @@ describe('DrsClient', () => {
       const result = await client.disableSchedule('site-1', 'sched-1', { timeout: 5000 });
       expect(result.schedule.schedule_id).to.equal('sched-1');
       scope.done();
+    });
+
+    // Delegates validation to updateSchedule — document the contract so a future refactor
+    // that bypasses updateSchedule doesn't silently drop these checks.
+    it('throws when siteId is missing', async () => {
+      await expect(client.disableSchedule('', 'sched-1'))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when scheduleId is missing', async () => {
+      await expect(client.disableSchedule('site-1', ''))
+        .to.be.rejectedWith('scheduleId is required');
     });
   });
 

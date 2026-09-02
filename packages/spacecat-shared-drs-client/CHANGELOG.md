@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.14.0...@adobe/spacecat-shared-drs-client-v1.15.0) (2026-09-02)
+
+
+### Features
+
+* added update and disable DRS schedule methods ([#1908](https://github.com/adobe/spacecat-shared/issues/1908)) ([7509c29](https://github.com/adobe/spacecat-shared/commit/7509c2961dca4cad58bb2a3ca10875b46accfd24))
+
 # [@adobe/spacecat-shared-drs-client-v1.14.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.13.0...@adobe/spacecat-shared-drs-client-v1.14.0) (2026-07-16)
 
 

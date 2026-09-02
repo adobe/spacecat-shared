@@ -1831,6 +1831,101 @@ describe('DrsClient', () => {
     });
   });
 
+  describe('updateSchedule', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('PATCHes the schedule with the provided updates', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { enabled: false })
+        .reply(200, {
+          message: 'Schedule updated successfully',
+          schedule_id: 'sched-1',
+          schedule: { schedule_id: 'sched-1', enabled: 'false' },
+        });
+
+      const result = await client.updateSchedule('site-1', 'sched-1', { enabled: false });
+      expect(result.schedule.enabled).to.equal('false');
+      scope.done();
+    });
+
+    it('passes a fetch timeout through when provided', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { enabled: false })
+        .reply(200, { schedule: { schedule_id: 'sched-1' } });
+
+      const result = await client.updateSchedule(
+        'site-1',
+        'sched-1',
+        { enabled: false },
+        { timeout: 5000 },
+      );
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+
+    it('throws on a non-2xx response', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1')
+        .reply(404, { message: 'not found' });
+
+      await expect(client.updateSchedule('site-1', 'sched-1', { enabled: false }))
+        .to.be.rejectedWith(/DRS PATCH \/schedules\/site-1\/sched-1 failed: 404/);
+      scope.done();
+    });
+
+    it('throws when siteId is missing', async () => {
+      await expect(client.updateSchedule('', 'sched-1', { enabled: false }))
+        .to.be.rejectedWith('siteId is required');
+    });
+
+    it('throws when scheduleId is missing', async () => {
+      await expect(client.updateSchedule('site-1', '', { enabled: false }))
+        .to.be.rejectedWith('scheduleId is required');
+    });
+
+    it('throws when updates is not an object', async () => {
+      await expect(client.updateSchedule('site-1', 'sched-1', undefined))
+        .to.be.rejectedWith('updates must be a non-empty object');
+    });
+
+    it('throws when updates is an empty object', async () => {
+      await expect(client.updateSchedule('site-1', 'sched-1', {}))
+        .to.be.rejectedWith('updates must be a non-empty object');
+    });
+  });
+
+  describe('disableSchedule', () => {
+    let client;
+
+    beforeEach(() => {
+      client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+    });
+
+    it('PATCHes the schedule with enabled:false', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { enabled: false })
+        .reply(200, { schedule: { schedule_id: 'sched-1', enabled: 'false' } });
+
+      const result = await client.disableSchedule('site-1', 'sched-1');
+      expect(result.schedule.enabled).to.equal('false');
+      scope.done();
+    });
+
+    it('forwards options (timeout) to updateSchedule', async () => {
+      const scope = nock(DRS_API_URL)
+        .patch('/schedules/site-1/sched-1', { enabled: false })
+        .reply(200, { schedule: { schedule_id: 'sched-1' } });
+
+      const result = await client.disableSchedule('site-1', 'sched-1', { timeout: 5000 });
+      expect(result.schedule.schedule_id).to.equal('sched-1');
+      scope.done();
+    });
+  });
+
   describe('isS3Configured', () => {
     it('returns false when s3Bucket is missing', () => {
       const client = new DrsClient({

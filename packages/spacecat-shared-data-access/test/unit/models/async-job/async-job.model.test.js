@@ -38,6 +38,7 @@ describe('AsyncJobModel', () => {
       startedAt: '2025-01-01T00:00:00.000Z',
       endedAt: '',
       recordExpiresAt: 1767225600,
+      expiresAt: '2025-01-08T00:00:00.000Z',
       createdAt: '2025-01-01T00:00:00.000Z',
       updatedAt: '2025-01-01T00:00:00.000Z',
     };
@@ -145,6 +146,12 @@ describe('AsyncJobModel', () => {
   describe('recordExpiresAt', () => {
     it('gets recordExpiresAt', () => {
       expect(instance.getRecordExpiresAt()).to.equal(1767225600);
+    });
+  });
+
+  describe('expiresAt', () => {
+    it('gets expiresAt', () => {
+      expect(instance.getExpiresAt()).to.equal('2025-01-08T00:00:00.000Z');
     });
   });
 

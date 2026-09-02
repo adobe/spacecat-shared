@@ -79,6 +79,7 @@ describe('GeoExperimentModel', () => {
       SCHEDULE_CONFIG: 'scheduleConfig',
       IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
       VALIDATION: 'validation',
+      ROUTING_VALIDATION: 'routingValidation',
     });
   });
 

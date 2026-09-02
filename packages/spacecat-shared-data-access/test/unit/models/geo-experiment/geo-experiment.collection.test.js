@@ -173,10 +173,19 @@ describe('GeoExperimentCollection', () => {
 
       const [, options] = instance.all.getCall(0).args;
       const attrs = new Proxy({}, { get: (_, prop) => prop });
-      const op = { eq: (field, value) => `${field}=${value}` };
+      const op = {
+        eq: (field, value) => ({ type: 'eq', field, value }),
+        and: (...conditions) => ({ type: 'and', conditions }),
+      };
 
       const expr = options.where(attrs, op);
-      expect(expr).to.equal('status=COMPLETED AND phase=impact_measurement_started');
+      expect(expr).to.deep.equal({
+        type: 'and',
+        conditions: [
+          { type: 'eq', field: 'status', value: 'COMPLETED' },
+          { type: 'eq', field: 'phase', value: 'impact_measurement_started' },
+        ],
+      });
     });
 
     it('passes through caller options merged with where', async () => {
@@ -187,6 +196,17 @@ describe('GeoExperimentCollection', () => {
       const [, options] = instance.all.getCall(0).args;
       expect(options.limit).to.equal(5);
       expect(options.order).to.equal('asc');
+      expect(options.where).to.be.a('function');
+    });
+
+    it('overrides a caller-supplied where option with its own filter', async () => {
+      instance.all = stub().resolves([]);
+      const callerWhere = () => ({ type: 'eq', field: 'foo', value: 'bar' });
+
+      await instance.allStuckImpactMeasurementChecks({ where: callerWhere });
+
+      const [, options] = instance.all.getCall(0).args;
+      expect(options.where).to.not.equal(callerWhere);
       expect(options.where).to.be.a('function');
     });
 

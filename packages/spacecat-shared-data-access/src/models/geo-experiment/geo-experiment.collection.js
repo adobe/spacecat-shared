@@ -79,8 +79,10 @@ class GeoExperimentCollection extends BaseCollection {
       {},
       {
         ...options,
-        where: (attrs, op) => `${op.eq(attrs.status, GeoExperiment.STATUSES.COMPLETED)} AND ${
-          op.eq(attrs.phase, GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED)}`,
+        where: (attrs, op) => op.and(
+          op.eq(attrs.status, GeoExperiment.STATUSES.COMPLETED),
+          op.eq(attrs.phase, GeoExperiment.PHASES.IMPACT_MEASUREMENT_STARTED),
+        ),
       },
     );
   }

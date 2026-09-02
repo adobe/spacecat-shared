@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.20.0...@adobe/spacecat-shared-project-engine-client-v1.21.0) (2026-08-31)
+
+### Features
+
+* **project-engine-client:** expose deleteProjectTags, correct prompt_id spec drift ([#1903](https://github.com/adobe/spacecat-shared/issues/1903)) ([0afe7ba](https://github.com/adobe/spacecat-shared/commit/0afe7ba4e76ff237533f77935589329593401e83)), closes [adobe/serenity-docs#427](https://github.com/adobe/serenity-docs/issues/427)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.20.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.19.0...@adobe/spacecat-shared-project-engine-client-v1.20.0) (2026-08-27)
 
 ### Features

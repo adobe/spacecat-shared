@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-scrape-client-v2.7.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.7.1...@adobe/spacecat-shared-scrape-client-v2.7.2) (2026-09-01)
+
+### Bug Fixes
+
+* **scrape-client:** bump @mysticat/data-service-types to v1.53.0 for PRE_ONBOARD tier ([#1904](https://github.com/adobe/spacecat-shared/issues/1904)) ([500ae53](https://github.com/adobe/spacecat-shared/commit/500ae53f871a311d195d3eddad7aca1de2fadd11))
+
 ## [@adobe/spacecat-shared-scrape-client-v2.7.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-scrape-client-v2.7.0...@adobe/spacecat-shared-scrape-client-v2.7.1) (2026-05-29)
 
 ### Bug Fixes

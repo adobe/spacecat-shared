@@ -30,6 +30,7 @@ class GeoExperiment extends BaseModel {
 
   static PHASES = {
     INITIATED: 'initiated',
+    ROUTING_VALIDATION: 'routing_validation',
     PROMPT_GENERATION_STARTED: 'prompt_generation_started',
     PROMPT_GENERATION_COMPLETED: 'prompt_generation_completed',
     PRE_ANALYSIS_STARTED: 'pre_analysis_started',
@@ -56,12 +57,18 @@ class GeoExperiment extends BaseModel {
    * Well-known keys used within a GeoExperiment's metadata object.
    * Centralised here so all consumers reference the same key names.
    *
-   * @type {{ SCHEDULE_CONFIG: string, IMPACT_MEASUREMENT_TASK_ID: string }}
+   * @type {{
+   *   SCHEDULE_CONFIG: string,
+   *   IMPACT_MEASUREMENT_TASK_ID: string,
+   *   VALIDATION: string,
+   *   ROUTING_VALIDATION: string,
+   * }}
    */
   static METADATA_KEYS = {
     SCHEDULE_CONFIG: 'scheduleConfig',
     IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
     VALIDATION: 'validation',
+    ROUTING_VALIDATION: 'routingValidation',
   };
 
   /**

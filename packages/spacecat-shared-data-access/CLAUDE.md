@@ -28,6 +28,7 @@ Lambda/ECS service
 | `src/models/base/base.collection.js` | Base collection class (findById, all, query, count) |
 | `src/models/base/entity.registry.js` | Registers all entity collections |
 | `src/util/postgrest.utils.js` | camelCase<->snake_case field mapping, query builders, cursor pagination |
+| `src/util/url-index.utils.js` | Source-URL index (`opportunity_urls`/`suggestion_urls`) writer/reader helpers |
 | `src/models/index.js` | Barrel export of all entity models |
 
 ## Entity Structure
@@ -186,8 +187,10 @@ PostgREST queries against them — use the shared helpers, re-exported from the 
   write fan-out (use it instead of `Promise.all(map(syncUrlIndex))`). Returns `Map<entityId, count>`;
   same semantics and caveats as `syncUrlIndex`.
 - `lookupEntityIdsByUrl(postgrestClient, { table, siteId, urls })` — site-scoped reverse lookup
-  returning `{ entity_id, entity_type, url }`, chunked over `.in()`.
+  returning `{ entity_id, entity_type, url }`, chunked over `.in()` and range-paginated per chunk
+  (so a hot URL backing many entities is never silently truncated).
 - `URL_INDEX_TABLES` — the `opportunity_urls` / `suggestion_urls` allow-list.
+- `URL_CHUNK_SIZE` — the per-request batch size (50); exported for consumers that batch manually.
 
 Contracts to preserve:
 

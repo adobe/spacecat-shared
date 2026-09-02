@@ -28,9 +28,10 @@ export const URL_INDEX_TABLES = Object.freeze(['opportunity_urls', 'suggestion_u
 
 /**
  * Chunk every multi-row op so neither the query string (`in(...)` reads/deletes, HTTP 414) nor
- * the request body (upserts, HTTP 413 against the ~1MB ALB limit) exceeds its limit.
+ * the request body (upserts, HTTP 413 against the ~1MB ALB limit) exceeds its limit. Exported so
+ * consumers doing their own batching align with the helpers instead of hardcoding the size.
  */
-const URL_CHUNK_SIZE = 50;
+export const URL_CHUNK_SIZE = 50;
 
 function assertClient(postgrestClient) {
   if (!postgrestClient || typeof postgrestClient.from !== 'function') {
@@ -369,21 +370,32 @@ export async function lookupEntityIdsByUrl(postgrestClient, { table, siteId, url
   }
 
   const results = [];
-  // Chunked by URL count only; a chunk is not range-paginated, so it assumes each URL backs few
-  // entities and a chunk's matches stay under the PostgREST `max-rows` cap (true for this index).
+  // Chunked by URL count (URI limit) AND range-paginated within each chunk (max-rows), so neither
+  // cap can silently truncate the matches — a hot URL backing many entities is still fully fetched.
   for (let i = 0; i < canonicalUrls.length; i += URL_CHUNK_SIZE) {
     const chunk = canonicalUrls.slice(i, i + URL_CHUNK_SIZE);
-    // eslint-disable-next-line no-await-in-loop
-    const { data, error } = await postgrestClient
-      .from(table)
-      .select('entity_id, entity_type, url')
-      .eq('site_id', siteId)
-      .in('url', chunk);
-    if (error) {
-      throw new DataAccessError(`Failed to look up ${table} for site ${siteId}`, { table, siteId }, error);
-    }
-    if (Array.isArray(data)) {
-      results.push(...data);
+    let offset = 0;
+    let keepGoing = true;
+    while (keepGoing) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await postgrestClient
+        .from(table)
+        .select('entity_id, entity_type, url')
+        .eq('site_id', siteId)
+        .in('url', chunk)
+        .order('url', { ascending: true })
+        .order('entity_id', { ascending: true }) // (url, entity_id) is unique -> stable page boundary
+        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      if (error) {
+        throw new DataAccessError(`Failed to look up ${table} for site ${siteId}`, { table, siteId }, error);
+      }
+      if (!data || data.length === 0) {
+        keepGoing = false;
+      } else {
+        results.push(...data);
+        offset += DEFAULT_PAGE_SIZE;
+        keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+      }
     }
   }
   return results;

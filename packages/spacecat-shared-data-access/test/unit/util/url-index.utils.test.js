@@ -17,6 +17,7 @@ import { DataAccessError, ValidationError } from '../../../src/errors/index.js';
 import { DEFAULT_PAGE_SIZE } from '../../../src/util/postgrest.utils.js';
 import {
   URL_INDEX_TABLES,
+  URL_CHUNK_SIZE,
   syncUrlIndex,
   syncUrlIndexMany,
   lookupEntityIdsByUrl,
@@ -66,21 +67,28 @@ function makeClient(config = {}) {
       calls.clear.push({ table: state.table, eqs: state.eqs });
       return Promise.resolve(config.clearResult ?? noError);
     }
-    if (state.range) {
-      calls.readBack.push({
+    // Reads (selects). Both read-back and lookup now range-paginate, so classify by the filter
+    // column (`in('url')` is the reverse lookup) rather than by the presence of `range`.
+    if (state.inFilter?.column === 'url') {
+      calls.lookup.push({
         table: state.table,
         columns: state.columns,
         eqs: state.eqs,
-        entityIds: state.inFilter?.values,
+        urls: state.inFilter.values,
         orders: state.orders,
         range: state.range,
       });
-      return Promise.resolve(shiftOr(queues.readPages, config.readBackResult ?? noRows));
+      return Promise.resolve(shiftOr(queues.lookup, config.lookupResult ?? noRows));
     }
-    calls.lookup.push({
-      table: state.table, columns: state.columns, eqs: state.eqs, urls: state.inFilter?.values,
+    calls.readBack.push({
+      table: state.table,
+      columns: state.columns,
+      eqs: state.eqs,
+      entityIds: state.inFilter?.values,
+      orders: state.orders,
+      range: state.range,
     });
-    return Promise.resolve(shiftOr(queues.lookup, config.lookupResult ?? noRows));
+    return Promise.resolve(shiftOr(queues.readPages, config.readBackResult ?? noRows));
   }
 
   function makeBuilder(state) {
@@ -136,6 +144,10 @@ const catchError = async (promise) => {
 describe('url-index.utils', () => {
   it('exposes the allowed tables', () => {
     expect(URL_INDEX_TABLES).to.deep.equal(['opportunity_urls', 'suggestion_urls']);
+  });
+
+  it('exposes the chunk size for consumers that batch manually', () => {
+    expect(URL_CHUNK_SIZE).to.be.a('number').that.is.greaterThan(0);
   });
 
   describe('syncUrlIndex', () => {
@@ -770,6 +782,11 @@ describe('url-index.utils', () => {
       expect(calls.lookup[0].columns).to.equal('entity_id, entity_type, url');
       expect(calls.lookup[0].eqs).to.deep.equal([{ column: 'site_id', value: SITE_ID }]);
       expect(calls.lookup[0].urls).to.deep.equal(['example.com/a']);
+      // (url, entity_id) is unique, so this ordering gives `range()` a stable page boundary
+      expect(calls.lookup[0].orders).to.deep.equal([
+        { column: 'url', options: { ascending: true } },
+        { column: 'entity_id', options: { ascending: true } },
+      ]);
     });
 
     it('tolerates a null data payload', async () => {
@@ -804,6 +821,31 @@ describe('url-index.utils', () => {
       await lookupEntityIdsByUrl(client, { table: TABLE, siteId: SITE_ID, urls });
       expect(calls.lookup).to.have.length(1);
       expect(calls.lookup[0].urls).to.have.length(50);
+    });
+
+    it('range-paginates within a chunk so a hot URL is not silently truncated', async () => {
+      // One URL backed by more entities than the max-rows cap: a full page then a short page.
+      const fullPage = Array.from(
+        { length: DEFAULT_PAGE_SIZE },
+        (_, i) => ({ entity_id: `e${i}`, entity_type: ENTITY_TYPE, url: 'example.com/a' }),
+      );
+      const { client, calls } = makeClient({
+        lookupResults: [
+          { data: fullPage, error: null }, // full page -> fetch another
+          { data: [{ entity_id: 'last', entity_type: ENTITY_TYPE, url: 'example.com/a' }], error: null }, // short -> stop
+        ],
+      });
+      const rows = await lookupEntityIdsByUrl(client, {
+        table: TABLE, siteId: SITE_ID, urls: ['https://example.com/a'],
+      });
+      expect(calls.lookup).to.have.length(2);
+      expect(calls.lookup[0].range).to.deep.equal({ from: 0, to: DEFAULT_PAGE_SIZE - 1 });
+      expect(calls.lookup[1].range).to.deep.equal({
+        from: DEFAULT_PAGE_SIZE, to: (2 * DEFAULT_PAGE_SIZE) - 1,
+      });
+      // all matches returned across pages, not truncated at the cap
+      expect(rows).to.have.length(DEFAULT_PAGE_SIZE + 1);
+      expect(rows[rows.length - 1].entity_id).to.equal('last');
     });
 
     it('throws DataAccessError with cause when a lookup query fails', async () => {

@@ -30,6 +30,7 @@ export {
 
 export {
   URL_INDEX_TABLES,
+  URL_CHUNK_SIZE,
   syncUrlIndex,
   syncUrlIndexMany,
   lookupEntityIdsByUrl,

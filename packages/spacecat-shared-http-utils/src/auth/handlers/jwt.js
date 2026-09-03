@@ -16,7 +16,7 @@ import AbstractHandler from './abstract.js';
 import AuthInfo from '../auth-info.js';
 import { getBearerToken } from './utils/bearer.js';
 import { getCookieValue } from './utils/cookie.js';
-import { loadPublicKey, validateToken } from './utils/token.js';
+import { createPublicKeyLoader, validateToken } from './utils/token.js';
 
 export { ISSUER } from './utils/token.js';
 
@@ -56,13 +56,12 @@ function isAllowedPayloadScopeName(name) {
 export default class JwtHandler extends AbstractHandler {
   constructor(log) {
     super('jwt', log);
+    this.loadPublicKey = createPublicKeyLoader();
   }
 
   async checkAuth(request, context) {
     try {
-      if (!this.authPublicKey) {
-        this.authPublicKey = await loadPublicKey(context);
-      }
+      const authPublicKey = await this.loadPublicKey(context);
 
       const token = getBearerToken(context) ?? getCookieValue(context, 'sessionToken');
 
@@ -71,7 +70,7 @@ export default class JwtHandler extends AbstractHandler {
         return null;
       }
 
-      const payload = await validateToken(token, this.authPublicKey);
+      const payload = await validateToken(token, authPublicKey);
       payload.tenants = payload.tenants || [];
 
       if (payload.is_admin && payload.is_read_only_admin) {

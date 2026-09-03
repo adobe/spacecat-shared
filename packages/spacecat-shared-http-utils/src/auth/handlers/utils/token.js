@@ -31,6 +31,29 @@ export async function loadPublicKey(context) {
 }
 
 /**
+ * Creates a request-context-aware public-key loader.
+ *
+ * Lambda execution environments are shared by every alias that targets the same
+ * numeric version. Reload the imported key when an alias-specific secret override
+ * changes AUTH_PUBLIC_KEY_B64 instead of retaining the first alias's key forever.
+ *
+ * @returns {Function} loader that returns the current imported public key.
+ */
+export function createPublicKeyLoader() {
+  let encodedKey;
+  let publicKey;
+
+  return async (context) => {
+    const currentEncodedKey = context.env?.AUTH_PUBLIC_KEY_B64;
+    if (!publicKey || encodedKey !== currentEncodedKey) {
+      publicKey = await loadPublicKey(context);
+      encodedKey = currentEncodedKey;
+    }
+    return publicKey;
+  };
+}
+
+/**
  * Validates a JWT token against the given public key using ES256.
  * @param {string} token - The raw JWT string.
  * @param {CryptoKey} publicKey - The public key to verify against.

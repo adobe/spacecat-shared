@@ -14,7 +14,7 @@ import { Response } from '@adobe/fetch';
 import { hasText, isNonEmptyArray, isObject } from '@adobe/spacecat-shared-utils';
 
 import { getBearerToken } from './handlers/utils/bearer.js';
-import { loadPublicKey, validateToken } from './handlers/utils/token.js';
+import { createPublicKeyLoader, validateToken } from './handlers/utils/token.js';
 import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from './route-utils.js';
 
 /**
@@ -37,15 +37,13 @@ import { guardNonEmptyRouteCapabilities, resolveRouteCapability } from './route-
 export function s2sAuthWrapper(fn, { routeCapabilities } = {}) {
   guardNonEmptyRouteCapabilities('s2sAuthWrapper', routeCapabilities);
 
-  let publicKey;
+  const loadPublicKey = createPublicKeyLoader();
 
   return async (request, context) => {
     const { log } = context;
 
     try {
-      if (!publicKey) {
-        publicKey = await loadPublicKey(context);
-      }
+      const publicKey = await loadPublicKey(context);
 
       const token = getBearerToken(context);
       if (!hasText(token)) {

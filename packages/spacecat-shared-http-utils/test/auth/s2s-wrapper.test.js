@@ -30,13 +30,23 @@ const decryptedPrivateKey = crypto.createPrivateKey({
 const decryptedPrivateKeyPEM = decryptedPrivateKey.export({ format: 'pem', type: 'pkcs8' });
 const josePrivateKey = await importPKCS8(decryptedPrivateKeyPEM, 'ES256');
 
-const createToken = async (payload, exp = 3600) => new SignJWT(payload)
+const {
+  publicKey: alternatePublicKey,
+  privateKey: alternatePrivateKey,
+} = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+const alternatePublicKeyB64 = Buffer.from(
+  alternatePublicKey.export({ format: 'pem', type: 'spki' }),
+).toString('base64');
+const alternatePrivateKeyPEM = alternatePrivateKey.export({ format: 'pem', type: 'pkcs8' });
+const alternateJosePrivateKey = await importPKCS8(alternatePrivateKeyPEM, 'ES256');
+
+const createToken = async (payload, exp = 3600, signingKey = josePrivateKey) => new SignJWT(payload)
   .setProtectedHeader({ alg: 'ES256' })
   .setIssuedAt()
   .setIssuer(payload.iss)
   .setAudience('test')
   .setExpirationTime(`${exp} sec`)
-  .sign(josePrivateKey);
+  .sign(signingKey);
 
 const createTokenPayload = (overrides = {}) => ({
   iss: 'https://spacecat.experiencecloud.live',
@@ -172,6 +182,50 @@ describe('s2sAuthWrapper', () => {
 
     expect(result).to.deep.equal({ status: 200 });
     expect(handler.calledOnce).to.be.true;
+  });
+
+  it('reloads the public key when the request context changes', async () => {
+    const wrapped = s2sAuthWrapper(handler, { routeCapabilities });
+    const firstToken = await createToken(createTokenPayload({
+      is_s2s_consumer: true,
+      client_id: 'first-client',
+      org: 'first-org',
+      tenants: [{ id: 'first-org' }],
+    }));
+    context.pathInfo.headers = {
+      authorization: ['Bearer', firstToken].join(' '),
+    };
+
+    await wrapped({}, context);
+
+    delete context.s2sConsumer;
+    context.env.AUTH_PUBLIC_KEY_B64 = alternatePublicKeyB64;
+    const secondToken = await createToken(
+      createTokenPayload({
+        is_s2s_consumer: true,
+        client_id: 'second-client',
+        org: 'second-org',
+        tenants: [{ id: 'second-org' }],
+      }),
+      3600,
+      alternateJosePrivateKey,
+    );
+    context.pathInfo.headers.authorization = ['Bearer', secondToken].join(' ');
+
+    await wrapped({}, context);
+
+    delete context.s2sConsumer;
+    context.env.AUTH_PUBLIC_KEY_B64 = publicKeyB64;
+    context.pathInfo.headers.authorization = ['Bearer', firstToken].join(' ');
+
+    await wrapped({}, context);
+
+    expect(context.dataAccess.Consumer.findByClientIdAndImsOrgId.args)
+      .to.deep.equal([
+        ['first-client', 'first-org'],
+        ['second-client', 'second-org'],
+        ['first-client', 'first-org'],
+      ]);
   });
 
   it('passes through when is_s2s_consumer claim is absent', async () => {

@@ -35,13 +35,23 @@ const decryptedPrivateKey = crypto.createPrivateKey({
 const decryptedPrivateKeyPEM = decryptedPrivateKey.export({ format: 'pem', type: 'pkcs8' });
 const privateKey = await importPKCS8(decryptedPrivateKeyPEM, 'ES256');
 
-const createToken = async (payload, exp = 3600) => new SignJWT(payload)
+const {
+  publicKey: alternatePublicKey,
+  privateKey: alternatePrivateKey,
+} = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+const alternatePublicKeyB64 = Buffer.from(
+  alternatePublicKey.export({ format: 'pem', type: 'spki' }),
+).toString('base64');
+const alternatePrivateKeyPEM = alternatePrivateKey.export({ format: 'pem', type: 'pkcs8' });
+const alternateJosePrivateKey = await importPKCS8(alternatePrivateKeyPEM, 'ES256');
+
+const createToken = async (payload, exp = 3600, signingKey = privateKey) => new SignJWT(payload)
   .setProtectedHeader({ alg: 'ES256' })
   .setIssuedAt()
   .setIssuer(payload.iss)
   .setAudience('test')
   .setExpirationTime(`${exp} sec`)
-  .sign(privateKey);
+  .sign(signingKey);
 
 const createTokenPayload = (overrides = {}) => ({
   iss: 'https://spacecat.experiencecloud.live',
@@ -191,6 +201,36 @@ describe('SpacecatJWTHandler', () => {
       expect(result.isAdmin()).to.be.true;
       expect(result.hasOrganization(`${orgId}@AdobeId`)).to.be.true;
       expect(result.hasScope('user', scope)).to.be.true;
+    });
+
+    it('reloads the public key when the request context changes', async () => {
+      const firstToken = await createToken(createTokenPayload({
+        user_id: 'first-user',
+        tenants: [],
+      }));
+      context.pathInfo = {
+        headers: { authorization: ['Bearer', firstToken].join(' ') },
+      };
+
+      const firstResult = await handler.checkAuth({}, context);
+
+      context.env.AUTH_PUBLIC_KEY_B64 = alternatePublicKeyB64;
+      const secondToken = await createToken(
+        createTokenPayload({ user_id: 'second-user', tenants: [] }),
+        3600,
+        alternateJosePrivateKey,
+      );
+      context.pathInfo.headers.authorization = ['Bearer', secondToken].join(' ');
+
+      const secondResult = await handler.checkAuth({}, context);
+
+      context.env.AUTH_PUBLIC_KEY_B64 = publicKeyB64;
+      context.pathInfo.headers.authorization = ['Bearer', firstToken].join(' ');
+      const restoredResult = await handler.checkAuth({}, context);
+
+      expect(firstResult.getProfile().user_id).to.equal('first-user');
+      expect(secondResult.getProfile().user_id).to.equal('second-user');
+      expect(restoredResult.getProfile().user_id).to.equal('first-user');
     });
 
     it('successfully validates a token with no tenants array', async () => {

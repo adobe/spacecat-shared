@@ -132,10 +132,18 @@ class TierClient {
    * Creates entitlement for organization and site enrollment for site.
    * If entitlement exists with different tier, updates the tier.
    * @param {string} tier - Entitlement tier.
+   * @param {object} [quotaOverrides={}] - Optional quota values that override the defaults when
+   * a NEW entitlement is created. Merged over the default quotas
+   * (`llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0`), so any key provided here wins —
+   * EXCEPT `llmo_trial_prompts_consumed`, which is always pinned to 0 on creation and cannot be
+   * overridden (a new entitlement has consumed nothing). A non-object value is ignored.
+   * Only applied on new-entitlement creation; when an entitlement already exists it is returned
+   * unchanged and these overrides are ignored. Omitting this argument preserves the prior
+   * default-quota behavior.
    * @returns {Promise<object>} Object with created/updated
    * entitlement and siteEnrollment (if site provided).
    */
-  async createEntitlement(tier) {
+  async createEntitlement(tier, quotaOverrides = {}) {
     try {
       if (!Object.values(ENTITLEMENT_TIERS).includes(tier)) {
         throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(ENTITLEMENT_TIERS).join(', ')}`);
@@ -177,6 +185,10 @@ class TierClient {
         tier,
         quotas: {
           llmo_trial_prompts: 200,
+          // Only merge a real object; a non-object (string/null) would spread garbage keys.
+          ...(quotaOverrides && typeof quotaOverrides === 'object' ? quotaOverrides : {}),
+          // Pinned AFTER the spread: a new entitlement always starts at 0 consumed, so the
+          // caller may set the contracted quota (llmo_trial_prompts) but never the consumed count.
           llmo_trial_prompts_consumed: 0,
         },
       });

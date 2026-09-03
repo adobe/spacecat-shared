@@ -26,7 +26,8 @@ export interface AsyncJob extends BaseModel {
     getResult(): object | [];
     getError(): { code: string; message: string; details?: object } | null;
     getMetadata(): object | null;
-    getRecordExpiressAt(): number;
+    getRecordExpiresAt(): number;
+    getExpiresAt(): string | undefined;
     getStartedAt(): string | undefined;
     getEndedAt(): string | undefined;
     setStatus(status: string): void;
@@ -35,7 +36,6 @@ export interface AsyncJob extends BaseModel {
     setResult(result: object | []): void;
     setError(error: { code: string; message: string; details?: object }): void;
     setMetadata(metadata: object): void;
-    setExpiresAt(expiresAt: number): void;
     setStartedAt(startedAt: string): void;
     setEndedAt(endedAt: string): void;
 }

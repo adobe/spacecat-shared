@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-rum-api-client-v2.45.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.44.1...@adobe/spacecat-shared-rum-api-client-v2.45.0) (2026-09-03)
+
+### Features
+
+* **rum-api-client:** attribute paid vendor/channel from click-id when referrer is stripped ([#1913](https://github.com/adobe/spacecat-shared/issues/1913)) ([bd24a95](https://github.com/adobe/spacecat-shared/commit/bd24a957f75dac45e6f4481b144cc33fe474eed6))
+
 ## [@adobe/spacecat-shared-rum-api-client-v2.44.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-rum-api-client-v2.44.0...@adobe/spacecat-shared-rum-api-client-v2.44.1) (2026-07-24)
 
 ### Bug Fixes

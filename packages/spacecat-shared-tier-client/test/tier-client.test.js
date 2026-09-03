@@ -350,6 +350,83 @@ describe('TierClient', () => {
       });
     });
 
+    it('should apply quotaOverrides over the default quotas on new entitlement creation', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      const result = await tierClient.createEntitlement('PAID', { llmo_trial_prompts: 1000 });
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'PAID',
+        quotas: { llmo_trial_prompts: 1000, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should use default quotas when no quotaOverrides are provided (unchanged behavior)', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await tierClient.createEntitlement('FREE_TRIAL');
+
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'FREE_TRIAL',
+        quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should not allow overriding llmo_trial_prompts_consumed on creation', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await tierClient.createEntitlement('PAID', { llmo_trial_prompts: 500, llmo_trial_prompts_consumed: 999 });
+
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'PAID',
+        quotas: { llmo_trial_prompts: 500, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should ignore a non-object quotaOverrides and use the default quotas', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await tierClient.createEntitlement('PAID', 'not-an-object');
+
+      expect(mockDataAccess.Entitlement.create).to.have.been.calledWith({
+        organizationId: orgId,
+        productCode,
+        tier: 'PAID',
+        quotas: { llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 },
+      });
+    });
+
+    it('should ignore quotaOverrides when entitlement already exists', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      const result = await tierClient.createEntitlement('FREE_TRIAL', { llmo_trial_prompts: 1000 });
+
+      expect(result).to.deep.equal({
+        entitlement: mockEntitlement,
+        siteEnrollment: mockSiteEnrollment,
+      });
+      expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
+    });
+
     it('should throw error for invalid tier', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
 

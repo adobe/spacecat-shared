@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.26.0...@adobe/spacecat-shared-data-access-v4.27.0) (2026-09-03)
+
+### Features
+
+* **data-access:** add FixEntity.ORIGINS.CUSTOMER_SELF_FIX ([#1911](https://github.com/adobe/spacecat-shared/issues/1911)) ([c424a74](https://github.com/adobe/spacecat-shared/commit/c424a74a164fb55cb1e9693f9b7073c935c1f5e3))
+
 ## [@adobe/spacecat-shared-data-access-v4.26.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.25.0...@adobe/spacecat-shared-data-access-v4.26.0) (2026-09-02)
 
 ### Features

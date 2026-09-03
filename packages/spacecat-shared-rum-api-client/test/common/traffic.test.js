@@ -12,7 +12,7 @@
 /* eslint-disable object-curly-newline */
 
 import { expect } from 'chai';
-import { classifyTrafficSource } from '../../src/common/traffic.js';
+import { classifyTrafficSource, classifyTraffic } from '../../src/common/traffic.js';
 
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
@@ -309,6 +309,39 @@ describe('Traffic classification', () => {
         { type: 'paid', category: 'display', vendor: '' },
         { referrer: '', utmSource: 'psosi', utmMedium: '', tracking: 'paid' },
       );
+    });
+
+    it('normalizes a mixed-case click-id', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'linkedin' },
+        { referrer: '', utmSource: 'psosi', utmMedium: '', tracking: 'paid', trackingSource: 'linkedin', trackingTarget: 'Li_Fat_Id' },
+      );
+    });
+  });
+
+  describe('classifyTraffic bundle extraction and threading', () => {
+    // Guards the seam the click-id fix ships through: extractTrafficHints reading
+    // source/target from the `paid` checkpoint, and classifyTraffic threading them
+    // positionally into classifyTrafficSource. A transposed arg or swapped field
+    // read would keep the classifyTrafficSource-level tests green but fail here.
+    const bundleUrl = 'https://www.test.com/some/page';
+
+    it('attributes paid social from a paid checkpoint when the referrer is stripped', () => {
+      const bundle = {
+        url: bundleUrl,
+        weight: 100,
+        events: [
+          // Real enhancer convention (adobe/helix-rum-enhancer plugins/martech.js):
+          // sampleRUM('paid', { source: <platform>, target: <click-id param> }).
+          { checkpoint: 'paid', source: 'linkedin', target: 'li_fat_id' },
+          { checkpoint: 'enter', source: '' }, // referrer stripped
+          { checkpoint: 'utm', source: 'utm_source', target: 'psosi' }, // opaque in-house code
+        ],
+      };
+
+      const result = classifyTraffic(bundle);
+
+      expect(result).to.include({ type: 'paid', category: 'social', vendor: 'linkedin' });
     });
   });
 });

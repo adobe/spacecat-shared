@@ -40,6 +40,7 @@ class FixEntity extends BaseModel {
     SPACECAT: 'spacecat',
     ASO: 'aso',
     REPORTING: 'reporting',
+    CUSTOMER_SELF_FIX: 'customer-self-fix',
   };
 
   // Canonical v2 changeDetails enums + limits (SITES-47997, ADR

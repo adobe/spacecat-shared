@@ -17,10 +17,16 @@ import SchemaBuilder from '../base/schema.builder.js';
 import AsyncJob from './async-job.model.js';
 import AsyncJobCollection from './async-job.collection.js';
 
-// 7-day TTL for async_jobs (SITES-47947), restoring the DynamoDB-era contract on
-// Postgres: rows expire 7 days after creation and are purged by the mystique
-// AsyncJobReaper (SITES-47948) via wrpc_purge_expired_async_jobs (preflights
-// cascade). `expiresAt` below is the PERSISTED timestamptz that drives it;
+// 7-day TTL for async_jobs (SITES-47947). This restores a 7-day retention on
+// Postgres but NOT the exact DynamoDB-era mechanism: the old `withRecordExpiry`
+// TTL was a SLIDING expiry (it sets both `default` and `set`, so it was
+// recomputed on every write). `expiresAt` below has only a `default`, so it is
+// FIXED at creation (now + 7 days) and not moved by later updates — matching how
+// the mystique side stamps it (`wrpc_create_preflight` sets
+// `expires_at = now() + 7 days` once, at creation). For preflight jobs, which
+// finish in minutes, the two are indistinguishable in practice. Rows are purged
+// by the mystique AsyncJobReaper (SITES-47948) via wrpc_purge_expired_async_jobs
+// (preflights cascade). `expiresAt` is the PERSISTED timestamptz that drives it;
 // `recordExpiresAt` (from withRecordExpiry) stays the legacy virtual epoch field
 // used by the V1 preflight response and is NOT persisted.
 const ASYNC_JOB_TTL_DAYS = 7;

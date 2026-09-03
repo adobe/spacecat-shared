@@ -12,14 +12,22 @@
 /* eslint-disable object-curly-newline */
 
 import { expect } from 'chai';
-import { classifyTrafficSource } from '../../src/common/traffic.js';
+import { classifyTrafficSource, classifyTraffic } from '../../src/common/traffic.js';
 
 describe('Traffic classification', () => {
   const url = 'https://www.test.com/some/page';
   const { origin } = new URL(url);
 
   const assert = (expected, f) => {
-    const result = classifyTrafficSource(url, f.referrer, f.utmSource, f.utmMedium, f.tracking);
+    const result = classifyTrafficSource(
+      url,
+      f.referrer,
+      f.utmSource,
+      f.utmMedium,
+      f.tracking,
+      f.trackingSource,
+      f.trackingTarget,
+    );
     expect(result).to.eql(expected);
   };
 
@@ -245,6 +253,95 @@ describe('Traffic classification', () => {
       const expected = { type: 'earned', category: 'llm', vendor: 'meta' };
       assert(expected, { referrer: 'https://l.meta.ai/', utmSource: '', utmMedium: '', tracking: null });
       assert(expected, { referrer: 'meta.ai', utmSource: '', utmMedium: '', tracking: null });
+    });
+  });
+
+  describe('Paid click-id attribution (stripped referrer)', () => {
+    // The RUM `paid` checkpoint records the ad platform (tracking source) and the
+    // click-id (tracking target) even when the HTTP referrer is stripped and the
+    // utm_source is an opaque in-house campaign code. Use it to attribute the vendor
+    // and, for social-network click-ids, correct the `display` catch-all channel.
+
+    it('attributes LinkedIn paid social from li_fat_id when the referrer is stripped', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'linkedin' },
+        { referrer: '', utmSource: 'psosi', utmMedium: '', tracking: 'paid', trackingSource: 'linkedin', trackingTarget: 'li_fat_id' },
+      );
+    });
+
+    it('attributes Facebook paid social from fbclid when the referrer is stripped', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'facebook' },
+        { referrer: '', utmSource: 'psovd', utmMedium: '', tracking: 'paid', trackingSource: 'facebook', trackingTarget: 'fbclid' },
+      );
+    });
+
+    it('attributes the vendor from a Google click-id (gclid) but keeps the channel (ambiguous)', () => {
+      assert(
+        { type: 'paid', category: 'display', vendor: 'google' },
+        { referrer: '', utmSource: 'pgdis', utmMedium: '', tracking: 'paid', trackingSource: 'google', trackingTarget: 'gclid' },
+      );
+    });
+
+    it('attributes the vendor from a named tracking source when the click-id is unknown', () => {
+      assert(
+        { type: 'paid', category: 'display', vendor: 'google' },
+        { referrer: '', utmSource: 'pubds', utmMedium: '', tracking: 'paid', trackingSource: 'doubleclick', trackingTarget: '' },
+      );
+    });
+
+    it('fills the vendor without changing an already-social channel', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'linkedin' },
+        { referrer: '', utmSource: 'soc', utmMedium: 'paidsocial', tracking: null, trackingSource: 'linkedin', trackingTarget: 'li_fat_id' },
+      );
+    });
+
+    it('does not override a vendor already identified from referrer/UTM', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'facebook' },
+        { referrer: 'https://www.facebook.com/', utmSource: 'some', utmMedium: 'paidsocial', tracking: null, trackingSource: 'linkedin', trackingTarget: 'li_fat_id' },
+      );
+    });
+
+    it('leaves paid traffic unattributed when no click-id signal is present', () => {
+      assert(
+        { type: 'paid', category: 'display', vendor: '' },
+        { referrer: '', utmSource: 'psosi', utmMedium: '', tracking: 'paid' },
+      );
+    });
+
+    it('normalizes a mixed-case click-id', () => {
+      assert(
+        { type: 'paid', category: 'social', vendor: 'linkedin' },
+        { referrer: '', utmSource: 'psosi', utmMedium: '', tracking: 'paid', trackingSource: 'linkedin', trackingTarget: 'Li_Fat_Id' },
+      );
+    });
+  });
+
+  describe('classifyTraffic bundle extraction and threading', () => {
+    // Guards the seam the click-id fix ships through: extractTrafficHints reading
+    // source/target from the `paid` checkpoint, and classifyTraffic threading them
+    // positionally into classifyTrafficSource. A transposed arg or swapped field
+    // read would keep the classifyTrafficSource-level tests green but fail here.
+    const bundleUrl = 'https://www.test.com/some/page';
+
+    it('attributes paid social from a paid checkpoint when the referrer is stripped', () => {
+      const bundle = {
+        url: bundleUrl,
+        weight: 100,
+        events: [
+          // Real enhancer convention (adobe/helix-rum-enhancer plugins/martech.js):
+          // sampleRUM('paid', { source: <platform>, target: <click-id param> }).
+          { checkpoint: 'paid', source: 'linkedin', target: 'li_fat_id' },
+          { checkpoint: 'enter', source: '' }, // referrer stripped
+          { checkpoint: 'utm', source: 'utm_source', target: 'psosi' }, // opaque in-house code
+        ],
+      };
+
+      const result = classifyTraffic(bundle);
+
+      expect(result).to.include({ type: 'paid', category: 'social', vendor: 'linkedin' });
     });
   });
 });

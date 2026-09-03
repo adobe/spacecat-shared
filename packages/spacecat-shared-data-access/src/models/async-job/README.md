@@ -18,7 +18,8 @@ The `AsyncJob` entity persists the state and metadata of each asynchronous job. 
 - `status`: Job lifecycle status (`IN_PROGRESS`, `COMPLETED`, `FAILED`, `CANCELLED`).
 - `createdAt`, `updatedAt`: Timestamps for auditing and sorting.
 - `startedAt`, `endedAt`: Timestamps for when the job actually started and finished. Set automatically when job is created.
-- `recordExpiresAt`: Unix epoch seconds for DynamoDB TTL/cleanup. Set automatically when job is created.
+- `expiresAt`: ISO timestamp (persisted to the `expires_at` column) at which the job becomes eligible for cleanup. Set automatically, once at creation, to `now + 7 days` (insertion time — independent of `createdAt`, which has its own default). Expired rows are purged by the Mystique `AsyncJobReaper` via `wrpc_purge_expired_async_jobs` (SITES-47947 / SITES-47948); for preflight jobs, the linked `preflights` row cascades on delete.
+- `recordExpiresAt`: **Legacy** virtual field (Unix epoch seconds) — a carryover from the retired DynamoDB TTL. **Not persisted** to Postgres; kept only for backward compatibility of the V1 preflight response. Use `expiresAt` for the actual TTL.
 - `resultLocation`: URL or S3 URI where the result can be retrieved, or empty if not available.
 - `resultType`: Optional. One of `S3`, `INLINE`, `URL`, or `null` if no result yet.
 - `result`: Inline result data (if small enough), or `null`.
@@ -27,7 +28,7 @@ The `AsyncJob` entity persists the state and metadata of each asynchronous job. 
 
 ### Best Practices
 - `resultType` is optional and should only be set when a result is available. For jobs in progress, leave it `null` or unset.
-- Use `recordExpiresAt` to enable DynamoDB TTL for automatic cleanup of old jobs.
+- Records auto-expire 7 days after creation via `expiresAt` and are cleaned up by the `AsyncJobReaper` — no action needed. (`recordExpiresAt` is a non-persisted legacy field; do not rely on it.)
 - Use `metadata` for extensibility (e.g., tracking submitter, job type, or tags).
 
 ## Usage Example

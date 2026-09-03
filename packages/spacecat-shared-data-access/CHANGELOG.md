@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.27.0...@adobe/spacecat-shared-data-access-v4.28.0) (2026-09-03)
+
+### Features
+
+* **data-access:** persist AsyncJob 7-day TTL as expiresAt (SITES-47947) ([#1909](https://github.com/adobe/spacecat-shared/issues/1909)) ([426c588](https://github.com/adobe/spacecat-shared/commit/426c588bd58115c04a251cd4a27b30c1ced2ba98)), closes [#4800](https://github.com/adobe/spacecat-shared/issues/4800) [#4800](https://github.com/adobe/spacecat-shared/issues/4800) [#4800](https://github.com/adobe/spacecat-shared/issues/4800) [#4800](https://github.com/adobe/spacecat-shared/issues/4800)
+
 ## [@adobe/spacecat-shared-data-access-v4.27.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.26.0...@adobe/spacecat-shared-data-access-v4.27.0) (2026-09-03)
 
 ### Features

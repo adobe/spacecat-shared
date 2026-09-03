@@ -17,8 +17,22 @@ import SchemaBuilder from '../base/schema.builder.js';
 import AsyncJob from './async-job.model.js';
 import AsyncJobCollection from './async-job.collection.js';
 
+// 7-day TTL for async_jobs (SITES-47947). This restores a 7-day retention on
+// Postgres but NOT the exact DynamoDB-era mechanism: the old `withRecordExpiry`
+// TTL was a SLIDING expiry (it sets both `default` and `set`, so it was
+// recomputed on every write). `expiresAt` below has only a `default`, so it is
+// FIXED at creation (now + 7 days) and not moved by later updates — matching how
+// the mystique side stamps it (`wrpc_create_preflight` sets
+// `expires_at = now() + 7 days` once, at creation). For preflight jobs, which
+// finish in minutes, the two are indistinguishable in practice. Rows are purged
+// by the mystique AsyncJobReaper (SITES-47948) via wrpc_purge_expired_async_jobs
+// (preflights cascade). `expiresAt` is the PERSISTED timestamptz that drives it;
+// `recordExpiresAt` (from withRecordExpiry) stays the legacy virtual epoch field
+// used by the V1 preflight response and is NOT persisted.
+const ASYNC_JOB_TTL_DAYS = 7;
+
 const schema = new SchemaBuilder(AsyncJob, AsyncJobCollection)
-  .withRecordExpiry(7)
+  .withRecordExpiry(ASYNC_JOB_TTL_DAYS)
   .addAttribute('status', {
     type: Object.values(AsyncJob.Status),
     required: true,
@@ -57,6 +71,19 @@ const schema = new SchemaBuilder(AsyncJob, AsyncJobCollection)
   })
   .addAttribute('endedAt', {
     type: 'string',
+    validate: (value) => !value || isIsoDate(value),
+  })
+  // Persisted TTL (SITES-47947): ISO timestamp -> async_jobs.expires_at (auto
+  // snake_case mapping). Set once at creation to now + 7 days; the
+  // AsyncJobReaper purges rows past it. Distinct from the legacy virtual
+  // `recordExpiresAt` (epoch, not persisted). Deliberately NOT `required`: legacy
+  // rows created before this shipped have expires_at = NULL until the one-time
+  // backfill, and a `required` attribute would fail validation when such a row is
+  // saved (e.g. a status update) before that backfill runs.
+  .addAttribute('expiresAt', {
+    type: 'string',
+    readOnly: true,
+    default: () => new Date(Date.now() + ASYNC_JOB_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
     validate: (value) => !value || isIsoDate(value),
   })
   .addIndex(

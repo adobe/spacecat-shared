@@ -215,6 +215,7 @@ describe('SpacecatJWTHandler', () => {
       const firstResult = await handler.checkAuth({}, context);
 
       context.env.AUTH_PUBLIC_KEY_B64 = alternatePublicKeyB64;
+      const mismatchedResult = await handler.checkAuth({}, context);
       const secondToken = await createToken(
         createTokenPayload({ user_id: 'second-user', tenants: [] }),
         3600,
@@ -229,6 +230,7 @@ describe('SpacecatJWTHandler', () => {
       const restoredResult = await handler.checkAuth({}, context);
 
       expect(firstResult.getProfile().user_id).to.equal('first-user');
+      expect(mismatchedResult).to.be.null;
       expect(secondResult.getProfile().user_id).to.equal('second-user');
       expect(restoredResult.getProfile().user_id).to.equal('first-user');
     });

@@ -21,7 +21,7 @@ export const ISSUER = 'https://spacecat.experiencecloud.live';
  * @param {Object} context - The universal context.
  * @returns {Promise<CryptoKey>} The imported public key.
  */
-export async function loadPublicKey(context) {
+async function loadPublicKey(context) {
   const authPublicKeyB64 = context.env?.AUTH_PUBLIC_KEY_B64;
   if (!hasText(authPublicKeyB64)) {
     throw new Error('No public key provided');

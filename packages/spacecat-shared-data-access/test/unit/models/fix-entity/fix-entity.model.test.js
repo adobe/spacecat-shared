@@ -103,6 +103,7 @@ describe('FixEntityModel', () => {
           SPACECAT: 'spacecat',
           ASO: 'aso',
           REPORTING: 'reporting',
+          CUSTOMER_SELF_FIX: 'customer-self-fix',
         });
       });
 
@@ -116,6 +117,10 @@ describe('FixEntityModel', () => {
 
       it('should have REPORTING origin', () => {
         expect(FixEntity.ORIGINS.REPORTING).to.equal('reporting');
+      });
+
+      it('should have CUSTOMER_SELF_FIX origin', () => {
+        expect(FixEntity.ORIGINS.CUSTOMER_SELF_FIX).to.equal('customer-self-fix');
       });
     });
   });

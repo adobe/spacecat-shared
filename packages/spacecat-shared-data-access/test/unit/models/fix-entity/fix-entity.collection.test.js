@@ -1081,6 +1081,7 @@ describe('FixEntityCollection', () => {
       expect(FixEntity.ORIGINS).to.be.an('object');
       expect(FixEntity.ORIGINS.SPACECAT).to.equal('spacecat');
       expect(FixEntity.ORIGINS.ASO).to.equal('aso');
+      expect(FixEntity.ORIGINS.CUSTOMER_SELF_FIX).to.equal('customer-self-fix');
     });
 
     it('has STATUSES enum', () => {
@@ -1092,16 +1093,16 @@ describe('FixEntityCollection', () => {
       expect(FixEntity.STATUSES.ROLLED_BACK).to.equal('ROLLED_BACK');
     });
 
-    it('ORIGINS enum has exactly 3 values', () => {
+    it('ORIGINS enum has exactly 4 values', () => {
       const originValues = Object.values(FixEntity.ORIGINS);
-      expect(originValues).to.have.lengthOf(3);
-      expect(originValues).to.include.members(['spacecat', 'aso', 'reporting']);
+      expect(originValues).to.have.lengthOf(4);
+      expect(originValues).to.include.members(['spacecat', 'aso', 'reporting', 'customer-self-fix']);
     });
 
     it('ORIGINS enum keys match expected format', () => {
       const originKeys = Object.keys(FixEntity.ORIGINS);
-      expect(originKeys).to.have.lengthOf(3);
-      expect(originKeys).to.include.members(['SPACECAT', 'ASO', 'REPORTING']);
+      expect(originKeys).to.have.lengthOf(4);
+      expect(originKeys).to.include.members(['SPACECAT', 'ASO', 'REPORTING', 'CUSTOMER_SELF_FIX']);
     });
   });
 });

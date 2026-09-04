@@ -358,6 +358,9 @@ describe('DrsClient', () => {
         siteId: 'site-1',
         brandId: 'brand-1',
         orgId: 'org-1',
+        // tier defaults to the RESTRICTED set (fail-safe) — pass 'PAID' explicitly to
+        // exercise the canonical FULL payload shape this test is actually about.
+        tier: 'PAID',
       });
 
       expect(result).to.deep.equal({ scheduleId: 'sched-1', alreadyExisted: false });
@@ -487,6 +490,109 @@ describe('DrsClient', () => {
         expect(err.status).to.equal(503);
       }
       scope.done();
+    });
+
+    describe('tier-restricted platform set', () => {
+      it('drops openai_web_search and copilot when tier is FREE_TRIAL', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews',
+            ]);
+            expect(body.job_config.provider_parameters).to.not.have.property('openai_web_search');
+            expect(body.job_config.provider_parameters.brightdata.dataset_id)
+              .to.equal('chatgpt_free,perplexity,gemini,aimode');
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-plg' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        const result = await client.createBrandPresenceSchedule({
+          siteId: 'site-1',
+          tier: 'FREE_TRIAL',
+        });
+
+        expect(result).to.deep.equal({ scheduleId: 'sched-plg', alreadyExisted: false });
+        scope.done();
+      });
+
+      it('drops openai_web_search and copilot when tier is PLG', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews',
+            ]);
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-plg-2' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        await client.createBrandPresenceSchedule({ siteId: 'site-1', tier: 'PLG' });
+        scope.done();
+      });
+
+      it('keeps the full set when tier is explicitly PAID', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews', 'openai_web_search',
+            ]);
+            expect(body.job_config.provider_parameters.brightdata.dataset_id)
+              .to.equal('chatgpt_free,perplexity,gemini,copilot,aimode');
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-paid' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        await client.createBrandPresenceSchedule({ siteId: 'site-1', tier: 'PAID' });
+        scope.done();
+      });
+
+      it('normalizes a trailing-space/lowercase PAID tier instead of wrongly restricting it', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews', 'openai_web_search',
+            ]);
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-paid-space' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        await client.createBrandPresenceSchedule({ siteId: 'site-1', tier: 'paid ' });
+        scope.done();
+      });
+
+      it('defaults to the RESTRICTED set (fail-safe) when tier is omitted', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews',
+            ]);
+            expect(body.job_config.provider_parameters).to.not.have.property('openai_web_search');
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-unknown-tier' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        await client.createBrandPresenceSchedule({ siteId: 'site-1' });
+        scope.done();
+      });
+
+      it('restricts on an unrecognized tier string, not just a known non-PAID one', async () => {
+        const scope = nock(DRS_API_URL)
+          .post('/schedules', (body) => {
+            expect(body.job_config.provider_ids).to.deep.equal([
+              'brightdata', 'google_ai_overviews',
+            ]);
+            return true;
+          })
+          .reply(201, { schedule_id: 'sched-garbage-tier' });
+
+        const client = new DrsClient({ apiBaseUrl: DRS_API_URL, apiKey: DRS_API_KEY }, log);
+        await client.createBrandPresenceSchedule({ siteId: 'site-1', tier: 'not-a-real-tier' });
+        scope.done();
+      });
     });
   });
 

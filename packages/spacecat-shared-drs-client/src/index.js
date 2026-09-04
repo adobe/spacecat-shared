@@ -62,6 +62,16 @@ const REDDIT_COMMENTS_ONLY_PARAMS = ['daysBack', 'commentLimit', 'sortBy', 'load
 // schedules on (site_id, brand_id, cadence, provider-set), so the provider set MUST be
 // identical across callers — one definition is what keeps the dedup matching (two
 // hand-synced payloads would drift and silently produce duplicate schedules).
+//
+// LLMO-7366: PLG/free-trial orgs must not get ChatGPT Paid (openai_web_search) or
+// Copilot — those are paid-tier-only surfaces. PAID_ONLY_PROVIDER_IDS /
+// PAID_ONLY_BRIGHTDATA_PLATFORMS are the subset of the full (PAID-tier) set below that
+// `createBrandPresenceSchedule` drops when its `tier` param is not 'PAID'. DRS itself
+// also enforces this at the API boundary (create_schedule.py) as defense-in-depth, so a
+// caller that forgets to pass `tier` still gets the restriction — but passing it here is
+// what keeps a PLG site out of the block in the first place, and the dedup key correct
+// from the start (DRS's guard normalizes an unstripped legacy row for comparison, but a
+// FRESH create should just send the right set).
 const BRAND_PRESENCE_PROVIDER_IDS = Object.freeze([
   'brightdata',
   'google_ai_overviews',
@@ -74,6 +84,8 @@ const BRAND_PRESENCE_BRIGHTDATA_PLATFORMS = Object.freeze([
   'copilot',
   'aimode',
 ]);
+const PAID_ONLY_PROVIDER_IDS = Object.freeze(['openai_web_search']);
+const PAID_ONLY_BRIGHTDATA_PLATFORMS = Object.freeze(['copilot']);
 
 // Fixed cadences for the generic `createSchedule` (LLMO prompt-suggestion pipelines). The
 // cron is derived SERVER-SIDE by DRS from the cadence — the caller CANNOT pass an arbitrary
@@ -842,6 +854,15 @@ export default class DrsClient {
    * @param {string} [params.description] - Schedule description (NOT part of the dedup key).
    * @param {boolean} [params.triggerImmediately=false] - Trigger the first run on creation.
    * @param {number} [params.timeout] - Fetch timeout in ms; omit for the tracingFetch default.
+   * @param {string} [params.tier] - The org's LLMO entitlement tier ('PAID', 'FREE_TRIAL', 'PLG',
+   *   ...), if the caller already knows it (e.g. via TierClient). ONLY an exact (normalized)
+   *   'PAID' gets the full set; every other value AND omitting this param entirely default to
+   *   the RESTRICTED set (no openai_web_search / copilot) — fail-safe, so a caller that forgets
+   *   to resolve/pass tier never accidentally grants paid-only surfaces. A caller that already
+   *   knows the org is paying (e.g. because it's gated on a paid-entitlement check before ever
+   *   reaching this method, like spacecat-api-service's self-serve activate-brand route) MUST
+   *   pass `tier: 'PAID'` explicitly to get the full set. DRS's own create_schedule.py guard is
+   *   a backstop either way, but should not be relied on as the only enforcement.
    * @returns {Promise<{ scheduleId: string, alreadyExisted: boolean }>}
    */
   async createBrandPresenceSchedule({
@@ -852,6 +873,7 @@ export default class DrsClient {
     description,
     triggerImmediately = false,
     timeout,
+    tier,
   }) {
     if (!hasText(siteId)) {
       throw new Error('siteId is required');
@@ -859,6 +881,23 @@ export default class DrsClient {
     if (!hasText(brandId)) {
       this.log.debug(`createBrandPresenceSchedule: no brandId; dedup is site-level for ${siteId}`);
     }
+
+    // Fail-safe default: an omitted, unrecognized, or non-'PAID' tier restricts the
+    // set. Only an explicit, normalized 'PAID' unlocks the full set — a caller that
+    // forgets to resolve/pass tier gets the SAFE (restricted) behavior, not a silent
+    // reversion to the full set. Normalized (trim + uppercase) so a trailing-space or
+    // lowercase 'PAID' from an upstream source doesn't get misread as "not PAID" and
+    // wrongly restrict a genuinely paying org.
+    const normalizedTier = typeof tier === 'string' ? tier.trim().toUpperCase() : tier;
+    const isRestricted = normalizedTier !== 'PAID';
+    const providerIds = isRestricted
+      ? BRAND_PRESENCE_PROVIDER_IDS.filter((p) => !PAID_ONLY_PROVIDER_IDS.includes(p))
+      : [...BRAND_PRESENCE_PROVIDER_IDS];
+    const brightdataPlatforms = isRestricted
+      ? BRAND_PRESENCE_BRIGHTDATA_PLATFORMS.filter(
+        (p) => !PAID_ONLY_BRIGHTDATA_PLATFORMS.includes(p),
+      )
+      : [...BRAND_PRESENCE_BRIGHTDATA_PLATFORMS];
 
     const body = {
       site_id: siteId,
@@ -868,7 +907,7 @@ export default class DrsClient {
       cron_expression: 'auto',
       description: description || `Brand presence: ${siteId}`,
       job_config: {
-        provider_ids: [...BRAND_PRESENCE_PROVIDER_IDS],
+        provider_ids: providerIds,
         priority,
         enable_brand_presence: true,
         cadence: 'weekly',
@@ -882,15 +921,13 @@ export default class DrsClient {
         // so this stays dedup-equivalent to the legacy payload.
         provider_parameters: {
           brightdata: {
-            dataset_id: BRAND_PRESENCE_BRIGHTDATA_PLATFORMS.join(','),
+            dataset_id: brightdataPlatforms.join(','),
             metadata: { site: siteId },
           },
           google_ai_overviews: {
             metadata: { site: siteId },
           },
-          openai_web_search: {
-            metadata: { site: siteId },
-          },
+          ...(isRestricted ? {} : { openai_web_search: { metadata: { site: siteId } } }),
         },
       },
     };

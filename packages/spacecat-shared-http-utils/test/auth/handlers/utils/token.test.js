@@ -43,8 +43,12 @@ describe('token utils', () => {
     };
     const loader = createPublicKeyLoader();
     const originalPublicKey = await loader(context);
+    const cachedPublicKey = await loader(context);
+
+    expect(cachedPublicKey).to.equal(originalPublicKey);
 
     context.env.AUTH_PUBLIC_KEY_B64 = 'not-a-public-key';
+    await expect(loader(context)).to.be.rejected;
     await expect(loader(context)).to.be.rejected;
 
     context.env.AUTH_PUBLIC_KEY_B64 = originalPublicKeyB64;

@@ -5,7 +5,7 @@
   "type": "module",
   "engines": {
     "node": ">=22.0.0 <25.0.0",
-    "npm": ">=10.9.0 <12.0.0"
+    "npm": ">=10.9.0 <13.0.0"
   },
   "main": "src/index.js",
   "types": "src/index.d.ts",
@@ -40,8 +40,8 @@
     "@adobe/spacecat-shared-utils": "1.81.1",
     "@aws-sdk/client-secrets-manager": "3.1057.0",
     "aws-xray-sdk": "3.12.0",
-    "google-auth-library": "10.6.2",
-    "googleapis": "173.0.0"
+    "google-auth-library": "11.0.2",
+    "googleapis": "178.0.0"
   },
   "devDependencies": {
     "chai": "6.2.2",
@@ -50,6 +50,6 @@
     "nock": "14.0.15",
     "sinon": "22.0.0",
     "sinon-chai": "4.0.1",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }

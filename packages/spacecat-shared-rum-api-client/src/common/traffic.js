@@ -129,6 +129,26 @@ const vendorClassifications = [
 const paidTrackingParams = ['paid'];
 const emailTrackingParams = ['email'];
 
+// Ad-platform click-id parameters captured by the RUM `paid` checkpoint.
+// These identify the ad platform even when the HTTP referrer is stripped and the
+// utm_source is an opaque in-house campaign code. `category` is set only for
+// channel-unambiguous (social-network) click-ids; search/display click-ids
+// (gclid/dclid/msclkid) attribute the vendor but leave the channel to the RULES.
+const clickIdClassifications = {
+  li_fat_id: { vendor: 'linkedin', category: 'social' },
+  fbclid: { vendor: 'facebook', category: 'social' },
+  ttclid: { vendor: 'tiktok', category: 'social' },
+  twclid: { vendor: 'x', category: 'social' },
+  epik: { vendor: 'pinterest', category: 'social' },
+  sccid: { vendor: 'snapchat', category: 'social' },
+  gclid: { vendor: 'google' },
+  gbraid: { vendor: 'google' },
+  wbraid: { vendor: 'google' },
+  gclsrc: { vendor: 'google' },
+  dclid: { vendor: 'google' },
+  msclkid: { vendor: 'bing' },
+};
+
 /*
  * --------- HELPERS ----------------
  */
@@ -340,7 +360,35 @@ export function classifyVendor(referrer, utmSource, utmMedium) {
   return result ? result.result : '';
 }
 
-export function classifyTrafficSource(url, referrer, utmSource, utmMedium, trackingEvent) {
+/**
+ * Attributes a paid ad platform from the RUM `paid` checkpoint's tracking source
+ * (e.g. 'linkedin', 'doubleclick') and target (the click-id, e.g. 'li_fat_id').
+ * This is the only reliable signal when the referrer is stripped and the utm_source
+ * is an opaque in-house campaign code.
+ * @param {string} trackingSource - The `paid` checkpoint source (the ad platform).
+ * @param {string} trackingTarget - The `paid` checkpoint target (the click-id param).
+ * @returns {{vendor?: string, category?: string}} Vendor and, for social-network
+ *   click-ids, the corrected category; empty object when nothing is identifiable.
+ */
+export function classifyPaidClickId(trackingSource, trackingTarget) {
+  const clickId = (trackingTarget || '').toLowerCase();
+  if (clickIdClassifications[clickId]) {
+    return clickIdClassifications[clickId];
+  }
+  // Fall back to a named tracking source (e.g. 'linkedin', 'doubleclick' -> google).
+  const vendor = classifyVendor(trackingSource || '', '', '');
+  return vendor ? { vendor } : {};
+}
+
+export function classifyTrafficSource(
+  url,
+  referrer,
+  utmSource,
+  utmMedium,
+  trackingEvent,
+  trackingSource = '',
+  trackingTarget = '',
+) {
   const secondLevelDomain = getSecondLevelDomain(url);
   const rules = RULES(secondLevelDomain);
 
@@ -365,6 +413,19 @@ export function classifyTrafficSource(url, referrer, utmSource, utmMedium, track
   type = overridden.type;
   category = overridden.category;
   vendor = overridden.vendor;
+
+  // Paid click-id fallback: when the referrer/UTM don't identify the platform, the
+  // `paid` checkpoint's source/target (click-id) still do. Attribute the vendor and,
+  // for social-network click-ids, correct the `display` catch-all channel.
+  if (type === 'paid' && !vendor) {
+    const paid = classifyPaidClickId(trackingSource, trackingTarget);
+    if (paid.vendor) {
+      vendor = paid.vendor;
+      if (paid.category && category === 'display') {
+        category = paid.category;
+      }
+    }
+  }
 
   // validate vendor against allowed vendors for this type/category
   const validatedVendor = validateVendor(type, category, vendor);
@@ -402,6 +463,14 @@ export function classifyTraffic(bundle) {
     weight,
     trackingSource,
     trackingTarget,
-    ...classifyTrafficSource(url, referrer, source, utmMedium, tracking),
+    ...classifyTrafficSource(
+      url,
+      referrer,
+      source,
+      utmMedium,
+      tracking,
+      trackingSource,
+      trackingTarget,
+    ),
   };
 }

@@ -933,7 +933,7 @@ export default class DrsClient {
     };
 
     this.log.info(`Creating brand presence schedule for site ${siteId}`, {
-      brandId, orgId, triggerImmediately,
+      brandId, orgId, triggerImmediately, tier, isRestricted,
     });
     const { ok, status, body: payload } = await this.#requestRaw(
       'POST',

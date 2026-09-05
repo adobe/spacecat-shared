@@ -45,19 +45,19 @@
     "@adobe/spacecat-shared-utils": "1.105.0",
     "@aws-sdk/client-s3": "^3.940.0",
     "@smithy/util-retry": "^4.0.0",
-    "@supabase/postgrest-js": "2.106.2",
+    "@supabase/postgrest-js": "2.115.0",
     "@types/joi": "17.2.3",
     "aws-xray-sdk": "3.12.0",
-    "joi": "18.2.1",
+    "joi": "18.2.8",
     "pluralize": "8.0.0"
   },
   "devDependencies": {
     "chai": "6.2.2",
     "chai-as-promised": "8.0.2",
-    "electrodb": "3.9.0",
+    "electrodb": "3.9.3",
     "joi-to-json": "^5.0.5",
-    "nock": "14.0.15",
-    "sinon": "22.0.0",
+    "nock": "14.0.17",
+    "sinon": "22.1.0",
     "sinon-chai": "4.0.1"
   }
 }

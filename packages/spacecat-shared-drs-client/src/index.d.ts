@@ -133,6 +133,13 @@ interface CreateBrandPresenceScheduleParams {
   description?: string;
   triggerImmediately?: boolean;
   timeout?: number;
+  /**
+   * The org's LLMO entitlement tier, if known. Fail-safe: only an exact (normalized)
+   * 'PAID' gets the full provider set — omitting this, or any other value, defaults
+   * to the RESTRICTED set (no openai_web_search / copilot). A caller that already
+   * knows the org is paying MUST pass 'PAID' explicitly to get the full set.
+   */
+  tier?: string;
 }
 
 interface BrandPresenceScheduleResult {

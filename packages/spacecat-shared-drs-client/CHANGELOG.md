@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.15.0...@adobe/spacecat-shared-drs-client-v1.15.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **drs-client:** fail safe to restricted platforms when tier is omitted (LLMO-7366) ([#1915](https://github.com/adobe/spacecat-shared/issues/1915)) ([2e1923a](https://github.com/adobe/spacecat-shared/commit/2e1923a55d9fc993d7ec13520847e585061f0b10)), closes [#3178](https://github.com/adobe/spacecat-shared/issues/3178)
+
 # [@adobe/spacecat-shared-drs-client-v1.15.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.14.0...@adobe/spacecat-shared-drs-client-v1.15.0) (2026-09-02)
 
 

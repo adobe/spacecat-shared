@@ -44,8 +44,8 @@
  *   root-first `path[]` ancestry breadcrumb excluding itself (a depth-2 tag: one leaf, its
  *   dimension root; a depth-3 tag: two leaves); a root omits `parent_id` and `path` entirely.
  * When callers opt into a bounded `limit`, it must be 1–100. That response retains the full
- * matching `total` and adds `complete` so pagination cannot silently look exhaustive. Legacy
- * reads without `limit` remain unpaged and complete.
+ * matching `total`; callers derive whether they reached the end from `page`, `limit`, `total`,
+ * and the returned item count. Legacy reads without `limit` remain unpaged and complete.
  * - DELETE (`aio-delete-tags`): removes the body's tag ids (`BatchDeleteRequest` `{ ids }`) from
  *   the standalone tag collection AND detaches each id from every prompt carrying it → 204. A
  *   prompt whose only tag was deleted becomes fully unassigned (gate 4, verified 2026-07-02); it is
@@ -143,9 +143,7 @@ export function GET($) {
   }
   const start = (page - 1) * limit;
   const items = matched.slice(start, start + limit).map(serialize);
-  return $.response[200].json({
-    items, page, total, complete: start + items.length >= total,
-  });
+  return $.response[200].json({ items, page, total });
 }
 
 /** DELETE — remove standalone project tags by id, detaching them from prompts → 204 No Content. */

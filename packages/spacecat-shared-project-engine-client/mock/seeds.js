@@ -484,6 +484,8 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
  */
 export const RAW_PROVIDER_TAGS_WORKSPACE = Object.freeze({
   ...WORKSPACE_WITH_DATA,
+  // `Tag` is intentionally case-variant and unreferenced: the inherited prompt collection keeps
+  // the canonical prompt tags, while this fixture preserves the raw provider tag inventory.
   [collectionKey('tags', { workspaceId: CHILD_WORKSPACE_ID, projectId: PROJECT_ID })]: [
     ...WORKSPACE_WITH_DATA[
       collectionKey('tags', { workspaceId: CHILD_WORKSPACE_ID, projectId: PROJECT_ID })

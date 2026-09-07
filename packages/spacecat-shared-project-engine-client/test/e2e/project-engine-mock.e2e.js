@@ -1740,7 +1740,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     }
   });
 
-  it('keeps legacy reads complete and pages siblings only when a bounded limit is requested', async () => {
+  // Legacy mode is selected by omitting limit, even when page is present.
+  it('keeps legacy tag reads unpaged and complete', async () => {
     const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
     const legacy = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=`, {
       headers: jsonAuth,
@@ -1750,7 +1751,6 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(legacyBody.total).to.equal(5);
     expect(legacyBody.items).to.have.length(5);
     expect(legacyBody.page).to.equal(1);
-    expect(legacyBody).to.not.have.property('complete');
 
     const ignoredInvalidPage = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&page=abc`, {
       headers: jsonAuth,
@@ -1758,29 +1758,42 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(ignoredInvalidPage.status).to.equal(200);
     const ignoredInvalidPageBody = await ignoredInvalidPage.json();
     expect(ignoredInvalidPageBody).to.deep.equal(legacyBody);
+  });
 
+  // Bounded mode returns only the requested sibling page; callers derive completeness from the
+  // page, limit, total, and short-page signal rather than a response extension.
+  it('pages tag siblings without overlap and preserves the unpaged set', async () => {
+    const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const legacy = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=`, {
+      headers: jsonAuth,
+    });
+    const legacyBody = await legacy.json();
     const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=1`, {
       headers: jsonAuth,
     });
     expect(first.status).to.equal(200);
     const firstBody = await first.json();
-    expect(firstBody).to.include({ page: 1, total: 5, complete: false });
+    expect(firstBody).to.include({ page: 1, total: 5 });
     expect(firstBody.items).to.have.length(2);
+    expect(firstBody.page * 2 >= firstBody.total).to.equal(false);
 
     const middle = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=2`, {
       headers: jsonAuth,
     });
     expect(middle.status).to.equal(200);
     const middleBody = await middle.json();
-    expect(middleBody).to.include({ page: 2, total: 5, complete: false });
+    expect(middleBody).to.include({ page: 2, total: 5 });
     expect(middleBody.items).to.have.length(2);
+    expect(middleBody.page * 2 >= middleBody.total).to.equal(false);
 
     const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=3`, {
       headers: jsonAuth,
     });
+    expect(last.status).to.equal(200);
     const lastBody = await last.json();
-    expect(lastBody).to.include({ page: 3, total: 5, complete: true });
+    expect(lastBody).to.include({ page: 3, total: 5 });
     expect(lastBody.items).to.have.length(1);
+    expect(lastBody.page * 2 >= lastBody.total || lastBody.items.length < 2).to.equal(true);
     const pagedItems = [...firstBody.items, ...middleBody.items, ...lastBody.items];
     expect(new Set(pagedItems.map(({ id }) => id)).size).to.equal(pagedItems.length);
     expect(pagedItems.map(({ id }) => id)).to.have.members(legacyBody.items.map(({ id }) => id));
@@ -1794,13 +1807,25 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       items: [],
       page: 100,
       total: 5,
-      complete: true,
     });
+    expect(beyondLastBody.page * 2 >= beyondLastBody.total).to.equal(true);
+  });
 
+  // Limit and page are validated only when bounded pagination is explicitly requested.
+  it('rejects invalid tag pagination parameters', async () => {
+    const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
     const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
       headers: jsonAuth,
     });
     expect(tooLarge.status).to.equal(400);
+
+    const invalidLimits = await Promise.all(['0', 'abc'].map((invalidLimit) => (
+      fetch(
+        `${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${invalidLimit}`,
+        { headers: jsonAuth },
+      )
+    )));
+    expect(invalidLimits.map(({ status }) => status)).to.deep.equal([400, 400]);
 
     const invalidResponses = await Promise.all(['0', '-1', '1.5', 'not-a-number'].map((invalidPage) => (
       fetch(
@@ -1813,6 +1838,19 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(invalidBodies).to.deep.equal(Array.from({ length: invalidBodies.length }, () => ({
       message: 'page must be an integer greater than or equal to 1',
     })));
+  });
+
+  // Search is applied before pagination, so total and items describe the filtered sibling set.
+  it('reports filtered tag pagination totals and items', async () => {
+    const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const filtered = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=Re&limit=1&page=1`, {
+      headers: jsonAuth,
+    });
+    expect(filtered.status).to.equal(200);
+    const filteredBody = await filtered.json();
+    expect(filteredBody).to.include({ page: 1, total: 2 });
+    expect(filteredBody.items).to.have.length(1);
+    expect(filteredBody.items[0].name).to.equal('Research');
   });
 
   // __reset restores the boot seed (the normal roots, no ad-hoc tags), so a created

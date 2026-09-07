@@ -85,7 +85,8 @@ describe('seeds', () => {
 
     // Provisioned roots include the hidden intent wire root and exact generic `tag` root.
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.include.members([
+    // The provisioned taxonomy must contain exactly the six dimension roots, with no extra roots.
+    expect(roots.map((t) => t.name)).to.have.members([
       'category', '$abv_tags$intent', 'origin', 'source', 'tag', 'type',
     ]);
 

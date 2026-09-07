@@ -523,6 +523,43 @@ describe('Config Tests', () => {
       expect(config.getContentAiConfig()).to.deep.equal({ name: 'new-name' });
     });
 
+    it('updates contentAiConfig index, preserving name', () => {
+      const config = Config({
+        contentAiConfig: {
+          name: 'source-name',
+          index: 'old-index',
+        },
+      });
+      config.updateContentAiConfig({ index: 'new-index' });
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'source-name',
+        index: 'new-index',
+      });
+    });
+
+    it('updates contentAiConfig name and index together', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ name: 'new-name', index: 'new-index' });
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'new-name',
+        index: 'new-index',
+      });
+    });
+
+    it('leaves contentAiConfig unchanged when called with no fields', () => {
+      const config = Config({
+        contentAiConfig: {
+          name: 'source-name',
+          index: 'legacy-index',
+        },
+      });
+      config.updateContentAiConfig();
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'source-name',
+        index: 'legacy-index',
+      });
+    });
+
     it('accepts a legacy contentAiConfig that has index but no name', () => {
       const data = {
         contentAiConfig: {

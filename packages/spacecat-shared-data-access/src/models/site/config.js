@@ -971,8 +971,12 @@ export const Config = (data = {}) => {
     state.brandConfig = brandConfig;
   };
 
-  self.updateContentAiConfig = ({ name }) => {
-    state.contentAiConfig = { ...state.contentAiConfig, name };
+  self.updateContentAiConfig = ({ name, index } = {}) => {
+    state.contentAiConfig = {
+      ...state.contentAiConfig,
+      ...(name !== undefined && { name }),
+      ...(index !== undefined && { index }),
+    };
   };
 
   /**

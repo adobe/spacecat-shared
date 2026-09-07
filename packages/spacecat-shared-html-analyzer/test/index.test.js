@@ -217,6 +217,24 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Manage consent preferences');
     });
 
+    it('should remove Cybot Cookiebot dialog', async () => {
+      const html = `<html><body>
+        <h1>Title</h1>
+        <div id="CybotCookiebotDialog" role="region" class="CybotEdge CybotCookiebotDialogActive">
+          <div id="CybotCookiebotDialogBodyContentTitle">This website uses cookies</div>
+          <div id="CybotCookiebotDialogBodyContentText">We use cookies to improve your experience.</div>
+        </div>
+        <p>Content</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Title');
+      expect(text).to.include('Content');
+      expect(text).to.not.include('This website uses cookies');
+      expect(text).to.not.include('We use cookies to improve your experience');
+    });
+
     it('should not remove cookie-banner selectors when content does not indicate consent', async () => {
       const html = `<html><body>
         <h1>Title</h1>

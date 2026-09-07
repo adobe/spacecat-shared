@@ -103,7 +103,8 @@ describe('seeds', () => {
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
 
     // Generic plain tags have normal depth-2/depth-3 descendants without a fixed vocabulary.
-    expect(childNamesOf(SEED_IDS.tagRootTagId)).to.deep.equal(['Running']);
+    expect(childNamesOf(SEED_IDS.tagRootTagId))
+      .to.deep.equal(['Running', 'Research', 'Comparison', 'News', 'Reviews']);
     expect(childNamesOf(SEED_IDS.tagParentTagId)).to.deep.equal(['Trail']);
 
     // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories

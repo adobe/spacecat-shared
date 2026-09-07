@@ -470,6 +470,10 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
     }]),
     childTag(TAG_PARENT_NAME, TAG_ROOT_TAG_ID),
     childTag(TAG_CHILD_NAME, TAG_PARENT_TAG_ID),
+    childTag('Research', TAG_ROOT_TAG_ID),
+    childTag('Comparison', TAG_ROOT_TAG_ID),
+    childTag('News', TAG_ROOT_TAG_ID),
+    childTag('Reviews', TAG_ROOT_TAG_ID),
   ],
 }));
 

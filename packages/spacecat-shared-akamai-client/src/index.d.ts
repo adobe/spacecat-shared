@@ -91,6 +91,13 @@ export default class AkamaiClient {
 
   getLatestVersion(propertyId: string, contractId: string, groupId: string): Promise<number>;
 
+  getLatestVersionActivatedOn(
+    propertyId: string,
+    contractId: string,
+    groupId: string,
+    network: 'STAGING' | 'PRODUCTION',
+  ): Promise<object | undefined>;
+
   getRuleTree(
     propertyId: string,
     version: number,

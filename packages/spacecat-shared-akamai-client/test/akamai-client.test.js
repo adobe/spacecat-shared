@@ -854,6 +854,63 @@ describe('AkamaiClient', () => {
     });
   });
 
+  describe('getLatestVersionActivatedOn', () => {
+    it('throws when network is not STAGING or PRODUCTION', async () => {
+      await expect(client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'sandbox'))
+        .to.be.rejectedWith('network must be one of STAGING, PRODUCTION, got: sandbox');
+    });
+
+    it('sends the bounded activatedOn lookup and returns the version item', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, activatedOn: 'STAGING' })
+        .reply(200, { versions: { items: [{ propertyVersion: 4, stagingStatus: 'ACTIVE' }] } });
+
+      const item = await client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'STAGING');
+      expect(item).to.deep.equal({ propertyVersion: 4, stagingStatus: 'ACTIVE' });
+    });
+
+    it('uppercases the network argument for the activatedOn query', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, activatedOn: 'PRODUCTION' })
+        .reply(200, { versions: { items: [{ propertyVersion: 9 }] } });
+
+      const item = await client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'production');
+      expect(item.propertyVersion).to.equal(9);
+    });
+
+    it('returns undefined when the property was never activated on that network (PAPI 404)', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, activatedOn: 'STAGING' })
+        .reply(404, 'no active version on STAGING');
+
+      const item = await client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'STAGING');
+      expect(item).to.be.undefined;
+    });
+
+    it('returns undefined when PAPI replies 200 with an empty version list', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query({ contractId: CONTRACT_ID, groupId: GROUP_ID, activatedOn: 'PRODUCTION' })
+        .reply(200, { versions: { items: [] } });
+
+      const item = await client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'PRODUCTION');
+      expect(item).to.be.undefined;
+    });
+
+    it('still throws on a non-404 error response', async () => {
+      nock(API_BASE)
+        .get(`/papi/v1/properties/${PROPERTY_ID}/versions/latest`)
+        .query(true)
+        .reply(403, 'forbidden');
+
+      await expect(client.getLatestVersionActivatedOn(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'STAGING'))
+        .to.be.rejectedWith(/-> 403: forbidden/);
+    });
+  });
+
   describe('latestActivation', () => {
     it('throws when network is not STAGING or PRODUCTION', async () => {
       await expect(client.latestActivation(PROPERTY_ID, CONTRACT_ID, GROUP_ID, 'sandbox'))

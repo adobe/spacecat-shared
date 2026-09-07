@@ -2086,9 +2086,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data).to.include.keys(['page', 'total', 'items']);
     expect(data.total).to.equal(38);
     expect(data.items).to.be.an('array').with.length(38);
-    expect(data.items[0]).to.include.keys(['id', 'name']);
+    expect(data.items[0]).to.include.keys(['id', 'name', 'code']);
     // The mock-only `iso` column (used by the project read-view resolver) is NOT served here — the
-    // live catalog item is just `{ id, name }`.
+    // live catalog item is just `{ id, name, code }` (LLMO-7420).
     expect(data.items[0]).to.not.have.property('iso');
     expect(data.items).to.deep.include({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English' });
   });

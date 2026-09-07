@@ -83,7 +83,7 @@ describe('factories — live-shaped entities', () => {
     // language.name = ISO code resolved from the catalog id (live read-view shape, #1745), NOT the
     // English display name; country.name = the Intl region name resolved from the code.
     expect(p.settings.ai.language)
-      .to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en' });
+      .to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en', code: 'en' });
     expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
     expect(p.settings.ai.location).to.deep.equal({ id: 2840, name: 'United States' });
     expect(p.settings.ai.models_stats).to.deep.equal({ models: [], models_count: 0 });
@@ -93,7 +93,7 @@ describe('factories — live-shaped entities', () => {
     // An unknown language_id (not in the catalog) resolves to '' (id is still echoed). A
     // structurally invalid country code makes Intl.DisplayNames.of throw — caught → ''.
     const p = createProjectResponseFromRequest({ language_id: 'not-a-catalog-id', country_code: 'usa' });
-    expect(p.settings.ai.language).to.deep.equal({ id: 'not-a-catalog-id', name: '' });
+    expect(p.settings.ai.language).to.deep.equal({ id: 'not-a-catalog-id', name: '', code: '' });
     expect(p.settings.ai.country).to.deep.equal({ code: 'usa', name: '' });
   });
 
@@ -103,7 +103,7 @@ describe('factories — live-shaped entities', () => {
       country_code: 'de',
     });
     expect(p.settings.ai.language)
-      .to.deep.equal({ id: 'e5282ae9-83a6-4ea3-b3cf-5e99d8f51eca', name: 'de' });
+      .to.deep.equal({ id: 'e5282ae9-83a6-4ea3-b3cf-5e99d8f51eca', name: 'de', code: 'de' });
     expect(p.settings.ai.country).to.deep.equal({ code: 'de', name: 'Germany' });
   });
 
@@ -113,7 +113,7 @@ describe('factories — live-shaped entities', () => {
     // Live echoes null (not [] / '') for an omitted brand_names / location_name (2026-06-29).
     expect(p.settings.ai.brand_names).to.equal(null);
     expect(p.settings.ai.brand_name_display).to.equal('');
-    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '' });
+    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '', code: '' });
     expect(p.settings.ai.country).to.deep.equal({ code: '', name: '' });
     expect(p.settings.ai.location).to.deep.equal({ id: 0, name: null });
     expect(p.settings.ai.primary_url).to.equal('');
@@ -137,7 +137,7 @@ describe('factories — live-shaped entities', () => {
     });
     // empty request → empty settings.ai, so it has no resolvable geo/lang (caller supplies one).
     expect(p.settings.ai).to.deep.include({ primary_url: '', prompts_count: 0 });
-    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '' });
+    expect(p.settings.ai.language).to.deep.equal({ id: '', name: '', code: '' });
   });
 
   it('createLiveProjectMock builds a resolvable live market from a request (US/en)', () => {
@@ -165,7 +165,7 @@ describe('factories — live-shaped entities', () => {
     // geo (location.id) + language.name (ISO) are the load-bearing fields api-service's listMarkets
     // reads to keep the project as an addressable market.
     expect(p.settings.ai.location.id).to.equal(2840);
-    expect(p.settings.ai.language).to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en' });
+    expect(p.settings.ai.language).to.deep.equal({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'en', code: 'en' });
     expect(p.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
   });
 
@@ -231,10 +231,11 @@ describe('factories — live-shaped entities', () => {
     expect(createBrandUrlMock({ type: 'social' }).type).to.equal('social');
   });
 
-  it('createLanguageMock yields { id, name }', () => {
-    const l = createLanguageMock({ name: 'German' });
-    expect(l).to.have.keys(['id', 'name']);
+  it('createLanguageMock yields { id, name, code }', () => {
+    const l = createLanguageMock({ name: 'German', code: 'de' });
+    expect(l).to.have.keys(['id', 'name', 'code']);
     expect(l.name).to.equal('German');
+    expect(l.code).to.equal('de');
   });
 
   it('createTagNodeMock yields a TreeNodeResponse', () => {

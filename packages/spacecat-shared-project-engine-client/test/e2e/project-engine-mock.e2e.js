@@ -1759,17 +1759,40 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(firstBody).to.include({ page: 1, total: 5, complete: false });
     expect(firstBody.items).to.have.length(2);
 
+    const middle = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=2`, {
+      headers: jsonAuth,
+    });
+    expect(middle.status).to.equal(200);
+    const middleBody = await middle.json();
+    expect(middleBody).to.include({ page: 2, total: 5, complete: false });
+    expect(middleBody.items).to.have.length(2);
+
     const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=3`, {
       headers: jsonAuth,
     });
     const lastBody = await last.json();
     expect(lastBody).to.include({ page: 3, total: 5, complete: true });
     expect(lastBody.items).to.have.length(1);
+    const pagedItems = [...firstBody.items, ...middleBody.items, ...lastBody.items];
+    expect(new Set(pagedItems.map(({ id }) => id)).size).to.equal(pagedItems.length);
+    expect(pagedItems.map(({ id }) => id)).to.have.members(legacyBody.items.map(({ id }) => id));
 
     const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
       headers: jsonAuth,
     });
     expect(tooLarge.status).to.equal(400);
+
+    const invalidResponses = await Promise.all(['0', '-1', '1.5', 'not-a-number'].map((invalidPage) => (
+      fetch(
+        `${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=${invalidPage}`,
+        { headers: jsonAuth },
+      )
+    )));
+    expect(invalidResponses.map(({ status }) => status)).to.deep.equal([400, 400, 400, 400]);
+    const invalidBodies = await Promise.all(invalidResponses.map((invalid) => invalid.json()));
+    expect(invalidBodies).to.deep.equal(Array.from({ length: invalidBodies.length }, () => ({
+      message: 'page must be an integer greater than or equal to 1',
+    })));
   });
 
   // __reset restores the boot seed (the normal roots, no ad-hoc tags), so a created

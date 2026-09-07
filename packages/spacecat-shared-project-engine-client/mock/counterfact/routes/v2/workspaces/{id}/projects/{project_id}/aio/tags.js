@@ -131,14 +131,18 @@ export function GET($) {
   // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric
   // type AIOTagsListResponse declares, regardless of whether the param was passed.
   const page = Number(query?.page ?? 1);
+  if (hasLimit && (!Number.isInteger(page) || page < 1)) {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'page must be an integer greater than or equal to 1',
+    }));
+  }
   // Count the full parent/search-matched sibling set before selecting a requested page.
   const total = matched.length;
-  const allItems = matched.map(serialize);
   if (!hasLimit) {
-    return $.response[200].json({ items: allItems, page, total });
+    return $.response[200].json({ items: matched.map(serialize), page, total });
   }
   const start = (page - 1) * limit;
-  const items = allItems.slice(start, start + limit);
+  const items = matched.slice(start, start + limit).map(serialize);
   return $.response[200].json({
     items, page, total, complete: start + items.length >= total,
   });

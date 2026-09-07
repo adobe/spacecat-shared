@@ -337,8 +337,10 @@ export const applyProjectUpdate = (stored, patch) => {
  * 2026-06-25; `primary_url`/`root_domain` are added to the schema by overlay CR10). `primary_url`
  * and `root_domain` mirror the benchmark's `domain` live, so they default off the effective domain
  * here (the mock mirrors the full domain; it does not extract a registrable root); `project_id`
- * defaults empty and is set by the handler/seed to the owning project. Created
- * benchmarks are competitors (`main_brand: false`); the own-brand benchmark is system-managed.
+ * defaults empty and is set by the handler/seed to the owning project. Defaults to a competitor
+ * (`main_brand: false`); the v2 batch-create route passes the caller's `main_brand` through in
+ * `overrides` on every entry, honouring `true` when requested (LLMO-7421 — create DOES accept
+ * and honour the flag live, unlike a PUT).
  * @param {Partial<Benchmark>} [overrides]
  * @returns {Benchmark}
  */

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.21.0...@adobe/spacecat-shared-project-engine-client-v1.21.1) (2026-09-07)
+
+### Bug Fixes
+
+* **project-engine-client:** honour main_brand:true on v2 benchmark create (LLMO-7421) ([#1918](https://github.com/adobe/spacecat-shared/issues/1918)) ([57f37d1](https://github.com/adobe/spacecat-shared/commit/57f37d1f4e4561119d9148671dac09f2259f0fcb))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.21.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.20.0...@adobe/spacecat-shared-project-engine-client-v1.21.0) (2026-08-31)
 
 ### Features

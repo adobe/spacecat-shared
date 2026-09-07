@@ -2340,8 +2340,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(unflagged).to.include({ main_brand: false });
   });
 
-  // Documents the strict-equality contract (`main_brand: b?.main_brand === true`): an explicit
-  // `false` behaves identically to an omitted field, not just "falsy" values in general.
+  // An explicit `false` behaves identically to an omitted field. This does not by itself
+  // distinguish the `=== true` strict-equality mapping from a looser truthiness coercion
+  // (both would produce `false` here) — a truthy non-boolean input would be the case that
+  // does, and isn't covered — but it's still worth pinning as the documented, unsurprising
+  // behavior a caller may rely on explicitly sending `false`.
   it('creates a benchmark unflagged when main_brand is explicitly false (v2)', async () => {
     const { data: created, error: createError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',

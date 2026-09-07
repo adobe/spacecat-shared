@@ -2296,6 +2296,100 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.aio_benchmarks.map((b) => b.id)).to.not.include(created.ids[0]);
   });
 
+  // LLMO-7421: main_brand: true IS accepted and honoured at create (live-verified). A prior
+  // version of this mock silently dropped it and always created a competitor, which masked the
+  // real spacecat-api-service defect (every benchmark it created upstream was left unflagged)
+  // behind a passing suite.
+  it('creates a benchmark flagged main_brand: true (v2) and the list reflects it', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Own Brand X', domain: 'own-brand-x.example', main_brand: true }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const flagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(flagged).to.include({ main_brand: true, domain: 'own-brand-x.example' });
+  });
+
+  // A create with main_brand omitted still defaults to a competitor — the pre-LLMO-7421 default
+  // behaviour, unchanged.
+  it('creates a benchmark unflagged by default when main_brand is omitted (v2)', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Plain Competitor', domain: 'plain-competitor.example' }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const unflagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(unflagged).to.include({ main_brand: false });
+  });
+
+  // An explicit `false` behaves identically to an omitted field. This does not by itself
+  // distinguish the `=== true` strict-equality mapping from a looser truthiness coercion
+  // (both would produce `false` here) — a truthy non-boolean input would be the case that
+  // does, and isn't covered — but it's still worth pinning as the documented, unsurprising
+  // behavior a caller may rely on explicitly sending `false`.
+  it('creates a benchmark unflagged when main_brand is explicitly false (v2)', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Explicitly False Competitor', domain: 'explicitly-false.example', main_brand: false }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const unflagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(unflagged).to.include({ main_brand: false });
+  });
+
+  // A single POST can mix an own-brand entry with competitor entries — the per-entry `main_brand`
+  // mapping (LLMO-7421) must not leak the flag across entries or apply it to the wrong index.
+  it('honours main_brand per-entry in a mixed batch (v2)', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [
+          { brand_name: 'Mixed Own Brand', domain: 'mixed-own.example', main_brand: true },
+          { brand_name: 'Mixed Competitor', domain: 'mixed-competitor.example' },
+        ],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(2);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const ownBrand = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    const competitor = listed.aio_benchmarks.find((b) => b.id === created.ids[1]);
+    expect(ownBrand).to.include({ main_brand: true, domain: 'mixed-own.example' });
+    expect(competitor).to.include({ main_brand: false, domain: 'mixed-competitor.example' });
+  });
+
   // Live rejects a duplicate competitor (same brand name / alias / domain) with a hard 409, unlike
   // prompts which dedup into existing_count (#1745 second sweep).
   it('409s a duplicate benchmark (brand name or domain conflict)', async () => {
@@ -2385,6 +2479,70 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     const updated = listed.aio_benchmarks.find((b) => b.id === SEED_IDS.benchmarkId);
     expect(updated.brand_aliases).to.deep.equal(['Adobe Inc', 'Adobe Systems']);
+  });
+
+  // LLMO-7421: main_brand can only be set at CREATE, never via PUT (live-verified). A PUT that
+  // includes main_brand must not change the stored flag either way — matching a same-shaped
+  // gap on the create side that this ticket fixed (the mock must not be MORE permissive than
+  // live by silently honouring a field live ignores).
+  it('ignores main_brand on PUT — cannot demote the seeded own-brand benchmark', async () => {
+    const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${SEED_IDS.benchmarkId}`;
+    const rawBenchPut = await fetch(benchPutUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ brand_aliases: ['Adobe Inc'], main_brand: false }),
+    });
+    expect(rawBenchPut.status).to.equal(202);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const updated = listed.aio_benchmarks.find((b) => b.id === SEED_IDS.benchmarkId);
+    expect(updated).to.include({ main_brand: true });
+    // The non-stripped field in the same request was still applied — this PUT is not a no-op.
+    expect(updated.brand_aliases).to.deep.equal(['Adobe Inc']);
+  });
+
+  // The inverse of the demotion test above: a PUT can't PROMOTE a competitor to own-brand either.
+  // Both directions must be pinned — a fix that only strips main_brand when it's already true
+  // (an accidental `if (body.main_brand === false)` instead of an unconditional strip) would pass
+  // the demotion test above while still leaking a promotion through.
+  it('ignores main_brand on PUT — cannot promote a competitor to own-brand', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Promote Me Not', domain: 'promote-me-not.example' }],
+      },
+    );
+    const competitorId = created.ids[0];
+
+    const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${competitorId}`;
+    const rawBenchPut = await fetch(benchPutUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ brand_aliases: ['Promo Alias'], main_brand: true }),
+    });
+    expect(rawBenchPut.status).to.equal(202);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const updated = listed.aio_benchmarks.find((b) => b.id === competitorId);
+    expect(updated).to.include({ main_brand: false });
+    expect(updated.brand_aliases).to.deep.equal(['Promo Alias']);
   });
 
   it('listBrandUrls returns the seeded brand URL under the own-brand benchmark', async () => {

@@ -267,10 +267,14 @@ describe('seeds', () => {
     const { workspaceId, projectId } = SEED_IDS;
 
     ops.prompts.createMany({ workspaceId, projectId }, [{ text: 'extra' }]);
-    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(2);
+    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(3);
 
     store.reset();
-    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+    const restored = ops.prompts.list({ workspaceId, projectId });
+    expect(restored.map((prompt) => prompt.id))
+      .to.deep.equal([SEED_IDS.promptId, SEED_IDS.childOnlyPromptId]);
+    expect(restored.find((prompt) => prompt.id === SEED_IDS.childOnlyPromptId).tags.map((tag) => tag.id))
+      .to.deep.equal([SEED_IDS.tagChildTagId]);
   });
 
   it('seed sets are frozen (handed to the store by reference safely)', () => {

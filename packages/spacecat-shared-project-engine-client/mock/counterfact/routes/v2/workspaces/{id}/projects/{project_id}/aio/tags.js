@@ -13,7 +13,8 @@
 /**
  * Stateful handlers for /v2/workspaces/{id}/projects/{project_id}/aio/tags — the project-level AIO
  * tag taxonomy (the Categories surface), modelled as a dimension-root tree: each DIMENSION
- * (`category`, `intent`, `origin`, `source`, `type`) is a bare-named root with no `parent_id`, and
+ * (`category`, `$abv_tags$intent`, `origin`, `source`, `tag`, `type`) is a bare-named root with no
+ * `parent_id`, and
  * every VALUE is a bare-named descendant carrying its parent's id. No tag name contains a `:`; a
  * tag's dimension is `path[0]`. Categories sit at depth 2 and sub-categories at depth 3. The
  * per-project `tags` collection (`tags:{ws}:{pid}`) is scoped so the same taxonomy registered
@@ -42,6 +43,9 @@
  *   carries a DERIVED `children_count` (stored tags whose `parent_id` is this tag's id) and a
  *   root-first `path[]` ancestry breadcrumb excluding itself (a depth-2 tag: one leaf, its
  *   dimension root; a depth-3 tag: two leaves); a root omits `parent_id` and `path` entirely.
+ * When callers opt into a bounded `limit`, it must be 1–100. That response retains the full
+ * matching `total` and adds `complete` so pagination cannot silently look exhaustive. Legacy
+ * reads without `limit` remain unpaged and complete.
  * - DELETE (`aio-delete-tags`): removes the body's tag ids (`BatchDeleteRequest` `{ ids }`) from
  *   the standalone tag collection AND detaches each id from every prompt carrying it → 204. A
  *   prompt whose only tag was deleted becomes fully unassigned (gate 4, verified 2026-07-02); it is
@@ -117,10 +121,25 @@ export function GET($) {
   // and the root-first `path[]` from the stored collection, and leaves `parent_id`/`path` OFF a
   // root entirely — exactly as live does.
   const { serialize } = context.buildTagView(stored, context.factories);
-  const items = matched.map(serialize);
+  const limit = Number(query?.limit);
+  const hasLimit = query?.limit !== undefined && query?.limit !== '';
+  if (hasLimit && (!Number.isInteger(limit) || limit < 1 || limit > 100)) {
+    return $.response[400].json(context.factories.createBasicResponseMock({
+      message: 'limit must be an integer between 1 and 100',
+    }));
+  }
   // `page` arrives as a query string (e.g. "2"); coerce so the response field stays the numeric
   // type AIOTagsListResponse declares, regardless of whether the param was passed.
-  return $.response[200].json({ items, page: Number(query?.page ?? 1), total: items.length });
+  const page = Number(query?.page ?? 1);
+  const allItems = matched.map(serialize);
+  if (!hasLimit) {
+    return $.response[200].json({ items: allItems, page, total: allItems.length });
+  }
+  const start = (page - 1) * limit;
+  const items = allItems.slice(start, start + limit);
+  return $.response[200].json({
+    items, page, total: allItems.length, complete: start + items.length >= allItems.length,
+  });
 }
 
 /** DELETE — remove standalone project tags by id, detaching them from prompts → 204 No Content. */

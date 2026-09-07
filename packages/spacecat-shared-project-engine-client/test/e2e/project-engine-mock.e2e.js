@@ -40,8 +40,8 @@ const READY_TIMEOUT_MS = 30_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
 const SEED_WORKSPACE = SEED_IDS.workspaceId;
 const SEED_PROJECT = SEED_IDS.projectId;
-// Every project's root level holds exactly these five dimension roots and nothing else.
-const DIMENSION_ROOT_NAMES = ['category', 'intent', 'origin', 'source', 'type'];
+// Normal provisioned roots are a membership contract; raw provider fixtures add a case variant.
+const DIMENSION_ROOT_NAMES = ['category', '$abv_tags$intent', 'origin', 'source', 'tag', 'type'];
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -914,7 +914,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       if (t.path === undefined) {
         expect(t).to.not.have.property('parent_id');
       } else {
-        expect(t.path[0].name).to.be.oneOf(['category', 'intent', 'origin', 'source', 'type']);
+        expect(t.path[0].name).to.be.oneOf(DIMENSION_ROOT_NAMES);
         expect(t.parent_id).to.be.a('string');
       }
     });
@@ -933,7 +933,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(res.status).to.equal(201);
 
-    // The minted name is now a root in the tag tree, alongside the five dimension roots.
+    // The minted name is now a root in the tag tree, alongside the provisioned roots.
     const { data: roots } = await listTags('');
     const minted = roots.items.find((t) => t.name === 'Freshly Minted');
     expect(minted, 'the minted root is registered in the tag tree').to.not.equal(undefined);
@@ -989,7 +989,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     expect(created.ids).to.have.length(1);
 
-    // Default (no draft) read: only the seeded, already-published prompt is visible.
+    // Default (no draft) read: only the seeded, already-published prompts are visible.
     const { data: beforePublish } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
       {
@@ -997,7 +997,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         body: { tag_ids: [] },
       },
     );
-    expect(beforePublish.total).to.equal(1);
+    expect(beforePublish.total).to.equal(2);
     expect(beforePublish.items.map((p) => p.name)).to.not.include('Draft-gated question');
 
     // draft:true sees it immediately, same as live's draft tree.
@@ -1097,8 +1097,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
         body: { tag_ids: [] },
       },
     );
-    expect(listed.total).to.equal(1);
-    expect(listed.items[0].id).to.equal(SEED_IDS.promptId);
+    expect(listed.total).to.equal(2);
+    expect(listed.items.map((p) => p.id))
+      .to.have.members([SEED_IDS.promptId, SEED_IDS.childOnlyPromptId]);
   });
 
   // ───────────────────────────────────────────────────────────────────────
@@ -1170,9 +1171,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     expect(res.status).to.equal(500);
 
-    // Nothing was created — by_tags still shows only the seeded prompt.
+    // Nothing was created — by_tags still shows both seeded prompts.
     const { data: all } = await listByTags([]);
-    expect(all.total).to.equal(1);
+    expect(all.total).to.equal(2);
     expect(all.items.map((p) => p.name)).to.not.include('Should not persist');
   });
 
@@ -1234,6 +1235,28 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // … and no longer matches an original tag (the `branded` value was replaced out)
     const { data: byOld } = await listByTags([SEED_IDS.typeBrandedTagId]);
     expect(byOld.items.map((p) => p.id)).to.not.include(SEED_IDS.promptId);
+  });
+
+  it('preserves plain, origin, and source ids on replace only when explicitly unioned', async () => {
+    const references = [
+      SEED_IDS.categoryTagId,
+      SEED_IDS.tagParentTagId,
+      SEED_IDS.tagChildTagId,
+      SEED_IDS.originHumanTagId,
+      SEED_IDS.sourceConfigTagId,
+    ];
+    const { response } = await client.PUT(
+      '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: { items: [{ id: SEED_IDS.promptId, references, replace: true }] },
+      },
+    );
+    expect(response.status).to.equal(204);
+
+    const { data } = await listByTags([]);
+    const prompt = data.items.find((p) => p.id === SEED_IDS.promptId);
+    expect(prompt.tags.map((t) => t.id)).to.deep.equal(references);
   });
 
   // An unknown prompt id is skipped SILENTLY — the call still 204s, no "not found" error.
@@ -1302,8 +1325,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
 
     const { data: listed } = await listByTags([]);
-    expect(listed.total).to.equal(1); // no duplicate was minted
-    expect(listed.items[0]).to.include({
+    expect(listed.total).to.equal(2); // no duplicate was minted
+    expect(listed.items.find((p) => p.id === SEED_IDS.promptId)).to.include({
       id: SEED_IDS.promptId,
       name: 'What is the best trail shoe?',
     });
@@ -1566,7 +1589,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.parent_id).to.equal(SEED_IDS.categoryRootTagId);
     expect(created.path.map((leaf) => leaf.name)).to.deep.equal(['category']);
 
-    // The root level is untouched: still exactly the five dimension roots.
+    // The root level retains all normal provisioned roots.
     const { data: roots } = await listTags('');
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
   });
@@ -1673,7 +1696,65 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(gsc.id).to.not.equal(SEED_IDS.childGscTagId);
   });
 
-  // __reset restores the boot seed (the five dimension roots, no ad-hoc tags), so a created
+  it('preserves child-only plain-tag attachment without expanding it to the parent', async () => {
+    const { data } = await listByTags([SEED_IDS.tagChildTagId]);
+    const childOnly = data.items.find((p) => p.id === SEED_IDS.childOnlyPromptId);
+
+    expect(childOnly.tags.map((t) => t.id)).to.deep.equal([SEED_IDS.tagChildTagId]);
+    expect(childOnly.tags[0].path.map((leaf) => leaf.name)).to.deep.equal(['tag', 'Running']);
+  });
+
+  it('returns raw incompatible and deep provider tag shapes without compatibility metadata', async () => {
+    const { data: roots } = await listTags('');
+    expect(roots.items.find((t) => t.id === SEED_IDS.caseVariantRootTagId)).to.include({ name: 'Tag' });
+
+    const { data: tagChildren } = await listTags(SEED_IDS.tagRootTagId);
+    expect(tagChildren.items.find((t) => t.id === SEED_IDS.separatorTagId))
+      .to.include({ name: 'Men/Women', parent_id: SEED_IDS.tagRootTagId });
+    expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedDashTagId).name)
+      .to.equal('Road-Running');
+    expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedSpaceTagId).name)
+      .to.equal('Road Running');
+
+    const { data: deep } = await listTags(SEED_IDS.deepChildTagId);
+    const unsupported = deep.items.find((t) => t.id === SEED_IDS.deepGrandchildTagId);
+    expect(unsupported.path.map((leaf) => leaf.name)).to.deep.equal(['tag', 'Deep', 'Nested']);
+    expect(unsupported).to.not.have.property('compatibility');
+  });
+
+  it('keeps legacy reads complete and pages siblings only when a bounded limit is requested', async () => {
+    const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const legacy = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=`, {
+      headers: { Authorization: '******' },
+    });
+    expect(legacy.status).to.equal(200);
+    const legacyBody = await legacy.json();
+    expect(legacyBody.total).to.equal(5);
+    expect(legacyBody.items).to.have.length(5);
+    expect(legacyBody).to.not.have.property('complete');
+
+    const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=1`, {
+      headers: { Authorization: '******' },
+    });
+    expect(first.status).to.equal(200);
+    const firstBody = await first.json();
+    expect(firstBody).to.include({ page: 1, total: 5, complete: false });
+    expect(firstBody.items).to.have.length(2);
+
+    const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=3`, {
+      headers: { Authorization: '******' },
+    });
+    const lastBody = await last.json();
+    expect(lastBody).to.include({ page: 3, total: 5, complete: true });
+    expect(lastBody.items).to.have.length(1);
+
+    const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
+      headers: { Authorization: '******' },
+    });
+    expect(tooLarge.status).to.equal(400);
+  });
+
+  // __reset restores the boot seed (the normal roots, no ad-hoc tags), so a created
   // standalone tag is cleared — proving the tags collection rides the seed/reset lifecycle like
   // every other stateful resource.
   it('clears created tags on __reset (tags ride the seed lifecycle)', async () => {
@@ -1683,9 +1764,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     await fetch(`${baseUrl}/__reset`, { method: 'POST' });
 
-    // back to the baked baseline: the five dimension roots, and `Ephemeral` is gone
+    // back to the baked baseline: all normal roots, and `Ephemeral` is gone
     const { data: roots } = await listTags('');
-    expect(roots.total).to.equal(5);
     expect(roots.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
     const { data: categories } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categories.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
@@ -1954,16 +2034,16 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // `Doomed` is gone; the baked category survives (delete targets only the id sent) …
     const { data: categoriesAfter } = await listTags(SEED_IDS.categoryRootTagId);
     expect(categoriesAfter.items.map((t) => t.name)).to.deep.equal(['Running Shoes']);
-    // … and the five dimension roots are untouched.
+    // …and the normal provisioned roots are untouched.
     const { data: rootsAfter } = await listTags('');
     expect(rootsAfter.items.map((t) => t.name)).to.have.members(DIMENSION_ROOT_NAMES);
 
     // The seeded prompt survives — deleting a tag never deletes a prompt. `Doomed` carried none,
     // so the prompt's own tags are untouched too.
     const { data: prompts } = await listByTags([]);
-    expect(prompts.total).to.equal(1);
-    expect(prompts.items[0].id).to.equal(SEED_IDS.promptId);
-    expect(prompts.items[0].tags.map((t) => t.id)).to.include(SEED_IDS.categoryTagId);
+    expect(prompts.total).to.equal(2);
+    const seeded = prompts.items.find((p) => p.id === SEED_IDS.promptId);
+    expect(seeded.tags.map((t) => t.id)).to.include(SEED_IDS.categoryTagId);
   });
 
   // Gate 4 (verified live 2026-07-02): deleting a tag DETACHES it from every carrying prompt. The
@@ -1992,12 +2072,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
 
     // … the prompt itself survives, minus that one tag, keeping every other …
     const { data: all } = await listByTags([]);
-    expect(all.total).to.equal(1);
-    const [prompt] = all.items;
+    expect(all.total).to.equal(2);
+    const prompt = all.items.find((p) => p.id === SEED_IDS.promptId);
     expect(prompt.tags.map((t) => t.id)).to.not.include(SEED_IDS.typeBrandedTagId);
     expect(prompt.tags.map((t) => t.id)).to.have.members([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
+      SEED_IDS.tagParentTagId,
+      SEED_IDS.tagChildTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.sourceConfigTagId,
@@ -2020,6 +2102,8 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const { response } = await delTags([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
+      SEED_IDS.tagParentTagId,
+      SEED_IDS.tagChildTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.sourceConfigTagId,
@@ -2028,11 +2112,12 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(response.status).to.equal(204);
 
     const { data: all } = await listByTags([]);
-    expect(all.total).to.equal(1);
-    expect(all.items[0].id).to.equal(SEED_IDS.promptId);
+    expect(all.total).to.equal(2);
+    const primary = all.items.find((p) => p.id === SEED_IDS.promptId);
+    expect(primary.id).to.equal(SEED_IDS.promptId);
     // A fully-unassigned prompt OMITS the `tags` key entirely (matches prod — §6 fidelity fix),
     // rather than emitting `[]`, and is counted in `unassigned`.
-    expect(all.items[0]).to.not.have.property('tags');
+    expect(primary).to.not.have.property('tags');
     expect(all.unassigned).to.equal(1);
   });
 

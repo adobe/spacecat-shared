@@ -59,6 +59,7 @@ const PROJECT_ID = 'b8c9d0e1-f2a3-4b4c-8d5e-7f8091021324'; // live market under 
 const AI_MODEL_ASSIGNMENT_ID = 'c3d4e5f6-a7b8-4c9d-8e1f-2a3b4c5d6e7f'; // ProjectAIModelResponse.id
 const AI_MODEL_CATALOG_ID = findCatalogEntryByKey('search-gpt').id; // catalog `search-gpt` (ChatGPT)
 const PROMPT_ID = 'e5f6a7b8-c9d0-4e1f-8a2b-4c5d6e7f8091'; // AIOPromptWithStatus.id
+const CHILD_ONLY_PROMPT_ID = 'e6f7a8b9-c0d1-4e2f-8a3b-5c6d7e8f9012';
 const BENCHMARK_ID = 'f6a7b8c9-d0e1-4f2a-9b3c-5d6e7f809102'; // AIOBenchmarkWithCounters.id (own brand)
 const BRAND_URL_ID = 'a7b8c9d0-e1f2-4a3b-8c4d-6e7f80910213'; // BrandURL.id
 const ENGLISH_LANGUAGE_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1'; // catalog "English" → ISO en
@@ -72,9 +73,10 @@ const US_GEO_TARGET_ID = 2840; // Google geoTargetId (United States)
 // prompt resolve to ONE id and the Categories surface / `by_tags` correlate them.
 const DIMENSION_ROOTS = Object.freeze({
   category: 'category',
-  intent: 'intent',
+  intent: '$abv_tags$intent',
   origin: 'origin',
   source: 'source',
+  tag: 'tag',
   type: 'type',
 });
 
@@ -97,6 +99,7 @@ const INTENT_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.intent);
 const ORIGIN_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.origin);
 const SOURCE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.source);
 const TYPE_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.type);
+const TAG_ROOT_TAG_ID = tagId(DIMENSION_ROOTS.tag);
 
 // The pre-rename authorship root name, retained only for the legacy seed fixture (WP-O1 item 4):
 // a project whose authorship root is still `source`, so api-service's tolerant resolver
@@ -171,6 +174,22 @@ const INTENT_COMMERCIAL_TAG_ID = tagId('Commercial', INTENT_ROOT_TAG_ID);
 const SOURCE_CONFIG_TAG_ID = tagId('config', SOURCE_ROOT_TAG_ID);
 const SOURCE_GSC_TAG_ID = tagId('gsc', SOURCE_ROOT_TAG_ID);
 const TYPE_BRANDED_TAG_ID = tagId('branded', TYPE_ROOT_TAG_ID);
+
+// Raw Project Engine data intentionally includes names that the Adobe API layer must classify
+// separately. These fixtures preserve that provider shape without adding compatibility metadata.
+const TAG_PARENT_NAME = 'Running';
+const TAG_CHILD_NAME = 'Trail';
+const TAG_PARENT_TAG_ID = tagId(TAG_PARENT_NAME, TAG_ROOT_TAG_ID);
+const TAG_CHILD_TAG_ID = tagId(TAG_CHILD_NAME, TAG_PARENT_TAG_ID);
+const CASE_VARIANT_ROOT_TAG_ID = tagId('Tag');
+const NORMALIZED_DASH_TAG_ID = tagId('Road-Running', TAG_ROOT_TAG_ID);
+const NORMALIZED_SPACE_TAG_ID = tagId('Road Running', TAG_ROOT_TAG_ID);
+const NORMALIZED_DASH_CHILD_TAG_ID = tagId('Shoes', NORMALIZED_DASH_TAG_ID);
+const NORMALIZED_SPACE_CHILD_TAG_ID = tagId('Shoes', NORMALIZED_SPACE_TAG_ID);
+const SEPARATOR_TAG_ID = tagId('Men/Women', TAG_ROOT_TAG_ID);
+const DEEP_PARENT_TAG_ID = tagId('Deep', TAG_ROOT_TAG_ID);
+const DEEP_CHILD_TAG_ID = tagId('Nested', DEEP_PARENT_TAG_ID);
+const DEEP_GRANDCHILD_TAG_ID = tagId('Unsupported', DEEP_CHILD_TAG_ID);
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -279,7 +298,7 @@ const childTag = (name, parentId) => createAIOTagMock({
 });
 
 /**
- * The five dimension roots and the closed dimensions' full child vocabularies — the tree every
+ * The dimension roots and the closed dimensions' full child vocabularies — the tree every
  * project is provisioned with, before any customer-authored category exists. Pass `categories` to
  * append the open `category` subtree: each entry is a depth-2 category and its depth-3
  * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
@@ -307,6 +326,7 @@ const dimensionRootTree = (
     rootTag(DIMENSION_ROOTS.intent),
     rootTag(authorshipRootName),
     ...(includeSource ? [rootTag(DIMENSION_ROOTS.source)] : []),
+    rootTag(DIMENSION_ROOTS.tag),
     rootTag(DIMENSION_ROOTS.type),
     ...INTENT_VALUES.map((v) => childTag(v, INTENT_ROOT_TAG_ID)),
     ...ORIGIN_VALUES.map((v) => childTag(v, authorshipRootId)),
@@ -357,7 +377,8 @@ const legacySlugDimensionRootTree = () => [
  *   domain: string, brandName: string, languageId: string, countryCode: string, locationId: number,
  *   locationName: string, modelKey: string, promptId: string, promptName: string,
  *   promptTags: Array<Schemas['model.AIOTag']>, benchmarkId: string, brandUrlId: string,
- *   projectTags: Array<Schemas['model.AIOTag']> }} cfg
+ *   projectTags: Array<Schemas['model.AIOTag']>,
+ *   additionalPrompts?: Array<Schemas['model.AIOPromptWithStatus']> }} cfg
  * @returns {Snapshot}
  */
 const peHierarchy = (cfg) => buildSeed({
@@ -382,7 +403,7 @@ const peHierarchy = (cfg) => buildSeed({
       id: cfg.promptId,
       name: cfg.promptName,
       tags: cfg.promptTags,
-    })],
+    }), ...(cfg.additionalPrompts ?? [])],
     benchmarks: [createBenchmarkMock({
       id: cfg.benchmarkId,
       brand_name: cfg.brandName,
@@ -407,9 +428,8 @@ export const EMPTY_WORKSPACE = Object.freeze({
  * benchmark/URL + the dimension-root tag tree) — the "read/patch/run existing data" flow starts
  * here. Entity shapes mirror the real API responses so `__dump` and GETs look like production.
  *
- * The prompt is dual-tagged (its depth-2 category AND its depth-3 sub-category, per the id-based
- * alignment spec's delete-resilience rule) and carries one closed value per dimension. Its
- * sub-category `human` and its origin value `human` share a name and nothing else.
+ * The main prompt is dual-tagged in both the category and plain-tag families and carries independent
+ * origin/source values. A second prompt is attached only to the depth-3 plain tag child.
  */
 export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   childWorkspaceId: CHILD_WORKSPACE_ID,
@@ -428,6 +448,8 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   promptTags: [
     childTag(CATEGORY_NAME, CATEGORY_ROOT_TAG_ID),
     childTag(CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_TAG_ID),
+    childTag(TAG_PARENT_NAME, TAG_ROOT_TAG_ID),
+    childTag(TAG_CHILD_NAME, TAG_PARENT_TAG_ID),
     childTag('human', ORIGIN_ROOT_TAG_ID),
     childTag('Commercial', INTENT_ROOT_TAG_ID),
     childTag('config', SOURCE_ROOT_TAG_ID),
@@ -435,13 +457,29 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
   ],
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
+  additionalPrompts: [createPromptMock({
+    id: CHILD_ONLY_PROMPT_ID,
+    name: 'What trail shoe should I buy?',
+    tags: [childTag(TAG_CHILD_NAME, TAG_PARENT_TAG_ID)],
+  })],
   // `Trail` and `gsc` carry no prompts, so 0-prompt sub-categories are exercised by the tree read.
-  projectTags: dimensionRootTree([
-    {
+  projectTags: [
+    ...dimensionRootTree([{
       name: CATEGORY_NAME,
       children: [CATEGORY_CHILD_NAME, CATEGORY_CHILD_COLLIDING_NAME, CATEGORY_CHILD_GSC_NAME],
-    },
-  ]),
+    }]),
+    childTag(TAG_PARENT_NAME, TAG_ROOT_TAG_ID),
+    childTag(TAG_CHILD_NAME, TAG_PARENT_TAG_ID),
+    rootTag('Tag'),
+    childTag('Road-Running', TAG_ROOT_TAG_ID),
+    childTag('Road Running', TAG_ROOT_TAG_ID),
+    childTag('Shoes', NORMALIZED_DASH_TAG_ID),
+    childTag('Shoes', NORMALIZED_SPACE_TAG_ID),
+    childTag('Men/Women', TAG_ROOT_TAG_ID),
+    childTag('Deep', TAG_ROOT_TAG_ID),
+    childTag('Nested', DEEP_PARENT_TAG_ID),
+    childTag('Unsupported', DEEP_CHILD_TAG_ID),
+  ],
 }));
 
 /**
@@ -594,11 +632,13 @@ export const SEED_IDS = Object.freeze({
   promptId: PROMPT_ID,
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
-  // The five dimension roots — every project carries exactly these at the root level.
+  // The normal provisioned roots. `$abv_tags$intent` is the hidden wire root; `tag` is generic
+  // project data rather than a vendor enum.
   categoryRootTagId: CATEGORY_ROOT_TAG_ID,
   intentRootTagId: INTENT_ROOT_TAG_ID,
   originRootTagId: ORIGIN_ROOT_TAG_ID,
   sourceRootTagId: SOURCE_ROOT_TAG_ID,
+  tagRootTagId: TAG_ROOT_TAG_ID,
   typeRootTagId: TYPE_ROOT_TAG_ID,
   // H1's open taxonomy: a depth-2 category and its three depth-3 sub-categories. `childTagId`
   // carries no prompts; `childCollidingTagId` is the sub-category named `human` whose name matches
@@ -615,6 +655,18 @@ export const SEED_IDS = Object.freeze({
   sourceConfigTagId: SOURCE_CONFIG_TAG_ID,
   sourceGscTagId: SOURCE_GSC_TAG_ID,
   typeBrandedTagId: TYPE_BRANDED_TAG_ID,
+  childOnlyPromptId: CHILD_ONLY_PROMPT_ID,
+  tagParentTagId: TAG_PARENT_TAG_ID,
+  tagChildTagId: TAG_CHILD_TAG_ID,
+  caseVariantRootTagId: CASE_VARIANT_ROOT_TAG_ID,
+  normalizedDashTagId: NORMALIZED_DASH_TAG_ID,
+  normalizedSpaceTagId: NORMALIZED_SPACE_TAG_ID,
+  normalizedDashChildTagId: NORMALIZED_DASH_CHILD_TAG_ID,
+  normalizedSpaceChildTagId: NORMALIZED_SPACE_CHILD_TAG_ID,
+  separatorTagId: SEPARATOR_TAG_ID,
+  deepParentTagId: DEEP_PARENT_TAG_ID,
+  deepChildTagId: DEEP_CHILD_TAG_ID,
+  deepGrandchildTagId: DEEP_GRANDCHILD_TAG_ID,
   // The legacy pre-rename fixture (`legacy-source-workspace`): the authorship root is still named
   // `source`, for api-service's tolerant-resolver test (origin-dimension.md §7 gate 3). WP-O6 drops
   // both the seed and these ids.

@@ -149,7 +149,6 @@ describe('seeds', () => {
     ]);
     expect(childOnlyPrompt).to.include({ id: SEED_IDS.childOnlyPromptId });
     expect(childOnlyPrompt.tags.map((t) => t.id)).to.deep.equal([SEED_IDS.tagChildTagId]);
-
   });
 
   it('raw-provider-tags preserves incompatible and deep provider data outside the canonical seed', () => {

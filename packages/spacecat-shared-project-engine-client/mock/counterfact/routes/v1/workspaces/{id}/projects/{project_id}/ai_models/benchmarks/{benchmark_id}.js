@@ -29,7 +29,7 @@
 /** PUT — update a benchmark in place (main_brand ignored, matching live) → 202 Accepted (empty). */
 export function PUT($) {
   const { path, body, context } = $;
-  const { main_brand: ignoredMainBrand, ...patch } = body ?? {};
+  const { main_brand: _mainBrand, ...patch } = body ?? {};
   context.ops.benchmarks.update(
     { workspaceId: path.id, projectId: path.project_id },
     path.benchmark_id,

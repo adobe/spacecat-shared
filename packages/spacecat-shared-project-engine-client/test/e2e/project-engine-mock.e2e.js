@@ -2340,6 +2340,27 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(unflagged).to.include({ main_brand: false });
   });
 
+  // Documents the strict-equality contract (`main_brand: b?.main_brand === true`): an explicit
+  // `false` behaves identically to an omitted field, not just "falsy" values in general.
+  it('creates a benchmark unflagged when main_brand is explicitly false (v2)', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Explicitly False Competitor', domain: 'explicitly-false.example', main_brand: false }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const unflagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(unflagged).to.include({ main_brand: false });
+  });
+
   // A single POST can mix an own-brand entry with competitor entries — the per-entry `main_brand`
   // mapping (LLMO-7421) must not leak the flag across entries or apply it to the wrong index.
   it('honours main_brand per-entry in a mixed batch (v2)', async () => {
@@ -2481,6 +2502,44 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     );
     const updated = listed.aio_benchmarks.find((b) => b.id === SEED_IDS.benchmarkId);
     expect(updated).to.include({ main_brand: true });
+    // The non-stripped field in the same request was still applied — this PUT is not a no-op.
+    expect(updated.brand_aliases).to.deep.equal(['Adobe Inc']);
+  });
+
+  // The inverse of the demotion test above: a PUT can't PROMOTE a competitor to own-brand either.
+  // Both directions must be pinned — a fix that only strips main_brand when it's already true
+  // (an accidental `if (body.main_brand === false)` instead of an unconditional strip) would pass
+  // the demotion test above while still leaking a promotion through.
+  it('ignores main_brand on PUT — cannot promote a competitor to own-brand', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Promote Me Not', domain: 'promote-me-not.example' }],
+      },
+    );
+    const competitorId = created.ids[0];
+
+    const benchPutUrl = `${baseUrl}/v1/workspaces/${SEED_WORKSPACE}`
+      + `/projects/${SEED_PROJECT}/ai_models/benchmarks/${competitorId}`;
+    const rawBenchPut = await fetch(benchPutUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer e2e-token',
+        'content-type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ brand_aliases: ['Promo Alias'], main_brand: true }),
+    });
+    expect(rawBenchPut.status).to.equal(202);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const updated = listed.aio_benchmarks.find((b) => b.id === competitorId);
+    expect(updated).to.include({ main_brand: false });
+    expect(updated.brand_aliases).to.deep.equal(['Promo Alias']);
   });
 
   it('listBrandUrls returns the seeded brand URL under the own-brand benchmark', async () => {

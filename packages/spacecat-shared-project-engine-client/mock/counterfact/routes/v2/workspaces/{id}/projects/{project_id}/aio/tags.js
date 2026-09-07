@@ -139,7 +139,7 @@ export function GET($) {
   // Count the full parent/search-matched sibling set before selecting a requested page.
   const total = matched.length;
   if (!hasLimit) {
-    return $.response[200].json({ items: matched.map(serialize), page, total });
+    return $.response[200].json({ items: matched.map(serialize), page: 1, total });
   }
   const start = (page - 1) * limit;
   const items = matched.slice(start, start + limit).map(serialize);

@@ -1749,7 +1749,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const legacyBody = await legacy.json();
     expect(legacyBody.total).to.equal(5);
     expect(legacyBody.items).to.have.length(5);
+    expect(legacyBody.page).to.equal(1);
     expect(legacyBody).to.not.have.property('complete');
+
+    const ignoredInvalidPage = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&page=abc`, {
+      headers: jsonAuth,
+    });
+    expect(ignoredInvalidPage.status).to.equal(200);
+    const ignoredInvalidPageBody = await ignoredInvalidPage.json();
+    expect(ignoredInvalidPageBody).to.deep.equal(legacyBody);
 
     const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=1`, {
       headers: jsonAuth,
@@ -1776,6 +1784,18 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     const pagedItems = [...firstBody.items, ...middleBody.items, ...lastBody.items];
     expect(new Set(pagedItems.map(({ id }) => id)).size).to.equal(pagedItems.length);
     expect(pagedItems.map(({ id }) => id)).to.have.members(legacyBody.items.map(({ id }) => id));
+
+    const beyondLast = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=100`, {
+      headers: jsonAuth,
+    });
+    expect(beyondLast.status).to.equal(200);
+    const beyondLastBody = await beyondLast.json();
+    expect(beyondLastBody).to.deep.equal({
+      items: [],
+      page: 100,
+      total: 5,
+      complete: true,
+    });
 
     const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
       headers: jsonAuth,

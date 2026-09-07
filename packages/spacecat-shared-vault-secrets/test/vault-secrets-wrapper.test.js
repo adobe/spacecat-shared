@@ -180,6 +180,97 @@ describe('vaultSecrets wrapper', () => {
       expect(innerFn.called).to.equal(false);
     });
 
+    it('502 response uses @adobe/fetch Headers — .raw() is available for helix-universal adapter', async () => {
+      // Regression test for: response.headers.raw is not a function
+      // helix-universal aws-adapter.js calls response.headers.raw() on every response.
+      // When vault fails, the wrapper must return a Response with @adobe/fetch Headers
+      // (which have .raw()), not native Node.js Headers (which do not).
+      nock(AWS_ENDPOINT)
+        .post('/')
+        .replyWithError('connection refused');
+
+      const ctx = makeContext();
+      const wrapped = vaultSecrets(sinon.stub(), { bootstrapPath: BOOTSTRAP_PATH });
+
+      const response = await wrapped(new Request('https://example.com'), ctx);
+
+      expect(response.status).to.equal(502);
+      // response.headers.raw must exist — native Node.js Headers lack it and break helix-universal
+      expect(typeof response.headers.raw).to.equal('function');
+      const raw = response.headers.raw();
+      expect(raw).to.be.an('object');
+      expect(raw['x-error']).to.equal('error fetching secrets.');
+    });
+
+    it('returns 502 when Vault AppRole login returns 403', async () => {
+      mockBootstrap();
+      nock(VAULT_ADDR)
+        .post('/v1/auth/approle/login')
+        .reply(403, { errors: ['permission denied'] });
+
+      const ctx = makeContext();
+      const innerFn = sinon.stub();
+      const wrapped = vaultSecrets(innerFn, { bootstrapPath: BOOTSTRAP_PATH });
+
+      const response = await wrapped(new Request('https://example.com'), ctx);
+
+      expect(response.status).to.equal(502);
+      expect(response.headers.get('x-error')).to.equal('error fetching secrets.');
+      expect(innerFn.called).to.equal(false);
+      expect(ctx.log.error.calledOnce).to.equal(true);
+    });
+
+    it('502 from Vault 403 also has @adobe/fetch Headers with .raw()', async () => {
+      // This is the exact production failure path:
+      // Vault NAT/WAF blocks egress → 403 → native Response → helix-universal crashes
+      mockBootstrap();
+      nock(VAULT_ADDR)
+        .post('/v1/auth/approle/login')
+        .reply(403, { errors: ['permission denied'] });
+
+      const ctx = makeContext();
+      const wrapped = vaultSecrets(sinon.stub(), { bootstrapPath: BOOTSTRAP_PATH });
+
+      const response = await wrapped(new Request('https://example.com'), ctx);
+
+      expect(response.status).to.equal(502);
+      expect(typeof response.headers.raw).to.equal('function');
+      const raw = response.headers.raw();
+      expect(raw['x-error']).to.equal('error fetching secrets.');
+    });
+
+    it('returns 502 when Vault secret read fails', async () => {
+      mockBootstrap();
+      mockAppRoleLogin();
+      nock(VAULT_ADDR)
+        .get(`/v1/${MOUNT_POINT}/data/prod/api-service`)
+        .reply(500, { errors: ['internal server error'] });
+
+      const ctx = makeContext();
+      const innerFn = sinon.stub();
+      const wrapped = vaultSecrets(innerFn, { bootstrapPath: BOOTSTRAP_PATH });
+
+      const response = await wrapped(new Request('https://example.com'), ctx);
+
+      expect(response.status).to.equal(502);
+      expect(response.headers.get('x-error')).to.equal('error fetching secrets.');
+      expect(innerFn.called).to.equal(false);
+    });
+
+    it('logs the error message when vault fails', async () => {
+      nock(AWS_ENDPOINT)
+        .post('/')
+        .replyWithError('ECONNREFUSED vault unreachable');
+
+      const ctx = makeContext();
+      const wrapped = vaultSecrets(sinon.stub(), { bootstrapPath: BOOTSTRAP_PATH });
+
+      await wrapped(new Request('https://example.com'), ctx);
+
+      expect(ctx.log.error.calledOnce).to.equal(true);
+      expect(ctx.log.error.firstCall.args[0]).to.include('Failed to load secrets:');
+    });
+
     it('returns empty object when VAULT_SECRETS_DISABLED is true', async () => {
       process.env.VAULT_SECRETS_DISABLED = 'true';
       const ctx = makeContext();

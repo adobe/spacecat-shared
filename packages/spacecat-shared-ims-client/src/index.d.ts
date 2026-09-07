@@ -10,7 +10,13 @@
  * governing permissions and limitations under the License.
  */
 
-import type { ImsClient, ImsPromiseClient } from './clients';
+import {
+  ImsClient,
+  ImsPromiseClient,
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
+} from './clients';
 interface SiteLike {
   getBaseURL(): string;
   getAuthoringType(): string;
@@ -20,6 +26,9 @@ interface SiteLike {
 export {
   ImsClient,
   ImsPromiseClient,
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
 };
 
 export declare function getAccessToken(context: object, promiseToken: string): Promise<object>;

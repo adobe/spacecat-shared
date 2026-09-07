@@ -2296,6 +2296,47 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(after.aio_benchmarks.map((b) => b.id)).to.not.include(created.ids[0]);
   });
 
+  // LLMO-7421: main_brand: true IS accepted and honoured at create (live-verified). A prior
+  // version of this mock silently dropped it and always created a competitor, which masked the
+  // real spacecat-api-service defect (every benchmark it created upstream was left unflagged)
+  // behind a passing suite.
+  it('creates a benchmark flagged main_brand: true (v2) and the list reflects it', async () => {
+    const { data: created, error: createError } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Own Brand X', domain: 'own-brand-x.example', main_brand: true }],
+      },
+    );
+    expect(createError).to.equal(undefined);
+    expect(created.ids).to.have.length(1);
+
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const flagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(flagged).to.include({ main_brand: true, domain: 'own-brand-x.example' });
+  });
+
+  // A create with no main_brand (or an explicit false) still defaults to a competitor — the
+  // pre-LLMO-7421 default behaviour, unchanged.
+  it('creates a benchmark unflagged by default when main_brand is omitted (v2)', async () => {
+    const { data: created } = await client.POST(
+      '/v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      {
+        params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } },
+        body: [{ brand_name: 'Plain Competitor', domain: 'plain-competitor.example' }],
+      },
+    );
+    const { data: listed } = await client.GET(
+      '/v1/workspaces/{id}/projects/{project_id}/ai_models/benchmarks',
+      { params: { path: { id: SEED_WORKSPACE, project_id: SEED_PROJECT } } },
+    );
+    const unflagged = listed.aio_benchmarks.find((b) => b.id === created.ids[0]);
+    expect(unflagged).to.include({ main_brand: false });
+  });
+
   // Live rejects a duplicate competitor (same brand name / alias / domain) with a hard 409, unlike
   // prompts which dedup into existing_count (#1745 second sweep).
   it('409s a duplicate benchmark (brand name or domain conflict)', async () => {

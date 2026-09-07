@@ -470,6 +470,20 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
     }]),
     childTag(TAG_PARENT_NAME, TAG_ROOT_TAG_ID),
     childTag(TAG_CHILD_NAME, TAG_PARENT_TAG_ID),
+  ],
+}));
+
+/**
+ * Provider-shaped data deliberately excluded from the canonical default seed. Consumers that need
+ * to classify case variants, normalized collisions, separators, or unsupported depth select this
+ * fixture explicitly; the mock preserves every raw name and parent relationship unchanged.
+ */
+export const RAW_PROVIDER_TAGS_WORKSPACE = Object.freeze({
+  ...WORKSPACE_WITH_DATA,
+  [collectionKey('tags', { workspaceId: CHILD_WORKSPACE_ID, projectId: PROJECT_ID })]: [
+    ...WORKSPACE_WITH_DATA[
+      collectionKey('tags', { workspaceId: CHILD_WORKSPACE_ID, projectId: PROJECT_ID })
+    ],
     rootTag('Tag'),
     childTag('Road-Running', TAG_ROOT_TAG_ID),
     childTag('Road Running', TAG_ROOT_TAG_ID),
@@ -480,7 +494,7 @@ export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({
     childTag('Nested', DEEP_PARENT_TAG_ID),
     childTag('Unsupported', DEEP_CHILD_TAG_ID),
   ],
-}));
+});
 
 /**
  * Two coexisting, fully independent hierarchies (H1 = the `workspace-with-data` US/en world, plus a
@@ -613,6 +627,7 @@ export const LEGACY_SLUG_TAG_NAMES_WORKSPACE = Object.freeze(peHierarchy({
 export const SEEDS = Object.freeze({
   'empty-workspace': EMPTY_WORKSPACE,
   'workspace-with-data': WORKSPACE_WITH_DATA,
+  'raw-provider-tags': RAW_PROVIDER_TAGS_WORKSPACE,
   'two-hierarchies': TWO_HIERARCHIES,
   'legacy-source-workspace': WORKSPACE_WITH_SOURCE_ROOT,
   'legacy-slug-tag-names': LEGACY_SLUG_TAG_NAMES_WORKSPACE,

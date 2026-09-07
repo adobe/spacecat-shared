@@ -405,7 +405,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(created.ids).to.have.length(2);
     expect(created.existing_count).to.equal(0);
 
-    // by_tags with an empty tag_ids + draft:true lists every prompt: 1 seeded (published) + 2
+    // by_tags with an empty tag_ids + draft:true lists every prompt: 2 seeded (published) + 2
     // just-created (draft).
     const { data: listed, error: listError } = await client.POST(
       '/v2/workspaces/{id}/projects/{project_id}/aio/prompts/by_tags',
@@ -418,8 +418,10 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       },
     );
     expect(listError).to.equal(undefined);
-    expect(listed.total).to.equal(3);
-    expect(listed.items.map((p) => p.name)).to.include.members(['What is X?', 'Tell me Y']);
+    expect(listed.total).to.equal(4);
+    expect(listed.items.map((p) => p.id)).to.include.members([
+      ...created.ids, SEED_IDS.promptId, SEED_IDS.childOnlyPromptId,
+    ]);
   });
 
   // WP2 (LLMO-6288 v3 rework): the DELIVERED Semrush metadata contract — v3 create-with-metadata,
@@ -1361,10 +1363,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       message: 'conflict\nprompt with name "What is the best running shoe?" already exists',
     });
 
-    // Nothing mutated: the sibling keeps its text, and the seeded prompt is untouched.
+    // Nothing mutated: the sibling keeps its text, and both canonical seed prompts remain.
     const { data: listed } = await listByTags([], { draft: true });
-    expect(listed.items.map((p) => p.name))
-      .to.have.members(['What is the best running shoe?', 'A sibling prompt']);
+    expect(listed.items.find((p) => p.id === SEED_IDS.promptId))
+      .to.include({ name: 'What is the best running shoe?' });
+    expect(listed.items.find((p) => p.id === sibling.id)).to.include({ name: 'A sibling prompt' });
+    expect(listed.items.find((p) => p.id === SEED_IDS.childOnlyPromptId))
+      .to.include({ name: 'What trail shoe should I buy?' });
   });
 
   it('404s a rename of an unknown prompt id', async () => {
@@ -1705,27 +1710,40 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   });
 
   it('returns raw incompatible and deep provider tag shapes without compatibility metadata', async () => {
-    const { data: roots } = await listTags('');
-    expect(roots.items.find((t) => t.id === SEED_IDS.caseVariantRootTagId)).to.include({ name: 'Tag' });
+    await fetch(`${baseUrl}/__seed`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(SEEDS['raw-provider-tags']),
+    });
+    try {
+      const { data: roots } = await listTags('');
+      expect(roots.items.find((t) => t.id === SEED_IDS.caseVariantRootTagId)).to.include({ name: 'Tag' });
 
-    const { data: tagChildren } = await listTags(SEED_IDS.tagRootTagId);
-    expect(tagChildren.items.find((t) => t.id === SEED_IDS.separatorTagId))
-      .to.include({ name: 'Men/Women', parent_id: SEED_IDS.tagRootTagId });
-    expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedDashTagId).name)
-      .to.equal('Road-Running');
-    expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedSpaceTagId).name)
-      .to.equal('Road Running');
+      const { data: tagChildren } = await listTags(SEED_IDS.tagRootTagId);
+      expect(tagChildren.items.find((t) => t.id === SEED_IDS.separatorTagId))
+        .to.include({ name: 'Men/Women', parent_id: SEED_IDS.tagRootTagId });
+      expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedDashTagId).name)
+        .to.equal('Road-Running');
+      expect(tagChildren.items.find((t) => t.id === SEED_IDS.normalizedSpaceTagId).name)
+        .to.equal('Road Running');
 
-    const { data: deep } = await listTags(SEED_IDS.deepChildTagId);
-    const unsupported = deep.items.find((t) => t.id === SEED_IDS.deepGrandchildTagId);
-    expect(unsupported.path.map((leaf) => leaf.name)).to.deep.equal(['tag', 'Deep', 'Nested']);
-    expect(unsupported).to.not.have.property('compatibility');
+      const { data: deep } = await listTags(SEED_IDS.deepChildTagId);
+      const unsupported = deep.items.find((t) => t.id === SEED_IDS.deepGrandchildTagId);
+      expect(unsupported.path.map((leaf) => leaf.name)).to.deep.equal(['tag', 'Deep', 'Nested']);
+      expect(unsupported).to.not.have.property('compatibility');
+    } finally {
+      await fetch(`${baseUrl}/__seed`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(SEEDS['workspace-with-data']),
+      });
+    }
   });
 
   it('keeps legacy reads complete and pages siblings only when a bounded limit is requested', async () => {
     const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
     const legacy = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=`, {
-      headers: { Authorization: '******' },
+      headers: jsonAuth,
     });
     expect(legacy.status).to.equal(200);
     const legacyBody = await legacy.json();
@@ -1734,7 +1752,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(legacyBody).to.not.have.property('complete');
 
     const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=1`, {
-      headers: { Authorization: '******' },
+      headers: jsonAuth,
     });
     expect(first.status).to.equal(200);
     const firstBody = await first.json();
@@ -1742,14 +1760,14 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(firstBody.items).to.have.length(2);
 
     const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=3`, {
-      headers: { Authorization: '******' },
+      headers: jsonAuth,
     });
     const lastBody = await last.json();
     expect(lastBody).to.include({ page: 3, total: 5, complete: true });
     expect(lastBody.items).to.have.length(1);
 
     const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
-      headers: { Authorization: '******' },
+      headers: jsonAuth,
     });
     expect(tooLarge.status).to.equal(400);
   });
@@ -2118,7 +2136,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // A fully-unassigned prompt OMITS the `tags` key entirely (matches prod — §6 fidelity fix),
     // rather than emitting `[]`, and is counted in `unassigned`.
     expect(primary).to.not.have.property('tags');
-    expect(all.unassigned).to.equal(1);
+    const childOnly = all.items.find((p) => p.id === SEED_IDS.childOnlyPromptId);
+    expect(childOnly).to.not.have.property('tags');
+    expect(all.unassigned).to.equal(2);
   });
 
   // Anchors the DELETE-orphan limitation documented in the tags.js header: deleting a parent does

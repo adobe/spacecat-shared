@@ -428,7 +428,7 @@ export const EMPTY_WORKSPACE = Object.freeze({
  * benchmark/URL + the dimension-root tag tree) — the "read/patch/run existing data" flow starts
  * here. Entity shapes mirror the real API responses so `__dump` and GETs look like production.
  *
- * The main prompt is dual-tagged in both the category and plain-tag families and carries independent
+ * The main prompt is dual-tagged in the category and plain-tag families with independent
  * origin/source values. A second prompt is attached only to the depth-3 plain tag child.
  */
 export const WORKSPACE_WITH_DATA = Object.freeze(peHierarchy({

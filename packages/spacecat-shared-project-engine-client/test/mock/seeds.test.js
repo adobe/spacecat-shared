@@ -273,7 +273,9 @@ describe('seeds', () => {
     const restored = ops.prompts.list({ workspaceId, projectId });
     expect(restored.map((prompt) => prompt.id))
       .to.deep.equal([SEED_IDS.promptId, SEED_IDS.childOnlyPromptId]);
-    expect(restored.find((prompt) => prompt.id === SEED_IDS.childOnlyPromptId).tags.map((tag) => tag.id))
+    expect(
+      restored.find((prompt) => prompt.id === SEED_IDS.childOnlyPromptId).tags.map((tag) => tag.id),
+    )
       .to.deep.equal([SEED_IDS.tagChildTagId]);
   });
 

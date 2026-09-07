@@ -520,6 +520,7 @@ export const configSchema = Joi.object({
     }).options({ stripUnknown: true }),
   ).optional(),
   contentAiConfig: Joi.object({
+    name: Joi.string().trim().min(1).optional(),
     index: Joi.string().optional(),
   }).optional(),
   enableMoneyPageUrls: Joi.boolean().optional(),
@@ -968,6 +969,10 @@ export const Config = (data = {}) => {
 
   self.updateBrandConfig = (brandConfig) => {
     state.brandConfig = brandConfig;
+  };
+
+  self.updateContentAiConfig = ({ name }) => {
+    state.contentAiConfig = { ...state.contentAiConfig, name };
   };
 
   /**

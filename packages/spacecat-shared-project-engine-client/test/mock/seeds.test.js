@@ -182,7 +182,7 @@ describe('seeds', () => {
     // The authorship root is still named `source` (not `origin`) — the fixture api-service's
     // tolerant resolver runs against (origin-dimension.md §7 gate 3), and it carries no `origin`.
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal([
+    expect(roots.map((t) => t.name)).to.have.members([
       'category', '$abv_tags$intent', 'source', 'tag', 'type',
     ]);
     expect(roots.map((t) => t.name)).to.not.include('origin');

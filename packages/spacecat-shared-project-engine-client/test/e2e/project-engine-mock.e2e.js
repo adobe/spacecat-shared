@@ -1814,10 +1814,21 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // Limit and page are validated only when bounded pagination is explicitly requested.
   it('rejects invalid tag pagination parameters', async () => {
     const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const upperBoundary = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=100&page=1`, {
+      headers: jsonAuth,
+    });
+    expect(upperBoundary.status).to.equal(200);
+    const upperBoundaryBody = await upperBoundary.json();
+    expect(upperBoundaryBody).to.include({ page: 1, total: 5 });
+    expect(upperBoundaryBody.items).to.have.length(5);
+
     const tooLarge = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=101`, {
       headers: jsonAuth,
     });
     expect(tooLarge.status).to.equal(400);
+    expect(await tooLarge.json()).to.deep.equal({
+      message: 'limit must be an integer between 1 and 100',
+    });
 
     const invalidLimits = await Promise.all(['0', 'abc'].map((invalidLimit) => (
       fetch(
@@ -1826,6 +1837,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       )
     )));
     expect(invalidLimits.map(({ status }) => status)).to.deep.equal([400, 400]);
+    const invalidLimitBodies = await Promise.all(invalidLimits.map((invalid) => invalid.json()));
+    expect(invalidLimitBodies).to.deep.equal(Array.from(
+      { length: invalidLimitBodies.length },
+      () => ({ message: 'limit must be an integer between 1 and 100' }),
+    ));
 
     const invalidResponses = await Promise.all(['0', '-1', '1.5', 'not-a-number'].map((invalidPage) => (
       fetch(

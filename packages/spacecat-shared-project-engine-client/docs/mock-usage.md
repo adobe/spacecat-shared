@@ -191,10 +191,11 @@ Six named seeds ship in `mock/seeds.js`:
   The sub-category `human` and the `origin` value `human` — and the sub-category `gsc` and the
   `source` value `gsc` — deliberately share a name and differ only by parent, so the cross-dimension
   collision case stays exercised. Canonical ids are exported as `SEED_IDS`
-  (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`,
-  `brandUrlId`, the five `*RootTagId`s, `categoryTagId`, `childTagId`, `childCollidingTagId`,
-  `childGscTagId`, `originHumanTagId`, `intentCommercialTagId`, `sourceConfigTagId`,
-  `sourceGscTagId`, `typeBrandedTagId`).
+  (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`,
+  `childOnlyPromptId`, `benchmarkId`, `brandUrlId`, the six `*RootTagId`s,
+  `categoryTagId`, `childTagId`, `childCollidingTagId`, `childGscTagId`,
+  `tagParentTagId`, `tagChildTagId`, `originHumanTagId`, `intentCommercialTagId`,
+  `sourceConfigTagId`, `sourceGscTagId`, `typeBrandedTagId`).
 - **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
   independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
   `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct

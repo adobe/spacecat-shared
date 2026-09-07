@@ -276,7 +276,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     });
     // The created read-view carries the live shapes the consumer's langOf/geoOf reconstruct a
     // market from: language.name is the ISO code (NOT the English display name), location echoed.
-    expect(created.settings.ai.language).to.deep.equal({ id: ENGLISH_ID, name: 'en' });
+    expect(created.settings.ai.language).to.deep.equal({ id: ENGLISH_ID, name: 'en', code: 'en' });
     expect(created.settings.ai.country).to.deep.equal({ code: 'us', name: 'United States' });
     expect(created.settings.ai.location).to.deep.equal({ id: 2840, name: 'United States' });
     expect(created).to.include({ is_draft: true, publish_status: 'draft' });
@@ -2090,7 +2090,9 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     // The mock-only `iso` column (used by the project read-view resolver) is NOT served here — the
     // live catalog item is just `{ id, name, code }` (LLMO-7420).
     expect(data.items[0]).to.not.have.property('iso');
-    expect(data.items).to.deep.include({ id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English' });
+    expect(data.items).to.deep.include({
+      id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', code: 'en',
+    });
   });
 
   it('listGlobalAiModels returns the full live model taxonomy (11, real keys)', async () => {

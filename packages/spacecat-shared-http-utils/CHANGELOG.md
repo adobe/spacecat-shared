@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.36.0...@adobe/spacecat-shared-http-utils-v1.37.0) (2026-09-08)
+
+### Features
+
+* **http-utils:** add anonymousEndpoints override and drop GET /slack/events from the anonymous auth bypass ([#1920](https://github.com/adobe/spacecat-shared/issues/1920)) ([041fa0c](https://github.com/adobe/spacecat-shared/commit/041fa0c4dcafc443c84fae19959dcea0d1994e46)), closes [adobe/spacecat-api-service#3229](https://github.com/adobe/spacecat-api-service/issues/3229) [adobe/spacecat-api-service#3229](https://github.com/adobe/spacecat-api-service/issues/3229)
+
 ## [@adobe/spacecat-shared-http-utils-v1.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.35.2...@adobe/spacecat-shared-http-utils-v1.36.0) (2026-08-27)
 
 ### Features

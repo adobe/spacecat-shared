@@ -118,15 +118,18 @@ describe('auth wrapper', () => {
     expect(resp).to.equal(42);
   });
 
-  it('ignores a non-array anonymousEndpoints and keeps the default', async () => {
-    const bogus = wrap(() => 42)
+  it('throws on a non-array anonymousEndpoints instead of silently using the default', () => {
+    // Security-sensitive config: a typo by a service trying to DISABLE the bypass must not
+    // silently re-enable an unauthenticated POST /slack/events.
+    expect(() => wrap(() => 42)
       .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: 'POST /slack/events' })
-      .with(enrichPathInfo);
-    context.pathInfo.suffix = '/slack/events';
+      .with(enrichPathInfo)).to.throw('anonymousEndpoints must be an array');
+  });
 
-    const resp = await bogus(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
-
-    expect(resp).to.equal(42);
+  it('throws on an anonymousEndpoints array containing a non-string', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST /slack/events', 42] })
+      .with(enrichPathInfo)).to.throw('anonymousEndpoints must be an array');
   });
 
   it('passes options method', async () => {

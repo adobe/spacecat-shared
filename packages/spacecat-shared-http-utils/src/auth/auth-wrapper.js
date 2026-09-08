@@ -46,13 +46,24 @@ const ANONYMOUS_ENDPOINTS = [
  *   authentication, as `'METHOD /path'` strings. Pass `[]` to disable the bypass entirely. A
  *   service that does not verify Slack request signatures SHOULD pass `[]`, otherwise it
  *   inherits an unauthenticated `POST /slack/events` it may not be defending.
+ *
+ *   Supplying a value that is not an array of strings THROWS at wrapper-construction time
+ *   rather than falling back to the default. This is security-sensitive configuration: a typo
+ *   by a service trying to *disable* the bypass must not silently re-enable it.
  * @returns {UniversalFunction} the wrapped function.
+ * @throws {Error} when `opts.anonymousEndpoints` is present but not an array of strings.
  */
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
-  const anonymousEndpoints = Array.isArray(opts.anonymousEndpoints)
-    ? opts.anonymousEndpoints
-    : ANONYMOUS_ENDPOINTS;
+  let anonymousEndpoints = ANONYMOUS_ENDPOINTS;
+
+  if (opts.anonymousEndpoints !== undefined) {
+    if (!Array.isArray(opts.anonymousEndpoints)
+      || opts.anonymousEndpoints.some((route) => typeof route !== 'string')) {
+      throw new Error('authWrapper: anonymousEndpoints must be an array of "METHOD /path" strings');
+    }
+    anonymousEndpoints = opts.anonymousEndpoints;
+  }
 
   return async (request, context) => {
     const { log, pathInfo: { method, suffix } } = context;

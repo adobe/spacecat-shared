@@ -107,6 +107,20 @@ describe('factories — live-shaped entities', () => {
     expect(p.settings.ai.country).to.deep.equal({ code: 'de', name: 'Germany' });
   });
 
+  it('read-view language.code is best-effort (isoForLanguageId), NOT the catalog BCP-47 code — pins the known Chinese divergence', () => {
+    // Chinese Simplified: catalog code is 'zh-Hans', but the embedded read-view field reuses
+    // isoForLanguageId's 'zh' (unverified for this context, LLMO-7420). A downstream consumer
+    // relying on settings.ai.language.code would pass against this mock but diverge from
+    // production for Chinese — see mock/factories.js buildAiSettings' doc comment.
+    const p = createProjectResponseFromRequest({
+      language_id: '728bef4c-94cf-4e14-bc06-56534751c71a', // catalog "Chinese Simplified"
+      country_code: 'cn',
+    });
+    expect(p.settings.ai.language).to.deep.equal({
+      id: '728bef4c-94cf-4e14-bc06-56534751c71a', name: 'zh', code: 'zh',
+    });
+  });
+
   it('createProjectResponseFromRequest falls back to defaults for an empty request', () => {
     const p = createProjectResponseFromRequest();
     expect(p).to.include({ type: 'ai', name: 'Seeded Project', domain: '' });

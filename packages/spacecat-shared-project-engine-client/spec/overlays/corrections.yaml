@@ -160,8 +160,10 @@ info:
 # CR26 model.LanguageResponse carries a BCP-47 `code`. GET /v1/languages returns a `code` field
 #      (e.g. `zh-Hans`, `zh-Hant`, `fil`) on all 38 catalog entries — the stable identifier LLMO-7420
 #      resolves `languageCode` against instead of English-name matching (verified rainer-friederich,
-#      2026-09-07). The delivered swagger declares only `id`/`name`. Add the property; CR5 marks it
-#      required. Remove if Semrush ships it upstream.
+#      2026-09-07). The delivered swagger declares only `id`/`name`. Add the property; CR5's
+#      `model.LanguageResponse` entry now requires `[id, name, code]` (previously unset — the
+#      vendored swagger marks NO response field required, so this schema had no CR5 entry at all
+#      before this PR added one alongside `code`). Remove if Semrush ships it upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored

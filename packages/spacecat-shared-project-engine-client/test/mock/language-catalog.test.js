@@ -19,10 +19,10 @@ describe('language-catalog — the canonical id ↔ name ↔ code ↔ iso catalo
   it('is the full live taxonomy (38 entries), each with id + English name + code + iso', () => {
     expect(LANGUAGE_CATALOG).to.be.an('array').with.length(38);
     for (const entry of LANGUAGE_CATALOG) {
-      expect(entry.id).to.match(/^[0-9a-f-]{36}$/);
-      expect(entry.name).to.be.a('string').with.length.greaterThan(0);
-      expect(entry.code).to.be.a('string').with.length.greaterThan(0);
-      expect(entry.iso).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.id, `${entry.name} id`).to.match(/^[0-9a-f-]{36}$/);
+      expect(entry.name, `${entry.id} name`).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.code, `${entry.name} code`).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.iso, `${entry.name} iso`).to.be.a('string').with.length.greaterThan(0);
     }
     // English is the live-verified read-view value.
     expect(LANGUAGE_CATALOG).to.deep.include({
@@ -48,6 +48,11 @@ describe('language-catalog — the canonical id ↔ name ↔ code ↔ iso catalo
   it('ids are unique (a faithful reverse index needs no collisions)', () => {
     const ids = LANGUAGE_CATALOG.map((l) => l.id);
     expect(new Set(ids).size).to.equal(ids.length);
+  });
+
+  it('codes are unique (BCP-47 resolution requires a 1:1 code -> id mapping)', () => {
+    const codes = LANGUAGE_CATALOG.map((l) => l.code);
+    expect(new Set(codes).size).to.equal(codes.length);
   });
 
   it('exposes the capture date so live-catalog drift is discoverable', () => {

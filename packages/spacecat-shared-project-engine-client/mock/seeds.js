@@ -345,6 +345,7 @@ const dimensionRootTree = (
 /**
  * The `legacy-slug-tag-names` tree (WP-D1 item 3): the five bare-slug dimension roots and the
  * closed dimensions' full vocabularies, exactly as a project looks in production TODAY — no
+ * generic `tag` root, because this fixture predates that dimension. There is also no
  * customer-authored category (that is `dimensionRootTree`'s job, and this fixture's whole purpose
  * is the plain pre-rename shape, not the collision cases). Built entirely from the
  * `LEGACY_SLUG_*` constants above, never from `DIMENSION_ROOTS` / `SOURCE_VALUES` / `TYPE_VALUES` /
@@ -651,6 +652,7 @@ export const SEED_IDS = Object.freeze({
   projectId: PROJECT_ID,
   aiModelId: AI_MODEL_CATALOG_ID,
   promptId: PROMPT_ID,
+  childOnlyPromptId: CHILD_ONLY_PROMPT_ID,
   benchmarkId: BENCHMARK_ID,
   brandUrlId: BRAND_URL_ID,
   // The normal provisioned roots. `$abv_tags$intent` is the hidden wire root; `tag` is generic
@@ -669,6 +671,9 @@ export const SEED_IDS = Object.freeze({
   childTagId: CHILD_TAG_ID,
   childCollidingTagId: CHILD_COLLIDING_TAG_ID,
   childGscTagId: CHILD_GSC_TAG_ID,
+  // H1's generic plain-tag branch.
+  tagParentTagId: TAG_PARENT_TAG_ID,
+  tagChildTagId: TAG_CHILD_TAG_ID,
   // H1's closed-dimension values, as carried by the seeded prompt.
   originHumanTagId: ORIGIN_HUMAN_TAG_ID,
   intentCommercialTagId: INTENT_COMMERCIAL_TAG_ID,
@@ -676,9 +681,7 @@ export const SEED_IDS = Object.freeze({
   sourceConfigTagId: SOURCE_CONFIG_TAG_ID,
   sourceGscTagId: SOURCE_GSC_TAG_ID,
   typeBrandedTagId: TYPE_BRANDED_TAG_ID,
-  childOnlyPromptId: CHILD_ONLY_PROMPT_ID,
-  tagParentTagId: TAG_PARENT_TAG_ID,
-  tagChildTagId: TAG_CHILD_TAG_ID,
+  // Raw-provider fixtures, present only in `raw-provider-tags`, not the default seed.
   caseVariantRootTagId: CASE_VARIANT_ROOT_TAG_ID,
   normalizedDashTagId: NORMALIZED_DASH_TAG_ID,
   normalizedSpaceTagId: NORMALIZED_SPACE_TAG_ID,

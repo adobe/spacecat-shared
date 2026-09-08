@@ -204,6 +204,9 @@ Six named seeds ship in `mock/seeds.js`:
   tag data for classification tests: a case-variant `Tag` root, separator-bearing names,
   normalized-name collisions under distinct parents, and a deeper-than-UI branch. The inherited
   prompt collection remains unchanged, so these extra raw tags are intentionally unreferenced.
+  Its raw-only ids are `SEED_IDS.caseVariantRootTagId`, `normalizedDashTagId`,
+  `normalizedSpaceTagId`, `normalizedDashChildTagId`, `normalizedSpaceChildTagId`,
+  `separatorTagId`, `deepParentTagId`, `deepChildTagId`, and `deepGrandchildTagId`.
 - **`legacy-source-workspace`** — the same shape as `workspace-with-data`, except the authorship
   root is still named `source` (with `ai` / `human` beneath it) rather than `origin`. This is the
   **pre-rename** fixture the authorship rename's tolerant resolver is tested against

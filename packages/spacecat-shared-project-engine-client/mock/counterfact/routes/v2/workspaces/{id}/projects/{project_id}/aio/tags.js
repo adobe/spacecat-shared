@@ -14,11 +14,10 @@
  * Stateful handlers for /v2/workspaces/{id}/projects/{project_id}/aio/tags — the project-level AIO
  * tag taxonomy (the Categories surface), modelled as a dimension-root tree: each DIMENSION
  * (`category`, `$abv_tags$intent`, `origin`, `source`, `tag`, `type`) is a bare-named root with no
- * `parent_id`, and
- * every VALUE is a bare-named descendant carrying its parent's id. No tag name contains a `:`; a
- * tag's dimension is `path[0]`. Categories sit at depth 2 and sub-categories at depth 3. The
- * per-project `tags` collection (`tags:{ws}:{pid}`) is scoped so the same taxonomy registered
- * across N market projects keeps N independent collections. Materialized into
+ * `parent_id`, and every VALUE is a bare-named descendant carrying its parent's id. No tag name
+ * contains a `:`; its dimension is `path[0]`. Categories sit at depth 2 and sub-categories at
+ * depth 3. The per-project `tags` collection (`tags:{ws}:{pid}`) is scoped so the same taxonomy
+ * registered across N market projects keeps N independent collections. Materialized into
  * `.counterfact/routes/` by the mock runner; excluded from coverage.
  *
  * - POST (`createProjectTags`): request `TreeNodeListRequest` `{ names, parent_id? }`; persists
@@ -117,10 +116,6 @@ export function GET($) {
     ? scoped.filter((t) => String(t.name).toLowerCase().includes(search))
     : scoped;
 
-  // The one serializer every tag endpoint shares (see mock/tag-view.js): derives `children_count`
-  // and the root-first `path[]` from the stored collection, and leaves `parent_id`/`path` OFF a
-  // root entirely — exactly as live does.
-  const { serialize } = context.buildTagView(stored, context.factories);
   const limit = Number(query?.limit);
   const hasLimit = query?.limit !== undefined && query?.limit !== '';
   if (hasLimit && (!Number.isInteger(limit) || limit < 1 || limit > 100)) {
@@ -136,6 +131,10 @@ export function GET($) {
       message: 'page must be an integer greater than or equal to 1',
     }));
   }
+  // The one serializer every tag endpoint shares (see mock/tag-view.js): derives `children_count`
+  // and the root-first `path[]` from the stored collection, and leaves `parent_id`/`path` OFF a
+  // root entirely — exactly as live does.
+  const { serialize } = context.buildTagView(stored, context.factories);
   // Count the full parent/search-matched sibling set before selecting a requested page.
   const total = matched.length;
   if (!hasLimit) {

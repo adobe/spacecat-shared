@@ -1764,41 +1764,43 @@ async function waitForReady(baseUrl, deadline, getStderr) {
   // page, limit, total, and short-page signal rather than a response extension.
   it('pages tag siblings without overlap and preserves the unpaged set', async () => {
     const url = `${baseUrl}/v2/workspaces/${SEED_WORKSPACE}/projects/${SEED_PROJECT}/aio/tags`;
+    const pageLimit = 2;
     const legacy = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=`, {
       headers: jsonAuth,
     });
     const legacyBody = await legacy.json();
-    const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=1`, {
+    const first = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=1`, {
       headers: jsonAuth,
     });
     expect(first.status).to.equal(200);
     const firstBody = await first.json();
     expect(firstBody).to.include({ page: 1, total: 5 });
     expect(firstBody.items).to.have.length(2);
-    expect(firstBody.page * 2 >= firstBody.total).to.equal(false);
+    expect(firstBody.page * pageLimit >= firstBody.total).to.equal(false);
 
-    const middle = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=2`, {
+    const middle = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=2`, {
       headers: jsonAuth,
     });
     expect(middle.status).to.equal(200);
     const middleBody = await middle.json();
     expect(middleBody).to.include({ page: 2, total: 5 });
     expect(middleBody.items).to.have.length(2);
-    expect(middleBody.page * 2 >= middleBody.total).to.equal(false);
+    expect(middleBody.page * pageLimit >= middleBody.total).to.equal(false);
 
-    const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=3`, {
+    const last = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=3`, {
       headers: jsonAuth,
     });
     expect(last.status).to.equal(200);
     const lastBody = await last.json();
     expect(lastBody).to.include({ page: 3, total: 5 });
     expect(lastBody.items).to.have.length(1);
-    expect(lastBody.page * 2 >= lastBody.total || lastBody.items.length < 2).to.equal(true);
+    expect(lastBody.page * pageLimit >= lastBody.total
+      || lastBody.items.length < pageLimit).to.equal(true);
     const pagedItems = [...firstBody.items, ...middleBody.items, ...lastBody.items];
     expect(new Set(pagedItems.map(({ id }) => id)).size).to.equal(pagedItems.length);
     expect(pagedItems.map(({ id }) => id)).to.have.members(legacyBody.items.map(({ id }) => id));
 
-    const beyondLast = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=2&page=100`, {
+    const beyondLast = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=100`, {
       headers: jsonAuth,
     });
     expect(beyondLast.status).to.equal(200);
@@ -1808,7 +1810,7 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       page: 100,
       total: 5,
     });
-    expect(beyondLastBody.page * 2 >= beyondLastBody.total).to.equal(true);
+    expect(beyondLastBody.page * pageLimit >= beyondLastBody.total).to.equal(true);
   });
 
   // Limit and page are validated only when bounded pagination is explicitly requested.
@@ -1830,13 +1832,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       message: 'limit must be an integer between 1 and 100',
     });
 
-    const invalidLimits = await Promise.all(['0', 'abc'].map((invalidLimit) => (
+    const invalidLimitValues = ['0', '-1', '1.5', 'abc'];
+    const invalidLimits = await Promise.all(invalidLimitValues.map((invalidLimit) => (
       fetch(
         `${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${invalidLimit}`,
         { headers: jsonAuth },
       )
     )));
-    expect(invalidLimits.map(({ status }) => status)).to.deep.equal([400, 400]);
+    expect(invalidLimits.map(({ status }) => status))
+      .to.deep.equal(invalidLimitValues.map(() => 400));
     const invalidLimitBodies = await Promise.all(invalidLimits.map((invalid) => invalid.json()));
     expect(invalidLimitBodies).to.deep.equal(Array.from(
       { length: invalidLimitBodies.length },
@@ -1867,6 +1871,15 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(filteredBody).to.include({ page: 1, total: 2 });
     expect(filteredBody.items).to.have.length(1);
     expect(filteredBody.items[0].name).to.equal('Research');
+
+    const secondPage = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=Re&limit=1&page=2`, {
+      headers: jsonAuth,
+    });
+    expect(secondPage.status).to.equal(200);
+    const secondPageBody = await secondPage.json();
+    expect(secondPageBody).to.include({ page: 2, total: 2 });
+    expect(secondPageBody.items).to.have.length(1);
+    expect(secondPageBody.items[0].name).to.equal('Reviews');
   });
 
   // __reset restores the boot seed (the normal roots, no ad-hoc tags), so a created

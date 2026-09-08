@@ -31,7 +31,7 @@ npm run mock              # serves on http://localhost:4010
 | Env var | Default | Purpose |
 | --- | --- | --- |
 | `MOCK_PORT` | `4010` | listen port |
-| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `two-hierarchies` \| `legacy-source-workspace` \| `legacy-slug-tag-names`); unknown → default |
+| `MOCK_SEED` | `workspace-with-data` | named startup fixture (`empty-workspace` \| `workspace-with-data` \| `raw-provider-tags` \| `two-hierarchies` \| `legacy-source-workspace` \| `legacy-slug-tag-names`); unknown → default |
 | `MOCK_SEED_FILE` | — | path to a JSON `Snapshot` to boot from; **takes precedence** over `MOCK_SEED` |
 
 ```bash
@@ -129,7 +129,7 @@ method that calls it.
 | `PUT /v2/workspaces/{id}/projects/{project_id}/aio/prompts/tags` | `updatePromptTags` | batch-update a prompt's tag refs; body `{ items: [{ id, references: [tagId…], replace }…] }` → `204`; `replace:false` MERGES refs onto the existing set, `replace:true` REPLACES it; an unknown prompt `id` is skipped SILENTLY (still `204`) |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/prompts/{prompt_id}/rename` | `renamePrompt` | IN-PLACE text edit (body `{ new_name }`) → `200 { id, name, is_updated }` with the SAME prompt id (rename never mints a new prompt); a `new_name` equal to ANOTHER prompt's text → `409` carrying live's exact wording (`conflict\nprompt with name "…" already exists`) with nothing mutated (live-verified 2026-07-14, body pinned 2026-07-15, overlay CR17) — the comparison is EXACT, live applies no whitespace/case/Unicode normalization; `is_updated` mirrors the LIVE layer, not whether the rename landed (`false` for a draft-only prompt or an unchanged name, `true` only for a real change to a published prompt) while the rename applies whenever the name differs; an empty/omitted/null `new_name` renames the prompt to `''` — applied literally, no validation error (live-pinned 2026-07-15); only a request with NO body at all is rejected (`400 { message: 'EOF' }`); unknown `prompt_id` → `404 { message: 'not found' }`. The rename is visible on BOTH the draft and default `by_tags` reads (the mock stores a single `name`; live keeps the old text in the live view until publish) |
 | `POST /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `createProjectTags` | create tags (body `{ names, parent_id? }`) → `201` top-level array of `TreeNodeResponse`; **persists** each tag (deterministic opaque `tag-<sha256(parent, name) prefix>` id, see tag-id.js) into the per-project `tags` collection. One `parent_id` applies to the whole batch; absent/empty ⇒ roots. Does NOT dedupe: a name that already exists at the same parent level `500`s (gate 7), or that appears twice within the same batch (intra-batch duplicate) — resolve-before-create is mandatory |
-| `GET /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `getProjectTags` | list the project's stored tags → `200 { items, page, total }` (`AIOTagsListResponse`); `parent_id` + `search` are `required` query params (omitting either → `400`). `parent_id=''` returns the ROOTS, a non-empty `parent_id` returns that tag's direct children. A non-empty `search` filters by case-insensitive name substring **within that one level only, never descending** — so a nested tag is unfindable from the root level, matching live. Each item carries a derived `children_count` and a root-first `path[]` ancestry breadcrumb excluding itself; a ROOT omits `parent_id` and `path` entirely (they are absent keys, not `null`) |
+| `GET /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `getProjectTags` | list the project's stored tags → `200 { items, page, total }` (`AIOTagsListResponse`); `parent_id` + `search` are `required` query params (omitting either → `400`). `parent_id=''` returns the ROOTS, a non-empty `parent_id` returns that tag's direct children. A non-empty `search` filters by case-insensitive name substring **within that one level only, never descending** — so a nested tag is unfindable from the root level, matching live. Each item carries a derived `children_count` and a root-first `path[]` ancestry breadcrumb excluding itself; a ROOT omits `parent_id` and `path` entirely (they are absent keys, not `null`). Pagination is opt-in: without `limit`, the complete unpaged sibling set is returned with `page: 1`; with `limit`, `limit` must be an integer from 1–100 and `page` must be an integer ≥1 (default `page` is 1). The response remains `{ items, page, total }`; derive completeness from `page * limit >= total` or a short page. A page beyond the end returns `items: []` with the same `total` |
 | `DELETE /v2/workspaces/{id}/projects/{project_id}/aio/tags` | `deleteProjectTags` | remove standalone tags by id (body `{ ids }`) → `204`; each removed id is also **detached from every prompt carrying it** (gate 4), so a prompt whose only tag was deleted becomes fully unassigned and stops matching `by_tags` on that id. Prompts are never deleted. Deleting a parent does NOT cascade to its children, which are left orphaned (the `prompt_id` query param is `required` by the spec but not load-bearing in the mock) |
 
 #### Prompt metadata (v3, LLMO-6288 WP2 rework)
@@ -178,27 +178,35 @@ Semrush-vendored `/v3` prompts API using RFC 7396 JSON Merge Patch — real, spe
 
 ## 4. Seeds
 
-Five named seeds ship in `mock/seeds.js`:
+Six named seeds ship in `mock/seeds.js`:
 
 - **`empty-workspace`** — the (child) seed workspace with no projects.
 - **`workspace-with-data`** (default) — one LIVE US/en market under the brand's **child**
   sub-workspace (`SEED_IDS.workspaceId`, the id a correctly-anchored brand resolves to — NOT the org
-  parent), with a catalog-valid AI model (`search-gpt`), the five bare dimension roots (`category`,
-  `intent`, `origin`, `source`, `type`) carrying their vocabularies as children (the open `source`
-  root carries a representative subset of producing-system values) plus a depth-2 category with
+  parent), with a catalog-valid AI model (`search-gpt`), the six bare dimension roots (`category`,
+  `$abv_tags$intent`, `origin`, `source`, `tag`, `type`) carrying their vocabularies as children
+  (the open `source` root carries a representative subset of producing-system values) plus a depth-2 category with
   three depth-3 sub-categories, a prompt dual-tagged with its category and sub-category plus one
   value per closed dimension and the open `source` value, an own-brand benchmark, and a brand URL.
   The sub-category `human` and the `origin` value `human` — and the sub-category `gsc` and the
   `source` value `gsc` — deliberately share a name and differ only by parent, so the cross-dimension
   collision case stays exercised. Canonical ids are exported as `SEED_IDS`
-  (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`, `benchmarkId`,
-  `brandUrlId`, the five `*RootTagId`s, `categoryTagId`, `childTagId`, `childCollidingTagId`,
-  `childGscTagId`, `originHumanTagId`, `intentCommercialTagId`, `sourceConfigTagId`,
-  `sourceGscTagId`, `typeBrandedTagId`).
+  (`parentWorkspaceId`, `workspaceId`, `projectId`, `aiModelId`, `promptId`,
+  `childOnlyPromptId`, `benchmarkId`, `brandUrlId`, the six `*RootTagId`s,
+  `categoryTagId`, `childTagId`, `childCollidingTagId`, `childGscTagId`,
+  `tagParentTagId`, `tagChildTagId`, `originHumanTagId`, `intentCommercialTagId`,
+  `sourceConfigTagId`, `sourceGscTagId`, `typeBrandedTagId`).
 - **`two-hierarchies`** — a strict superset of `workspace-with-data` plus a second, fully
   independent parent/child hierarchy with its own LIVE DE/de market (`SEED_IDS.secondWorkspaceId` /
   `secondProjectId`), for the dual-org case where two mock-wired orgs each need a distinct
   `semrush_workspace_id`.
+- **`raw-provider-tags`** — a strict superset of `workspace-with-data` that preserves provider-shaped
+  tag data for classification tests: a case-variant `Tag` root, separator-bearing names,
+  normalized-name collisions under distinct parents, and a deeper-than-UI branch. The inherited
+  prompt collection remains unchanged, so these extra raw tags are intentionally unreferenced.
+  Its raw-only ids are `SEED_IDS.caseVariantRootTagId`, `normalizedDashTagId`,
+  `normalizedSpaceTagId`, `normalizedDashChildTagId`, `normalizedSpaceChildTagId`,
+  `separatorTagId`, `deepParentTagId`, `deepChildTagId`, and `deepGrandchildTagId`.
 - **`legacy-source-workspace`** — the same shape as `workspace-with-data`, except the authorship
   root is still named `source` (with `ai` / `human` beneath it) rather than `origin`. This is the
   **pre-rename** fixture the authorship rename's tolerant resolver is tested against

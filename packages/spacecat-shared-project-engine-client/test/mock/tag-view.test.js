@@ -110,6 +110,24 @@ describe('tag-view', () => {
     expect(serialize(subHuman)).to.deep.equal(byId.get(SUB_HUMAN));
   });
 
+  it('preserves separator-bearing and deeper-than-UI provider branches verbatim', () => {
+    const { byId } = buildTagView([
+      { id: 'tag-root', name: 'tag' },
+      { id: 'separator', name: 'Men/Women', parent_id: 'tag-root' },
+      { id: 'depth-2', name: 'Deep', parent_id: 'tag-root' },
+      { id: 'depth-3', name: 'Nested', parent_id: 'depth-2' },
+      { id: 'depth-4', name: 'Unsupported', parent_id: 'depth-3' },
+    ], factories);
+
+    expect(byId.get('separator')).to.include({ name: 'Men/Women', parent_id: 'tag-root' });
+    expect(byId.get('depth-4').path).to.deep.equal([
+      { id: 'tag-root', name: 'tag' },
+      { id: 'depth-2', name: 'Deep', parent_id: 'tag-root' },
+      { id: 'depth-3', name: 'Nested', parent_id: 'depth-2' },
+    ]);
+    expect(byId.get('depth-4')).to.not.have.property('compatibility');
+  });
+
   describe('degenerate trees', () => {
     it('treats a tag whose parent is absent from the collection as a root', () => {
       // The parent was deleted between the write and this read; the orphan must

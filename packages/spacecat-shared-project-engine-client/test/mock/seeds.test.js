@@ -30,7 +30,7 @@ describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
     expect(Object.keys(SEEDS)).to.include.members([
       'empty-workspace', 'workspace-with-data', 'two-hierarchies', 'legacy-source-workspace',
-      'legacy-slug-tag-names',
+      'legacy-slug-tag-names', 'raw-provider-tags',
     ]);
     expect(SEEDS).to.have.property(DEFAULT_SEED);
   });
@@ -53,7 +53,7 @@ describe('seeds', () => {
     expect(ops.projects.list({ workspaceId })).to.have.length(1);
     expect(ops.projects.get({ workspaceId }, projectId)?.name).to.equal('Seeded Project');
     expect(ops.ai_models.list({ workspaceId, projectId })).to.have.length(1);
-    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(2);
     // own-brand benchmark + a brand URL under it
     const benchmarks = ops.benchmarks.list({ workspaceId, projectId });
     expect(benchmarks).to.have.length(1);
@@ -83,12 +83,12 @@ describe('seeds', () => {
     const tags = ops.tags.list({ workspaceId, projectId });
     expect(tags.every((t) => !t.name.includes(':'))).to.equal(true);
 
-    // Exactly the five dimension roots sit at the root level (model spec §7 gate 2).
-    // ORDER-sensitive on purpose: the seed provisions roots in a fixed order
-    // (`dimensionRootTree` / DIMENSION_ROOTS), and this unit test controls the seed, so it
-    // asserts that exact order; the e2e uses `.have.members` (listing order isn't contractual).
+    // Provisioned roots include the hidden intent wire root and exact generic `tag` root.
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'origin', 'source', 'type']);
+    // The provisioned taxonomy must contain exactly the six dimension roots, with no extra roots.
+    expect(roots.map((t) => t.name)).to.have.members([
+      'category', '$abv_tags$intent', 'origin', 'source', 'tag', 'type',
+    ]);
 
     // The closed dimensions carry their full fixed vocabularies as bare children.
     const childNamesOf = (parentId) => tags
@@ -102,6 +102,11 @@ describe('seeds', () => {
     expect(childNamesOf(SEED_IDS.sourceRootTagId))
       .to.deep.equal(['config', 'gsc', 'drs', 'synthetic-personas']);
     expect(childNamesOf(SEED_IDS.typeRootTagId)).to.deep.equal(['branded', 'non-branded']);
+
+    // Generic plain tags have normal depth-2/depth-3 descendants without a fixed vocabulary.
+    expect(childNamesOf(SEED_IDS.tagRootTagId))
+      .to.deep.equal(['Running', 'Research', 'Comparison', 'News', 'Reviews']);
+    expect(childNamesOf(SEED_IDS.tagParentTagId)).to.deep.equal(['Trail']);
 
     // The open dimension: a depth-2 category under `category`, with depth-3 sub-categories
     // including ones that collide by name with values from other dimensions.
@@ -128,20 +133,43 @@ describe('seeds', () => {
     expect(subcategoryGsc.parent_id).to.equal(SEED_IDS.categoryTagId);
     expect(sourceGsc.parent_id).to.equal(SEED_IDS.sourceRootTagId);
 
-    // The seeded prompt is dual-tagged (category + sub-category) and carries one value per
-    // dimension: one closed value (origin/intent/type) and one open value (source), reusing the
-    // ids the standalone tree registered so `by_tags` correlates.
-    const [prompt] = ops.prompts.list({ workspaceId, projectId });
+    // The seeded prompt carries parent + child plain tags plus independent origin/source values.
+    const [prompt, childOnlyPrompt] = ops.prompts.list({ workspaceId, projectId });
     expect(prompt.tags.map((t) => t.name))
-      .to.deep.equal(['Running Shoes', 'human', 'human', 'Commercial', 'config', 'branded']);
+      .to.deep.equal([
+        'Running Shoes', 'human', 'Running', 'Trail', 'human', 'Commercial', 'config', 'branded',
+      ]);
     expect(prompt.tags.map((t) => t.id)).to.deep.equal([
       SEED_IDS.categoryTagId,
       SEED_IDS.childCollidingTagId,
+      SEED_IDS.tagParentTagId,
+      SEED_IDS.tagChildTagId,
       SEED_IDS.originHumanTagId,
       SEED_IDS.intentCommercialTagId,
       SEED_IDS.sourceConfigTagId,
       SEED_IDS.typeBrandedTagId,
     ]);
+    expect(childOnlyPrompt).to.include({ id: SEED_IDS.childOnlyPromptId });
+    expect(childOnlyPrompt.tags.map((t) => t.id)).to.deep.equal([SEED_IDS.tagChildTagId]);
+  });
+
+  it('raw-provider-tags preserves incompatible and deep provider data outside the canonical seed', () => {
+    const store = new InMemoryStore();
+    store.load(SEEDS['raw-provider-tags']);
+    const tags = createStatefulOps(store).tags.list({
+      workspaceId: SEED_IDS.workspaceId,
+      projectId: SEED_IDS.projectId,
+    });
+
+    expect(tags.find((t) => t.id === SEED_IDS.caseVariantRootTagId)).to.include({ name: 'Tag' });
+    expect(tags.find((t) => t.id === SEED_IDS.separatorTagId))
+      .to.include({ name: 'Men/Women', parent_id: SEED_IDS.tagRootTagId });
+    expect(tags.find((t) => t.id === SEED_IDS.normalizedDashChildTagId))
+      .to.include({ name: 'Shoes', parent_id: SEED_IDS.normalizedDashTagId });
+    expect(tags.find((t) => t.id === SEED_IDS.normalizedSpaceChildTagId))
+      .to.include({ name: 'Shoes', parent_id: SEED_IDS.normalizedSpaceTagId });
+    expect(tags.find((t) => t.id === SEED_IDS.deepGrandchildTagId))
+      .to.include({ name: 'Unsupported', parent_id: SEED_IDS.deepChildTagId });
   });
 
   it('legacy-source-workspace seeds the pre-rename shape: a `source` authorship root with ai/human', () => {
@@ -154,7 +182,9 @@ describe('seeds', () => {
     // The authorship root is still named `source` (not `origin`) — the fixture api-service's
     // tolerant resolver runs against (origin-dimension.md §7 gate 3), and it carries no `origin`.
     const roots = tags.filter((t) => !t.parent_id);
-    expect(roots.map((t) => t.name)).to.deep.equal(['category', 'intent', 'source', 'type']);
+    expect(roots.map((t) => t.name)).to.have.members([
+      'category', '$abv_tags$intent', 'source', 'tag', 'type',
+    ]);
     expect(roots.map((t) => t.name)).to.not.include('origin');
 
     // Every tag id in the loaded seed is unique — mechanically locks down the UUID-reuse safety
@@ -245,10 +275,16 @@ describe('seeds', () => {
     const { workspaceId, projectId } = SEED_IDS;
 
     ops.prompts.createMany({ workspaceId, projectId }, [{ text: 'extra' }]);
-    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(2);
+    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(3);
 
     store.reset();
-    expect(ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+    const restored = ops.prompts.list({ workspaceId, projectId });
+    expect(restored.map((prompt) => prompt.id))
+      .to.deep.equal([SEED_IDS.promptId, SEED_IDS.childOnlyPromptId]);
+    expect(
+      restored.find((prompt) => prompt.id === SEED_IDS.childOnlyPromptId).tags.map((tag) => tag.id),
+    )
+      .to.deep.equal([SEED_IDS.tagChildTagId]);
   });
 
   it('seed sets are frozen (handed to the store by reference safely)', () => {

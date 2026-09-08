@@ -42,6 +42,10 @@ const ANONYMOUS_ENDPOINTS = [
   'POST /slack/events',
 ];
 
+// Entries are compared verbatim against `${METHOD.toUpperCase()} ${suffix}`, so they must be an
+// upper-case method, a single space, then an absolute path.
+const ANONYMOUS_ROUTE_SHAPE = /^[A-Z]+ \/\S*$/;
+
 /**
  * Wraps a function with authentication.
  *
@@ -72,6 +76,15 @@ export function authWrapper(fn, opts = {}) {
     if (!Array.isArray(opts.anonymousEndpoints)
       || opts.anonymousEndpoints.some((route) => typeof route !== 'string')) {
       throw new Error('authWrapper: anonymousEndpoints must be an array of "METHOD /path" strings');
+    }
+    // Shape-check each entry too. Matching is an exact string compare against
+    // `${METHOD.toUpperCase()} ${suffix}`, so an entry like 'post /slack/events' or a missing
+    // leading slash would validate, never match, and silently fail closed -- a debugging trap
+    // for a service that believes it has allowed a route. Same rationale as the throw above:
+    // security-sensitive config must not misconfigure quietly.
+    const malformed = opts.anonymousEndpoints.filter((route) => !ANONYMOUS_ROUTE_SHAPE.test(route));
+    if (malformed.length > 0) {
+      throw new Error(`authWrapper: anonymousEndpoints entries must look like "METHOD /path" with an upper-case method; got: ${malformed.join(', ')}`);
     }
     // Defensive copy: the caller must not be able to widen the bypass after construction.
     anonymousEndpoints = [...opts.anonymousEndpoints];

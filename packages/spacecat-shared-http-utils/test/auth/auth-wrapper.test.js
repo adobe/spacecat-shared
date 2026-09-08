@@ -183,6 +183,18 @@ describe('auth wrapper', () => {
       .with(enrichPathInfo)).to.throw('anonymousEndpoints must be an array');
   });
 
+  it('throws on a lower-case method, which would validate but never match', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['post /slack/events'] })
+      .with(enrichPathInfo)).to.throw('upper-case method');
+  });
+
+  it('throws on an entry with no leading slash on the path', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST slack/events'] })
+      .with(enrichPathInfo)).to.throw('upper-case method');
+  });
+
   it('passes options method', async () => {
     context.pathInfo.method = 'OPTIONS';
     context.pathInfo.suffix = '/sites';

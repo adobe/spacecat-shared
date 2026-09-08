@@ -659,9 +659,8 @@ actions:
     update:
       required: false
 
-  # ── CR26: model.LanguageResponse carries a BCP-47 `code` ──────────────────
-  # Live: GET /v1/languages returns `code` (e.g. `zh-Hans`, `zh-Hant`, `fil`) on every catalog entry
-  # (verified rainer-friederich, 2026-09-07). The delivered swagger declares only `id`/`name`.
+  # ── CR26: model.LanguageResponse carries a BCP-47 `code` — see the CR26 note above for the
+  # live-verification detail; not repeated here.
   - target: "$.components.schemas['model.LanguageResponse'].properties"
     description: "CR26: add the code (BCP-47) field to the language catalog entry"
     update:

@@ -2093,6 +2093,11 @@ async function waitForReady(baseUrl, deadline, getStderr) {
     expect(data.items).to.deep.include({
       id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', code: 'en',
     });
+    // Spot-check a live-verified entry where code diverges from the mock-only iso column
+    // (rainer-friederich, 2026-09-07) — the whole point of LLMO-7420 is resolving by this code.
+    expect(data.items).to.deep.include({
+      id: '728bef4c-94cf-4e14-bc06-56534751c71a', name: 'Chinese Simplified', code: 'zh-Hans',
+    });
   });
 
   it('listGlobalAiModels returns the full live model taxonomy (11, real keys)', async () => {

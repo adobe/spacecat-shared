@@ -50,6 +50,12 @@
  * The date the catalog (`id`/`name`) was captured verbatim from the live Semrush gateway, so drift
  * from the live taxonomy is discoverable/greppable rather than buried in prose. Bump it when the
  * catalog is re-captured.
+ *
+ * `code` was NOT captured on this date — it was added later (2026-09-07, LLMO-7420), live-verified
+ * only for `zh-Hans`/`zh-Hant`/`fil`, best-effort for the rest (see the `code`/`iso` doc block
+ * above). This constant intentionally stays pinned to the `id`/`name` capture date; bump it only
+ * when the full 38-row catalog (including `code`) is re-verified against live, not on a partial
+ * `code` update.
  */
 export const CATALOG_CAPTURED = '2026-06-25';
 

@@ -50,6 +50,29 @@ export const main = wrap(run)
   .with(auth, { authHandlers: [LegacyApiKeyHandler, AdobeImsHandler] });
 ```
 
+#### Anonymous routes (`anonymousEndpoints`)
+
+Some routes bypass authentication. By default that is `POST /slack/events`, which the
+consuming service is expected to authenticate by other means — spacecat-api-service verifies
+the Slack request signature in a wrapper mounted outside this one (VULN-39365).
+
+A service that does **not** verify Slack request signatures should opt out explicitly, so it
+does not inherit an unauthenticated route it is not defending:
+
+```javascript
+export const main = wrap(run)
+  .with(auth, { authHandlers: [...], anonymousEndpoints: [] });
+```
+
+Two caveats:
+
+- `anonymousEndpoints` governs only the **route-based** list (exact `'METHOD /path'` matches).
+  `OPTIONS` requests and `POST /hooks/site-detection/*` bypass authentication unconditionally
+  and are **not** affected by this option — `[]` does not mean "authenticate everything".
+- Passing anything other than an array of strings **throws at construction** rather than
+  falling back to the default, so a typo while locking things down cannot silently re-open the
+  bypass.
+
 ### Implementing an Authentication Handler
 
 To implement a new authentication handler, extend the `AbstractHandler` class and implement the `checkAuth` method.

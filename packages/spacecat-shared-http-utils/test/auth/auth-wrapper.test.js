@@ -76,12 +76,57 @@ describe('auth wrapper', () => {
   });
 
   it('passes anonymous route', async () => {
+    // Slack only ever POSTs; GET /slack/events is no longer anonymous (VULN-39365).
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await action(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+  });
+
+  it('does NOT treat GET /slack/events as anonymous (VULN-39365)', async () => {
+    // A GET carries no body to sign, so it could never be Slack-signature-verified. It must
+    // fall through to the authentication manager, which rejects it.
     context.pathInfo.suffix = '/slack/events';
 
     const resp = await action(new Request('https://space.cat/slack/events'), context);
 
-    expect(resp).to.equal(42);
+    expect(resp.status).to.equal(401);
     expect(context.attributes.authInfo).to.be.undefined;
+  });
+
+  it('honours an anonymousEndpoints override that disables the bypass', async () => {
+    const locked = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: [] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await locked(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp.status).to.equal(401);
+  });
+
+  it('honours an anonymousEndpoints override that names a different route', async () => {
+    const custom = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST /custom/hook'] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/custom/hook';
+
+    const resp = await custom(new Request('https://space.cat/custom/hook', { method: 'POST' }), context);
+
+    expect(resp).to.equal(42);
+  });
+
+  it('ignores a non-array anonymousEndpoints and keeps the default', async () => {
+    const bogus = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: 'POST /slack/events' })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await bogus(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp).to.equal(42);
   });
 
   it('passes options method', async () => {

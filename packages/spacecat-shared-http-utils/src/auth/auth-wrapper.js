@@ -16,20 +16,50 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
 import { checkScopes } from './check-scopes.js';
 
+/**
+ * Routes that bypass authentication entirely.
+ *
+ * SECURITY CONTRACT (VULN-39365): an entry here means this library performs NO authentication
+ * for that route, so the consuming service MUST authenticate it by other means. For
+ * `POST /slack/events` that means verifying the Slack request signature (`X-Slack-Signature` +
+ * `X-Slack-Request-Timestamp`) before the payload reaches any handler. spacecat-api-service does
+ * this in `slackSignatureWrapper`, which is mounted OUTSIDE this wrapper so it runs first.
+ *
+ * Historically this list also contained `GET /slack/events`. That was removed because Slack only
+ * ever POSTs events and interactive payloads, and a GET carries no body to sign — so a GET could
+ * never be signature-verified and existed purely as an unauthenticated entry point.
+ *
+ * Do NOT add entries here. A service that needs an unauthenticated route should pass its own
+ * `anonymousEndpoints` (see below) rather than widening the default for every consumer.
+ */
 const ANONYMOUS_ENDPOINTS = [
-  'GET /slack/events',
   'POST /slack/events',
 ];
 
+/**
+ * Wraps a function with authentication.
+ *
+ * @param {UniversalFunction} fn - the function to wrap.
+ * @param {object} [opts] - options.
+ * @param {Array} [opts.authHandlers] - the authentication handler classes to try, in order.
+ * @param {string[]} [opts.anonymousEndpoints] - overrides the default set of routes that bypass
+ *   authentication, as `'METHOD /path'` strings. Pass `[]` to disable the bypass entirely. A
+ *   service that does not verify Slack request signatures SHOULD pass `[]`, otherwise it
+ *   inherits an unauthenticated `POST /slack/events` it may not be defending.
+ * @returns {UniversalFunction} the wrapped function.
+ */
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
+  const anonymousEndpoints = Array.isArray(opts.anonymousEndpoints)
+    ? opts.anonymousEndpoints
+    : ANONYMOUS_ENDPOINTS;
 
   return async (request, context) => {
     const { log, pathInfo: { method, suffix } } = context;
 
     const route = `${method.toUpperCase()} ${suffix}`;
 
-    if (ANONYMOUS_ENDPOINTS.includes(route)
+    if (anonymousEndpoints.includes(route)
         || route.startsWith('POST /hooks/site-detection/')
         || method.toUpperCase() === 'OPTIONS') {
       return fn(request, context);

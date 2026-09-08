@@ -17,13 +17,19 @@ import AuthenticationManager from './authentication-manager.js';
 import { checkScopes } from './check-scopes.js';
 
 /**
- * Routes that bypass authentication entirely.
+ * Route-based entries that bypass authentication.
  *
  * SECURITY CONTRACT (VULN-39365): an entry here means this library performs NO authentication
  * for that route, so the consuming service MUST authenticate it by other means. For
  * `POST /slack/events` that means verifying the Slack request signature (`X-Slack-Signature` +
  * `X-Slack-Request-Timestamp`) before the payload reaches any handler. spacecat-api-service does
  * this in `slackSignatureWrapper`, which is mounted OUTSIDE this wrapper so it runs first.
+ *
+ * IMPORTANT: this list is NOT the whole unauthenticated surface. Two further bypasses are
+ * unconditional clauses in the wrapper below and are not represented here or overridable via
+ * `anonymousEndpoints`:
+ *   - every `OPTIONS` request (CORS preflight), and
+ *   - any route matching the `POST /hooks/site-detection/` prefix.
  *
  * Historically this list also contained `GET /slack/events`. That was removed because Slack only
  * ever POSTs events and interactive payloads, and a GET carries no body to sign — so a GET could
@@ -42,14 +48,19 @@ const ANONYMOUS_ENDPOINTS = [
  * @param {UniversalFunction} fn - the function to wrap.
  * @param {object} [opts] - options.
  * @param {Array} [opts.authHandlers] - the authentication handler classes to try, in order.
- * @param {string[]} [opts.anonymousEndpoints] - overrides the default set of routes that bypass
- *   authentication, as `'METHOD /path'` strings. Pass `[]` to disable the bypass entirely. A
- *   service that does not verify Slack request signatures SHOULD pass `[]`, otherwise it
- *   inherits an unauthenticated `POST /slack/events` it may not be defending.
+ * @param {string[]} [opts.anonymousEndpoints] - overrides the default set of **route-based**
+ *   anonymous entries, as `'METHOD /path'` strings (exact match, method upper-case).
+ *
+ *   Pass `[]` to remove the route-based entries. Note this does NOT authenticate everything:
+ *   `OPTIONS` requests and `POST /hooks/site-detection/*` bypass authentication
+ *   unconditionally and are not affected by this option. A service that does not verify Slack
+ *   request signatures SHOULD pass `[]`, otherwise it inherits an unauthenticated
+ *   `POST /slack/events` it may not be defending.
  *
  *   Supplying a value that is not an array of strings THROWS at wrapper-construction time
  *   rather than falling back to the default. This is security-sensitive configuration: a typo
- *   by a service trying to *disable* the bypass must not silently re-enable it.
+ *   by a service trying to *disable* the bypass must not silently re-enable it. Entries are
+ *   copied, so mutating the caller's array afterwards cannot widen the bypass.
  * @returns {UniversalFunction} the wrapped function.
  * @throws {Error} when `opts.anonymousEndpoints` is present but not an array of strings.
  */
@@ -62,7 +73,8 @@ export function authWrapper(fn, opts = {}) {
       || opts.anonymousEndpoints.some((route) => typeof route !== 'string')) {
       throw new Error('authWrapper: anonymousEndpoints must be an array of "METHOD /path" strings');
     }
-    anonymousEndpoints = opts.anonymousEndpoints;
+    // Defensive copy: the caller must not be able to widen the bypass after construction.
+    anonymousEndpoints = [...opts.anonymousEndpoints];
   }
 
   return async (request, context) => {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.21.1...@adobe/spacecat-shared-project-engine-client-v1.22.0) (2026-09-08)
+
+### Features
+
+* **project-engine-mock:** add native nested tag fixtures ([#1916](https://github.com/adobe/spacecat-shared/issues/1916)) ([591e183](https://github.com/adobe/spacecat-shared/commit/591e1838e2226d30b252737f9dd8c099dd93321a)), closes [adobe/serenity-docs#26](https://github.com/adobe/serenity-docs/issues/26)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.21.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.21.0...@adobe/spacecat-shared-project-engine-client-v1.21.1) (2026-09-07)
 
 ### Bug Fixes

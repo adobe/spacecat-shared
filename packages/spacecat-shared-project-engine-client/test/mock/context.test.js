@@ -95,9 +95,15 @@ describe('mock Context', () => {
   it('reset() restores the seed after mutation', () => {
     const ctx = new Context();
     ctx.ops.prompts.createMany({ workspaceId, projectId }, [{ text: 'extra' }]);
-    expect(ctx.ops.prompts.list({ workspaceId, projectId })).to.have.length(2);
+    expect(ctx.ops.prompts.list({ workspaceId, projectId })).to.have.length(3);
     ctx.reset();
-    expect(ctx.ops.prompts.list({ workspaceId, projectId })).to.have.length(1);
+    const restored = ctx.ops.prompts.list({ workspaceId, projectId });
+    expect(restored.map((prompt) => prompt.id))
+      .to.deep.equal([SEED_IDS.promptId, SEED_IDS.childOnlyPromptId]);
+    expect(
+      restored.find((prompt) => prompt.id === SEED_IDS.childOnlyPromptId).tags.map((tag) => tag.id),
+    )
+      .to.deep.equal([SEED_IDS.tagChildTagId]);
   });
 
   it('seed() replaces state and becomes the new reset baseline', () => {

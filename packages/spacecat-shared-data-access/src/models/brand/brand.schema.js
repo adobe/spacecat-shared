@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { hasText } from '@adobe/spacecat-shared-utils';
+import { hasText, isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import SchemaBuilder from '../base/schema.builder.js';
 import Brand from './brand.model.js';
@@ -52,6 +52,65 @@ const schema = new SchemaBuilder(Brand, BrandCollection)
   // Uniqueness guarantee on the write-of-record column
   // (brands.semrush_sub_workspace_id, mysticat-data-service migration
   // 20260702091920), so findBySemrushSubWorkspaceId returns at most one row.
-  .addAllIndex(['semrushSubWorkspaceId']);
+  .addAllIndex(['semrushSubWorkspaceId'])
+  // LLMO-7352/LLMO-7418: async Semrush sub-workspace provisioning state — see
+  // brand.model.js's class doc for the full field-by-field contract. All five
+  // are nullable (no default): a brand with no async attempt tracked simply
+  // has them all NULL, matching every brand that predates this column set.
+  //
+  // Not `required` and not `.addAllIndex`-ed: a targeted PATCH from the async
+  // worker sends only the fields it changes on a given transition (e.g. a
+  // requeue writes only `jobId`; a terminal promotion writes `status` +
+  // `semrushSubWorkspaceId`), never the full set at once.
+  .addAttribute('semrushProvisioningStatus', {
+    type: Brand.PROVISIONING_STATUSES,
+    validate: (value) => value == null || Brand.PROVISIONING_STATUSES.includes(value),
+  })
+  // Compare-and-set key for pointer promotion — an async worker's terminal
+  // write is always conditioned on this still matching the attempt it started,
+  // so a stale/superseded attempt (a retry, or a late at-least-once
+  // redelivery) can never clobber a newer winner. Nullable: no attempt tracked
+  // yet. Validated as a UUID like every other id on this entity, but
+  // deliberately NOT `.addAllIndex`-ed — this is a per-brand compare-and-set
+  // token, not a lookup key.
+  .addAttribute('semrushProvisioningAttemptId', {
+    type: 'string',
+    validate: (value) => value == null || isValidUUID(value),
+  })
+  // References the async_jobs row driving the current attempt. Deliberately
+  // NOT a foreign key: async_jobs rows are purged 7 days after creation
+  // (wrpc_purge_expired_async_jobs), so an FK would either block the purge or
+  // cascade this column to NULL — the durable state on this entity must
+  // outlive the job record it points at.
+  .addAttribute('semrushProvisioningJobId', {
+    type: 'string',
+    validate: (value) => value == null || isValidUUID(value),
+  })
+  // Sanitized terminal-failure reason, retained for diagnostics/UI after the
+  // async_jobs row is purged. Length-bounded to match the DB CHECK
+  // (brands_semrush_provisioning_error_length_check, <= 2000 chars). Must
+  // never contain a raw Semrush workspace id or upstream response body — that
+  // redaction is the writer's responsibility, this column only bounds length.
+  .addAttribute('semrushProvisioningError', {
+    type: 'string',
+    validate: (value) => value == null || value.length <= 2000,
+  })
+  // Diagnostic, NON-canonical candidate workspace id captured mid-attempt,
+  // before Semrush confirms the workspace is ready. `semrushSubWorkspaceId`
+  // above remains the only canonical, confirmed pointer — this field exists so
+  // a worker resuming a self-requeued attempt polls the SAME candidate instead
+  // of re-running create-or-adopt (which would otherwise create a new
+  // workspace on every backoff hop, since an in-progress candidate is
+  // invisible to the adoption family-listing check). Same nullable hasText
+  // guard as semrushSubWorkspaceId — never written from user input.
+  // NOTE: the backing DB column (mysticat-data-service, fast-follow to
+  // migration 20260908000000) had not landed as of this schema change; declare
+  // the attribute first so schema and DB ship together, per this repo's own
+  // schema-first sequencing precedent — do not use this attribute before that
+  // column exists.
+  .addAttribute('semrushProvisioningCandidateWorkspaceId', {
+    type: 'string',
+    validate: (value) => value == null || hasText(value),
+  });
 
 export default schema.build();

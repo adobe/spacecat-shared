@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.22.0...@adobe/spacecat-shared-project-engine-client-v1.23.0) (2026-09-09)
+
+### Features
+
+* **project-engine-client:** add BCP-47 code to the language catalog ([#1919](https://github.com/adobe/spacecat-shared/issues/1919)) ([4092604](https://github.com/adobe/spacecat-shared/commit/4092604f00a5642e91b690f73ec2acb6c26352a4))
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.22.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.21.1...@adobe/spacecat-shared-project-engine-client-v1.22.0) (2026-09-08)
 
 ### Features

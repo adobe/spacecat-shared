@@ -157,6 +157,13 @@ info:
 #      serenity-docs `category-delete-implementation-plan.md` WP0 gate 2). Mark it optional so a
 #      caller can omit it rather than sending a meaningless placeholder value. Remove if Semrush
 #      documents (or starts enforcing) real per-prompt scoping.
+# CR26 model.LanguageResponse carries a BCP-47 `code`. GET /v1/languages returns a `code` field
+#      (e.g. `zh-Hans`, `zh-Hant`, `fil`) on all 38 catalog entries — the stable identifier LLMO-7420
+#      resolves `languageCode` against instead of English-name matching (verified rainer-friederich,
+#      2026-09-07). The delivered swagger declares only `id`/`name`. Add the property; CR5's
+#      `model.LanguageResponse` entry now requires `[id, name, code]` (previously unset — the
+#      vendored swagger marks NO response field required, so this schema had no CR5 entry at all
+#      before this PR added one alongside `code`). Remove if Semrush ships it upstream.
 #
 # Freshness gate: test/overlay.test.js asserts every action above still APPLIES (matches >0
 # nodes) and is still NECESSARY (changes the converted vendored swagger) — so a re-vendored
@@ -308,6 +315,17 @@ actions:
     description: "CR5: a listed brand URL always carries id"
     update:
       required: [id]
+
+  - target: "$.components.schemas['model.LanguageResponse']"
+    description: "CR5: a catalog language always carries id + name + code"
+    # `code` is the BCP-47 field CR26 adds to the schema. Live-verified present on every one of the
+    # 38 `GET /v1/languages` catalog rows — the only context spacecat-api-service's LLMO-7420
+    # resolver reads — (rainer-friederich, 2026-09-07). `model.LanguageResponse` is also reused,
+    # unverified for `code`, as the embedded `AISettings.language` read-view field; the mock supplies
+    # a best-effort value there too (same treatment `language.name` already gets in that context —
+    # see factories.js `buildAiSettings`), so this required bar holds everywhere the schema serves.
+    update:
+      required: [id, name, code]
 
   - target: "$.components.schemas['model.AIOTag']"
     description: "CR5: a listed/stored project tag always carries id"
@@ -640,3 +658,12 @@ actions:
     description: "CR25: aio-delete-tags' prompt_id query is optional, not required"
     update:
       required: false
+
+  # ── CR26: model.LanguageResponse carries a BCP-47 `code` — see the CR26 note above for the
+  # live-verification detail; not repeated here.
+  - target: "$.components.schemas['model.LanguageResponse'].properties"
+    description: "CR26: add the code (BCP-47) field to the language catalog entry"
+    update:
+      code:
+        type: string
+        description: "BCP-47 language code (e.g. zh-Hans, zh-Hant, fil) — the stable identifier languageCode is resolved against"

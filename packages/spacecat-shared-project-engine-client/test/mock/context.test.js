@@ -33,7 +33,7 @@ describe('mock Context', () => {
     const ctx = new Context();
     expect(ctx.languageCatalog).to.be.an('array').with.length(38);
     expect(ctx.languageCatalog).to.deep.include({
-      id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', iso: 'en',
+      id: '5a0a33ed-7f5c-4901-befd-a042c0350da1', name: 'English', code: 'en', iso: 'en',
     });
   });
 

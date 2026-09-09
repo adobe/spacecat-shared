@@ -60,6 +60,7 @@ const COOKIE_BANNER_CLASS_SELECTORS = [
   '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
   '[class*="syrenis-cookie"]',
   '.tc-privacy-wrapper',
+  '.sl-cookie-modal',
 ];
 
 const COOKIE_BANNER_ID_SELECTORS = [

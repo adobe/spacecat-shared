@@ -217,6 +217,31 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Manage consent preferences');
     });
 
+    it('should remove Shangri-La custom cookie modal (.sl-cookie-modal)', async () => {
+      const html = `<html><body>
+        <h1>Summer Aqua Pilates</h1>
+        <p>Experience a refreshing workout in water.</p>
+        <div class="sl-cookie-modal text-font">
+          <div class="sl-cookie-modal-content">
+            <div class="sl-cookie-modal-title">We value your privacy</div>
+            <div class="sl-cookie-modal-desc">We use cookies to enhance your experience. Accept all cookies or manage your preferences.</div>
+            <div class="sl-cookie-modal-footer">
+              <div class="sl-cookie-modal-link">Manage Tracking</div>
+              <div class="sl-cookie-modal-btn">Accept All</div>
+            </div>
+          </div>
+        </div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Summer Aqua Pilates');
+      expect(text).to.include('Experience a refreshing workout in water.');
+      expect(text).to.not.include('We value your privacy');
+      expect(text).to.not.include('We use cookies');
+      expect(text).to.not.include('Accept All');
+    });
+
     it('should not remove cookie-banner selectors when content does not indicate consent', async () => {
       const html = `<html><body>
         <h1>Title</h1>

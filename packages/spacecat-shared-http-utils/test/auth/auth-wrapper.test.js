@@ -76,12 +76,123 @@ describe('auth wrapper', () => {
   });
 
   it('passes anonymous route', async () => {
+    // Slack only ever POSTs; GET /slack/events is no longer anonymous (VULN-39365).
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await action(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp).to.equal(42);
+    expect(context.attributes.authInfo).to.be.undefined;
+  });
+
+  it('does NOT treat GET /slack/events as anonymous (VULN-39365)', async () => {
+    // A GET carries no body to sign, so it could never be Slack-signature-verified. It must
+    // fall through to the authentication manager, which rejects it.
     context.pathInfo.suffix = '/slack/events';
 
     const resp = await action(new Request('https://space.cat/slack/events'), context);
 
-    expect(resp).to.equal(42);
+    expect(resp.status).to.equal(401);
     expect(context.attributes.authInfo).to.be.undefined;
+  });
+
+  it('honours an anonymousEndpoints override that disables the bypass', async () => {
+    const locked = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: [] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await locked(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp.status).to.equal(401);
+  });
+
+  // The option governs ONLY the route-based list. These pin the two unconditional bypasses it
+  // does not reach, so the documented contract cannot silently drift from the behaviour.
+  it('anonymousEndpoints: [] does NOT authenticate OPTIONS requests', async () => {
+    const locked = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: [] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/sites';
+
+    const resp = await locked(new Request('https://space.cat/sites', { method: 'OPTIONS' }), context);
+
+    expect(resp).to.equal(42);
+  });
+
+  it('anonymousEndpoints: [] does NOT authenticate POST /hooks/site-detection/*', async () => {
+    const locked = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: [] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/hooks/site-detection/cdn/some-secret';
+
+    const resp = await locked(
+      new Request('https://space.cat/hooks/site-detection/cdn/some-secret', { method: 'POST' }),
+      context,
+    );
+
+    expect(resp).to.equal(42);
+  });
+
+  it('a non-empty override drops the default POST /slack/events', async () => {
+    const custom = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST /custom/hook'] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await custom(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp.status).to.equal(401);
+  });
+
+  it('copies anonymousEndpoints so later mutation cannot widen the bypass', async () => {
+    const caller = [];
+    const locked = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: caller })
+      .with(enrichPathInfo);
+    caller.push('POST /slack/events');
+    context.pathInfo.suffix = '/slack/events';
+
+    const resp = await locked(new Request('https://space.cat/slack/events', { method: 'POST' }), context);
+
+    expect(resp.status).to.equal(401);
+  });
+
+  it('honours an anonymousEndpoints override that names a different route', async () => {
+    const custom = wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST /custom/hook'] })
+      .with(enrichPathInfo);
+    context.pathInfo.suffix = '/custom/hook';
+
+    const resp = await custom(new Request('https://space.cat/custom/hook', { method: 'POST' }), context);
+
+    expect(resp).to.equal(42);
+  });
+
+  it('throws on a non-array anonymousEndpoints instead of silently using the default', () => {
+    // Security-sensitive config: a typo by a service trying to DISABLE the bypass must not
+    // silently re-enable an unauthenticated POST /slack/events.
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: 'POST /slack/events' })
+      .with(enrichPathInfo)).to.throw('anonymousEndpoints must be an array');
+  });
+
+  it('throws on an anonymousEndpoints array containing a non-string', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST /slack/events', 42] })
+      .with(enrichPathInfo)).to.throw('anonymousEndpoints must be an array');
+  });
+
+  it('throws on a lower-case method, which would validate but never match', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['post /slack/events'] })
+      .with(enrichPathInfo)).to.throw('upper-case method');
+  });
+
+  it('throws on an entry with no leading slash on the path', () => {
+    expect(() => wrap(() => 42)
+      .with(authWrapper, { authHandlers: [DummyHandler], anonymousEndpoints: ['POST slack/events'] })
+      .with(enrichPathInfo)).to.throw('upper-case method');
   });
 
   it('passes options method', async () => {

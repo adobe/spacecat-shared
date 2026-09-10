@@ -11,12 +11,11 @@
  */
 
 import { tracingFetch, SPACECAT_USER_AGENT } from '@adobe/spacecat-shared-utils';
-import { EDGE_OPTIMIZE_REQUEST_ID_HEADERS } from '../constants.js';
 import BaseValidator from './base-validator.js';
 
 export const ROUTING_VALIDATOR_TYPE = 'routing';
 export const ROUTING_VALIDATOR_USER_AGENT = `${SPACECAT_USER_AGENT} Tokowaka-AI AdobeEdgeOptimize-AI`;
-export const REQUEST_ID_HEADERS = EDGE_OPTIMIZE_REQUEST_ID_HEADERS;
+export const REQUEST_ID_HEADERS = ['x-tokowaka-request-id', 'x-edgeoptimize-request-id'];
 export const FETCH_TIMEOUT_MS = 10000;
 // Two retries after the first attempt (3 attempts total), waiting 4s then 8s between them.
 export const RETRY_DELAYS_MS = [4000, 8000];

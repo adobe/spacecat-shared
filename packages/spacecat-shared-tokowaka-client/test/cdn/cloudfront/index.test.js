@@ -2045,27 +2045,6 @@ describe('edge-optimize support', () => {
       expect(result.details.bot.status).to.equal(200);
     });
 
-    it('passes when the bot response carries the older x-tokowaka-request-id header', async () => {
-      fetchStub = sinon.stub(global, 'fetch');
-      fetchStub.onFirstCall().resolves(makeResponse(200, { 'x-tokowaka-request-id': 'req-456' }));
-      fetchStub.onSecondCall().resolves(makeResponse(200, {}));
-
-      const result = await edgeOptimize.verifyRouting('https://d.cloudfront.net/');
-
-      expect(result.passed).to.equal(true);
-      expect(result.requestId).to.equal('req-456');
-    });
-
-    it('does NOT pass when the human response carries the older x-tokowaka-request-id header', async () => {
-      fetchStub = sinon.stub(global, 'fetch');
-      fetchStub.onFirstCall().resolves(makeResponse(200, { 'x-edgeoptimize-request-id': 'req-123' }));
-      fetchStub.onSecondCall().resolves(makeResponse(200, { 'x-tokowaka-request-id': 'req-999' }));
-
-      const result = await edgeOptimize.verifyRouting('https://d.cloudfront.net/');
-
-      expect(result.passed).to.equal(false);
-    });
-
     it('ignores non-edgeoptimize response headers', async () => {
       fetchStub = sinon.stub(global, 'fetch');
       fetchStub.onFirstCall().resolves(makeResponse(200, { 'x-edgeoptimize-request-id': 'req-1', 'content-type': 'text/html' }));

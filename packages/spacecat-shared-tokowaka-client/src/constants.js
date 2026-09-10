@@ -15,11 +15,3 @@ export const TARGET_USER_AGENTS_CATEGORIES = {
   BOTS: 'bots',
   ALL: 'all',
 };
-
-// Response headers that prove a request was routed through the Edge Optimize layer -- either
-// name means the same thing (x-tokowaka-request-id is the older name, x-edgeoptimize-request-id
-// the current one; both are still set by real edge configs). Checked independently in
-// RoutingValidator, verifyRouting, and index.js's edge-optimize-status probe -- all three must
-// stay in sync since they answer the same question ("is this URL routed through the edge-optimize
-// layer?").
-export const EDGE_OPTIMIZE_REQUEST_ID_HEADERS = ['x-tokowaka-request-id', 'x-edgeoptimize-request-id'];

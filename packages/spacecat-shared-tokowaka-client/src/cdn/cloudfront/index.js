@@ -44,7 +44,6 @@ import {
   PublishVersionCommand,
 } from '@aws-sdk/client-lambda';
 import { hasText } from '@adobe/spacecat-shared-utils';
-import { EDGE_OPTIMIZE_REQUEST_ID_HEADERS } from '../../constants.js';
 
 // Edge runtime code (Lambda@Edge handler + CloudFront routing function) lives in its own
 // module for readability; imported for use here and re-exported to keep the public surface.
@@ -1181,9 +1180,8 @@ async function fetchEdgeOptimizeHeaders(url, userAgent) {
     });
     const headers = {};
     response.headers.forEach((value, key) => {
-      const lowerKey = key.toLowerCase();
-      if (lowerKey.startsWith('x-edgeoptimize') || EDGE_OPTIMIZE_REQUEST_ID_HEADERS.includes(lowerKey)) {
-        headers[lowerKey] = value;
+      if (key.toLowerCase().startsWith('x-edgeoptimize')) {
+        headers[key.toLowerCase()] = value;
       }
     });
     // Drain the body so the connection can be reused/closed.
@@ -1223,12 +1221,9 @@ export async function verifyRouting(url) {
     fetchEdgeOptimizeHeaders(url, humanUa),
   ]);
 
-  const requestId = EDGE_OPTIMIZE_REQUEST_ID_HEADERS
-    .map((header) => bot.headers[header]).find(Boolean) || null;
-  const humanHasRequestId = EDGE_OPTIMIZE_REQUEST_ID_HEADERS
-    .some((header) => human.headers[header]);
+  const requestId = bot.headers['x-edgeoptimize-request-id'] || null;
   const passed = Boolean(requestId)
-    && !humanHasRequestId
+    && !human.headers['x-edgeoptimize-request-id']
     && !human.headers['x-edgeoptimize-fo']
     && human.headers['x-edgeoptimize-proxy'] !== '1';
 

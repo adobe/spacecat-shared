@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.0...@adobe/spacecat-shared-data-access-v4.29.1) (2026-09-10)
+
+### Bug Fixes
+
+* **data-access:** document why OaeValidation.Outcome avoids true/false strings ([#1929](https://github.com/adobe/spacecat-shared/issues/1929)) ([e28eeff](https://github.com/adobe/spacecat-shared/commit/e28eeff44b7a13744dacabfaabbdd396de982e41)), closes [#1928](https://github.com/adobe/spacecat-shared/issues/1928) [#1928](https://github.com/adobe/spacecat-shared/issues/1928)
+
 ## [@adobe/spacecat-shared-data-access-v4.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.28.0...@adobe/spacecat-shared-data-access-v4.29.0) (2026-09-10)
 
 ### Features

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.4...@adobe/spacecat-shared-html-analyzer-v1.3.5) (2026-09-10)
+
+### Bug Fixes
+
+* **html-analyzer:** add Shangri-La cookie banner selector ([#1925](https://github.com/adobe/spacecat-shared/issues/1925)) ([70f86a1](https://github.com/adobe/spacecat-shared/commit/70f86a1ca231552a8001d86c52e385a6d21e38a6))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.3.4](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.3...@adobe/spacecat-shared-html-analyzer-v1.3.4) (2026-07-22)
 
 ### Bug Fixes

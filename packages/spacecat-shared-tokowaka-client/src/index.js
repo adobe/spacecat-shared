@@ -60,8 +60,7 @@ export {
   ROUTING_VALIDATOR_USER_AGENT,
 } from './validators/routing-validator.js';
 export {
-  createOaeValidationJob,
-  getOaeValidationJob,
+  OaeValidationJobs,
   OAE_VALIDATION_IMPORT_TYPE,
 } from './oae-validation-job.js';
 

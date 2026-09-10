@@ -11,11 +11,12 @@
  */
 
 import { tracingFetch, SPACECAT_USER_AGENT } from '@adobe/spacecat-shared-utils';
+import { EDGE_OPTIMIZE_REQUEST_ID_HEADERS } from '../constants.js';
 import BaseValidator from './base-validator.js';
 
 export const ROUTING_VALIDATOR_TYPE = 'routing';
 export const ROUTING_VALIDATOR_USER_AGENT = `${SPACECAT_USER_AGENT} Tokowaka-AI AdobeEdgeOptimize-AI`;
-export const REQUEST_ID_HEADERS = ['x-tokowaka-request-id', 'x-edgeoptimize-request-id'];
+export const REQUEST_ID_HEADERS = EDGE_OPTIMIZE_REQUEST_ID_HEADERS;
 export const FETCH_TIMEOUT_MS = 10000;
 // Two retries after the first attempt (3 attempts total), waiting 4s then 8s between them.
 export const RETRY_DELAYS_MS = [4000, 8000];
@@ -131,13 +132,16 @@ async function checkUrlRoutingStatus(url) {
  * After all attempts are exhausted, a persistently unreachable URL is treated as a confirmed
  * failure ('false'), not merely inconclusive.
  */
-async function checkWithRetries(url) {
+async function checkWithRetries(url, log) {
   const totalAttempts = RETRY_DELAYS_MS.length + 1;
+  let lastError;
   for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
     try {
       // eslint-disable-next-line no-await-in-loop
       return await checkUrlRoutingStatus(url);
-    } catch {
+    } catch (error) {
+      lastError = error;
+      log.warn(`[routing-validator] attempt ${attempt}/${totalAttempts} failed for ${url}`, { error: error.message });
       if (attempt < totalAttempts) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((resolve) => {
@@ -146,7 +150,10 @@ async function checkWithRetries(url) {
       }
     }
   }
-  return { outcome: 'false', metadata: { reason: 'network_error', attempts: totalAttempts } };
+  return {
+    outcome: 'false',
+    metadata: { reason: 'network_error', lastError: lastError.message, attempts: totalAttempts },
+  };
 }
 
 export default class RoutingValidator extends BaseValidator {
@@ -155,7 +162,7 @@ export default class RoutingValidator extends BaseValidator {
     return ROUTING_VALIDATOR_TYPE;
   }
 
-  // eslint-disable-next-line class-methods-use-this, no-unused-vars
+  // eslint-disable-next-line no-unused-vars
   async validate(suggestion, context) {
     const url = suggestion.getData()?.url;
     if (!url) {
@@ -164,6 +171,6 @@ export default class RoutingValidator extends BaseValidator {
     if (!isAllowedUrl(url)) {
       return { outcome: 'unknown', metadata: { reason: 'disallowed_url' } };
     }
-    return checkWithRetries(url);
+    return checkWithRetries(url, this.log);
   }
 }

@@ -69,6 +69,9 @@ export class OaeValidationJobs {
     const jobId = crypto.randomUUID();
 
     const configuration = await this.dataAccess.Configuration.findLatest();
+    if (!configuration) {
+      throw new Error('No configuration found -- cannot determine import queue URL');
+    }
     await this.sqs.sendMessage(configuration.getQueues().imports, {
       type: OAE_VALIDATION_IMPORT_TYPE,
       jobId,

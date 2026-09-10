@@ -112,6 +112,22 @@ describe('OaeValidationJobs', () => {
       }
       expect(thrown.message).to.equal('SQS unavailable');
     });
+
+    it('throws a clear error when no configuration exists', async () => {
+      dataAccess.Configuration.findLatest.resolves(null);
+      const instance = OaeValidationJobs.createFrom(context);
+
+      let thrown;
+      try {
+        await instance.createJob({
+          siteId, type: 'routing', suggestionIds: [suggestionId1],
+        });
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown.message).to.equal('No configuration found -- cannot determine import queue URL');
+      expect(sqs.sendMessage.called).to.be.false;
+    });
   });
 
   describe('getJob', () => {

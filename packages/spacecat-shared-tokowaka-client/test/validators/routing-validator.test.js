@@ -203,17 +203,28 @@ describe('RoutingValidator', () => {
     expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
     expect(global.setTimeout).to.have.been.calledOnce;
     expect(global.setTimeout.firstCall.args[1]).to.equal(4000);
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] attempt 1/3 failed for https://example.com/a',
+      { error: 'network blip' },
+    );
   });
 
-  it('returns false with reason network_error after exhausting all 3 attempts', async () => {
-    fetchStub.rejects(new Error('still down'));
+  it('returns false with reason network_error and the last error after exhausting all 3 attempts', async () => {
+    fetchStub.onCall(0).rejects(new Error('down 1'));
+    fetchStub.onCall(1).rejects(new Error('down 2'));
+    fetchStub.onCall(2).rejects(new Error('down 3'));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({
       outcome: 'false',
-      metadata: { reason: 'network_error', attempts: 3 },
+      metadata: { reason: 'network_error', lastError: 'down 3', attempts: 3 },
     });
     expect(fetchStub.callCount).to.equal(3);
     expect(global.setTimeout.getCall(0).args[1]).to.equal(4000);
     expect(global.setTimeout.getCall(1).args[1]).to.equal(8000);
+    expect(log.warn.callCount).to.equal(3);
+    expect(log.warn.thirdCall).to.have.been.calledWith(
+      '[routing-validator] attempt 3/3 failed for https://example.com/a',
+      { error: 'down 3' },
+    );
   });
 });

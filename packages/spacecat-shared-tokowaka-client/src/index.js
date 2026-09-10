@@ -16,6 +16,7 @@ import {
   hasText, isNonEmptyObject, prependSchema, tracingFetch,
 } from '@adobe/spacecat-shared-utils';
 import { v4 as uuidv4 } from 'uuid';
+import { EDGE_OPTIMIZE_REQUEST_ID_HEADERS } from './constants.js';
 import MapperRegistry from './mappers/mapper-registry.js';
 import CdnClientRegistry from './cdn/cdn-client-registry.js';
 import { mergePatches } from './utils/patch-utils.js';
@@ -1393,8 +1394,8 @@ class TokowakaClient {
 
         this.log.info(`[edge-optimize-status] Response status: ${response.status} for ${targetUrl}`);
 
-        const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
-          || response.headers.get('x-edgeoptimize-request-id') !== null;
+        const edgeOptimizeEnabled = EDGE_OPTIMIZE_REQUEST_ID_HEADERS
+          .some((header) => response.headers.get(header) !== null);
 
         this.log.info(`[edge-optimize-status] Edge optimize headers found: ${edgeOptimizeEnabled} for ${targetUrl}`);
 

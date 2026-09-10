@@ -60,8 +60,8 @@ describe('OaeValidationModel', () => {
   describe('Outcome', () => {
     it('exposes the expected outcome values', () => {
       expect(OaeValidation.Outcome).to.deep.equal({
-        TRUE: 'true',
-        FALSE: 'false',
+        PASS: 'pass',
+        FAIL: 'fail',
         UNKNOWN: 'unknown',
       });
     });
@@ -109,8 +109,8 @@ describe('OaeValidationModel', () => {
       expect(instance.getOutcome()).to.equal(null);
     });
     it('sets outcome', () => {
-      instance.setOutcome('true');
-      expect(instance.getOutcome()).to.equal('true');
+      instance.setOutcome('pass');
+      expect(instance.getOutcome()).to.equal('pass');
     });
   });
 

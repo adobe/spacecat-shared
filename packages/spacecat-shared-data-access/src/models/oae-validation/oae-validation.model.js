@@ -38,8 +38,8 @@ class OaeValidation extends BaseModel {
    * The validation result once a row is COMPLETE.
    */
   static Outcome = {
-    TRUE: 'true',
-    FALSE: 'false',
+    PASS: 'pass',
+    FAIL: 'fail',
     UNKNOWN: 'unknown',
   };
 

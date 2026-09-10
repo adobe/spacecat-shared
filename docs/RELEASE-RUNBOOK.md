@@ -423,6 +423,31 @@ crosses a consumer's exact internal pin, the lock loses that resolution and
 `npm ci` fails on **every** branch (the `Missing <pkg>@<ver> from lock file`
 outage).
 
+Two things trigger this step, because a released version bump can drift the lock
+whether or not the rest of the release run succeeds. Its gate is
+`success() || failure()`, not `success()`:
+
+- **Clean release** (`success()`): the normal path — regenerate the lock against
+  the just-published versions, commit if it drifted.
+- **Partial `Semantic Release` failure** (`failure()`): semantic-release runs
+  once per workspace (`npx --no -ws semantic-release`). It can publish and push
+  package A's release commit (drifting the lock) and then fail on a *later*
+  workspace B in the same run. The release job goes red, but package A's version
+  bump is already on `main` — so the lock is drifted and the heal is exactly what
+  is needed. A `success()` gate would **skip** the one scenario that most needs
+  the re-sync, converting a release-job failure into a main-wide contributor tax.
+  (This is what #1773 hit: a `data-access@4.0.0` publish pushed its release
+  commit, then the run failed on an unrelated later package; the old `success()`
+  gate skipped the heal and left `main` drifted — every open PR went red at
+  `Verify package-lock.json is in sync`.)
+
+The step guards the `failure()` path so it only commits when a release commit was
+actually pushed this run: it checks that HEAD is a `chore(release): …` commit
+(the subject semantic-release uses) before regenerating. On a failure *before*
+any release was committed (e.g. `npm ci` failed) HEAD is the triggering
+feat/fix commit, so the step no-ops. Cancellation is excluded from the gate — a
+job cancelled mid-push must not race in a commit.
+
 The step is `continue-on-error: true` — it can never fail a release. So a
 failure here is **silent** and surfaces later as the `Verify package-lock.json
 is in sync` check going red on the next unrelated PR.
@@ -459,6 +484,41 @@ git commit -m "fix: sync package-lock.json with released workspace versions"
 
 No package is republished — this is a lockfile-only commit. The drift guard on
 the recovery PR confirms the fix (it will pass once the lock is regenerated).
+
+With the `success() || failure()` gate in place this manual recovery is only
+needed when the heal step *itself* could not run or push (e.g. the push race
+above, or a regeneration hiccup) — a plain partial-SR failure now auto-heals.
+
+### Underlying cause: a partial `Semantic Release` failure
+
+The `failure()` gate heals the lock, but the release itself still failed and no
+new versions publish until the root cause is fixed. The most common trigger is a
+**newly-added publishable package with no npm trusted-publisher binding**. Because
+`semantic-release` runs once per workspace, that package's
+`@semantic-release/npm` `verifyConditions` attempts an OIDC token exchange, npm
+returns `404 - package not found` (the package has never been published and has
+no binding), it falls back to token auth, and — with no `NPM_TOKEN` — throws
+`ENONPMTOKEN No npm token specified`, failing the whole run. If an earlier
+workspace already published, that is exactly the "release commit pushed, then SR
+failed" drift this failure mode heals.
+
+> A secondary `TypeError: Cannot read properties of undefined (reading 'map')` at
+> `semantic-release-monorepo/src/only-package-commits.js` often accompanies it —
+> that is noise from the monorepo plugin's error path (`commits` is undefined
+> because `verifyConditions` failed early), not the real cause. The real cause is
+> the `ENONPMTOKEN` above.
+
+Fix the release (so it stops half-failing on every run): register the new
+package's trusted-publisher binding and bootstrap its first publish — add it to
+`PACKAGES` in `scripts/setup-npm-trusted-publishers.sh` and re-run the script
+(see **Failure mode 1** for the OIDC binding path). Until then every release run
+fails at that package's `verifyConditions`, and this heal keeps `main`'s lock in
+sync in the meantime.
+
+Real example (#1773): `data-access@4.0.0` published and pushed its release
+commit, then the run failed at `@adobe/spacecat-shared-ticket-client` (added in
+#1701, never published, absent from the setup script's `PACKAGES`) with the
+`404` → `ENONPMTOKEN` chain above.
 
 ## Re-enabling the environment approval gate
 

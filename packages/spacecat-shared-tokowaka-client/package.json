@@ -34,7 +34,7 @@
     "spec": "test/**/*.test.js"
   },
   "dependencies": {
-    "@adobe/spacecat-shared-utils": "1.81.1",
+    "@adobe/spacecat-shared-utils": "1.126.0",
     "@aws-sdk/client-cloudfront": "3.1057.0",
     "@aws-sdk/client-iam": "3.1057.0",
     "@aws-sdk/client-lambda": "3.1057.0",

@@ -217,6 +217,47 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Manage consent preferences');
     });
 
+    it('should remove custom cookie modal via [class*="cookie-modal"] (e.g. Shangri-La .sl-cookie-modal)', async () => {
+      const html = `<html><body>
+        <h1>Summer Aqua Pilates</h1>
+        <p>Experience a refreshing workout in water.</p>
+        <div class="sl-cookie-modal text-font">
+          <div class="sl-cookie-modal-content">
+            <div class="sl-cookie-modal-title">We value your privacy</div>
+            <div class="sl-cookie-modal-desc">We use cookies to enhance your experience. Accept all cookies or manage your preferences.</div>
+            <div class="sl-cookie-modal-footer">
+              <div class="sl-cookie-modal-link">Manage Tracking</div>
+              <div class="sl-cookie-modal-btn">Accept All</div>
+            </div>
+          </div>
+        </div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Summer Aqua Pilates');
+      expect(text).to.include('Experience a refreshing workout in water.');
+      expect(text).to.not.include('We value your privacy');
+      expect(text).to.not.include('We use cookies');
+      expect(text).to.not.include('Accept All');
+    });
+
+    it('should not remove a [class*="cookie-modal"] element when content does not indicate consent', async () => {
+      // The substring selector matches the element, but the text-content gate
+      // must keep it because the copy carries none of the consent keywords.
+      const html = `<html><body>
+        <h1>Summer Sale</h1>
+        <div class="promo-cookie-modal">Limited time offer on swimwear this weekend.</div>
+        <p>Shop the new collection now.</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Summer Sale');
+      expect(text).to.include('Shop the new collection now.');
+      expect(text).to.include('Limited time offer on swimwear this weekend.');
+    });
+
     it('should not remove cookie-banner selectors when content does not indicate consent', async () => {
       const html = `<html><body>
         <h1>Title</h1>

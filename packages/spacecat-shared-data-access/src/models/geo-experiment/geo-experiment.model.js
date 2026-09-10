@@ -62,6 +62,7 @@ class GeoExperiment extends BaseModel {
    *   IMPACT_MEASUREMENT_TASK_ID: string,
    *   VALIDATION: string,
    *   ROUTING_VALIDATION: string,
+   *   OAE_VALIDATION_JOBS: string,
    * }}
    */
   static METADATA_KEYS = {
@@ -69,6 +70,10 @@ class GeoExperiment extends BaseModel {
     IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
     VALIDATION: 'validation',
     ROUTING_VALIDATION: 'routingValidation',
+    // Value is an object keyed by oae-validation job `type` (e.g. 'routing'), so multiple
+    // validation jobs of different types can be tracked against the same experiment without
+    // colliding, e.g. { routing: '<jobId>', prerender: '<jobId>' }.
+    OAE_VALIDATION_JOBS: 'oaeValidationJobs',
   };
 
   /**

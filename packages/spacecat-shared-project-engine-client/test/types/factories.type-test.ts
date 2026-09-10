@@ -26,6 +26,7 @@ import {
   createPromptMock,
   createBenchmarkMock,
   createBrandUrlMock,
+  createLanguageMock,
   createAIOTagMock,
   createAIOTagLeafMock,
   createUrlResolveMock,
@@ -40,6 +41,7 @@ type Prompt = components['schemas']['model.AIOPromptWithStatus'];
 type AIModel = components['schemas']['model.AIModelResponse'];
 type Benchmark = components['schemas']['model.AIOBenchmarkWithCounters'];
 type BrandUrl = components['schemas']['model.BrandURL'];
+type Language = components['schemas']['model.LanguageResponse'];
 type AIOTag = components['schemas']['model.AIOTag'];
 type UrlResolve = components['schemas']['model.ResolveURLResponse'];
 
@@ -67,6 +69,10 @@ void updatedProject;
 // 1d. the benchmark + brand-url factories (the overlay drift-guarded list shapes).
 const benchmark: Benchmark = createBenchmarkMock();
 const brandUrl: BrandUrl = createBrandUrlMock();
+// 1d-lang. the language catalog factory (the GET /v1/languages list item, LLMO-7420 — code is
+// required alongside id/name on model.LanguageResponse).
+const language: Language = createLanguageMock({ code: 'de', name: 'German' });
+void language;
 // 1e. the AIO tag factory (the GET /aio/tags list item + persisted shape).
 const aioTag: AIOTag = createAIOTagMock({ id: 'tag-x', name: 'Running Shoes' });
 void aioTag.prompts_count;

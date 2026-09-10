@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-data-access-v4.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.0...@adobe/spacecat-shared-data-access-v4.29.1) (2026-09-10)
+
+### Bug Fixes
+
+* **data-access:** document why OaeValidation.Outcome avoids true/false strings ([#1929](https://github.com/adobe/spacecat-shared/issues/1929)) ([e28eeff](https://github.com/adobe/spacecat-shared/commit/e28eeff44b7a13744dacabfaabbdd396de982e41)), closes [#1928](https://github.com/adobe/spacecat-shared/issues/1928) [#1928](https://github.com/adobe/spacecat-shared/issues/1928)
+
+## [@adobe/spacecat-shared-data-access-v4.29.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.28.0...@adobe/spacecat-shared-data-access-v4.29.0) (2026-09-10)
+
+### Features
+
+* **data-access:** add OaeValidation model and GeoExperiment.OAE_VALIDATION_JOBS key ([#1926](https://github.com/adobe/spacecat-shared/issues/1926)) ([65d7ca1](https://github.com/adobe/spacecat-shared/commit/65d7ca11465749a0ef73012fed4a1427a51818bf))
+
 ## [@adobe/spacecat-shared-data-access-v4.28.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.27.0...@adobe/spacecat-shared-data-access-v4.28.0) (2026-09-03)
 
 ### Features

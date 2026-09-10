@@ -16,20 +16,86 @@ import { isObject } from '@adobe/spacecat-shared-utils';
 import AuthenticationManager from './authentication-manager.js';
 import { checkScopes } from './check-scopes.js';
 
+/**
+ * Route-based entries that bypass authentication.
+ *
+ * SECURITY CONTRACT (VULN-39365): an entry here means this library performs NO authentication
+ * for that route, so the consuming service MUST authenticate it by other means. For
+ * `POST /slack/events` that means verifying the Slack request signature (`X-Slack-Signature` +
+ * `X-Slack-Request-Timestamp`) before the payload reaches any handler. spacecat-api-service does
+ * this in `slackSignatureWrapper`, which is mounted OUTSIDE this wrapper so it runs first.
+ *
+ * IMPORTANT: this list is NOT the whole unauthenticated surface. Two further bypasses are
+ * unconditional clauses in the wrapper below and are not represented here or overridable via
+ * `anonymousEndpoints`:
+ *   - every `OPTIONS` request (CORS preflight), and
+ *   - any route matching the `POST /hooks/site-detection/` prefix.
+ *
+ * Historically this list also contained `GET /slack/events`. That was removed because Slack only
+ * ever POSTs events and interactive payloads, and a GET carries no body to sign — so a GET could
+ * never be signature-verified and existed purely as an unauthenticated entry point.
+ *
+ * Do NOT add entries here. A service that needs an unauthenticated route should pass its own
+ * `anonymousEndpoints` (see below) rather than widening the default for every consumer.
+ */
 const ANONYMOUS_ENDPOINTS = [
-  'GET /slack/events',
   'POST /slack/events',
 ];
 
+// Entries are compared verbatim against `${METHOD.toUpperCase()} ${suffix}`, so they must be an
+// upper-case method, a single space, then an absolute path.
+const ANONYMOUS_ROUTE_SHAPE = /^[A-Z]+ \/\S*$/;
+
+/**
+ * Wraps a function with authentication.
+ *
+ * @param {UniversalFunction} fn - the function to wrap.
+ * @param {object} [opts] - options.
+ * @param {Array} [opts.authHandlers] - the authentication handler classes to try, in order.
+ * @param {string[]} [opts.anonymousEndpoints] - overrides the default set of **route-based**
+ *   anonymous entries, as `'METHOD /path'` strings (exact match, method upper-case).
+ *
+ *   Pass `[]` to remove the route-based entries. Note this does NOT authenticate everything:
+ *   `OPTIONS` requests and `POST /hooks/site-detection/*` bypass authentication
+ *   unconditionally and are not affected by this option. A service that does not verify Slack
+ *   request signatures SHOULD pass `[]`, otherwise it inherits an unauthenticated
+ *   `POST /slack/events` it may not be defending.
+ *
+ *   Supplying a value that is not an array of strings THROWS at wrapper-construction time
+ *   rather than falling back to the default. This is security-sensitive configuration: a typo
+ *   by a service trying to *disable* the bypass must not silently re-enable it. Entries are
+ *   copied, so mutating the caller's array afterwards cannot widen the bypass.
+ * @returns {UniversalFunction} the wrapped function.
+ * @throws {Error} when `opts.anonymousEndpoints` is present but not an array of strings.
+ */
 export function authWrapper(fn, opts = {}) {
   let authenticationManager;
+  let anonymousEndpoints = ANONYMOUS_ENDPOINTS;
+
+  if (opts.anonymousEndpoints !== undefined) {
+    if (!Array.isArray(opts.anonymousEndpoints)
+      || opts.anonymousEndpoints.some((route) => typeof route !== 'string')) {
+      throw new Error('authWrapper: anonymousEndpoints must be an array of "METHOD /path" strings');
+    }
+    // Shape-check each entry too. Matching is an exact string compare against
+    // `${METHOD.toUpperCase()} ${suffix}`, so an entry like 'post /slack/events' or a missing
+    // leading slash would validate, never match, and silently fail closed -- a debugging trap
+    // for a service that believes it has allowed a route. Same rationale as the throw above:
+    // security-sensitive config must not misconfigure quietly.
+    const malformed = opts.anonymousEndpoints.filter((route) => !ANONYMOUS_ROUTE_SHAPE.test(route));
+    if (malformed.length > 0) {
+      throw new Error(`authWrapper: anonymousEndpoints entries must look like "METHOD /path" with an upper-case method; got: ${malformed.join(', ')}`);
+    }
+    // Defensive copy: the caller must not be able to widen the bypass after construction.
+    anonymousEndpoints = [...opts.anonymousEndpoints];
+  }
 
   return async (request, context) => {
     const { log, pathInfo: { method, suffix } } = context;
 
     const route = `${method.toUpperCase()} ${suffix}`;
 
-    if (ANONYMOUS_ENDPOINTS.includes(route)
+    if (anonymousEndpoints.includes(route)
         || route.startsWith('POST /hooks/site-detection/')
         || method.toUpperCase() === 'OPTIONS') {
       return fn(request, context);

@@ -95,13 +95,13 @@ describe('RoutingValidator', () => {
   it('returns true when the routing header is present', async () => {
     fetchStub.resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
   });
 
   it('returns true when the alternate routing header is present', async () => {
     fetchStub.resolves(mkResponse(200, { 'x-edgeoptimize-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result.outcome).to.equal('true');
+    expect(result.outcome).to.equal('pass');
   });
 
   it('returns unknown for a 404 with no routing header', async () => {
@@ -113,19 +113,19 @@ describe('RoutingValidator', () => {
   it('returns false for a 200 with no routing header', async () => {
     fetchStub.resolves(mkResponse(200));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'false', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 200 } });
   });
 
   it('returns false for a 403 with no routing header', async () => {
     fetchStub.resolves(mkResponse(403));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'false', metadata: { origin_status: 403 } });
+    expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 403 } });
   });
 
   it('returns false for a 500 with no routing header', async () => {
     fetchStub.resolves(mkResponse(500));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'false', metadata: { origin_status: 500 } });
+    expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 500 } });
   });
 
   it('classifies correctly even when response.body is not a cancellable stream', async () => {
@@ -135,14 +135,14 @@ describe('RoutingValidator', () => {
     response.body = {};
     fetchStub.resolves(response);
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'false', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 200 } });
   });
 
   it('follows a www-normalization redirect and classifies the second response', async () => {
     fetchStub.onCall(0).resolves(mkResponse(301, { location: 'https://www.example.com/a' }));
     fetchStub.onCall(1).resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
     expect(fetchStub).to.have.been.calledTwice;
   });
 
@@ -150,7 +150,7 @@ describe('RoutingValidator', () => {
     fetchStub.onCall(0).resolves(mkResponse(301, { location: 'https://www.example.com/' }));
     fetchStub.onCall(1).resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com'), {});
-    expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
     expect(fetchStub).to.have.been.calledTwice;
   });
 
@@ -158,7 +158,7 @@ describe('RoutingValidator', () => {
     fetchStub.onCall(0).resolves(mkResponse(301, { location: 'https://www.example.com/a/' }));
     fetchStub.onCall(1).resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
     expect(fetchStub).to.have.been.calledTwice;
   });
 
@@ -200,7 +200,7 @@ describe('RoutingValidator', () => {
     fetchStub.onCall(0).rejects(new Error('network blip'));
     fetchStub.onCall(1).resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
-    expect(result).to.deep.equal({ outcome: 'true', metadata: { origin_status: 200 } });
+    expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
     expect(global.setTimeout).to.have.been.calledOnce;
     expect(global.setTimeout.firstCall.args[1]).to.equal(4000);
     expect(log.warn).to.have.been.calledOnceWith(
@@ -215,7 +215,7 @@ describe('RoutingValidator', () => {
     fetchStub.onCall(2).rejects(new Error('down 3'));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({
-      outcome: 'false',
+      outcome: 'fail',
       metadata: { reason: 'network_error', lastError: 'down 3', attempts: 3 },
     });
     expect(fetchStub.callCount).to.equal(3);

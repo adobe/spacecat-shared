@@ -70,19 +70,19 @@ async function cancelBody(response) {
 
 /**
  * Classifies an already-resolved (non-3xx) response.
- *   - routing header present (any status)      -> true  (definitive proof of correct routing)
+ *   - routing header present (any status)      -> pass (definitive proof of correct routing)
  *   - no header, status 404                     -> unknown (could be a legitimate customer-side
  *                                                   removal, not proof routing itself is broken)
- *   - no header, any other status (2xx/4xx/5xx) -> false
+ *   - no header, any other status (2xx/4xx/5xx) -> fail
  */
 function classifyResolvedResponse(response) {
   if (hasRoutingHeader(response)) {
-    return { outcome: 'true', metadata: { origin_status: response.status } };
+    return { outcome: 'pass', metadata: { origin_status: response.status } };
   }
   if (response.status === 404) {
     return { outcome: 'unknown', metadata: { origin_status: response.status } };
   }
-  return { outcome: 'false', metadata: { origin_status: response.status } };
+  return { outcome: 'fail', metadata: { origin_status: response.status } };
 }
 
 async function fetchOnce(url) {
@@ -129,7 +129,7 @@ async function checkUrlRoutingStatus(url) {
  * distinguished by cause). A response that resolves normally (even to an 'unknown' outcome,
  * e.g. a 404 or an ambiguous redirect) is never retried - only a thrown exception is.
  * After all attempts are exhausted, a persistently unreachable URL is treated as a confirmed
- * failure ('false'), not merely inconclusive.
+ * failure ('fail'), not merely inconclusive.
  */
 async function checkWithRetries(url, log) {
   const totalAttempts = RETRY_DELAYS_MS.length + 1;
@@ -150,7 +150,7 @@ async function checkWithRetries(url, log) {
     }
   }
   return {
-    outcome: 'false',
+    outcome: 'fail',
     metadata: { reason: 'network_error', lastError: lastError.message, attempts: totalAttempts },
   };
 }

@@ -35,7 +35,9 @@ class OaeValidation extends BaseModel {
   };
 
   /**
-   * The validation result once a row is COMPLETE.
+   * The validation result once a row is COMPLETE. Deliberately not 'true'/'false' -- those
+   * read like stringified booleans when they aren't, which is exactly the ambiguity that
+   * caused this enum to be renamed from TRUE/FALSE to PASS/FAIL.
    */
   static Outcome = {
     PASS: 'pass',

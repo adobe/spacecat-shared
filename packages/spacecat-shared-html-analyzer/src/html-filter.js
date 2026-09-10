@@ -56,11 +56,10 @@ const COOKIE_BANNER_CLASS_SELECTORS = [
   '.cookie-notice', '.privacy-notice', '.cookie-policy', '.privacy-policy',
   '.cookie-bar', '.privacy-bar', '.consent-bar', '.gdpr-bar',
   '.cookie-popup', '.privacy-popup', '.consent-popup', '.gdpr-popup',
-  '.cookie-modal', '.privacy-modal', '.consent-modal', '.gdpr-modal',
+  '[class*="cookie-modal"]', '.privacy-modal', '.consent-modal', '.gdpr-modal',
   '.cookie-overlay', '.privacy-overlay', '.consent-overlay', '.gdpr-overlay',
   '[class*="syrenis-cookie"]',
   '.tc-privacy-wrapper',
-  '.sl-cookie-modal',
 ];
 
 const COOKIE_BANNER_ID_SELECTORS = [

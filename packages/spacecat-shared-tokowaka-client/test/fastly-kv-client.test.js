@@ -157,6 +157,25 @@ describe('FastlyKVClient', () => {
       expect(result[1].status).to.equal('stale');
     });
 
+    it('should surface lastUpdated from the KV value', async () => {
+      const client = new FastlyKVClient(env, log);
+      const keys = ['sugg-stale'];
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys`)
+        .query({ limit: '100' })
+        .reply(200, { data: keys, meta: {} });
+
+      nock(FASTLY_KV_API_BASE)
+        .get(`/${TEST_STORE_ID}/keys/${encodeURIComponent(keys[0])}`)
+        .reply(200, JSON.stringify({ url: 'https://example.com/stale', status: 'stale', lastUpdated: 1700000000000 }));
+
+      const result = await client.listAllStaleKeys();
+
+      expect(result).to.have.lengthOf(1);
+      expect(result[0].lastUpdated).to.equal(1700000000000);
+    });
+
     it('should respect maxPages limit', async () => {
       const client = new FastlyKVClient(env, log);
       const staleValue = { url: 'https://example.com', status: 'stale' };

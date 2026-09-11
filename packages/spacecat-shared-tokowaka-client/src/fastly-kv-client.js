@@ -141,6 +141,7 @@ export class FastlyKVClient {
             suggestionId: keyName,
             url: value.url,
             status: normalizedStatus,
+            lastUpdated: value.lastUpdated,
           });
         }
       } catch (error) {
@@ -161,7 +162,8 @@ export class FastlyKVClient {
    * @param {object} [options] - Options for listing keys
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
-   * @returns {Promise<Array<{key: string, suggestionId: string, url: string, status: string}>>}
+   * @returns {Promise<Array<{key: string, suggestionId: string, url: string,
+   *   status: string, lastUpdated: number|undefined}>>}
    */
   async listAllStaleKeys(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, maxPages = 100 } = options;

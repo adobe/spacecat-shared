@@ -18,7 +18,7 @@
 
 # Pinned to the multi-arch index digest of node:24-alpine for reproducibility (works on amd64 CI
 # and arm64 local alike). Bump the digest deliberately when upgrading the base.
-FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd AS builder
+FROM node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81 AS builder
 
 # openssl is BUILD-ONLY: it mints the self-signed cert below, which is then copied into the runtime
 # stage. The runtime stage never needs openssl.
@@ -53,7 +53,7 @@ RUN mkdir -p /etc/tls && openssl req -x509 -newkey rsa:2048 -nodes \
 
 
 # ---- runtime stage -------------------------------------------------------------------------------
-FROM node:24-alpine@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
+FROM node:24-alpine@sha256:50c8e8ca1d27439048670df5883f32d57cf81cff6233222c893fd0d9884cbd81
 
 # caddy — TLS terminator in front of the plain-HTTP mock
 # curl  — HEALTHCHECK probe

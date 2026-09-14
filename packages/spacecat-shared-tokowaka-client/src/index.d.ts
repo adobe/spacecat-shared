@@ -336,6 +336,17 @@ export function applyAssociations(
 ): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
 
 /**
+ * Remove Edge Optimize's own routing associations from a CloudFront distribution, across every
+ * behavior — the reverse of {@link applyAssociations}. Leaves the EO origin, the Lambda function,
+ * its execution role, the cache policy, and the connector role untouched.
+ */
+export function removeEdgeOptimizeRouting(
+  credentials: AWSCredentials,
+  distributionId: string,
+  region?: string,
+): Promise<{ reverted: boolean; behaviors: string[] }>;
+
+/**
  * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.
  */
 export function verifyRouting(url: string): Promise<{
@@ -426,6 +437,8 @@ export class CloudFrontEdgeClient {
     pathPattern: string,
     lambdaVersionArn: string,
   ): ReturnType<typeof applyAssociations>;
+
+  removeEdgeOptimizeRouting(distributionId: string): ReturnType<typeof removeEdgeOptimizeRouting>;
 
   runDeployStep(params: Parameters<typeof runDeployStep>[1]): ReturnType<typeof runDeployStep>;
 

@@ -1159,6 +1159,77 @@ export async function applyAssociations(
   return { cloudFrontFunctionArn, lambdaArn: lambdaVersionArn };
 }
 
+/**
+ * Remove Edge Optimize's own routing associations from a CloudFront distribution, across every
+ * behavior (the default behavior and every named cache behavior) — the reverse of
+ * {@link applyAssociations}. Strips only the EO-owned entries (the `edgeoptimize-routing`
+ * viewer-request CloudFront Function, and the `edgeoptimize-origin` origin-request/origin-response
+ * Lambda@Edge), preserving every other association a behavior may carry. Does not touch the EO
+ * origin, the Lambda function, its execution role, the cache policy, or the connector role itself —
+ * those stay in place so re-deploying later recreates nothing. Idempotent: a distribution with no
+ * EO associations anywhere is a no-op (no UpdateDistribution call).
+ *
+ * @param {object} credentials - temporary credentials from {@link assumeConnectorRole}.
+ * @param {string} distributionId - the CloudFront distribution ID.
+ * @param {string} [region] - CloudFront control-plane region.
+ * @returns {Promise<{reverted: boolean, behaviors: string[]}>} `behaviors` lists the path patterns
+ *   (`'default'` for the default behavior) that had EO associations removed.
+ */
+export async function removeEdgeOptimizeRouting(
+  credentials,
+  distributionId,
+  region = EDGE_OPTIMIZE_REGION,
+) {
+  if (!hasText(distributionId)) {
+    throw new Error('distributionId is required');
+  }
+  const client = new CloudFrontClient({ region, credentials });
+  const distResult = await client.send(new GetDistributionConfigCommand({ Id: distributionId }));
+  const config = distResult.DistributionConfig;
+
+  const behaviors = [
+    { pathPattern: 'default', behavior: config.DefaultCacheBehavior },
+    ...(config.CacheBehaviors?.Items || []).map(
+      (b) => ({ pathPattern: b.PathPattern, behavior: b }),
+    ),
+  ];
+
+  const changedPathPatterns = [];
+  for (let i = 0; i < behaviors.length; i += 1) {
+    const { pathPattern, behavior } = behaviors[i];
+    const existingFns = behavior.FunctionAssociations?.Items || [];
+    const existingLambdas = behavior.LambdaFunctionAssociations?.Items || [];
+    const remainingFns = existingFns.filter(
+      (a) => !(a.EventType === 'viewer-request' && /edgeoptimize-routing/i.test(a.FunctionARN || '')),
+    );
+    const remainingLambdas = existingLambdas.filter(
+      (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && /edgeoptimize-origin/i.test(a.LambdaFunctionARN || '')),
+    );
+    const fnsChanged = remainingFns.length !== existingFns.length;
+    const lambdasChanged = remainingLambdas.length !== existingLambdas.length;
+    if (fnsChanged || lambdasChanged) {
+      behavior.FunctionAssociations = { Quantity: remainingFns.length, Items: remainingFns };
+      behavior.LambdaFunctionAssociations = {
+        Quantity: remainingLambdas.length,
+        Items: remainingLambdas,
+      };
+      changedPathPatterns.push(pathPattern);
+    }
+  }
+
+  if (changedPathPatterns.length === 0) {
+    return { reverted: false, behaviors: [] };
+  }
+
+  await client.send(new UpdateDistributionCommand({
+    Id: distributionId,
+    IfMatch: distResult.ETag,
+    DistributionConfig: config,
+  }));
+
+  return { reverted: true, behaviors: changedPathPatterns };
+}
+
 // Bounded per-probe timeout for the verify fetches. 20s is generous enough for a slow/cold
 // `ChatGPT-User` prerender response, yet safely under the ~60s CDN/gateway first-byte budget — so a
 // hung origin can never block the request long enough to cascade into a gateway 503.
@@ -1851,6 +1922,10 @@ export class CloudFrontEdgeClient {
       lambdaVersionArn,
       this.region,
     );
+  }
+
+  removeEdgeOptimizeRouting(distributionId) {
+    return removeEdgeOptimizeRouting(this.credentials, distributionId, this.region);
   }
 
   runDeployStep(params) {

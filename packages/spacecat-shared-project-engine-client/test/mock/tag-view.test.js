@@ -117,15 +117,17 @@ describe('tag-view', () => {
       { id: 'depth-2', name: 'Deep', parent_id: 'tag-root' },
       { id: 'depth-3', name: 'Nested', parent_id: 'depth-2' },
       { id: 'depth-4', name: 'Unsupported', parent_id: 'depth-3' },
+      { id: 'depth-5', name: 'Arbitrary Depth', parent_id: 'depth-4' },
     ], factories);
 
     expect(byId.get('separator')).to.include({ name: 'Men/Women', parent_id: 'tag-root' });
-    expect(byId.get('depth-4').path).to.deep.equal([
+    expect(byId.get('depth-5').path).to.deep.equal([
       { id: 'tag-root', name: 'tag' },
       { id: 'depth-2', name: 'Deep', parent_id: 'tag-root' },
       { id: 'depth-3', name: 'Nested', parent_id: 'depth-2' },
+      { id: 'depth-4', name: 'Unsupported', parent_id: 'depth-3' },
     ]);
-    expect(byId.get('depth-4')).to.not.have.property('compatibility');
+    expect(byId.get('depth-5')).to.not.have.property('compatibility');
   });
 
   describe('degenerate trees', () => {

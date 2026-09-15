@@ -1731,6 +1731,26 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       const unsupported = deep.items.find((t) => t.id === SEED_IDS.deepGrandchildTagId);
       expect(unsupported.path.map((leaf) => leaf.name)).to.deep.equal(['tag', 'Deep', 'Nested']);
       expect(unsupported).to.not.have.property('compatibility');
+
+      const { data: deepest } = await listTags(SEED_IDS.deepGrandchildTagId, 'arbitrary');
+      expect(deepest.items).to.have.length(1);
+      expect(deepest.items[0]).to.include({
+        id: SEED_IDS.deepGreatGrandchildTagId,
+        name: 'Arbitrary Depth',
+        parent_id: SEED_IDS.deepGrandchildTagId,
+      });
+      expect(deepest.items[0].path.map((leaf) => leaf.name))
+        .to.deep.equal(['tag', 'Deep', 'Nested', 'Unsupported']);
+
+      // Search stays level-local at arbitrary depth: the leaf is invisible from roots and
+      // non-parent ancestors, and visible only when querying its direct parent.
+      const hiddenSearches = await Promise.all([
+        listTags('', 'arbitrary'),
+        listTags(SEED_IDS.tagRootTagId, 'arbitrary'),
+        listTags(SEED_IDS.deepParentTagId, 'arbitrary'),
+        listTags(SEED_IDS.deepChildTagId, 'arbitrary'),
+      ]);
+      hiddenSearches.forEach(({ data }) => expect(data.items).to.have.length(0));
     } finally {
       await fetch(`${baseUrl}/__seed`, {
         method: 'POST',
@@ -1798,7 +1818,13 @@ async function waitForReady(baseUrl, deadline, getStderr) {
       || lastBody.items.length < pageLimit).to.equal(true);
     const pagedItems = [...firstBody.items, ...middleBody.items, ...lastBody.items];
     expect(new Set(pagedItems.map(({ id }) => id)).size).to.equal(pagedItems.length);
-    expect(pagedItems.map(({ id }) => id)).to.have.members(legacyBody.items.map(({ id }) => id));
+    expect(pagedItems.map(({ id }) => id)).to.deep.equal(legacyBody.items.map(({ id }) => id));
+
+    const repeatedFirst = await fetch(
+      `${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=1`,
+      { headers: jsonAuth },
+    );
+    expect((await repeatedFirst.json()).items).to.deep.equal(firstBody.items);
 
     const beyondLast = await fetch(`${url}?parent_id=${SEED_IDS.tagRootTagId}&search=&limit=${pageLimit}&page=100`, {
       headers: jsonAuth,

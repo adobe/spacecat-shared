@@ -20,11 +20,13 @@ import {
   SEED_IDS,
   EMPTY_WORKSPACE,
   buildSeed,
+  buildTagFixtureTree,
 } from '../../mock/seeds.js';
 import {
   createProjectAiModelMock, createPromptMock, createBenchmarkMock, createBrandUrlMock,
   createAIOTagMock,
 } from '../../mock/factories.js';
+import { tagId } from '../../mock/tag-id.js';
 
 describe('seeds', () => {
   it('exposes named seed sets with a valid default', () => {
@@ -170,6 +172,8 @@ describe('seeds', () => {
       .to.include({ name: 'Shoes', parent_id: SEED_IDS.normalizedSpaceTagId });
     expect(tags.find((t) => t.id === SEED_IDS.deepGrandchildTagId))
       .to.include({ name: 'Unsupported', parent_id: SEED_IDS.deepChildTagId });
+    expect(tags.find((t) => t.id === SEED_IDS.deepGreatGrandchildTagId))
+      .to.include({ name: 'Arbitrary Depth', parent_id: SEED_IDS.deepGrandchildTagId });
   });
 
   it('legacy-source-workspace seeds the pre-rename shape: a `source` authorship root with ai/human', () => {
@@ -368,6 +372,29 @@ describe('buildSeed', () => {
     const tags = createStatefulOps(store).tags.list({ workspaceId, projectId });
     expect(tags).to.have.length(1);
     expect(tags[0]).to.include({ id: 'tag-cat', name: 'Running Shoes' });
+  });
+
+  it('builds arbitrary-depth tag fixtures while preserving string-child compatibility', () => {
+    const rootId = 'tag-root';
+    const legacyParentId = tagId('Legacy Parent', rootId);
+    const recursiveParentId = tagId('Recursive Parent', rootId);
+    const nestedId = tagId('Nested', recursiveParentId);
+    const tags = buildTagFixtureTree(rootId, [
+      { name: 'Legacy Parent', children: ['Legacy Child'] },
+      {
+        name: 'Recursive Parent',
+        children: [{ name: 'Nested', children: [{ name: 'Deep', children: ['Leaf'] }] }],
+      },
+    ]);
+
+    expect(tags.map(({ name }) => name)).to.deep.equal([
+      'Legacy Parent', 'Legacy Child', 'Recursive Parent', 'Nested', 'Deep', 'Leaf',
+    ]);
+    expect(tags.find(({ name }) => name === 'Legacy Child').parent_id).to.equal(legacyParentId);
+    expect(tags.find(({ name }) => name === 'Nested').parent_id).to.equal(recursiveParentId);
+    expect(tags.find(({ name }) => name === 'Deep').parent_id).to.equal(nestedId);
+    expect(tags.find(({ name }) => name === 'Leaf').parent_id)
+      .to.equal(tagId('Deep', nestedId));
   });
 
   it('handles an empty workspace (no projects)', () => {

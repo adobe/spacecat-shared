@@ -190,6 +190,7 @@ const SEPARATOR_TAG_ID = tagId('Men/Women', TAG_ROOT_TAG_ID);
 const DEEP_PARENT_TAG_ID = tagId('Deep', TAG_ROOT_TAG_ID);
 const DEEP_CHILD_TAG_ID = tagId('Nested', DEEP_PARENT_TAG_ID);
 const DEEP_GRANDCHILD_TAG_ID = tagId('Unsupported', DEEP_CHILD_TAG_ID);
+const DEEP_GREAT_GRANDCHILD_TAG_ID = tagId('Arbitrary Depth', DEEP_GRANDCHILD_TAG_ID);
 
 // --- Hierarchy 2 — a second, fully independent mock-wired org (unique `semrush_workspace_id`s),
 // present only in the `two-hierarchies` seed. A German market so the two read distinctly. These
@@ -205,6 +206,9 @@ const DE_GEO_TARGET_ID = 2276; // Google geoTargetId (Germany)
 /**
  * @typedef {import('./store.js').Snapshot} Snapshot
  * @typedef {import('../src/index.js').components['schemas']} Schemas
+ * @typedef {object} TagFixtureNode
+ * @property {string} name
+ * @property {Array<string | TagFixtureNode>} [children]
  */
 
 /**
@@ -298,18 +302,37 @@ const childTag = (name, parentId) => createAIOTagMock({
 });
 
 /**
+ * Expands a recursive fixture description into the flat provider collection stored by the mock.
+ * String children retain the original `{ name, children: string[] }` shorthand; object children
+ * can nest to arbitrary depth. Output is parent-first and preserves sibling declaration order,
+ * which makes bounded pagination deterministic.
+ *
+ * @param {string} parentId
+ * @param {Array<string | TagFixtureNode>} [nodes]
+ * @returns {Array<Schemas['model.AIOTag']>}
+ */
+export const buildTagFixtureTree = (parentId, nodes = []) => nodes.flatMap((node) => {
+  const { name, children = [] } = typeof node === 'string' ? { name: node } : node;
+  const id = tagId(name, parentId);
+  return [
+    childTag(name, parentId),
+    ...buildTagFixtureTree(id, children),
+  ];
+});
+
+/**
  * The dimension roots and the closed dimensions' full child vocabularies — the tree every
  * project is provisioned with, before any customer-authored category exists. Pass `categories` to
- * append the open `category` subtree: each entry is a depth-2 category and its depth-3
- * sub-categories. `authorshipRootName` defaults to the current `origin` root; pass the pre-rename
- * `source` name to build the legacy fixture (WP-O1 item 4) — the `ai`/`human` vocabulary is
- * unchanged, only the root it hangs off differs. The open `source` dimension (producing systems)
- * is seeded with a representative subset of canonical values as its direct children (which have no
- * grandchildren of their own). The source root is
+ * append the open `category` subtree. String children preserve the original depth-3 shorthand;
+ * recursive object children can describe arbitrary depth. `authorshipRootName` defaults to the
+ * current `origin` root; pass the pre-rename `source` name to build the legacy fixture (WP-O1 item
+ * 4) — the `ai`/`human` vocabulary is unchanged, only the root it hangs off differs. The open
+ * `source` dimension (producing systems) is seeded with a representative subset of canonical
+ * values as its direct children (which have no grandchildren of their own). The source root is
  * skipped automatically when `authorshipRootName` is the pre-rename `source` name (the two would
  * collide by name/id) — derived internally, so callers never coordinate it. WP-O6 removes the
  * legacy fixture, retiring this guard.
- * @param {Array<{ name: string, children?: string[] }>} [categories]
+ * @param {TagFixtureNode[]} [categories]
  * @param {string} [authorshipRootName]
  * @returns {Array<Schemas['model.AIOTag']>} roots first, then descendants (parents before children)
  */
@@ -332,13 +355,7 @@ const dimensionRootTree = (
     ...ORIGIN_VALUES.map((v) => childTag(v, authorshipRootId)),
     ...(includeSource ? SOURCE_VALUES.map((v) => childTag(v, SOURCE_ROOT_TAG_ID)) : []),
     ...TYPE_VALUES.map((v) => childTag(v, TYPE_ROOT_TAG_ID)),
-    ...categories.flatMap(({ name, children = [] }) => {
-      const categoryId = tagId(name, CATEGORY_ROOT_TAG_ID);
-      return [
-        childTag(name, CATEGORY_ROOT_TAG_ID),
-        ...children.map((child) => childTag(child, categoryId)),
-      ];
-    }),
+    ...buildTagFixtureTree(CATEGORY_ROOT_TAG_ID, categories),
   ];
 };
 
@@ -492,14 +509,21 @@ export const RAW_PROVIDER_TAGS_WORKSPACE = Object.freeze({
       collectionKey('tags', { workspaceId: CHILD_WORKSPACE_ID, projectId: PROJECT_ID })
     ],
     rootTag('Tag'),
-    childTag('Road-Running', TAG_ROOT_TAG_ID),
-    childTag('Road Running', TAG_ROOT_TAG_ID),
-    childTag('Shoes', NORMALIZED_DASH_TAG_ID),
-    childTag('Shoes', NORMALIZED_SPACE_TAG_ID),
-    childTag('Men/Women', TAG_ROOT_TAG_ID),
-    childTag('Deep', TAG_ROOT_TAG_ID),
-    childTag('Nested', DEEP_PARENT_TAG_ID),
-    childTag('Unsupported', DEEP_CHILD_TAG_ID),
+    ...buildTagFixtureTree(TAG_ROOT_TAG_ID, [
+      { name: 'Road-Running', children: ['Shoes'] },
+      { name: 'Road Running', children: ['Shoes'] },
+      'Men/Women',
+      {
+        name: 'Deep',
+        children: [{
+          name: 'Nested',
+          children: [{
+            name: 'Unsupported',
+            children: ['Arbitrary Depth'],
+          }],
+        }],
+      },
+    ]),
   ],
 });
 
@@ -691,6 +715,7 @@ export const SEED_IDS = Object.freeze({
   deepParentTagId: DEEP_PARENT_TAG_ID,
   deepChildTagId: DEEP_CHILD_TAG_ID,
   deepGrandchildTagId: DEEP_GRANDCHILD_TAG_ID,
+  deepGreatGrandchildTagId: DEEP_GREAT_GRANDCHILD_TAG_ID,
   // The legacy pre-rename fixture (`legacy-source-workspace`): the authorship root is still named
   // `source`, for api-service's tolerant-resolver test (origin-dimension.md §7 gate 3). WP-O6 drops
   // both the seed and these ids.

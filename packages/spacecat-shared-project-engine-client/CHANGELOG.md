@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-project-engine-client-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.23.0...@adobe/spacecat-shared-project-engine-client-v1.24.0) (2026-09-15)
+
+### Features
+
+* **project-engine:** support recursive tag fixtures ([#1931](https://github.com/adobe/spacecat-shared/issues/1931)) ([1a6bafe](https://github.com/adobe/spacecat-shared/commit/1a6bafed892549dd68ee3720d067c11ea87cee01)), closes [adobe/serenity-docs#26](https://github.com/adobe/serenity-docs/issues/26)
+
 ## [@adobe/spacecat-shared-project-engine-client-v1.23.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-project-engine-client-v1.22.0...@adobe/spacecat-shared-project-engine-client-v1.23.0) (2026-09-09)
 
 ### Features

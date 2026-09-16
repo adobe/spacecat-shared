@@ -331,6 +331,11 @@ export const DEFAULT_IMPORT_CONFIGS = {
   },
 };
 
+export const contentAiConfigSchema = Joi.object({
+  name: Joi.string().trim().min(1).optional(),
+  index: Joi.string().optional(),
+});
+
 export const configSchema = Joi.object({
   slack: Joi.object({
     workspace: Joi.string(),
@@ -519,10 +524,7 @@ export const configSchema = Joi.object({
       }).optional(),
     }).options({ stripUnknown: true }),
   ).optional(),
-  contentAiConfig: Joi.object({
-    name: Joi.string().trim().min(1).optional(),
-    index: Joi.string().optional(),
-  }).optional(),
+  contentAiConfig: contentAiConfigSchema.optional(),
   enableMoneyPageUrls: Joi.boolean().optional(),
   auditTargetURLs: Joi.object({
     manual: Joi.array().items(Joi.object({
@@ -972,11 +974,19 @@ export const Config = (data = {}) => {
   };
 
   self.updateContentAiConfig = ({ name, index } = {}) => {
-    state.contentAiConfig = {
+    if (name === undefined && index === undefined) {
+      return;
+    }
+    const merged = {
       ...state.contentAiConfig,
       ...(name !== undefined && { name }),
       ...(index !== undefined && { index }),
     };
+    const { error, value } = contentAiConfigSchema.validate(merged);
+    if (error) {
+      throw new Error(`Configuration validation error: ${error.message}`);
+    }
+    state.contentAiConfig = value;
   };
 
   /**

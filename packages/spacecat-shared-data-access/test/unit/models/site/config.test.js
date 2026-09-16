@@ -560,6 +560,34 @@ describe('Config Tests', () => {
       });
     });
 
+    it('is a true no-op when called with no fields and no prior config', () => {
+      const config = Config({});
+      config.updateContentAiConfig();
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('trims a name written through updateContentAiConfig', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ name: '  source-name  ' });
+      expect(config.getContentAiConfig()).to.deep.equal({ name: 'source-name' });
+    });
+
+    it('rejects a blank name written through updateContentAiConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateContentAiConfig({ name: '   ' }),
+      ).to.throw(/Configuration validation error/);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('rejects a non-string name written through updateContentAiConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateContentAiConfig({ name: 123 }),
+      ).to.throw(/Configuration validation error/);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
     it('accepts a legacy contentAiConfig that has index but no name', () => {
       const data = {
         contentAiConfig: {

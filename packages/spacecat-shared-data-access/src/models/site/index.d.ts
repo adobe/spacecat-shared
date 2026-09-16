@@ -229,6 +229,10 @@ export interface SiteConfig {
       channel?: string;
       invitedUserCount?: number;
     };
+    teams?: {
+      channel?: string;
+      link?: string;
+    };
     imports?: ImportConfig[];
     auditTargetURLs?: AuditTargetURLs;
     handlers?: Record<string, {
@@ -279,6 +283,7 @@ export interface SiteConfig {
   };
   extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
+  getTeamsConfig(): { channel?: string; link?: string };
   getImports(): ImportConfig[];
   getImportConfig(type: ImportType): ImportConfig | undefined;
   isImportEnabled(type: ImportType): boolean;

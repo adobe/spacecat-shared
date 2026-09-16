@@ -337,6 +337,10 @@ export const configSchema = Joi.object({
     channel: Joi.string(),
     invitedUserCount: Joi.number().integer().min(0),
   }),
+  teams: Joi.object({
+    channel: Joi.string(),
+    link: Joi.string(),
+  }),
   imports: Joi.array().items(
     Joi.alternatives().try(...Object.values(IMPORT_TYPE_SCHEMAS)),
   ),
@@ -560,6 +564,7 @@ export const configSchema = Joi.object({
 
 export const DEFAULT_CONFIG = {
   slack: {},
+  teams: {},
   handlers: {},
 };
 
@@ -611,6 +616,7 @@ export const Config = (data = {}) => {
   self.getSlackConfig = () => state.slack;
   self.isInternalCustomer = () => state?.slack?.workspace === 'internal';
   self.getSlackMentions = (type) => state?.handlers?.[type]?.mentions?.slack;
+  self.getTeamsConfig = () => state.teams;
   self.getHandlerConfig = (type) => state?.handlers?.[type];
   self.getContentAiConfig = () => state?.contentAiConfig;
   self.getHandlers = () => state.handlers;
@@ -726,6 +732,13 @@ export const Config = (data = {}) => {
       channel,
       workspace,
       invitedUserCount,
+    };
+  };
+
+  self.updateTeamsConfig = (channel, link) => {
+    state.teams = {
+      channel,
+      link,
     };
   };
 
@@ -1123,6 +1136,7 @@ Config.fromDynamoItem = (dynamoItem) => Config(dynamoItem);
 
 Config.toDynamoItem = (config) => ({
   slack: config.getSlackConfig(),
+  teams: config.getTeamsConfig?.(),
   handlers: config.getHandlers(),
   defaults: config.getDefaults?.(),
   contentAiConfig: config.getContentAiConfig(),

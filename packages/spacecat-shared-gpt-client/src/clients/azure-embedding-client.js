@@ -1,0 +1,181 @@
+/*
+ * Copyright 2026 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+
+import { createUrl } from '@adobe/fetch';
+import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
+
+import { fetch as httpFetch, sanitizeHeaders } from '../utils.js';
+
+/**
+ * Minimal contract every embedding provider satisfies, so consumers depend on the
+ * interface (not the concrete Azure client) and the model/provider stays swappable.
+ * @typedef {Object} EmbeddingProvider
+ * @property {(inputs: string[], options?: { dimensions?: number }) => Promise<number[][]>}
+ *   createEmbeddings - embed each input string, returning one vector per input, in input order.
+ */
+
+function validateEmbeddingResponse(response, expectedCount) {
+  return isObject(response)
+    && Array.isArray(response?.data)
+    && response.data.length === expectedCount
+    && response.data.every(
+      (item) => isObject(item) && Array.isArray(item.embedding) && item.embedding.length > 0,
+    );
+}
+
+/**
+ * Azure OpenAI embeddings client (e.g. text-embedding-3-small). Separate from
+ * {@link AzureOpenAIClient} (chat/completions) but same vendor/auth: it reuses the
+ * Azure OpenAI endpoint/key/api-version and adds its own embeddings deployment.
+ * Implements {@link EmbeddingProvider}.
+ */
+export default class AzureEmbeddingClient {
+  /**
+   * Builds a client from a UniversalContext. Embeddings may share the chat resource, so the
+   * endpoint/key/api-version fall back to the `AZURE_OPENAI_*` values; only the embeddings
+   * deployment (`AZURE_EMBEDDING_DEPLOYMENT`) is distinct and required.
+   *
+   * @param {object} context - UniversalContext (`env`, optional `log`).
+   * @returns {AzureEmbeddingClient}
+   */
+  static createFrom(context) {
+    const { log = console } = context;
+
+    const {
+      AZURE_EMBEDDING_ENDPOINT,
+      AZURE_EMBEDDING_KEY,
+      AZURE_EMBEDDING_API_VERSION,
+      AZURE_EMBEDDING_DEPLOYMENT: deploymentName,
+      AZURE_OPENAI_ENDPOINT,
+      AZURE_OPENAI_KEY,
+      AZURE_API_VERSION,
+    } = context.env;
+
+    const apiEndpoint = AZURE_EMBEDDING_ENDPOINT || AZURE_OPENAI_ENDPOINT;
+    const apiKey = AZURE_EMBEDDING_KEY || AZURE_OPENAI_KEY;
+    const apiVersion = AZURE_EMBEDDING_API_VERSION || AZURE_API_VERSION;
+
+    if (!isValidUrl(apiEndpoint)) {
+      throw new Error('Missing Azure OpenAI embedding endpoint');
+    }
+
+    if (!hasText(apiKey)) {
+      throw new Error('Missing Azure OpenAI embedding API key');
+    }
+
+    if (!hasText(apiVersion)) {
+      throw new Error('Missing Azure OpenAI embedding API version');
+    }
+
+    if (!hasText(deploymentName)) {
+      throw new Error('Missing Azure OpenAI embedding deployment name');
+    }
+
+    return new AzureEmbeddingClient({
+      apiEndpoint,
+      apiKey,
+      apiVersion,
+      deploymentName,
+    }, log);
+  }
+
+  /**
+   * @param {object} config
+   * @param {string} config.apiEndpoint - Azure OpenAI resource endpoint.
+   * @param {string} config.apiKey - Azure OpenAI API key.
+   * @param {string} config.apiVersion - Azure OpenAI API version.
+   * @param {string} config.deploymentName - The embeddings deployment name.
+   * @param {object} log - Logger.
+   */
+  constructor(config, log) {
+    this.config = config;
+    this.log = log;
+  }
+
+  #logDuration(message, startTime) {
+    const endTime = process.hrtime.bigint();
+    const duration = (endTime - startTime) / BigInt(1e6);
+    this.log.debug(`${message}: took ${duration}ms`);
+  }
+
+  async #post(body, path) {
+    const url = createUrl(`${this.config.apiEndpoint}${path}?api-version=${this.config.apiVersion}`);
+    const headers = {
+      'Content-Type': 'application/json',
+      'api-key': this.config.apiKey,
+    };
+
+    this.log.debug(`[Azure OpenAI Embedding Call]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
+
+    const response = await httpFetch(url, {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`API call failed with status code ${response.status} and body: ${errorBody}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Embeds each input string, returning one vector per input in input order.
+   *
+   * @param {string[]} inputs - Non-empty array of non-empty strings to embed.
+   * @param {object} [options]
+   * @param {number} [options.dimensions] - Optional output dimension (Matryoshka truncation);
+   *   omit to use the model's native dimension. Must match the stored index's dimension.
+   * @returns {Promise<number[][]>} One embedding vector per input, aligned to input order.
+   */
+  async createEmbeddings(inputs, options = {}) {
+    if (!Array.isArray(inputs) || inputs.length === 0) {
+      throw new Error('inputs must be a non-empty array');
+    }
+    if (!inputs.every((input) => hasText(input))) {
+      throw new Error('each input must be a non-empty string');
+    }
+
+    const { dimensions } = options || {};
+
+    const body = { input: inputs };
+    if (dimensions !== undefined) {
+      body.dimensions = dimensions;
+    }
+
+    let response;
+    try {
+      const startTime = process.hrtime.bigint();
+      response = await this.#post(
+        JSON.stringify(body),
+        `/openai/deployments/${this.config.deploymentName}/embeddings`,
+      );
+      this.#logDuration('Azure OpenAI API Embeddings call', startTime);
+    } catch (error) {
+      this.log.error('Error while fetching data from Azure OpenAI embeddings API: ', error.message);
+      throw error;
+    }
+
+    if (!validateEmbeddingResponse(response, inputs.length)) {
+      this.log.error('Could not obtain embeddings from Azure OpenAI: Invalid response format.');
+      throw new Error('Invalid response format.');
+    }
+
+    // Azure returns each embedding with its input `index`; sort by it so the result
+    // aligns to input order regardless of response ordering.
+    return [...response.data]
+      .sort((a, b) => a.index - b.index)
+      .map((item) => item.embedding);
+  }
+}

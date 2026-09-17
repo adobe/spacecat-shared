@@ -21,6 +21,7 @@ import {
   COPY_VECTORS_RPC,
   normalizeText,
   hashText,
+  cleanTopicText,
   serializeVector,
   parseVector,
   syncOpportunitySemantic,
@@ -144,6 +145,23 @@ describe('semantic-index.utils', () => {
     it('hashText is deterministic', () => {
       expect(hashText('running shoes')).to.equal(hashText('running shoes'));
       expect(hashText('a')).to.not.equal(hashText('b'));
+    });
+
+    it('cleanTopicText trims, returns embed text + normalized key, drops junk', () => {
+      expect(cleanTopicText('  Running   SHOES ')).to.deep.equal({
+        text: 'Running   SHOES',
+        key: 'running shoes',
+      });
+      // non-string / empty / whitespace-only -> null
+      expect(cleanTopicText(42)).to.equal(null);
+      expect(cleanTopicText('')).to.equal(null);
+      expect(cleanTopicText('   ')).to.equal(null);
+      // length bound is on the trimmed text; default max is MAX_SOURCE_TEXT_LENGTH (2048)
+      expect(cleanTopicText('a'.repeat(2048))).to.not.equal(null);
+      expect(cleanTopicText('a'.repeat(2049))).to.equal(null);
+      // caller-supplied maxLength
+      expect(cleanTopicText('abcd', { maxLength: 3 })).to.equal(null);
+      expect(cleanTopicText('abc', { maxLength: 3 })).to.deep.equal({ text: 'abc', key: 'abc' });
     });
 
     it('serializeVector formats a numeric array; rejects invalid input', () => {

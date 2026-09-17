@@ -43,6 +43,12 @@ export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
  */
 export const SEMANTIC_CHUNK_SIZE = 20;
 
+/**
+ * Upper bound on a topic/query text (matches the `opportunity_semantic_embedding.source_text`
+ * DB CHECK, `1..2048`). The shared default max for `cleanTopicText`.
+ */
+export const MAX_SOURCE_TEXT_LENGTH = 2048;
+
 function assertClient(postgrestClient) {
   if (!postgrestClient || typeof postgrestClient.from !== 'function') {
     throw new ValidationError('postgrestClient is required');
@@ -79,6 +85,29 @@ export function normalizeText(text) {
 /** Stable content hash of the normalized text (dedup/cache key). */
 export function hashText(normalized) {
   return createHash('sha256').update(normalized).digest('hex');
+}
+
+/**
+ * Pure per-topic hygiene shared by the write side (audit-worker `sanitizeTopics`) and the read
+ * side (api-service `by-topics` request parsing): both embed scraped/user-supplied text into the
+ * same vector space, so both must reject the same junk and de-duplicate on the same key. Returns
+ * the embed `text` (trimmed, original case — what gets embedded) and its dedup/lookup `key`
+ * (`normalizeText`, the exact value the writer hashes on), or `null` when the input is not a usable
+ * topic. The caller owns iteration, its own per-entity/per-request count cap, and the output shape.
+ *
+ * @param {unknown} title - a raw topic title (write) or query string (read)
+ * @param {{ maxLength?: number }} [opts] - trimmed-text bound (default `MAX_SOURCE_TEXT_LENGTH`)
+ * @returns {{ text: string, key: string } | null}
+ */
+export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {}) {
+  if (typeof title !== 'string') {
+    return null;
+  }
+  const text = title.trim();
+  if (text.length === 0 || text.length > maxLength) {
+    return null;
+  }
+  return { text, key: normalizeText(text) };
 }
 
 /** pgvector wire format: a JSON-ish `[v1,v2,...]` string PostgREST casts to `vector`. */

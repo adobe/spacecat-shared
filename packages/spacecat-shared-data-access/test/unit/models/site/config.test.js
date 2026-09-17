@@ -574,9 +574,17 @@ describe('Config Tests', () => {
 
     it('rejects a blank name written through updateContentAiConfig', () => {
       const config = Config({});
-      expect(
-        () => config.updateContentAiConfig({ name: '   ' }),
-      ).to.throw(/Configuration validation error/);
+      let thrown;
+      try {
+        config.updateContentAiConfig({ name: '   ' });
+      } catch (e) {
+        thrown = e;
+      }
+      expect(thrown).to.be.an('error');
+      expect(thrown.message).to.match(/Configuration validation error/);
+      // Joi cause is preserved for programmatic callers, matching validateConfiguration.
+      expect(thrown.cause).to.exist;
+      expect(thrown.cause.isJoi).to.equal(true);
       expect(config.getContentAiConfig()).to.be.undefined;
     });
 
@@ -1065,9 +1073,14 @@ describe('Config Tests', () => {
       const data = Config({
         contentAiConfig: {
           name: 'source-name',
+          index: 'legacy-index',
         },
       });
       const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.contentAiConfig).to.deep.equal({
+        name: 'source-name',
+        index: 'legacy-index',
+      });
       expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
     });
 

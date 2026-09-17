@@ -984,7 +984,7 @@ export const Config = (data = {}) => {
     };
     const { error, value } = contentAiConfigSchema.validate(merged);
     if (error) {
-      throw new Error(`Configuration validation error: ${error.message}`);
+      throw new Error(`Configuration validation error: ${error.message}`, { cause: error });
     }
     state.contentAiConfig = value;
   };

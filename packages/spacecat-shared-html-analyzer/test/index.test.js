@@ -217,7 +217,7 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Manage consent preferences');
     });
 
-    it('should remove custom cookie modal via [class*="cookie-modal"] (e.g. Shangri-La .sl-cookie-modal)', async () => {
+    it('should remove Shangri-La custom cookie modal (.sl-cookie-modal)', async () => {
       const html = `<html><body>
         <h1>Summer Aqua Pilates</h1>
         <p>Experience a refreshing workout in water.</p>
@@ -242,9 +242,27 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Accept All');
     });
 
-    it('should not remove a [class*="cookie-modal"] element when content does not indicate consent', async () => {
-      // The substring selector matches the element, but the text-content gate
-      // must keep it because the copy carries none of the consent keywords.
+    it('should not strip body when scroll-lock class contains "cookie-modal" substring (Shangri-La regression)', async () => {
+      // Regression for LLMO-7680: Shangri-La applies sl-cookie-modal-body-hidden to <body>
+      // while the modal is open. The old [class*="cookie-modal"] selector matched <body>
+      // itself, stripping all page content and undercounting client-side words.
+      const html = `<html><body class="text-font dirltr SHANGRILA sl-header-shangrila sl-cookie-modal-body-hidden">
+        <h1>Meetings &amp; Events</h1>
+        <p>Host your event at Boracay Resort.</p>
+        <div class="sl-cookie-modal">
+          <div>We use cookies to enhance your experience. Accept all cookies.</div>
+        </div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Meetings');
+      expect(text).to.include('Host your event at Boracay Resort.');
+      expect(text).to.not.include('We use cookies to enhance');
+      expect(text).to.not.include('Accept all cookies');
+    });
+
+    it('should not remove a class-named element when content does not indicate consent', async () => {
       const html = `<html><body>
         <h1>Summer Sale</h1>
         <div class="promo-cookie-modal">Limited time offer on swimwear this weekend.</div>

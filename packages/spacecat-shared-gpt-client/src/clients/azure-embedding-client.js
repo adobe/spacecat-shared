@@ -32,6 +32,27 @@ function validateEmbeddingResponse(response, expectedCount) {
     );
 }
 
+/** Transient statuses worth retrying: rate-limit (429) and server errors (5xx). */
+function isRetryableStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+const sleep = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+/**
+ * Backoff for a retryable response: honor a numeric `Retry-After` (seconds) when present,
+ * else exponential backoff with full jitter.
+ */
+function retryDelayMs(response, attempt, baseDelayMs) {
+  const retryAfter = Number(response.headers.get('retry-after'));
+  if (Number.isFinite(retryAfter) && retryAfter > 0) {
+    return retryAfter * 1000;
+  }
+  return Math.round((2 ** attempt) * baseDelayMs * (0.5 + Math.random()));
+}
+
 /**
  * Azure OpenAI embeddings client (e.g. text-embedding-3-small). Separate from
  * {@link AzureOpenAIClient} (chat/completions) but same vendor/auth: it reuses the
@@ -55,6 +76,7 @@ export default class AzureEmbeddingClient {
       AZURE_EMBEDDING_KEY,
       AZURE_EMBEDDING_API_VERSION,
       AZURE_EMBEDDING_DEPLOYMENT: deploymentName,
+      AZURE_EMBEDDING_MAX_RETRIES,
       AZURE_OPENAI_ENDPOINT,
       AZURE_OPENAI_KEY,
       AZURE_API_VERSION,
@@ -80,13 +102,21 @@ export default class AzureEmbeddingClient {
       throw new Error('Missing Azure OpenAI embedding deployment name');
     }
 
+    const maxRetries = Number.isInteger(Number(AZURE_EMBEDDING_MAX_RETRIES))
+      ? Number(AZURE_EMBEDDING_MAX_RETRIES)
+      : undefined;
+
     return new AzureEmbeddingClient({
       apiEndpoint,
       apiKey,
       apiVersion,
       deploymentName,
+      ...(maxRetries !== undefined ? { maxRetries } : {}),
     }, log);
   }
+
+  /** Private so the API key is never readable off the instance. */
+  #config;
 
   /**
    * @param {object} config
@@ -94,10 +124,12 @@ export default class AzureEmbeddingClient {
    * @param {string} config.apiKey - Azure OpenAI API key.
    * @param {string} config.apiVersion - Azure OpenAI API version.
    * @param {string} config.deploymentName - The embeddings deployment name.
+   * @param {number} [config.maxRetries=3] - Retries for transient 429/5xx responses (0 disables).
+   * @param {number} [config.retryBaseDelayMs=500] - Base for exponential backoff with jitter.
    * @param {object} log - Logger.
    */
   constructor(config, log) {
-    this.config = config;
+    this.#config = config;
     this.log = log;
   }
 
@@ -107,27 +139,41 @@ export default class AzureEmbeddingClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
+  /**
+   * POST with bounded retry on transient failures (429/5xx): honors a numeric `Retry-After`,
+   * otherwise exponential backoff with jitter. Non-transient (4xx) errors throw immediately.
+   */
   async #post(body, path) {
-    const url = createUrl(`${this.config.apiEndpoint}${path}?api-version=${this.config.apiVersion}`);
+    const url = createUrl(`${this.#config.apiEndpoint}${path}?api-version=${this.#config.apiVersion}`);
     const headers = {
       'Content-Type': 'application/json',
-      'api-key': this.config.apiKey,
+      'api-key': this.#config.apiKey,
     };
 
     this.log.debug(`[Azure OpenAI Embedding Call]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
-    const response = await httpFetch(url, {
-      method: 'POST',
-      headers,
-      body,
-    });
+    const maxRetries = this.#config.maxRetries ?? 3;
+    const baseDelayMs = this.#config.retryBaseDelayMs ?? 500;
 
-    if (!response.ok) {
+    for (let attempt = 0; ; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const response = await httpFetch(url, { method: 'POST', headers, body });
+
+      if (response.ok) {
+        return response.json();
+      }
+
+      // eslint-disable-next-line no-await-in-loop
       const errorBody = await response.text();
-      throw new Error(`API call failed with status code ${response.status} and body: ${errorBody}`);
+      if (isRetryableStatus(response.status) && attempt < maxRetries) {
+        const delay = retryDelayMs(response, attempt, baseDelayMs);
+        this.log.info(`[Azure OpenAI Embedding] status ${response.status}, retry ${attempt + 1}/${maxRetries} in ${delay}ms`);
+        // eslint-disable-next-line no-await-in-loop
+        await sleep(delay);
+      } else {
+        throw new Error(`API call failed with status code ${response.status} and body: ${errorBody}`);
+      }
     }
-
-    return response.json();
   }
 
   /**
@@ -159,7 +205,7 @@ export default class AzureEmbeddingClient {
       const startTime = process.hrtime.bigint();
       response = await this.#post(
         JSON.stringify(body),
-        `/openai/deployments/${this.config.deploymentName}/embeddings`,
+        `/openai/deployments/${this.#config.deploymentName}/embeddings`,
       );
       this.#logDuration('Azure OpenAI API Embeddings call', startTime);
     } catch (error) {

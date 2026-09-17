@@ -22,9 +22,9 @@ import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
  *   - `semantic_query_embedding` — a global text -> vector cache for the read path.
  *
  * Mirrors `url-index.utils.js`, swapping the canonical URL for an embedding vector. Vectors are
- * produced upstream (Mystique) with the shared model; this layer owns storage, dedup, and the
- * (RPC-backed) ANN read. Text normalization + hashing live here so a value written always matches
- * a later read/re-sync. Requires the `postgrest_writer` role for writes.
+ * produced by the writer (the audit-worker) with the shared model; this layer owns storage, dedup,
+ * and the (RPC-backed) ANN read. Text normalization + hashing live here so a value written always
+ * matches a later read/re-sync. Requires the `postgrest_writer` role for writes.
  */
 
 /** The ANN-indexed entity table(s) the sync/copy helpers may touch. */
@@ -33,6 +33,8 @@ export const SEMANTIC_INDEX_TABLES = Object.freeze(['opportunity_semantic_embedd
 export const QUERY_EMBEDDING_TABLE = 'semantic_query_embedding';
 /** The Postgres RPC that runs the ANN search (read RPC -> reader fleet). */
 export const SEMANTIC_SEARCH_RPC = 'rpc_opportunity_semantic_search';
+/** The write RPC (-> writer fleet) that copies an opportunity's vectors to another id. */
+export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
 
 /**
  * Chunk multi-row ops so neither the query string (`in(...)`, HTTP 414) nor the request body
@@ -47,15 +49,16 @@ function assertClient(postgrestClient) {
   }
 }
 
-function assertTable(table) {
-  if (!SEMANTIC_INDEX_TABLES.includes(table)) {
-    throw new ValidationError(`Invalid semantic-index table: ${table}`);
-  }
-}
-
 function assertId(value, name) {
   if (typeof value !== 'string' || value.length === 0) {
     throw new ValidationError(`${name} is required`);
+  }
+}
+
+/** `dims` is part of the cache key; unchecked it corrupts it (silent miss / null-dims row). */
+function assertDims(value) {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw new ValidationError('dims must be a positive integer');
   }
 }
 
@@ -99,7 +102,10 @@ export function parseVector(value) {
   if (inner === '') {
     return [];
   }
-  return inner.split(',').map(Number);
+  const nums = inner.split(',').map(Number);
+  // A non-numeric segment (corrupt row) yields NaN; return null (cache-miss semantics) rather
+  // than surface a NaN vector far downstream where serializeVector rejects it misleadingly.
+  return nums.some(Number.isNaN) ? null : nums;
 }
 
 /**
@@ -260,65 +266,37 @@ export async function syncOpportunitySemantic(postgrestClient, {
 }
 
 /**
- * Copy every semantic vector row from one entity id to another within a table (used when an offsite
- * refresh preserves the previous evergreen content as a new history snapshot: the content — hence
- * the vectors — is identical, so we re-point rather than re-embed). Reads the source rows and
- * re-inserts them under `toEntityId` (a new PK is generated). Idempotent via the unique key.
- * Requires the `postgrest_writer` role.
+ * Copy every semantic vector row from one opportunity id to another within a site (used when an
+ * offsite refresh preserves the previous evergreen content as a new history snapshot: the content —
+ * hence the vectors — is identical, so we re-point rather than re-embed). Runs entirely server-side
+ * via the `wrpc_copy_opportunity_semantic_vectors` write RPC (`INSERT … SELECT`), so no rows are
+ * materialized in the caller. Idempotent (the RPC's `ON CONFLICT DO NOTHING`). Requires the
+ * `postgrest_writer` role.
  *
  * @param {object} postgrestClient
  * @param {object} params
- * @param {string} params.table - a `SEMANTIC_INDEX_TABLES` entry
  * @param {string} params.siteId
  * @param {string} params.fromEntityId - source opportunity id (still holding the old vectors)
  * @param {string} params.toEntityId - destination (the new snapshot) opportunity id
- * @returns {Promise<number>} number of rows copied
+ * @returns {Promise<number>} number of rows inserted (a re-copy of already-present rows returns 0)
  */
 export async function copyEntityVectors(postgrestClient, {
-  table, siteId, fromEntityId, toEntityId,
+  siteId, fromEntityId, toEntityId,
 } = {}) {
   assertClient(postgrestClient);
-  assertTable(table);
   assertId(siteId, 'siteId');
   assertId(fromEntityId, 'fromEntityId');
   assertId(toEntityId, 'toEntityId');
 
-  const cols = 'entity_type, source_type, source_id, source_hash, source_text, embedding, model, dims';
-  const source = [];
-  let offset = 0;
-  let keepGoing = true;
-  while (keepGoing) {
-    // eslint-disable-next-line no-await-in-loop
-    const { data, error } = await postgrestClient
-      .from(table)
-      .select(cols)
-      .eq('site_id', siteId)
-      .eq('entity_id', fromEntityId)
-      .order('source_hash', { ascending: true })
-      .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
-    if (error) {
-      throw new DataAccessError(`Failed to read ${table} for entity ${fromEntityId}`, { table, entityId: fromEntityId }, error);
-    }
-    if (!data || data.length === 0) {
-      keepGoing = false;
-    } else {
-      source.push(...data);
-      offset += DEFAULT_PAGE_SIZE;
-      keepGoing = data.length >= DEFAULT_PAGE_SIZE;
-    }
+  const { data, error } = await postgrestClient.rpc(COPY_VECTORS_RPC, {
+    p_site_id: siteId,
+    p_from_entity_id: fromEntityId,
+    p_to_entity_id: toEntityId,
+  });
+  if (error) {
+    throw new DataAccessError(`Failed to copy semantic vectors for entity ${fromEntityId}`, { fromEntityId, toEntityId }, error);
   }
-
-  if (source.length === 0) {
-    return 0;
-  }
-
-  const rows = source.map((row) => ({
-    ...row,
-    site_id: siteId,
-    entity_id: toEntityId,
-  }));
-  await upsertRows(postgrestClient, table, rows, 'entity_id,source_type,source_hash', toEntityId);
-  return rows.length;
+  return data ?? 0;
 }
 
 /**
@@ -370,6 +348,7 @@ export async function lookupOpportunitiesByVector(postgrestClient, {
 export async function getQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
   assertClient(postgrestClient);
   assertId(model, 'model');
+  assertDims(dims);
   const normalized = normalizeText(text);
   if (normalized === '') {
     throw new ValidationError('text is required');
@@ -389,7 +368,12 @@ export async function getQueryEmbedding(postgrestClient, { text, model, dims } =
   if (!data || data.length === 0) {
     return null;
   }
-  return { vector: parseVector(data[0].embedding), textHash };
+  const vector = parseVector(data[0].embedding);
+  // A corrupt cached vector parses to null; treat it as a miss so the caller re-embeds.
+  if (vector === null) {
+    return null;
+  }
+  return { vector, textHash };
 }
 
 /**
@@ -402,6 +386,7 @@ export async function upsertQueryEmbedding(postgrestClient, {
 } = {}) {
   assertClient(postgrestClient);
   assertId(model, 'model');
+  assertDims(dims);
   const normalized = normalizeText(text);
   if (normalized === '') {
     throw new ValidationError('text is required');
@@ -431,6 +416,7 @@ export async function upsertQueryEmbedding(postgrestClient, {
 export async function touchQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
   assertClient(postgrestClient);
   assertId(model, 'model');
+  assertDims(dims);
   const normalized = normalizeText(text);
   if (normalized === '') {
     throw new ValidationError('text is required');

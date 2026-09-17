@@ -81,15 +81,31 @@ describe('AzureEmbeddingClient', () => {
         .to.throw('Missing Azure OpenAI embedding deployment name');
     });
 
-    it('creates a client from the dedicated AZURE_EMBEDDING_* values', () => {
+    it('wires the dedicated AZURE_EMBEDDING_* values into the request (endpoint/key/version/deployment)', async () => {
+      // config is private (#config); assert it through a real call rather than instance inspection.
+      const scope = nock('https://your-resource.openai.azure.com', {
+        reqheaders: { 'api-key': 'your-api-key' },
+      })
+        .post('/openai/deployments/text-embedding-3-small/embeddings')
+        .query({ 'api-version': '2024-02-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.1] }] });
+
       const client = AzureEmbeddingClient.createFrom(mockContext);
-      expect(client.config.apiEndpoint).to.equal('https://your-resource.openai.azure.com');
-      expect(client.config.apiKey).to.equal('your-api-key');
-      expect(client.config.apiVersion).to.equal('2024-02-01');
-      expect(client.config.deploymentName).to.equal('text-embedding-3-small');
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.1]]);
+      expect(scope.isDone()).to.equal(true);
+      // the key must never be readable off the instance
+      expect(client.config).to.equal(undefined);
     });
 
-    it('falls back to AZURE_OPENAI_* for endpoint/key/version (embeddings share the resource)', () => {
+    it('falls back to AZURE_OPENAI_* for endpoint/key/version (embeddings share the resource)', async () => {
+      const scope = nock('https://shared-resource.openai.azure.com', {
+        reqheaders: { 'api-key': 'shared-key' },
+      })
+        .post('/openai/deployments/text-embedding-3-small/embeddings')
+        .query({ 'api-version': '2024-06-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.2] }] });
+
       const client = AzureEmbeddingClient.createFrom({
         log: mockLog,
         env: {
@@ -99,10 +115,9 @@ describe('AzureEmbeddingClient', () => {
           AZURE_EMBEDDING_DEPLOYMENT: 'text-embedding-3-small',
         },
       });
-      expect(client.config.apiEndpoint).to.equal('https://shared-resource.openai.azure.com');
-      expect(client.config.apiKey).to.equal('shared-key');
-      expect(client.config.apiVersion).to.equal('2024-06-01');
-      expect(client.config.deploymentName).to.equal('text-embedding-3-small');
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.2]]);
+      expect(scope.isDone()).to.equal(true);
     });
   });
 
@@ -193,14 +208,14 @@ describe('AzureEmbeddingClient', () => {
       expect(capturedBody).to.deep.equal({ input: ['x'] });
     });
 
-    it('throws on a non-2xx response', async () => {
+    it('throws immediately on a non-retryable (4xx) response', async () => {
       nock(mockContext.env.AZURE_EMBEDDING_ENDPOINT)
         .post(path)
         .query({ 'api-version': '2024-02-01' })
-        .reply(429, 'Too Many Requests');
+        .reply(400, 'Bad Request');
 
       await expect(client.createEmbeddings(['x']))
-        .to.be.rejectedWith('API call failed with status code 429');
+        .to.be.rejectedWith('API call failed with status code 400');
       expect(mockLog.error.called).to.equal(true);
     });
 
@@ -232,6 +247,85 @@ describe('AzureEmbeddingClient', () => {
 
       await expect(client.createEmbeddings(['x']))
         .to.be.rejectedWith('Invalid response format.');
+    });
+  });
+
+  // eslint-disable-next-line func-names
+  describe('retry on transient failures', function () {
+    this.timeout(3000);
+    const endpoint = 'https://your-resource.openai.azure.com';
+    const path = '/openai/deployments/text-embedding-3-small/embeddings';
+    const baseConfig = {
+      apiEndpoint: endpoint,
+      apiKey: 'your-api-key',
+      apiVersion: '2024-02-01',
+      deploymentName: 'text-embedding-3-small',
+    };
+
+    it('retries a 429 (exponential backoff path) and then succeeds', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(429, 'Too Many Requests');
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.9] }] });
+
+      const client = new AzureEmbeddingClient(
+        { ...baseConfig, retryBaseDelayMs: 0 },
+        mockLog,
+      );
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.9]]);
+      expect(mockLog.info.called).to.equal(true);
+    });
+
+    it('honors a numeric Retry-After header before retrying', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(503, 'Unavailable', { 'Retry-After': '0.01' });
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.5] }] });
+
+      const client = new AzureEmbeddingClient(baseConfig, mockLog);
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.5]]);
+    });
+
+    it('falls back to backoff when Retry-After is non-positive', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(429, 'slow down', { 'Retry-After': '0' });
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.7] }] });
+
+      const client = new AzureEmbeddingClient(
+        { ...baseConfig, retryBaseDelayMs: 0 },
+        mockLog,
+      );
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.7]]);
+    });
+
+    it('throws after exhausting retries on repeated 5xx', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(500, 'err');
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(500, 'err');
+
+      const client = new AzureEmbeddingClient(
+        { ...baseConfig, maxRetries: 1, retryBaseDelayMs: 0 },
+        mockLog,
+      );
+      await expect(client.createEmbeddings(['x']))
+        .to.be.rejectedWith('API call failed with status code 500');
+    });
+
+    it('reads AZURE_EMBEDDING_MAX_RETRIES from env (0 disables retry)', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(500, 'err');
+
+      const client = AzureEmbeddingClient.createFrom({
+        log: mockLog,
+        env: { ...mockContext.env, AZURE_EMBEDDING_MAX_RETRIES: '0' },
+      });
+      await expect(client.createEmbeddings(['x']))
+        .to.be.rejectedWith('API call failed with status code 500');
     });
   });
 });

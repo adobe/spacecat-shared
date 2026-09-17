@@ -32,7 +32,6 @@ import {
 
 chaiUse(chaiAsPromised);
 
-const TABLE = 'opportunity_semantic_embedding';
 const SITE_ID = 'site-1';
 const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'cited-analysis';
@@ -159,6 +158,10 @@ describe('semantic-index.utils', () => {
       expect(parseVector('[]')).to.deep.equal([]);
       expect(parseVector('x')).to.equal(null);
       expect(parseVector(42)).to.equal(null);
+    });
+
+    it('parseVector returns null (not a NaN array) for a corrupt vector', () => {
+      expect(parseVector('[0.1,abc,0.3]')).to.equal(null);
     });
 
     it('exposes constants', () => {
@@ -295,45 +298,42 @@ describe('semantic-index.utils', () => {
   });
 
   describe('copyEntityVectors', () => {
-    it('validates table + ids', async () => {
-      await expect(copyEntityVectors(makeClient(), {
-        table: 'nope', siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      }))
-        .to.be.rejectedWith(ValidationError, 'Invalid semantic-index table');
-      await expect(copyEntityVectors(makeClient(), { table: TABLE, fromEntityId: 'a', toEntityId: 'b' }))
+    it('validates the client + ids', async () => {
+      await expect(copyEntityVectors({}, { siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' }))
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
+      await expect(copyEntityVectors(makeClient(), { fromEntityId: 'a', toEntityId: 'b' }))
         .to.be.rejectedWith(ValidationError, 'siteId is required');
+      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, toEntityId: 'b' }))
+        .to.be.rejectedWith(ValidationError, 'fromEntityId is required');
+      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, fromEntityId: 'a' }))
+        .to.be.rejectedWith(ValidationError, 'toEntityId is required');
     });
 
-    it('returns 0 when the source entity has no rows', async () => {
-      const client = makeClient({ selectPages: [{ data: [], error: null }] });
+    it('calls the copy RPC and returns the inserted count', async () => {
+      const client = makeClient({ rpcResult: { data: 3, error: null } });
       const n = await copyEntityVectors(client, {
-        table: TABLE, siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+      });
+      expect(n).to.equal(3);
+      expect(client.calls.rpc).to.deep.equal([{
+        name: 'wrpc_copy_opportunity_semantic_vectors',
+        params: { p_site_id: SITE_ID, p_from_entity_id: 'a', p_to_entity_id: 'b' },
+      }]);
+    });
+
+    it('returns 0 when the RPC reports no inserted rows (null data)', async () => {
+      const client = makeClient({ rpcResult: { data: null, error: null } });
+      const n = await copyEntityVectors(client, {
+        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
       });
       expect(n).to.equal(0);
-      expect(client.calls.upsert).to.have.length(0);
     });
 
-    it('copies rows re-pointed to the destination entity', async () => {
-      const client = makeClient({
-        selectPages: [{
-          data: [{
-            entity_type: ENTITY_TYPE, source_type: SOURCE_TYPE, source_id: null, source_hash: 'h1', source_text: 't', embedding: '[0.1,0.2]', model: 'm', dims: 2,
-          }],
-          error: null,
-        }],
-      });
-      const n = await copyEntityVectors(client, {
-        table: TABLE, siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      });
-      expect(n).to.equal(1);
-      expect(client.calls.upsert[0].rows[0]).to.include({ site_id: SITE_ID, entity_id: 'b', source_hash: 'h1' });
-    });
-
-    it('wraps a read error', async () => {
-      const client = makeClient({ selectPages: [{ data: null, error: { message: 'boom' } }] });
+    it('wraps an RPC error', async () => {
+      const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
       await expect(copyEntityVectors(client, {
-        table: TABLE, siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      })).to.be.rejectedWith(DataAccessError, 'Failed to read');
+        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+      })).to.be.rejectedWith(DataAccessError, 'Failed to copy semantic vectors');
     });
   });
 
@@ -388,6 +388,10 @@ describe('semantic-index.utils', () => {
     it('getQueryEmbedding validates + returns null on miss', async () => {
       await expect(getQueryEmbedding(makeClient(), { text: 'x', dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(getQueryEmbedding(makeClient(), { text: 'x', model: MODEL }))
+        .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
+      await expect(getQueryEmbedding(makeClient(), { text: 'x', model: MODEL, dims: 1.5 }))
+        .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(getQueryEmbedding(makeClient(), { text: '  ', model: MODEL, dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'text is required');
       const miss = await getQueryEmbedding(makeClient({ getResult: { data: [], error: null } }), { text: 'x', model: MODEL, dims: 2 });
@@ -402,6 +406,12 @@ describe('semantic-index.utils', () => {
       expect(client.calls.select[0].eqs).to.include({ model: MODEL, dims: 2 });
     });
 
+    it('getQueryEmbedding treats a corrupt cached vector as a miss (null)', async () => {
+      const client = makeClient({ getResult: { data: [{ embedding: '[0.1,abc]' }], error: null } });
+      const hit = await getQueryEmbedding(client, { text: 'x', model: MODEL, dims: 2 });
+      expect(hit).to.equal(null);
+    });
+
     it('getQueryEmbedding wraps a read error', async () => {
       const client = makeClient({ getResult: { data: null, error: { message: 'boom' } } });
       await expect(getQueryEmbedding(client, { text: 'x', model: MODEL, dims: 2 }))
@@ -411,6 +421,8 @@ describe('semantic-index.utils', () => {
     it('upsertQueryEmbedding validates + writes + returns the hash', async () => {
       await expect(upsertQueryEmbedding(makeClient(), { text: 'x', dims: 2, vector: [0.1] }))
         .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(upsertQueryEmbedding(makeClient(), { text: 'x', model: MODEL, vector: [0.1] }))
+        .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(upsertQueryEmbedding(makeClient(), {
         text: ' ', model: MODEL, dims: 2, vector: [0.1],
       }))
@@ -437,6 +449,8 @@ describe('semantic-index.utils', () => {
     it('touchQueryEmbedding validates + updates last_access_at', async () => {
       await expect(touchQueryEmbedding(makeClient(), { text: 'x', dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(touchQueryEmbedding(makeClient(), { text: 'x', model: MODEL, dims: 0 }))
+        .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(touchQueryEmbedding(makeClient(), { text: '', model: MODEL, dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'text is required');
       const client = makeClient();

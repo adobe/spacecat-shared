@@ -578,6 +578,14 @@ describe('Config Tests', () => {
       expect(config.getContentAiConfig()).to.deep.equal({ index: 'legacy-index' });
     });
 
+    it('rejects a blank index written through updateContentAiConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateContentAiConfig({ index: '   ' }),
+      ).to.throw(/Configuration validation error/);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
     it('rejects a blank name written through updateContentAiConfig', () => {
       const config = Config({});
       let thrown;

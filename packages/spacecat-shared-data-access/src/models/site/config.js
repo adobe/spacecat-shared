@@ -333,7 +333,7 @@ export const DEFAULT_IMPORT_CONFIGS = {
 
 export const contentAiConfigSchema = Joi.object({
   name: Joi.string().trim().min(1).optional(),
-  index: Joi.string().trim().optional(),
+  index: Joi.string().trim().min(1).optional(),
 });
 
 export const configSchema = Joi.object({

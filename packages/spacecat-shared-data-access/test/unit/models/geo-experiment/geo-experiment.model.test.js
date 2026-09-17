@@ -80,6 +80,7 @@ describe('GeoExperimentModel', () => {
       IMPACT_MEASUREMENT_TASK_ID: 'impactMeasurementTaskId',
       VALIDATION: 'validation',
       ROUTING_VALIDATION: 'routingValidation',
+      OAE_VALIDATION_JOBS: 'oaeValidationJobs',
     });
   });
 

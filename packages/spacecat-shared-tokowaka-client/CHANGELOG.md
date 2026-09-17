@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.3...@adobe/spacecat-shared-tokowaka-client-v1.24.0) (2026-09-10)
+
+### Features
+
+* **tokowaka-client:** Validator interface, RoutingValidator, and OAE validation job functions ([#1927](https://github.com/adobe/spacecat-shared/issues/1927)) ([3851385](https://github.com/adobe/spacecat-shared/commit/3851385f39f2b1c804ee657edf74d1aedb568ae6)), closes [#1926](https://github.com/adobe/spacecat-shared/issues/1926) [#1926](https://github.com/adobe/spacecat-shared/issues/1926)
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.23.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.2...@adobe/spacecat-shared-tokowaka-client-v1.23.3) (2026-08-06)
 
 ### Bug Fixes

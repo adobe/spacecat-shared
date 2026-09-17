@@ -31,6 +31,7 @@ export * from './import-job/index.js';
 export * from './import-url/index.js';
 export * from './key-event/index.js';
 export * from './latest-audit/index.js';
+export * from './oae-validation/index.js';
 export * from './opportunity/index.js';
 export * from './organization/index.js';
 export * from './project/index.js';

@@ -15,21 +15,44 @@ import { LANGUAGE_CATALOG, isoForLanguageId, CATALOG_CAPTURED } from '../../mock
 
 const ENGLISH_ID = '5a0a33ed-7f5c-4901-befd-a042c0350da1';
 
-describe('language-catalog — the canonical id ↔ name ↔ iso catalog', () => {
-  it('is the full live taxonomy (38 entries), each with id + English name + iso', () => {
+describe('language-catalog — the canonical id ↔ name ↔ code ↔ iso catalog', () => {
+  it('is the full live taxonomy (38 entries), each with id + English name + code + iso', () => {
     expect(LANGUAGE_CATALOG).to.be.an('array').with.length(38);
     for (const entry of LANGUAGE_CATALOG) {
-      expect(entry.id).to.match(/^[0-9a-f-]{36}$/);
-      expect(entry.name).to.be.a('string').with.length.greaterThan(0);
-      expect(entry.iso).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.id, `${entry.name} id`).to.match(/^[0-9a-f-]{36}$/);
+      expect(entry.name, `${entry.id} name`).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.code, `${entry.name} code`).to.be.a('string').with.length.greaterThan(0);
+      expect(entry.iso, `${entry.name} iso`).to.be.a('string').with.length.greaterThan(0);
     }
     // English is the live-verified read-view value.
-    expect(LANGUAGE_CATALOG).to.deep.include({ id: ENGLISH_ID, name: 'English', iso: 'en' });
+    expect(LANGUAGE_CATALOG).to.deep.include({
+      id: ENGLISH_ID, name: 'English', code: 'en', iso: 'en',
+    });
+    // The two Chinese rows are the known code/iso divergence (LLMO-7420): `code` carries the
+    // BCP-47 script subtag Semrush's read-view `iso` does not (live-verified rainer-friederich,
+    // 2026-09-07).
+    expect(LANGUAGE_CATALOG).to.deep.include({
+      id: '728bef4c-94cf-4e14-bc06-56534751c71a',
+      name: 'Chinese Simplified',
+      code: 'zh-Hans',
+      iso: 'zh',
+    });
+    expect(LANGUAGE_CATALOG).to.deep.include({
+      id: '4fecf249-03fa-430a-b0b1-42421c5c1f7d',
+      name: 'Chinese Traditional',
+      code: 'zh-Hant',
+      iso: 'zh-tw',
+    });
   });
 
   it('ids are unique (a faithful reverse index needs no collisions)', () => {
     const ids = LANGUAGE_CATALOG.map((l) => l.id);
     expect(new Set(ids).size).to.equal(ids.length);
+  });
+
+  it('codes are unique (BCP-47 resolution requires a 1:1 code -> id mapping)', () => {
+    const codes = LANGUAGE_CATALOG.map((l) => l.code);
+    expect(new Set(codes).size).to.equal(codes.length);
   });
 
   it('exposes the capture date so live-catalog drift is discoverable', () => {

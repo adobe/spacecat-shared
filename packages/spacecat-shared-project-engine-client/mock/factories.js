@@ -186,6 +186,18 @@ export const createProjectMock = (overrides = {}) => ({
 });
 
 /**
+ * A language catalog entry (`LanguageResponse`) — the `listLanguages` item `{ id, name, code }`.
+ * @param {Partial<Language>} [overrides]
+ * @returns {Language}
+ */
+export const createLanguageMock = (overrides = {}) => ({
+  id: uuid(),
+  name: 'English',
+  code: 'en',
+  ...overrides,
+});
+
+/**
  * Builds the `settings.ai` read-view sub-object the live project GET echoes — nested
  * brand / language / country / location plus zeroed counters. Extracted so
  * {@link createProjectResponseFromRequest} (the draft create-response) and
@@ -193,7 +205,11 @@ export const createProjectMock = (overrides = {}) => ({
  *
  * `language.name` is the ISO code resolved from the catalog id (e.g. "en"), NOT the English display
  * name; `langOf` (api-service) reads it directly as the slice code, so resolving id → ISO is the
- * load-bearing round-trip fix (#1745). `country.name` is the informal Intl region name, populated
+ * load-bearing round-trip fix (#1745). `language.code` reuses the same resolved ISO code as a
+ * best-effort stand-in — this embedded read-view field is unverified for `code` (unlike the
+ * `GET /v1/languages` catalog list, which is live-verified per entry, LLMO-7420); it is populated
+ * only so the (schema-wide) required field is satisfied, not as a live-confirmed value.
+ * `country.name` is the informal Intl region name, populated
  * for fidelity. Live echoes `null` (not `[]`/`''`) for an omitted `brand_names` / `location.name`
  * on the read-view (verified 2026-06-29); the {@link NULLABLE} casts satisfy the schema
  * (`string[]`/`string`, no explicit null variant).
@@ -205,7 +221,11 @@ const buildAiSettings = (request = {}) => ({
   prompts_count: 0,
   brand_names: request.brand_names ?? NULLABLE,
   brand_name_display: request.brand_name_display ?? '',
-  language: { id: request.language_id ?? '', name: isoForLanguageId(request.language_id) },
+  language: createLanguageMock({
+    id: request.language_id ?? '',
+    name: isoForLanguageId(request.language_id),
+    code: isoForLanguageId(request.language_id),
+  }),
   country: { code: request.country_code ?? '', name: countryName(request.country_code) },
   location: { id: request.location_id ?? 0, name: request.location_name ?? NULLABLE },
   primary_url: request.domain ?? '',
@@ -317,8 +337,10 @@ export const applyProjectUpdate = (stored, patch) => {
  * 2026-06-25; `primary_url`/`root_domain` are added to the schema by overlay CR10). `primary_url`
  * and `root_domain` mirror the benchmark's `domain` live, so they default off the effective domain
  * here (the mock mirrors the full domain; it does not extract a registrable root); `project_id`
- * defaults empty and is set by the handler/seed to the owning project. Created
- * benchmarks are competitors (`main_brand: false`); the own-brand benchmark is system-managed.
+ * defaults empty and is set by the handler/seed to the owning project. Defaults to a competitor
+ * (`main_brand: false`); the v2 batch-create route passes the caller's `main_brand` through in
+ * `overrides` on every entry, honouring `true` when requested (LLMO-7421 — create DOES accept
+ * and honour the flag live, unlike a PUT).
  * @param {Partial<Benchmark>} [overrides]
  * @returns {Benchmark}
  */
@@ -350,17 +372,6 @@ export const createBrandUrlMock = (overrides = {}) => ({
   id: uuid(),
   url: 'https://example.com/about',
   type: 'own',
-  ...overrides,
-});
-
-/**
- * A language catalog entry (`LanguageResponse`) — the `listLanguages` item `{ id, name }`.
- * @param {Partial<Language>} [overrides]
- * @returns {Language}
- */
-export const createLanguageMock = (overrides = {}) => ({
-  id: uuid(),
-  name: 'English',
   ...overrides,
 });
 

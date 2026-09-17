@@ -12,18 +12,20 @@
 
 /**
  * Static handler for GET /v1/languages — the language catalog the consumer
- * (spacecat-api-service `listLanguages`) reads to resolve an ISO 639-1 code to a Semrush language
- * UUID. The live shape is `{ page, total, items: [{ id, name }] }` — items carry NO key/icon (that
- * is the ai_models shape) and NO `iso` (that field is mock-only, for the read-view resolver). The
- * catalog (38 languages, real UUIDs + names, captured verbatim 2026-06-25) lives in
- * `mock/language-catalog.js` so it is shared with the project read-view factory rather than
- * duplicated here; it is exposed on the per-request context as `$.context.languageCatalog`.
+ * (spacecat-api-service `listLanguages`/LLMO-7420 `resolveLanguageId`) reads to resolve a BCP-47
+ * `code` to a Semrush language UUID. The live shape is
+ * `{ page, total, items: [{ id, name, code }] }` — items carry NO key/icon (that is the ai_models
+ * shape) and NO `iso` (that field is mock-only, for the read-view resolver — see
+ * `mock/language-catalog.js`'s doc comment for why `code` and `iso` are not the same value). The
+ * catalog (38 languages, real UUIDs + names, captured verbatim 2026-06-25; `code` added LLMO-7420)
+ * lives in `mock/language-catalog.js` so it is shared with the project read-view factory rather
+ * than duplicated here; it is exposed on the per-request context as `$.context.languageCatalog`.
  * Materialized into `.counterfact/routes/` by the mock runner; excluded from coverage.
  */
 
-/** GET — list the language catalog `{ id, name }` (each row shaped via the factory). */
+/** GET — list the language catalog `{ id, name, code }` (each row shaped via the factory). */
 export function GET($) {
   const items = $.context.languageCatalog
-    .map(({ id, name }) => $.context.factories.createLanguageMock({ id, name }));
+    .map(({ id, name, code }) => $.context.factories.createLanguageMock({ id, name, code }));
   return $.response[200].json({ page: 1, total: items.length, items });
 }

@@ -2321,8 +2321,10 @@ export interface components {
             total?: number;
         };
         "model.LanguageResponse": {
-            id?: string;
-            name?: string;
+            id: string;
+            name: string;
+            /** @description BCP-47 language code (e.g. zh-Hans, zh-Hant, fil) — the stable identifier languageCode is resolved against */
+            code: string;
         };
         "model.ListAIOBenchmarksResponse": {
             aio_benchmarks?: components["schemas"]["model.AIOBenchmarkWithCounters"][];

@@ -148,6 +148,33 @@ export class FastlyKVClient {
   }): Promise<FastlyKVEntry[]>;
 }
 
+export interface OaeValidationJobSuggestion {
+  suggestionId: string;
+  status: string;
+  outcome: string | null;
+  completedAt: string | null;
+  metadata: Record<string, any> | null;
+}
+
+export const OAE_VALIDATION_IMPORT_TYPE: string;
+
+export class OaeValidationJobs {
+  static createFrom(context: { dataAccess: any; sqs: any; log?: any }): OaeValidationJobs;
+
+  constructor(config: { dataAccess: any; sqs: any }, log: any);
+
+  createJob(params: {
+    siteId: string;
+    type: string;
+    suggestionIds: string[];
+  }, log?: any): Promise<{ jobId: string }>;
+
+  getJob(jobId: string): Promise<{
+    jobId: string;
+    suggestions: OaeValidationJobSuggestion[];
+  } | null>;
+}
+
 /**
  * Compute the forwarded host for edge optimize (bare domain → www; subdomains unchanged).
  * @param url - Full base URL (e.g. https://example.com)

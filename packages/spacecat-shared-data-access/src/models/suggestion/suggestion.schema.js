@@ -21,6 +21,11 @@ import SuggestionCollection from './suggestion.collection.js';
 const schema = new SchemaBuilder(Suggestion, SuggestionCollection)
   .addReference('belongs_to', 'Opportunity', ['status', 'rank'])
   .addReference('has_many', 'FixEntitySuggestion', ['updatedAt'], { removeDependents: true })
+  // No removeDependents here -- oae_validations.suggestion_id already has ON DELETE CASCADE
+  // at the DB level (db/migrations/20260908124733_oae_validation.sql in mysticat-data-service),
+  // so an app-level cascade would just be redundant. This inverse only exists for the
+  // getOaeValidations() accessor.
+  .addReference('has_many', 'OaeValidation')
   .addAttribute('type', {
     type: Object.values(Suggestion.TYPES),
     required: true,

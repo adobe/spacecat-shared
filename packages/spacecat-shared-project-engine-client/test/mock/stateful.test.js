@@ -498,6 +498,29 @@ describe('stateful — tags ops', () => {
     expect(allOps.prompts.list(scope)).to.have.length(3);
   });
 
+  it('detaches a plain-tag id without conflating independent origin and source ids', () => {
+    const store = new InMemoryStore();
+    const allOps = createStatefulOps(store);
+    allOps.tags.upsertMany(scope, [
+      { id: 'plain-child', name: 'Trail', parent_id: 'plain-parent' },
+      { id: 'origin-human', name: 'human', parent_id: 'origin' },
+      { id: 'source-config', name: 'config', parent_id: 'source' },
+    ]);
+    const [prompt] = allOps.prompts.createMany(scope, [{
+      id: 'p1',
+      name: 'independent dimensions',
+      tags: [
+        { id: 'plain-child', name: 'Trail' },
+        { id: 'origin-human', name: 'human' },
+        { id: 'source-config', name: 'config' },
+      ],
+    }]);
+
+    expect(allOps.tags.removeMany(scope, ['plain-child'])).to.equal(1);
+    expect(allOps.prompts.get(scope, prompt.id).tags.map((tag) => tag.id))
+      .to.deep.equal(['origin-human', 'source-config']);
+  });
+
   // An id that names no stored tag still detaches from any prompt carrying it (the prompt's tag map
   // is the only place it survives), and it does not count toward the removed total.
   it('detaches an id that is not in the standalone tag collection, without counting it', () => {

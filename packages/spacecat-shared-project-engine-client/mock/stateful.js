@@ -564,8 +564,10 @@ export function createStatefulOps(store) {
       },
       /**
        * Creates one benchmark per supplied entry, returning all created entities (so the caller
-       * can surface their ids). The own/main-brand benchmark is system-managed, so created
-       * benchmarks are always competitor (`main_brand: false`) — matching the live create API.
+       * can surface their ids). Stores each entry as given — `main_brand` is whatever the caller's
+       * entity carries (the v2 route builds it via `createBenchmarkMock`, which defaults to
+       * competitor `main_brand: false` but honours `true` when passed, matching the live create
+       * API's own-brand support — LLMO-7421).
        * @param {{ workspaceId: string | number, projectId: string | number }} scope
        * @param {Array<Partial<Entity> & Record<string, unknown>>} benchmarks
        * @returns {Entity[]}

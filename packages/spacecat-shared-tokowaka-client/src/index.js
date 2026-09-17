@@ -52,6 +52,18 @@ export { FastlyKVClient } from './fastly-kv-client.js';
 export { calculateForwardedHost } from './utils/custom-html-utils.js';
 export { SUGGESTION_BULK_UPDATE_TYPE } from './utils/suggestion-utils.js';
 
+export { default as BaseValidator } from './validators/base-validator.js';
+export { default as ValidatorRegistry } from './validators/validator-registry.js';
+export {
+  default as RoutingValidator,
+  ROUTING_VALIDATOR_TYPE,
+  ROUTING_VALIDATOR_USER_AGENT,
+} from './validators/routing-validator.js';
+export {
+  OaeValidationJobs,
+  OAE_VALIDATION_IMPORT_TYPE,
+} from './oae-validation-job.js';
+
 // CloudFront control-plane (free functions + constants).
 export {
   assumeConnectorRole,

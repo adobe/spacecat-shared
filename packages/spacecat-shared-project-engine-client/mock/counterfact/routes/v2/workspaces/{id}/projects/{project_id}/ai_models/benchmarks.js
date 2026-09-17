@@ -13,8 +13,12 @@
 /**
  * Stateful POST handler for /v2/workspaces/{id}/projects/{project_id}/ai_models/benchmarks —
  * batch-creates benchmarks (the consumer's `createBenchmarks`). Request is an ARRAY of
- * `AIOBenchmarkRequest` `{ brand_name, domain, brand_aliases?, color? }`; a created benchmark is
- * always a competitor (`main_brand: false` — the API cannot set the system-managed own brand).
+ * `AIOBenchmarkRequest` `{ brand_name, domain, brand_aliases?, color?, main_brand? }`.
+ * `main_brand: true` IS accepted and honoured at create (live-verified; see
+ * mysticat-data-service PR #945/executor.py `_own_brand_body` and spacecat-api-service's
+ * `ensureOwnBrandBenchmark`/LLMO-7421) — a prior version of this mock silently dropped it and
+ * always created a competitor (`main_brand: false`), which masked the real defect (every
+ * benchmark this codebase created upstream was left unflagged) behind a passing test suite.
  * Writes to the SAME store key (`benchmarks:{ws}:{pid}`) the v1 list/delete use, so a subsequent
  * list reflects it. Live: 200 `IDsWithStatsResponse` `{ ids, existing_count }` (verified
  * 2026-06-25). Unlike prompts (which dedup into `existing_count`), a benchmark whose brand name,
@@ -66,6 +70,7 @@ export function POST($) {
       domain: b?.domain ?? '',
       brand_aliases: Array.isArray(b?.brand_aliases) ? b.brand_aliases : [],
       color: b?.color ?? '',
+      main_brand: b?.main_brand === true,
       project_id: path.project_id,
     })),
   );

@@ -572,6 +572,12 @@ describe('Config Tests', () => {
       expect(config.getContentAiConfig()).to.deep.equal({ name: 'source-name' });
     });
 
+    it('trims an index written through updateContentAiConfig', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ index: '  legacy-index  ' });
+      expect(config.getContentAiConfig()).to.deep.equal({ index: 'legacy-index' });
+    });
+
     it('rejects a blank name written through updateContentAiConfig', () => {
       const config = Config({});
       let thrown;

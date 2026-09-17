@@ -26,7 +26,8 @@ const DEFAULT_TIMEOUT = 30000;
  * last-modified date, for cleanup.
  *
  * Key format: `${suggestionId}`
- * Value format: { url: string, status: 'stale' | 'last_mod_missing' | 'live' }
+ * Value format: { url: string, status: 'stale' | 'last_mod_missing' | 'live',
+ *   applied: boolean, lastUpdated: number }
  */
 export class FastlyKVClient {
   /**
@@ -100,7 +101,8 @@ export class FastlyKVClient {
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {string} [options.cursor] - Cursor for pagination
    * @returns {Promise<{keys: Array<{key: string, suggestionId: string, url: string,
-   *   status: string}>, cursor: string|null}>}
+   *   status: string, lastUpdated: number|undefined, applied: boolean|undefined}>,
+   *   cursor: string|null}>}
    */
   async #listStaleKeysPage(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, cursor } = options;
@@ -142,6 +144,7 @@ export class FastlyKVClient {
             url: value.url,
             status: normalizedStatus,
             lastUpdated: value.lastUpdated,
+            applied: value.applied,
           });
         }
       } catch (error) {
@@ -163,7 +166,7 @@ export class FastlyKVClient {
    * @param {number} [options.pageSize=100] - Number of keys to fetch per page
    * @param {number} [options.maxPages=100] - Maximum number of pages to fetch (safety limit)
    * @returns {Promise<Array<{key: string, suggestionId: string, url: string,
-   *   status: string, lastUpdated: number|undefined}>>}
+   *   status: string, lastUpdated: number|undefined, applied: boolean|undefined}>>}
    */
   async listAllStaleKeys(options = {}) {
     const { pageSize = DEFAULT_PAGE_SIZE, maxPages = 100 } = options;

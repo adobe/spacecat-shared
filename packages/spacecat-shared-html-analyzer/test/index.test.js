@@ -244,7 +244,7 @@ describe('HTML Visibility Analyzer', () => {
 
     it('should not strip body when scroll-lock class contains "cookie-modal" substring (Shangri-La regression)', async () => {
       // Regression for LLMO-7680: Shangri-La applies sl-cookie-modal-body-hidden to <body>
-      // while the modal is open. The old [class*="cookie-modal"] selector matched <body>
+      // while the modal is open. The old substring-based selector matched <body>
       // itself, stripping all page content and undercounting client-side words.
       const html = `<html><body class="text-font dirltr SHANGRILA sl-header-shangrila sl-cookie-modal-body-hidden">
         <h1>Meetings &amp; Events</h1>

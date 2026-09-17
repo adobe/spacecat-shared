@@ -334,7 +334,7 @@ export interface SiteConfig {
   getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
   updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean }, options?: { maxHistory?: number }): void;
   getContentAiConfig(): { name?: string; index?: string } | undefined;
-  updateContentAiConfig(config: { name?: string; index?: string }): void;
+  updateContentAiConfig(config?: { name?: string; index?: string }): void;
   getAuditTargetURLs(): AuditTargetEntryWithSource[];
   getAuditTargetURLsBySource(source: AuditTargetSource): AuditTargetEntry[];
   updateAuditTargetURLs(source: AuditTargetSource, urls: AuditTargetEntry[]): void;

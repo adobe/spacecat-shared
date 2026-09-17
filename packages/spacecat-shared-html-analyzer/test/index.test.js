@@ -217,6 +217,23 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Manage consent preferences');
     });
 
+    it('should remove generic cookie modal (.cookie-modal)', async () => {
+      const html = `<html><body>
+        <h1>Welcome</h1>
+        <p>Main page content.</p>
+        <div class="cookie-modal">
+          <div>We use cookies to enhance your experience. Accept all cookies or manage your preferences.</div>
+        </div>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Welcome');
+      expect(text).to.include('Main page content.');
+      expect(text).to.not.include('We use cookies');
+      expect(text).to.not.include('Accept all cookies');
+    });
+
     it('should remove Shangri-La custom cookie modal (.sl-cookie-modal)', async () => {
       const html = `<html><body>
         <h1>Summer Aqua Pilates</h1>
@@ -265,7 +282,7 @@ describe('HTML Visibility Analyzer', () => {
     it('should not remove a class-named element when content does not indicate consent', async () => {
       const html = `<html><body>
         <h1>Summer Sale</h1>
-        <div class="promo-cookie-modal">Limited time offer on swimwear this weekend.</div>
+        <div class="cookie-modal">Limited time offer on swimwear this weekend.</div>
         <p>Shop the new collection now.</p>
       </body></html>`;
 

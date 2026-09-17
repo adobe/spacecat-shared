@@ -1071,6 +1071,7 @@ class TokowakaClient {
         try {
           if (metaconfigChanged) {
             await this.uploadMetaconfig(baseURL, metaconfig);
+            this.log.info(`[edge-rollback] Metaconfig upload succeeded for ${baseURL}`);
           }
         } catch (error) {
           this.log.error(`[edge-rollback] Metaconfig upload failed: ${error.message}`, error);
@@ -1086,6 +1087,13 @@ class TokowakaClient {
           try {
             await saveSuggestions(this.dataAccess, toSave);
             succeededPatternSuggestions.push(...toSave);
+            // Logs the exact payload that was just persisted, per suggestion, so a discrepancy
+            // between "save reported success" and "the DB still shows the old value" is visible
+            // from this log alone rather than requiring a follow-up GET.
+            toSave.forEach((s) => {
+              // eslint-disable-next-line max-len
+              this.log.info(`[edge-rollback] Saved pattern suggestion ${s.getId()}: edgeDeployed=${s.getData()?.edgeDeployed ?? 'undefined'}, tokowakaDeployed=${s.getData()?.tokowakaDeployed ?? 'undefined'}`);
+            });
           } catch (error) {
             // eslint-disable-next-line max-len
             this.log.error(`[edge-rollback] Error saving pattern suggestions: ${error.message}`);

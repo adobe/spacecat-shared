@@ -302,6 +302,29 @@ describe('AzureEmbeddingClient', () => {
       expect(result).to.deep.equal([[0.7]]);
     });
 
+    it('caps an oversized Retry-After at retryMaxDelayMs', async () => {
+      // Retry-After 3600s would be an hour; the cap keeps the sleep bounded (here ~5ms).
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(429, 'slow down', { 'Retry-After': '3600' });
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(200, { data: [{ index: 0, embedding: [0.4] }] });
+
+      const client = new AzureEmbeddingClient({ ...baseConfig, retryMaxDelayMs: 5 }, mockLog);
+      const started = Date.now();
+      const result = await client.createEmbeddings(['x']);
+      expect(result).to.deep.equal([[0.4]]);
+      expect(Date.now() - started).to.be.lessThan(1000); // not the 3600s the header asked for
+    });
+
+    it('clamps a negative maxRetries to 0 (no retry)', async () => {
+      nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
+        .reply(500, 'err');
+
+      const client = new AzureEmbeddingClient({ ...baseConfig, maxRetries: -5 }, mockLog);
+      await expect(client.createEmbeddings(['x']))
+        .to.be.rejectedWith('API call failed with status code 500');
+    });
+
     it('throws after exhausting retries on repeated 5xx', async () => {
       nock(endpoint).post(path).query({ 'api-version': '2024-02-01' })
         .reply(500, 'err');

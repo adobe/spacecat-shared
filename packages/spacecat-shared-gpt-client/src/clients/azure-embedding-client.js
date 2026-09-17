@@ -32,6 +32,9 @@ function validateEmbeddingResponse(response, expectedCount) {
     );
 }
 
+/** Upper bound on any single retry sleep, so a hostile `Retry-After` can't stall the invocation. */
+const DEFAULT_MAX_RETRY_DELAY_MS = 30_000;
+
 /** Transient statuses worth retrying: rate-limit (429) and server errors (5xx). */
 function isRetryableStatus(status) {
   return status === 429 || status >= 500;
@@ -42,15 +45,16 @@ const sleep = (ms) => new Promise((resolve) => {
 });
 
 /**
- * Backoff for a retryable response: honor a numeric `Retry-After` (seconds) when present,
- * else exponential backoff with full jitter.
+ * Backoff for a retryable response: honor a numeric `Retry-After` (seconds) when present, else
+ * exponential backoff with full jitter. Always capped at `maxDelayMs` so an unbounded/hostile
+ * `Retry-After` can never exceed the caller's execution budget.
  */
-function retryDelayMs(response, attempt, baseDelayMs) {
+function retryDelayMs(response, attempt, baseDelayMs, maxDelayMs) {
   const retryAfter = Number(response.headers.get('retry-after'));
-  if (Number.isFinite(retryAfter) && retryAfter > 0) {
-    return retryAfter * 1000;
-  }
-  return Math.round((2 ** attempt) * baseDelayMs * (0.5 + Math.random()));
+  const raw = (Number.isFinite(retryAfter) && retryAfter > 0)
+    ? retryAfter * 1000
+    : Math.round((2 ** attempt) * baseDelayMs * (0.5 + Math.random()));
+  return Math.min(raw, maxDelayMs);
 }
 
 /**
@@ -126,6 +130,8 @@ export default class AzureEmbeddingClient {
    * @param {string} config.deploymentName - The embeddings deployment name.
    * @param {number} [config.maxRetries=3] - Retries for transient 429/5xx responses (0 disables).
    * @param {number} [config.retryBaseDelayMs=500] - Base for exponential backoff with jitter.
+   * @param {number} [config.retryMaxDelayMs=30000] - Upper bound on any single retry sleep,
+   *   applied to the `Retry-After` and backoff paths alike.
    * @param {object} log - Logger.
    */
   constructor(config, log) {
@@ -152,8 +158,9 @@ export default class AzureEmbeddingClient {
 
     this.log.debug(`[Azure OpenAI Embedding Call]: ${url}, Headers: ${JSON.stringify(sanitizeHeaders(headers))}`);
 
-    const maxRetries = this.#config.maxRetries ?? 3;
+    const maxRetries = Math.max(0, this.#config.maxRetries ?? 3);
     const baseDelayMs = this.#config.retryBaseDelayMs ?? 500;
+    const maxDelayMs = this.#config.retryMaxDelayMs ?? DEFAULT_MAX_RETRY_DELAY_MS;
 
     for (let attempt = 0; ; attempt += 1) {
       // eslint-disable-next-line no-await-in-loop
@@ -166,7 +173,7 @@ export default class AzureEmbeddingClient {
       // eslint-disable-next-line no-await-in-loop
       const errorBody = await response.text();
       if (isRetryableStatus(response.status) && attempt < maxRetries) {
-        const delay = retryDelayMs(response, attempt, baseDelayMs);
+        const delay = retryDelayMs(response, attempt, baseDelayMs, maxDelayMs);
         this.log.info(`[Azure OpenAI Embedding] status ${response.status}, retry ${attempt + 1}/${maxRetries} in ${delay}ms`);
         // eslint-disable-next-line no-await-in-loop
         await sleep(delay);

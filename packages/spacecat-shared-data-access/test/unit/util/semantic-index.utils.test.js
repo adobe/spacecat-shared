@@ -18,6 +18,7 @@ import {
   SEMANTIC_INDEX_TABLES,
   QUERY_EMBEDDING_TABLE,
   SEMANTIC_SEARCH_RPC,
+  COPY_VECTORS_RPC,
   normalizeText,
   hashText,
   serializeVector,
@@ -168,6 +169,7 @@ describe('semantic-index.utils', () => {
       expect(SEMANTIC_INDEX_TABLES).to.deep.equal(['opportunity_semantic_embedding']);
       expect(QUERY_EMBEDDING_TABLE).to.equal('semantic_query_embedding');
       expect(SEMANTIC_SEARCH_RPC).to.equal('rpc_opportunity_semantic_search');
+      expect(COPY_VECTORS_RPC).to.equal('wrpc_copy_opportunity_semantic_vectors');
     });
   });
 
@@ -451,12 +453,23 @@ describe('semantic-index.utils', () => {
         .to.be.rejectedWith(ValidationError, 'model is required');
       await expect(touchQueryEmbedding(makeClient(), { text: 'x', model: MODEL, dims: 0 }))
         .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
-      await expect(touchQueryEmbedding(makeClient(), { text: '', model: MODEL, dims: 2 }))
-        .to.be.rejectedWith(ValidationError, 'text is required');
+      await expect(touchQueryEmbedding(makeClient(), { model: MODEL, dims: 2 }))
+        .to.be.rejectedWith(ValidationError, 'text or textHash is required');
       const client = makeClient();
-      await touchQueryEmbedding(client, { text: 'x', model: MODEL, dims: 2 });
+      await touchQueryEmbedding(client, { text: 'Running Shoes', model: MODEL, dims: 2 });
       expect(client.calls.update).to.have.length(1);
       expect(client.calls.update[0].updateVals).to.have.property('last_access_at');
+      // derived-hash path keys on hash(normalize(text))
+      expect(client.calls.update[0].eqs.text_hash).to.equal(hashText(normalizeText('Running Shoes')));
+    });
+
+    it('touchQueryEmbedding uses a provided textHash without re-deriving it', async () => {
+      const client = makeClient();
+      await touchQueryEmbedding(client, {
+        model: MODEL, dims: 2, textHash: 'precomputed-hash',
+      });
+      expect(client.calls.update).to.have.length(1);
+      expect(client.calls.update[0].eqs).to.include({ text_hash: 'precomputed-hash', model: MODEL, dims: 2 });
     });
 
     it('touchQueryEmbedding wraps an error', async () => {

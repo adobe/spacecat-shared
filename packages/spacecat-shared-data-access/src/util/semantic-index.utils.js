@@ -411,21 +411,28 @@ export async function upsertQueryEmbedding(postgrestClient, {
 
 /**
  * Coarsely bump `last_access_at` on a cache hit (housekeeping input). Best-effort at the call site.
+ * The caller may pass the `textHash` it already resolved from the preceding `getQueryEmbedding` hit
+ * to skip re-normalizing + re-hashing; `text` is used only when `textHash` is absent.
  * @returns {Promise<void>}
  */
-export async function touchQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
+export async function touchQueryEmbedding(postgrestClient, {
+  text, model, dims, textHash,
+} = {}) {
   assertClient(postgrestClient);
   assertId(model, 'model');
   assertDims(dims);
-  const normalized = normalizeText(text);
-  if (normalized === '') {
-    throw new ValidationError('text is required');
+  let hash = textHash;
+  if (typeof hash !== 'string' || hash.length === 0) {
+    const normalized = normalizeText(text);
+    if (normalized === '') {
+      throw new ValidationError('text or textHash is required');
+    }
+    hash = hashText(normalized);
   }
-  const textHash = hashText(normalized);
   const { error } = await postgrestClient
     .from(QUERY_EMBEDDING_TABLE)
     .update({ last_access_at: new Date().toISOString() })
-    .eq('text_hash', textHash)
+    .eq('text_hash', hash)
     .eq('model', model)
     .eq('dims', dims);
   if (error) {

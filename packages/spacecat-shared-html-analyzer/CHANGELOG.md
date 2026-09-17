@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.5...@adobe/spacecat-shared-html-analyzer-v1.3.6) (2026-09-17)
+
+### Bug Fixes
+
+* **html-analyzer:** tighten cookie-modal selector to prevent body match ([#1935](https://github.com/adobe/spacecat-shared/issues/1935)) ([42f56ac](https://github.com/adobe/spacecat-shared/commit/42f56ac609da477ab81cb69511af66c4acad88a8))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.3.5](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.4...@adobe/spacecat-shared-html-analyzer-v1.3.5) (2026-09-10)
 
 ### Bug Fixes

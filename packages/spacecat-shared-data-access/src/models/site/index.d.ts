@@ -390,6 +390,7 @@ export interface Site extends BaseModel {
   setBaseURL(baseURL: string): Site;
   setName(name: string): Site;
   setConfig(config: object): Site;
+  updateConfig(mutator: (config: SiteConfig) => (void | Promise<void>)): Promise<Site>;
   setDeliveryType(deliveryType: string): Site;
   setAuthoringType(authoringType: string): Site;
   setGitHubURL(gitHubURL: string): Site;

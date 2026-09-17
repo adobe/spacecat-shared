@@ -18,7 +18,7 @@ import {
   AUTHORING_TYPES,
 } from '@adobe/spacecat-shared-utils';
 import BaseModel from '../base/base.model.js';
-import { validateConfiguration } from './config.js';
+import { Config, validateConfiguration } from './config.js';
 import { guardConfigValidation } from '../../util/config-validation-guard.js';
 
 const HLX_HOST = /\.(?:aem|hlx)\.(?:page|live)$/i;
@@ -111,6 +111,71 @@ class Site extends BaseModel {
       log: this.log,
     });
     this.patcher.patchValue('config', value, false);
+    return this;
+  }
+
+  /**
+   * Safe partial-update path for the site's `config` JSONB, guarding against
+   * the lost-update race (LLMO-7588). `config` is a single JSONB column with
+   * no server-side merge, so a plain read-config -> mutate-one-field -> save()
+   * cycle persists the WHOLE in-memory config blob. A writer holding a config
+   * snapshot loaded earlier (e.g. a long-lived request handler or a periodic
+   * job) therefore silently clobbers any sibling field a concurrent writer
+   * changed in the meantime -- the mechanism behind sunlife.ca's recurring
+   * `llmo.dataFolder` wipes.
+   *
+   * This method re-reads the freshest persisted config immediately before
+   * applying the caller's mutation, so the change is rebased onto current DB
+   * state instead of onto a stale snapshot. Any sibling field committed before
+   * this re-read survives. Callers express their change by mutating the passed
+   * Config through its existing (already-validated) single-field setters, e.g.:
+   *
+   *   await site.updateConfig((config) => config.updateLlmoDataFolder(folder));
+   *
+   * This is NOT a fully atomic compare-and-swap: a writer that commits between
+   * this re-read and the subsequent save() can still be lost. It shrinks the
+   * window from "snapshot age" (minutes/hours) to "read+write latency"
+   * (milliseconds), which removes the real-world trigger class. A true
+   * optimistic-concurrency guard (reject a stale-blob save) is the follow-up
+   * for the residual window and needs backend conditional-write support.
+   *
+   * Fail-open: if the fresh re-read fails, the mutation is applied to the
+   * in-memory config and the write proceeds (a transient read error must not
+   * block a legitimate config write). This restores the wider lost-update
+   * window for that one write, so it is logged.
+   *
+   * @param {(config: object) => (void | Promise<void>)} mutator - receives the
+   *   freshest Config wrapper; mutate it via its setters.
+   * @returns {Promise<this>}
+   */
+  async updateConfig(mutator) {
+    if (typeof mutator !== 'function') {
+      throw new TypeError('Site.updateConfig requires a mutator function');
+    }
+
+    let latest;
+    try {
+      const fresh = await this.collection.findById(this.getId());
+      latest = fresh?.getConfig();
+    } catch (error) {
+      this.log?.warn?.(
+        `Site.updateConfig: failed to re-read latest config for site ${this.getId()}; `
+        + 'applying mutation to in-memory config (lost-update window reopened)',
+        error,
+      );
+    }
+
+    // In real usage findById hydrates `config` into a Config wrapper; normalize
+    // defensively so the fallback (or a non-hydrated record) is wrapped too.
+    const candidate = latest ?? this.getConfig();
+    const baseConfig = candidate && typeof candidate.getSlackConfig === 'function'
+      ? candidate
+      : Config(candidate); // Config() defaults a nullish arg to an empty config
+
+    await mutator(baseConfig);
+
+    this.setConfig(Config.toDynamoItem(baseConfig));
+    await this.save();
     return this;
   }
 

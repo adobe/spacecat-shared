@@ -1013,7 +1013,14 @@ class BaseCollection {
       });
       for (const preparedItem of preparedItems) {
         // Keep in-memory model state in sync with persisted values (e.g. watched updatedAt).
-        preparedItem.model.record = preparedItem.record;
+        // Merge in place (not a reassignment) so the model's Patcher — constructed with a
+        // reference to the original record object — keeps mutating the same object the
+        // model's getters read from. A reassignment here (`model.record = preparedItem.record`)
+        // would leave the Patcher's `this.record` pointing at the now-orphaned original object:
+        // a subsequent setter call on the same model instance (e.g. a second saveMany for the
+        // same item within one request) would silently mutate the orphaned copy, invisible to
+        // getters, so the change would appear to succeed but never persist.
+        Object.assign(preparedItem.model.record, preparedItem.record);
       }
       const payload = preparedItems
         .map((preparedItem) => this.#toDbRecord({ ...preparedItem.updates, ...preparedItem.keys }));

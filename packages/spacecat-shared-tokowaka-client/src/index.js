@@ -1062,7 +1062,13 @@ class TokowakaClient {
             this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
           }
 
-          suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
+          const strippedData = omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']);
+          // eslint-disable-next-line max-len
+          this.log.info(`[edge-rollback-diag] Pre-setData for ${suggestion.getId()}: before.edgeDeployed=${data?.edgeDeployed}, before.tokowakaDeployed=${data?.tokowakaDeployed}, stripped.hasEdgeDeployed=${Object.prototype.hasOwnProperty.call(strippedData, 'edgeDeployed')}, stripped.hasTokowakaDeployed=${Object.prototype.hasOwnProperty.call(strippedData, 'tokowakaDeployed')}, dataKeys=${JSON.stringify(Object.keys(data ?? {}))}, strippedKeys=${JSON.stringify(Object.keys(strippedData))}`);
+          suggestion.setData(strippedData);
+          const afterSetData = suggestion.getData();
+          // eslint-disable-next-line max-len
+          this.log.info(`[edge-rollback-diag] Post-setData for ${suggestion.getId()}: sameRef=${afterSetData === strippedData}, after.edgeDeployed=${afterSetData?.edgeDeployed}, after.tokowakaDeployed=${afterSetData?.tokowakaDeployed}, afterKeys=${JSON.stringify(Object.keys(afterSetData ?? {}))}`);
           suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
           toSave.push(suggestion);
         }
@@ -1084,6 +1090,10 @@ class TokowakaClient {
 
         // Batch-save all pattern suggestions.
         if (toSave.length > 0) {
+          toSave.forEach((s) => {
+            // eslint-disable-next-line max-len
+            this.log.info(`[edge-rollback-diag] Pre-save for ${s.getId()}: edgeDeployed=${s.getData()?.edgeDeployed}, tokowakaDeployed=${s.getData()?.tokowakaDeployed}`);
+          });
           try {
             await saveSuggestions(this.dataAccess, toSave);
             succeededPatternSuggestions.push(...toSave);

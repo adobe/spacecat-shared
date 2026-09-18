@@ -141,10 +141,10 @@ export class FastlyKVClient {
           staleEntries.push({
             key: keyName,
             suggestionId: keyName,
-            url: value.url,
+            url: value?.url,
             status: normalizedStatus,
-            lastUpdated: value.lastUpdated,
-            applied: value.applied,
+            lastUpdated: value?.lastUpdated,
+            applied: value?.applied,
           });
         }
       } catch (error) {

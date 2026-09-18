@@ -19,5 +19,7 @@ export default class CloudFrontClient {
 
   constructor(config: CloudFrontClientConfig, log?: object);
 
-  region: string;
+  readonly region: string;
+
+  readonly log: object;
 }

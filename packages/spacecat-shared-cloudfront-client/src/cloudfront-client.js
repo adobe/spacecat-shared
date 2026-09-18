@@ -37,7 +37,7 @@ export default class CloudFrontClient {
    * @returns {CloudFrontClient}
    */
   static createFrom(context) {
-    const { env, log = console } = context;
+    const { env = {}, log = console } = context;
     return new CloudFrontClient({ region: env.AWS_REGION }, log);
   }
 

@@ -30,6 +30,11 @@ describe('CloudFrontClient', () => {
       const client = CloudFrontClient.createFrom({ env: { AWS_REGION: REGION } });
       expect(client.log).to.equal(console);
     });
+
+    it('throws a clear error when context.env is missing', () => {
+      expect(() => CloudFrontClient.createFrom({ log: console }))
+        .to.throw('CloudFrontClient requires region');
+    });
   });
 
   describe('constructor', () => {

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.1...@adobe/spacecat-shared-data-access-v4.30.0) (2026-09-17)
+
+### Features
+
+* **data-access:** rework Site contentAiConfig ([#1917](https://github.com/adobe/spacecat-shared/issues/1917)) ([52981b4](https://github.com/adobe/spacecat-shared/commit/52981b4c136fe743f643ca3b7f9f3cbe02eb0f10)), closes [adobe/spacecat-audit-worker#2951](https://github.com/adobe/spacecat-audit-worker/issues/2951)
+
 ## [@adobe/spacecat-shared-data-access-v4.29.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.0...@adobe/spacecat-shared-data-access-v4.29.1) (2026-09-10)
 
 ### Bug Fixes

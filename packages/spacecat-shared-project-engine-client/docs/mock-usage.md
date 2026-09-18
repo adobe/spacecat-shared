@@ -334,6 +334,38 @@ await fetch(`${baseUrl}/__seed`, { method: 'POST', body: JSON.stringify(snapshot
 A consumer that only has the **published tarball** (no `mock/`) POSTs the raw `Snapshot` JSON from
 §4 instead.
 
+### Recursive tag fixtures
+
+`buildTagFixtureTree(parentId, nodes)` expands a readable hierarchy into the flat `AIOTag[]`
+collection accepted by `buildSeed`. Nodes may nest to arbitrary practical depth. Existing
+`{ name, children: string[] }` fixtures remain valid; use object children only where another level
+is needed:
+
+```js
+import { buildTagFixtureTree, buildSeed } from '@adobe/spacecat-shared-project-engine-client/mock/seeds.js';
+
+const tags = buildTagFixtureTree(tagRootId, [{
+  name: 'Campaign',
+  children: [
+    'Direct child',
+    { name: '2026', children: [{ name: 'Q3', children: ['Launch'] }] },
+  ],
+}]);
+
+const snapshot = buildSeed({
+  workspaceId,
+  projects: [{ id: projectId, name: 'Acme', tags }],
+});
+```
+
+The builder emits parents before descendants and preserves sibling declaration order. The mock
+serializes every descendant with its complete root-first `path`, regardless of depth. `GET
+/aio/tags` still reads exactly one level: `parent_id` selects the direct-parent scope and `search`
+filters only that sibling set, never descendants. To discover a complete tree, callers must page
+each visited parent separately. With `limit`, pages are stable, non-overlapping slices of fixture
+order; `total` is the full count after parent/search filtering, while `items.length` is the count
+on the requested page.
+
 ### End-to-end suite
 
 `npm run test:e2e` boots the mock (self-managed lifecycle, `__reset` between cases) and drives the

@@ -485,7 +485,135 @@ describe('Config Tests', () => {
     it('creates a Config with contentAiConfig property', () => {
       const data = {
         contentAiConfig: {
-          index: 'test-index',
+          name: 'source-name',
+        },
+      };
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.deep.equal(data.contentAiConfig);
+    });
+
+    it('accepts contentAiConfig with a legacy index alongside name', () => {
+      const data = {
+        contentAiConfig: {
+          name: 'source-name',
+          index: 'legacy-index',
+        },
+      };
+      const config = Config(data);
+      expect(config.getContentAiConfig()).to.deep.equal(data.contentAiConfig);
+    });
+
+    it('updates contentAiConfig name, preserving a legacy index', () => {
+      const config = Config({
+        contentAiConfig: {
+          name: 'old-name',
+          index: 'legacy-index',
+        },
+      });
+      config.updateContentAiConfig({ name: 'new-name' });
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'new-name',
+        index: 'legacy-index',
+      });
+    });
+
+    it('updates contentAiConfig name when no prior config exists', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ name: 'new-name' });
+      expect(config.getContentAiConfig()).to.deep.equal({ name: 'new-name' });
+    });
+
+    it('updates contentAiConfig index, preserving name', () => {
+      const config = Config({
+        contentAiConfig: {
+          name: 'source-name',
+          index: 'old-index',
+        },
+      });
+      config.updateContentAiConfig({ index: 'new-index' });
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'source-name',
+        index: 'new-index',
+      });
+    });
+
+    it('updates contentAiConfig name and index together', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ name: 'new-name', index: 'new-index' });
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'new-name',
+        index: 'new-index',
+      });
+    });
+
+    it('leaves contentAiConfig unchanged when called with no fields', () => {
+      const config = Config({
+        contentAiConfig: {
+          name: 'source-name',
+          index: 'legacy-index',
+        },
+      });
+      config.updateContentAiConfig();
+      expect(config.getContentAiConfig()).to.deep.equal({
+        name: 'source-name',
+        index: 'legacy-index',
+      });
+    });
+
+    it('is a true no-op when called with no fields and no prior config', () => {
+      const config = Config({});
+      config.updateContentAiConfig();
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('trims a name written through updateContentAiConfig', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ name: '  source-name  ' });
+      expect(config.getContentAiConfig()).to.deep.equal({ name: 'source-name' });
+    });
+
+    it('trims an index written through updateContentAiConfig', () => {
+      const config = Config({});
+      config.updateContentAiConfig({ index: '  legacy-index  ' });
+      expect(config.getContentAiConfig()).to.deep.equal({ index: 'legacy-index' });
+    });
+
+    it('rejects a blank index written through updateContentAiConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateContentAiConfig({ index: '   ' }),
+      ).to.throw(/Configuration validation error/);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('rejects a blank name written through updateContentAiConfig', () => {
+      const config = Config({});
+      let thrown;
+      try {
+        config.updateContentAiConfig({ name: '   ' });
+      } catch (e) {
+        thrown = e;
+      }
+      expect(thrown).to.be.an('error');
+      expect(thrown.message).to.match(/Configuration validation error/);
+      // Joi cause is preserved for programmatic callers, matching validateConfiguration.
+      expect(thrown.cause).to.exist;
+      expect(thrown.cause.isJoi).to.equal(true);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('rejects a non-string name written through updateContentAiConfig', () => {
+      const config = Config({});
+      expect(
+        () => config.updateContentAiConfig({ name: 123 }),
+      ).to.throw(/Configuration validation error/);
+      expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('accepts a legacy contentAiConfig that has index but no name', () => {
+      const data = {
+        contentAiConfig: {
+          index: 'legacy-index',
         },
       };
       const config = Config(data);
@@ -493,13 +621,30 @@ describe('Config Tests', () => {
     });
 
     it('accepts an empty contentAiConfig object', () => {
-      const data = {
-        // empty object
+      const validated = validateConfiguration({
         contentAiConfig: {},
-      };
-      const config = Config(data);
-      expect(config.getContentAiConfig()).to.be.an('object');
-      expect(config.getContentAiConfig()).to.deep.equal({});
+      });
+      expect(validated.contentAiConfig).to.deep.equal({});
+    });
+
+    it('rejects contentAiConfig with an unknown field', () => {
+      expect(
+        () => validateConfiguration({
+          contentAiConfig: {
+            somethingElse: 'value',
+          },
+        }),
+      ).to.throw(/Configuration validation error/);
+    });
+
+    it('rejects contentAiConfig with a blank name', () => {
+      expect(
+        () => validateConfiguration({
+          contentAiConfig: {
+            name: '   ',
+          },
+        }),
+      ).to.throw(/Configuration validation error/);
     });
 
     it('has empty contentAiConfig in default config', () => {
@@ -510,6 +655,24 @@ describe('Config Tests', () => {
     it('should return undefined for contentAiConfig if not provided', () => {
       const config = Config({});
       expect(config.getContentAiConfig()).to.be.undefined;
+    });
+
+    it('preserves unrelated config when updating contentAiConfig', () => {
+      const config = Config({
+        slack: {
+          workspace: 'external',
+          channel: 'some-channel',
+        },
+        contentAiConfig: {
+          name: 'old-name',
+        },
+      });
+      config.updateContentAiConfig({ name: 'new-name' });
+      expect(config.getContentAiConfig()).to.deep.equal({ name: 'new-name' });
+      expect(config.getSlackConfig()).to.deep.equal({
+        workspace: 'external',
+        channel: 'some-channel',
+      });
     });
 
     it('creates a Config with cdnLogsConfig property', () => {
@@ -923,10 +1086,15 @@ describe('Config Tests', () => {
     it('includes contentAiConfig in toDynamoItem conversion', () => {
       const data = Config({
         contentAiConfig: {
-          index: 'test-index',
+          name: 'source-name',
+          index: 'legacy-index',
         },
       });
       const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.contentAiConfig).to.deep.equal({
+        name: 'source-name',
+        index: 'legacy-index',
+      });
       expect(dynamoItem.contentAiConfig).to.deep.equal(data.getContentAiConfig());
     });
 

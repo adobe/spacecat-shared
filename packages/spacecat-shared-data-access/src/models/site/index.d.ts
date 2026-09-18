@@ -276,6 +276,10 @@ export interface SiteConfig {
       forcedOverride?: boolean;
       history?: Array<{ profile?: string; startTime?: number }>;
     };
+    contentAiConfig?: {
+      name?: string;
+      index?: string;
+    };
   };
   extractWellKnownTags(tags: Array<string>): Partial<Record<WellKnownLmmoTag, string>>;
   getSlackConfig(): { workspace?: string; channel?: string; invitedUserCount?: number };
@@ -329,6 +333,8 @@ export interface SiteConfig {
   removeLlmoTag(tag: string): void;
   getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
   updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean }, options?: { maxHistory?: number }): void;
+  getContentAiConfig(): { name?: string; index?: string } | undefined;
+  updateContentAiConfig(config?: { name?: string; index?: string }): void;
   getAuditTargetURLs(): AuditTargetEntryWithSource[];
   getAuditTargetURLsBySource(source: AuditTargetSource): AuditTargetEntry[];
   updateAuditTargetURLs(source: AuditTargetSource, urls: AuditTargetEntry[]): void;

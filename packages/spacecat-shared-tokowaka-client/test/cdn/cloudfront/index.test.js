@@ -523,7 +523,7 @@ describe('edge-optimize support', () => {
           DistributionConfig: {
             DefaultCacheBehavior: {
               FunctionAssociations: {
-                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:edgeoptimize-routing-adobe-E1' }],
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E1' }],
               },
             },
           },
@@ -2042,13 +2042,13 @@ describe('edge-optimize support', () => {
           DefaultCacheBehavior: {
             FunctionAssociations: {
               Quantity: 1,
-              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:edgeoptimize-routing-adobe-E2EXAMPLE' }],
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
             },
             LambdaFunctionAssociations: {
               Quantity: 2,
               Items: [
-                { EventType: 'origin-request', LambdaFunctionARN: 'arn:edgeoptimize-origin:5' },
-                { EventType: 'origin-response', LambdaFunctionARN: 'arn:edgeoptimize-origin:5' },
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
               ],
             },
           },
@@ -2076,15 +2076,15 @@ describe('edge-optimize support', () => {
               Quantity: 2,
               Items: [
                 { EventType: 'viewer-response', FunctionARN: 'arn:cust-fn' },
-                { EventType: 'viewer-request', FunctionARN: 'arn:edgeoptimize-routing-adobe-E2EXAMPLE' },
+                { EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' },
               ],
             },
             LambdaFunctionAssociations: {
               Quantity: 3,
               Items: [
                 { EventType: 'viewer-response', LambdaFunctionARN: 'arn:cust-lambda' },
-                { EventType: 'origin-request', LambdaFunctionARN: 'arn:edgeoptimize-origin:5' },
-                { EventType: 'origin-response', LambdaFunctionARN: 'arn:edgeoptimize-origin:5' },
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
               ],
             },
           },
@@ -2123,6 +2123,31 @@ describe('edge-optimize support', () => {
       expect(cfSendStub.calledOnce).to.equal(true); // no UpdateDistribution — nothing was EO's
     });
 
+    it('does not strip a customer look-alike ARN (substring match, but not this distribution\'s exact -adobe- name)', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              // Loose "edgeoptimize-routing" text, but not this dist's exact -adobe-E2EXAMPLE name.
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/my-edgeoptimize-routing-test' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 1,
+              // Right prefix but a DIFFERENT distribution id (EOTHER, not E2EXAMPLE).
+              Items: [{ EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-EOTHER:1' }],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      // no UpdateDistribution — nothing matched exactly
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
     it('does not choke on an association with no ARN field (exercises the `|| \'\'` fallback)', async () => {
       cfSendStub.onFirstCall().resolves({
         DistributionConfig: {
@@ -2148,13 +2173,13 @@ describe('edge-optimize support', () => {
               PathPattern: '/api/*',
               FunctionAssociations: {
                 Quantity: 1,
-                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:edgeoptimize-routing-adobe-E2EXAMPLE' }],
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
               },
               LambdaFunctionAssociations: {
                 Quantity: 2,
                 Items: [
-                  { EventType: 'origin-request', LambdaFunctionARN: 'arn:edgeoptimize-origin:3' },
-                  { EventType: 'origin-response', LambdaFunctionARN: 'arn:edgeoptimize-origin:3' },
+                  { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
+                  { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
                 ],
               },
             }],

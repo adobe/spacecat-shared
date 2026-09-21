@@ -1194,16 +1194,23 @@ export async function removeEdgeOptimizeRouting(
     ),
   ];
 
+  // Match the EXACT per-distribution resource names the automation created (not a loose
+  // `edgeoptimize-*` substring, which could false-positive on a customer-owned function/Lambda
+  // whose ARN merely contains that text). A CloudFront function ARN ends `.../function/<name>`;
+  // a Lambda@Edge association ARN is versioned `.../function:<name>:<version>`.
+  const fnName = eoRoutingFunctionName(distributionId);
+  const lambdaName = eoLambdaFunctionName(distributionId);
+
   const changedPathPatterns = [];
   for (let i = 0; i < behaviors.length; i += 1) {
     const { pathPattern, behavior } = behaviors[i];
     const existingFns = behavior.FunctionAssociations?.Items || [];
     const existingLambdas = behavior.LambdaFunctionAssociations?.Items || [];
     const remainingFns = existingFns.filter(
-      (a) => !(a.EventType === 'viewer-request' && /edgeoptimize-routing/i.test(a.FunctionARN || '')),
+      (a) => !(a.EventType === 'viewer-request' && (a.FunctionARN || '').includes(`:function/${fnName}`)),
     );
     const remainingLambdas = existingLambdas.filter(
-      (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && /edgeoptimize-origin/i.test(a.LambdaFunctionARN || '')),
+      (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && (a.LambdaFunctionARN || '').includes(`:function:${lambdaName}:`)),
     );
     const fnsChanged = remainingFns.length !== existingFns.length;
     const lambdasChanged = remainingLambdas.length !== existingLambdas.length;

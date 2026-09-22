@@ -347,7 +347,7 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Builds authenticated git arguments for a remote command (clone, push, or pull).
+   * Builds authenticated git arguments for a remote command (clone, push, fetch, or pull).
    *
    * Both repo types use http.extraheader for authentication:
    * - Standard repos: Basic auth header via extraheader scoped to the org prefix
@@ -355,7 +355,7 @@ export default class CloudManagerClient {
    *   belonging to that customer org without granting access to other orgs on the same host
    * - BYOG repos: Bearer token + API key + IMS org ID via extraheader on the CM Repo URL
    *
-   * @param {string} command - The git command ('clone', 'push', or 'pull')
+   * @param {string} command - The git command ('clone', 'push', 'fetch', or 'pull')
    * @param {string} programId - CM Program ID
    * @param {string} repositoryId - CM Repository ID
    * @param {Object} config - Repository auth configuration
@@ -931,21 +931,30 @@ export default class CloudManagerClient {
   }
 
   /**
-   * Pulls the latest changes from the remote CM repository into an existing clone.
+   * Syncs an existing clone to the current tip of the remote CM repository.
+   *
+   * Runs `git fetch <ref>` followed by `git reset --hard FETCH_HEAD` rather
+   * than `git pull`. `git pull` merges, and on git 2.27+ (no reconcile strategy
+   * configured) it aborts with "Need to specify how to reconcile divergent
+   * branches" the moment the local clone diverges from a force-pushed remote —
+   * the failure mode of an imported ZIP snapshot after the customer rewrites
+   * the ref. fetch + hard-reset instead makes the local working copy exactly
+   * the remote ref, discarding any divergent local-only commits, so a
+   * force-push is a non-event.
    *
    * For BYOG repos: uses Bearer token + API key + IMS org ID via extraheader.
    * For standard repos: uses Basic auth via extraheader.
    *
-   * If a ref is provided, the ref is checked out before pulling so that
-   * the pull updates the correct branch.
+   * If a ref is provided, the ref is checked out before syncing so the reset
+   * moves the correct branch to the remote tip.
    *
-   * Submodule handling: parent pull never carries `--recurse-submodules`
-   * so a submodule failure can't fail the parent pull. Submodules are
+   * Submodule handling: the parent fetch never carries `--recurse-submodules`
+   * so a submodule failure can't fail the parent sync. Submodules are
    * populated in a separate pass whose errors are caught and logged.
-   * - STANDARD: post-pull `submodule sync --recursive` + `update --init
+   * - STANDARD: post-sync `submodule sync --recursive` + `update --init
    *   --recursive`. See `#initStandardSubmodules`.
-   * - BYOG: post-pull rewrite driven by `submodules[].resolvedUrl`. Also
-   *   picks up any new submodules the pull may have introduced, since
+   * - BYOG: post-sync rewrite driven by `submodules[].resolvedUrl`. Also
+   *   picks up any new submodules the sync may have introduced, since
    *   the new entries will already be present in the array (it's
    *   per-program, not per-clone) provided onboarding has refreshed it.
    *
@@ -972,19 +981,31 @@ export default class CloudManagerClient {
       this.log.info(`Checked out ref '${ref}' before pull`);
     }
 
-    const pullArgs = await this.#buildAuthGitArgs('pull', programId, repositoryId, { imsOrgId, repoType, repoUrl });
-    // Explicitly pass the ref as the last argument so `git pull` fetches and
-    // merges that branch. Without it, `git pull <url>` merges the remote's
-    // default branch (its HEAD) into the checked-out branch, which can
-    // conflict with — or silently diverge from — the branch we actually want.
+    // Sync deterministically to the authoritative remote: fetch the ref, then
+    // hard-reset the working copy to FETCH_HEAD. A plain `git pull` (git 2.27+
+    // with no merge/rebase/ff-only strategy configured) aborts with
+    // "fatal: Need to specify how to reconcile divergent branches" whenever the
+    // local clone has diverged from a force-pushed / rewritten remote branch —
+    // which is exactly what an imported ZIP snapshot becomes once the customer
+    // force-pushes the ref. fetch + hard-reset makes the stale/divergent
+    // snapshot irrelevant: the local copy becomes exactly the current remote
+    // ref before we branch and apply.
+    const fetchArgs = await this.#buildAuthGitArgs('fetch', programId, repositoryId, { imsOrgId, repoType, repoUrl });
+    // Explicitly pass the ref so git records that branch's remote tip in
+    // FETCH_HEAD. Without it, `git fetch <url>` records the remote's default
+    // branch (its HEAD) instead of the branch we actually want to sync.
     if (hasText(ref)) {
-      pullArgs.push(ref);
+      fetchArgs.push(ref);
     }
-    // Always pull the parent only — never `--recurse-submodules` — so a
-    // submodule failure can't take down the parent pull. Submodules are
+    // Always fetch the parent only — never `--recurse-submodules` — so a
+    // submodule failure can't take down the parent sync. Submodules are
     // populated below in a path whose errors are caught and logged.
-    this.#execGit(pullArgs, { cwd: clonePath });
-    this.log.info('Changes pulled successfully');
+    this.#execGit(fetchArgs, { cwd: clonePath });
+    // Hard-reset the checked-out branch to the just-fetched remote tip,
+    // discarding any local-only commits the stale snapshot carried. This is
+    // what makes a force-pushed / divergent remote a non-event.
+    this.#execGit(['reset', '--hard', 'FETCH_HEAD'], { cwd: clonePath });
+    this.log.info('Changes synced successfully');
     this.#logTmpDiskUsage('pull');
 
     // Re-populate submodules after the pull in case the pulled commits

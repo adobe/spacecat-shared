@@ -155,7 +155,7 @@ These parameters can be set through environment variables (via `AzureEmbeddingCl
 ### Usage Example
 
 ```javascript
-import AzureEmbeddingClient from '@adobe/spacecat-shared-gpt-client';
+import { AzureEmbeddingClient } from '@adobe/spacecat-shared-gpt-client';
 
 // Assuming AZURE_EMBEDDING_DEPLOYMENT (+ AZURE_OPENAI_* or AZURE_EMBEDDING_*) are set on context.env
 const client = AzureEmbeddingClient.createFrom(context);

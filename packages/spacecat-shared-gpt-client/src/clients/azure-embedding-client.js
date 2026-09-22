@@ -28,7 +28,10 @@ function validateEmbeddingResponse(response, expectedCount) {
     && Array.isArray(response?.data)
     && response.data.length === expectedCount
     && response.data.every(
-      (item) => isObject(item) && Array.isArray(item.embedding) && item.embedding.length > 0,
+      (item) => isObject(item)
+        && Number.isInteger(item.index)
+        && Array.isArray(item.embedding)
+        && item.embedding.length > 0,
     );
 }
 
@@ -160,7 +163,7 @@ export default class AzureEmbeddingClient {
 
     const maxRetries = Math.max(0, this.#config.maxRetries ?? 3);
     const baseDelayMs = this.#config.retryBaseDelayMs ?? 500;
-    const maxDelayMs = this.#config.retryMaxDelayMs ?? DEFAULT_MAX_RETRY_DELAY_MS;
+    const maxDelayMs = Math.max(1, this.#config.retryMaxDelayMs ?? DEFAULT_MAX_RETRY_DELAY_MS);
 
     for (let attempt = 0; ; attempt += 1) {
       // eslint-disable-next-line no-await-in-loop
@@ -170,8 +173,9 @@ export default class AzureEmbeddingClient {
         return response.json();
       }
 
+      // Cap the body: Azure error payloads can carry deployment name / request-id.
       // eslint-disable-next-line no-await-in-loop
-      const errorBody = await response.text();
+      const errorBody = (await response.text()).slice(0, 512);
       if (isRetryableStatus(response.status) && attempt < maxRetries) {
         const delay = retryDelayMs(response, attempt, baseDelayMs, maxDelayMs);
         this.log.info(`[Azure OpenAI Embedding] status ${response.status}, retry ${attempt + 1}/${maxRetries} in ${delay}ms`);

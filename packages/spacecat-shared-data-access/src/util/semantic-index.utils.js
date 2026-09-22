@@ -148,27 +148,37 @@ function toRows({
   const seen = new Set();
   const rows = [];
   for (const src of list) {
-    const { text, vector, sourceId } = src ?? {};
-    if (typeof text !== 'string' || text.trim().length === 0) {
+    // Text hygiene (drop-don't-throw): same rule as the read side, incl. the 2048-char bound.
+    const cleaned = cleanTopicText(src?.text);
+    if (cleaned === null) {
       // eslint-disable-next-line no-continue
       continue;
     }
-    const normalized = normalizeText(text);
-    const sourceHash = hashText(normalized);
+    const { text, key } = cleaned;
+    const sourceHash = hashText(key);
     if (seen.has(sourceHash)) {
       // eslint-disable-next-line no-continue
       continue;
     }
     seen.add(sourceHash);
+    // Contract validation (this is the authoritative write side, so be at least as strict as the
+    // query cache): a bad model/dims or a vector whose length disagrees with dims is a hard error,
+    // not a silently-persisted row that surfaces later as wrong neighbours or an opaque DB failure.
+    assertId(src.model, 'model');
+    assertDims(src.dims);
+    const embedding = serializeVector(src.vector);
+    if (src.vector.length !== src.dims) {
+      throw new ValidationError(`vector length ${src.vector.length} does not match dims ${src.dims}`);
+    }
     rows.push({
       site_id: siteId,
       entity_id: entityId,
       entity_type: entityType,
       source_type: sourceType,
-      source_id: sourceId ?? null,
+      source_id: src.sourceId ?? null,
       source_hash: sourceHash,
       source_text: text,
-      embedding: serializeVector(vector),
+      embedding,
       model: src.model,
       dims: src.dims,
     });
@@ -334,28 +344,39 @@ export async function copyEntityVectors(postgrestClient, {
  * cannot be expressed through the PostgREST query builder). The RPC dedupes to distinct
  * opportunities keeping the best cosine similarity, applies the score floor, and limits to `k`.
  *
+ * The search is scoped to one embedding **generation** via `model` + `dims`, so a coordinated
+ * re-embed to a new model (same dims) never mixes generations in the ANN ranking — search only ever
+ * compares vectors produced by the same model. Callers pass the model/dims the query was embedded
+ * with (the same values stored on the index rows).
+ *
  * @param {object} postgrestClient
  * @param {object} params
  * @param {string} params.siteId
  * @param {string} params.sourceType - `topic` | `claim` | …
  * @param {number[]} params.vector - the query embedding (same model/dims as the index)
+ * @param {string} params.model - the embedding model the index + query share (generation scope)
+ * @param {number} params.dims - the embedding dimension (generation scope)
  * @param {number} [params.k=10] - max opportunities to return
  * @param {number} [params.minScore=0] - cosine-similarity floor; matches below are dropped
  * @returns {Promise<Array<{entityId: string, entityType: string, score: number}>>}
  *   ranked best-first
  */
 export async function lookupOpportunitiesByVector(postgrestClient, {
-  siteId, sourceType, vector, k = 10, minScore = 0,
+  siteId, sourceType, vector, model, dims, k = 10, minScore = 0,
 } = {}) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(sourceType, 'sourceType');
+  assertId(model, 'model');
+  assertDims(dims);
   const queryVector = serializeVector(vector);
 
   const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
     p_site_id: siteId,
     p_source_type: sourceType,
     p_query_embedding: queryVector,
+    p_model: model,
+    p_dims: dims,
     p_limit: k,
     p_min_score: minScore,
   });
@@ -421,12 +442,16 @@ export async function upsertQueryEmbedding(postgrestClient, {
     throw new ValidationError('text is required');
   }
   const textHash = hashText(normalized);
+  const embedding = serializeVector(vector);
+  if (vector.length !== dims) {
+    throw new ValidationError(`vector length ${vector.length} does not match dims ${dims}`);
+  }
   const row = {
     text_hash: textHash,
     model,
     dims,
     normalized_text: normalized,
-    embedding: serializeVector(vector),
+    embedding,
     last_access_at: new Date().toISOString(),
   };
   const { error } = await postgrestClient

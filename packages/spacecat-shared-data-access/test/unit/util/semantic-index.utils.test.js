@@ -81,7 +81,8 @@ function makeClient(config = {}) {
         state.inFilter = { column: col, values };
         return builder;
       },
-      order() {
+      order(col, opts) {
+        state.order = { col, opts };
         return builder;
       },
       range(from, to) {
@@ -105,7 +106,12 @@ function makeClient(config = {}) {
           result = config.updateResult ?? { error: null };
         } else {
           calls.select.push({
-            table, eqs: state.eqs, cols: state.cols, limited: state.limited,
+            table,
+            eqs: state.eqs,
+            cols: state.cols,
+            limited: state.limited,
+            order: state.order,
+            range: state.range,
           });
           if (state.limited) {
             result = config.getResult ?? { data: [], error: null };
@@ -226,6 +232,15 @@ describe('semantic-index.utils', () => {
       });
     });
 
+    it('clears the slice when sources is omitted entirely (undefined)', async () => {
+      const client = makeClient();
+      const count = await syncOpportunitySemantic(client, {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
+      });
+      expect(count).to.equal(0);
+      expect(client.calls.delete).to.have.length(1);
+    });
+
     it('throws when a non-empty sources input yields no valid rows', async () => {
       const client = makeClient();
       await expect(syncOpportunitySemantic(client, {
@@ -251,10 +266,49 @@ describe('semantic-index.utils', () => {
       expect(client.calls.upsert).to.have.length(1);
       expect(client.calls.upsert[0].options).to.deep.equal({ onConflict: 'entity_id,source_type,source_hash' });
       const row = client.calls.upsert[0].rows[0];
-      expect(row).to.include({ site_id: SITE_ID, entity_id: ENTITY_ID, source_type: SOURCE_TYPE });
+      // Full row shape — cross-repo write contract (model/dims/original text/hash/null id).
+      expect(row).to.include({
+        site_id: SITE_ID,
+        entity_id: ENTITY_ID,
+        source_type: SOURCE_TYPE,
+        entity_type: ENTITY_TYPE,
+        model: 'azure/text-embedding-3-small',
+        dims: 2,
+        source_text: 'Running Shoes', // original case, not normalized
+        source_id: null,
+      });
       expect(row.embedding).to.equal('[0.1,0.2]');
+      expect(row.source_hash).to.equal(hashText(normalizeText('Running Shoes')));
       expect(client.calls.delete).to.have.length(1);
       expect(client.calls.delete[0].inFilter.values).to.deep.equal(['stale-hash']);
+    });
+
+    it('passes an explicit sourceId through and validates model/dims/vector length', async () => {
+      const client = makeClient({ selectPages: [{ data: [], error: null }] });
+      await syncOpportunitySemantic(client, {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [src('Running Shoes', [0.1, 0.2], { sourceId: 'sid-1' })],
+      });
+      expect(client.calls.upsert[0].rows[0].source_id).to.equal('sid-1');
+
+      // model/dims/vector-length are hard contract errors on the authoritative write side.
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [{ text: 'x', vector: [0.1, 0.2], dims: 2 }], // missing model
+      })).to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [src('x', [0.1, 0.2], { dims: 1536 })], // vector length 2 != dims 1536
+      })).to.be.rejectedWith(ValidationError, 'does not match dims');
     });
 
     it('handles an empty read-back (nothing to prune)', async () => {
@@ -315,6 +369,57 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
       })).to.be.rejectedWith(DataAccessError, 'Failed to prune');
     });
+
+    it('paginates the stale-hash read-back across pages (>DEFAULT_PAGE_SIZE)', async () => {
+      const keptHash = hashText(normalizeText('kept'));
+      const page1 = Array.from({ length: 1000 }, (_, i) => ({ source_hash: `h${i}` }));
+      const client = makeClient({
+        selectPages: [
+          { data: page1, error: null },
+          { data: [{ source_hash: keptHash }], error: null },
+        ],
+      });
+      await syncOpportunitySemantic(client, {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('kept')],
+      });
+      // both page windows fetched, ordered by source_hash asc
+      expect(client.calls.select).to.have.length(2);
+      expect(client.calls.select[0].range).to.deep.equal([0, 999]);
+      expect(client.calls.select[1].range).to.deep.equal([1000, 1999]);
+      expect(client.calls.select[0].order).to.deep.equal({ col: 'source_hash', opts: { ascending: true } });
+      // stale set spans page 1 (1000 hashes) -> pruned; keptHash (page 2) is retained
+      const deleted = client.calls.delete.flatMap((d) => d.inFilter.values);
+      expect(deleted).to.have.length(1000);
+      expect(deleted).to.not.include(keptHash);
+    });
+
+    it('chunks upsert + delete beyond SEMANTIC_CHUNK_SIZE (and single chunk at exactly the size)', async () => {
+      // 21 sources -> 2 upsert chunks (20 + 1); read-back has 21 stale -> 2 delete chunks.
+      const sources21 = Array.from({ length: 21 }, (_, i) => src(`topic ${i}`));
+      const stale21 = Array.from({ length: 21 }, (_, i) => ({ source_hash: `stale-${i}` }));
+      const client = makeClient({ selectPages: [{ data: stale21, error: null }] });
+      await syncOpportunitySemantic(client, {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: sources21,
+      });
+      expect(client.calls.upsert).to.have.length(2);
+      expect(client.calls.delete).to.have.length(2);
+
+      // exactly 20 sources -> a single upsert chunk (boundary).
+      const sources20 = Array.from({ length: 20 }, (_, i) => src(`topic ${i}`));
+      const client20 = makeClient({ selectPages: [{ data: [], error: null }] });
+      await syncOpportunitySemantic(client20, {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: sources20,
+      });
+      expect(client20.calls.upsert).to.have.length(1);
+    });
   });
 
   describe('copyEntityVectors', () => {
@@ -358,37 +463,61 @@ describe('semantic-index.utils', () => {
   });
 
   describe('lookupOpportunitiesByVector', () => {
-    it('validates args + vector', async () => {
+    const MODEL = 'azure/text-embedding-3-small';
+
+    it('validates args + vector + model/dims (generation scope)', async () => {
       await expect(lookupOpportunitiesByVector(makeClient(), {
-        sourceType: SOURCE_TYPE, vector: [0.1],
+        sourceType: SOURCE_TYPE, vector: [0.1], model: MODEL, dims: 2,
       }))
         .to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(lookupOpportunitiesByVector(makeClient(), { siteId: SITE_ID, vector: [0.1] }))
+      await expect(lookupOpportunitiesByVector(makeClient(), {
+        siteId: SITE_ID, vector: [0.1], model: MODEL, dims: 2,
+      }))
         .to.be.rejectedWith(ValidationError, 'sourceType is required');
       await expect(lookupOpportunitiesByVector(makeClient(), {
-        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [],
+        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1], dims: 2,
+      }))
+        .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(lookupOpportunitiesByVector(makeClient(), {
+        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1], model: MODEL,
+      }))
+        .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
+      await expect(lookupOpportunitiesByVector(makeClient(), {
+        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [], model: MODEL, dims: 2,
       }))
         .to.be.rejectedWith(ValidationError, 'vector must be');
     });
 
-    it('calls the ANN RPC and maps rows, using defaults', async () => {
+    it('calls the ANN RPC scoped to model/dims and maps rows, using defaults', async () => {
       const client = makeClient({
         rpcResult: { data: [{ entity_id: 'o1', entity_type: ENTITY_TYPE, score: 0.87 }], error: null },
       });
       const out = await lookupOpportunitiesByVector(client, {
-        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1, 0.2],
+        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1, 0.2], model: MODEL, dims: 2,
       });
       expect(out).to.deep.equal([{ entityId: 'o1', entityType: ENTITY_TYPE, score: 0.87 }]);
       expect(client.calls.rpc[0].name).to.equal(SEMANTIC_SEARCH_RPC);
       expect(client.calls.rpc[0].params).to.deep.equal({
-        p_site_id: SITE_ID, p_source_type: SOURCE_TYPE, p_query_embedding: '[0.1,0.2]', p_limit: 10, p_min_score: 0,
+        p_site_id: SITE_ID,
+        p_source_type: SOURCE_TYPE,
+        p_query_embedding: '[0.1,0.2]',
+        p_model: MODEL,
+        p_dims: 2,
+        p_limit: 10,
+        p_min_score: 0,
       });
     });
 
     it('passes k/minScore and tolerates null data', async () => {
       const client = makeClient({ rpcResult: { data: null, error: null } });
       const out = await lookupOpportunitiesByVector(client, {
-        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1, 0.2], k: 5, minScore: 0.3,
+        siteId: SITE_ID,
+        sourceType: SOURCE_TYPE,
+        vector: [0.1, 0.2],
+        model: MODEL,
+        dims: 2,
+        k: 5,
+        minScore: 0.3,
       });
       expect(out).to.deep.equal([]);
       expect(client.calls.rpc[0].params).to.include({ p_limit: 5, p_min_score: 0.3 });
@@ -397,7 +526,7 @@ describe('semantic-index.utils', () => {
     it('wraps an RPC error', async () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
       await expect(lookupOpportunitiesByVector(client, {
-        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1],
+        siteId: SITE_ID, sourceType: SOURCE_TYPE, vector: [0.1], model: MODEL, dims: 2,
       })).to.be.rejectedWith(DataAccessError, 'Failed semantic search');
     });
   });
@@ -444,9 +573,13 @@ describe('semantic-index.utils', () => {
       await expect(upsertQueryEmbedding(makeClient(), { text: 'x', model: MODEL, vector: [0.1] }))
         .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(upsertQueryEmbedding(makeClient(), {
-        text: ' ', model: MODEL, dims: 2, vector: [0.1],
+        text: ' ', model: MODEL, dims: 2, vector: [0.1, 0.2],
       }))
         .to.be.rejectedWith(ValidationError, 'text is required');
+      await expect(upsertQueryEmbedding(makeClient(), {
+        text: 'x', model: MODEL, dims: 2, vector: [0.1], // length 1 != dims 2
+      }))
+        .to.be.rejectedWith(ValidationError, 'does not match dims');
       const client = makeClient();
       const h = await upsertQueryEmbedding(client, {
         text: 'Running Shoes', model: MODEL, dims: 2, vector: [0.1, 0.2],
@@ -462,7 +595,7 @@ describe('semantic-index.utils', () => {
     it('upsertQueryEmbedding wraps an error', async () => {
       const client = makeClient({ upsertResult: { error: { message: 'boom' } } });
       await expect(upsertQueryEmbedding(client, {
-        text: 'x', model: MODEL, dims: 2, vector: [0.1],
+        text: 'x', model: MODEL, dims: 2, vector: [0.1, 0.2],
       })).to.be.rejectedWith(DataAccessError, 'Failed to upsert semantic_query_embedding');
     });
 

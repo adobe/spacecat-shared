@@ -50,7 +50,7 @@ Following ADR-0001's test (*true for every consumer → shared; specific to one 
 ## Consequences
 
 - `gpt-client` gains an embeddings surface and its own `AZURE_EMBEDDING_*` config (documented in its README); the intended cost, not a drawback.
-- The shared embedding model is a cross-repo contract: both the write and read paths must point at the **same deployment**. A model change is a coordinated re-embed of the opportunity index; the query cache self-invalidates via its `model+dims` key.
+- The shared embedding model is a cross-repo contract: both the write and read paths must point at the **same deployment**. A model change is a coordinated re-embed of the opportunity index; the query cache self-invalidates via its `model+dims` key. ANN search is **scoped to one generation** — `lookupOpportunitiesByVector` (and the `rpc_opportunity_semantic_search` RPC) filter on `model`+`dims`, so an in-progress re-embed to a new model (same dims) never mixes generations in the ranking; not-yet-re-embedded opportunities simply don't match until the write path refreshes them (forward-only, self-healing).
 - Consumers stay thin: they inject the `EmbeddingProvider`, own their cache/status mapping, and call the `data-access` helpers — no matching logic is reimplemented per consumer.
 
 ## Alternatives considered

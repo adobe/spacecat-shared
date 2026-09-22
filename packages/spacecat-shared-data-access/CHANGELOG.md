@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.30.0...@adobe/spacecat-shared-data-access-v4.31.0) (2026-09-22)
+
+### Features
+
+* cancel ongoing exp ([#1902](https://github.com/adobe/spacecat-shared/issues/1902)) ([727998a](https://github.com/adobe/spacecat-shared/commit/727998a2a1eb8ef2cd81ad4f47e565e5380e9b6e))
+
 ## [@adobe/spacecat-shared-data-access-v4.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.1...@adobe/spacecat-shared-data-access-v4.30.0) (2026-09-17)
 
 ### Features

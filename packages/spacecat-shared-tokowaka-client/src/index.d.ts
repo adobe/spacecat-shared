@@ -133,6 +133,8 @@ export interface FastlyKVEntry {
   suggestionId: string;
   url: string;
   status: string;
+  lastUpdated?: number;
+  applied?: boolean;
 }
 
 export class FastlyKVClient {

@@ -68,6 +68,17 @@ function assertDims(value) {
   }
 }
 
+/** Upper bound on `model` (stored on every index row + used as a generation filter). */
+export const MAX_MODEL_LENGTH = 128;
+
+/** `model` is part of the cache key / generation filter and is stored on every row; bound it. */
+function assertModel(value) {
+  assertId(value, 'model');
+  if (value.length > MAX_MODEL_LENGTH) {
+    throw new ValidationError(`model must be at most ${MAX_MODEL_LENGTH} characters`);
+  }
+}
+
 /** Only an empty/omitted `sources` clears; a non-empty input reduced to nothing throws. */
 function assertClearable(sources, entityId, sourceType) {
   const explicitClear = sources === undefined || sources === null
@@ -164,7 +175,7 @@ function toRows({
     // Contract validation (this is the authoritative write side, so be at least as strict as the
     // query cache): a bad model/dims or a vector whose length disagrees with dims is a hard error,
     // not a silently-persisted row that surfaces later as wrong neighbours or an opaque DB failure.
-    assertId(src.model, 'model');
+    assertModel(src.model);
     assertDims(src.dims);
     const embedding = serializeVector(src.vector);
     if (src.vector.length !== src.dims) {
@@ -367,7 +378,7 @@ export async function lookupOpportunitiesByVector(postgrestClient, {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(sourceType, 'sourceType');
-  assertId(model, 'model');
+  assertModel(model);
   assertDims(dims);
   const queryVector = serializeVector(vector);
 
@@ -397,7 +408,7 @@ export async function lookupOpportunitiesByVector(postgrestClient, {
  */
 export async function getQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
   assertClient(postgrestClient);
-  assertId(model, 'model');
+  assertModel(model);
   assertDims(dims);
   const normalized = normalizeText(text);
   if (normalized === '') {
@@ -435,7 +446,7 @@ export async function upsertQueryEmbedding(postgrestClient, {
   text, model, dims, vector,
 } = {}) {
   assertClient(postgrestClient);
-  assertId(model, 'model');
+  assertModel(model);
   assertDims(dims);
   const normalized = normalizeText(text);
   if (normalized === '') {
@@ -473,7 +484,7 @@ export async function touchQueryEmbedding(postgrestClient, {
   text, model, dims, textHash,
 } = {}) {
   assertClient(postgrestClient);
-  assertId(model, 'model');
+  assertModel(model);
   assertDims(dims);
   let hash = textHash;
   if (typeof hash !== 'string' || hash.length === 0) {

@@ -309,6 +309,13 @@ describe('semantic-index.utils', () => {
         sourceType: SOURCE_TYPE,
         sources: [src('x', [0.1, 0.2], { dims: 1536 })], // vector length 2 != dims 1536
       })).to.be.rejectedWith(ValidationError, 'does not match dims');
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [src('x', [0.1, 0.2], { model: 'm'.repeat(129) })], // model over the length cap
+      })).to.be.rejectedWith(ValidationError, 'model must be at most 128 characters');
     });
 
     it('handles an empty read-back (nothing to prune)', async () => {
@@ -390,6 +397,28 @@ describe('semantic-index.utils', () => {
       // stale set spans page 1 (1000 hashes) -> pruned; keptHash (page 2) is retained
       const deleted = client.calls.delete.flatMap((d) => d.inFilter.values);
       expect(deleted).to.have.length(1000);
+      expect(deleted).to.not.include(keptHash);
+    });
+
+    it('stops paginating when an exactly-full page is followed by an empty page (boundary)', async () => {
+      // page 1 returns exactly DEFAULT_PAGE_SIZE (keepGoing stays true) -> a second fetch that
+      // returns empty ends the loop via the empty-page branch, not the < PAGE_SIZE branch.
+      const keptHash = hashText(normalizeText('kept'));
+      const page1 = Array.from({ length: 1000 }, (_, i) => (i === 0 ? { source_hash: keptHash } : { source_hash: `h${i}` }));
+      const client = makeClient({
+        selectPages: [
+          { data: page1, error: null },
+          { data: [], error: null },
+        ],
+      });
+      await syncOpportunitySemantic(client, {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('kept')],
+      });
+      expect(client.calls.select).to.have.length(2);
+      expect(client.calls.select[1].range).to.deep.equal([1000, 1999]);
+      // 999 stale (page 1 minus keptHash) pruned; keptHash retained
+      const deleted = client.calls.delete.flatMap((d) => d.inFilter.values);
+      expect(deleted).to.have.length(999);
       expect(deleted).to.not.include(keptHash);
     });
 

@@ -27,7 +27,7 @@ Two placement questions had to be settled so future consumers don't re-litigate 
 
 ### 2. Consumers depend on the `EmbeddingProvider` interface, not the concrete client
 
-The client implements a minimal `EmbeddingProvider` typedef (`createEmbeddings(inputs, options?) => number[][]`). Consumers (and the api-service engine) type against the interface, so the provider/model can be swapped later — a coordinated re-embed, no code-shape change. A future extraction into a dedicated package stays non-breaking behind this seam.
+The client implements a minimal `EmbeddingProvider` typedef (`createEmbeddings(inputs, options?) => number[][]`). Consumers (and the api-service engine) type against the interface, so the provider/model can be swapped later — an online, forward-only re-embed (see Consequences), no code-shape change. A future extraction into a dedicated package stays non-breaking behind this seam.
 
 ### 3. Ownership boundary — the shared client owns transport
 
@@ -50,7 +50,8 @@ Following ADR-0001's test (*true for every consumer → shared; specific to one 
 ## Consequences
 
 - `gpt-client` gains an embeddings surface and its own `AZURE_EMBEDDING_*` config (documented in its README); the intended cost, not a drawback.
-- The shared embedding model is a cross-repo contract: both the write and read paths must point at the **same deployment**. A model change is a coordinated re-embed of the opportunity index; the query cache self-invalidates via its `model+dims` key. ANN search is **scoped to one generation** — `lookupOpportunitiesByVector` (and the `rpc_opportunity_semantic_search` RPC) filter on `model`+`dims`, so an in-progress re-embed to a new model (same dims) never mixes generations in the ranking; not-yet-re-embedded opportunities simply don't match until the write path refreshes them (forward-only, self-healing).
+- The shared embedding model is a cross-repo contract: both the write and read paths must point at the **same deployment**. ANN search is **scoped to one generation** — `lookupOpportunitiesByVector` (and the `rpc_opportunity_semantic_search` RPC) filter on `model`+`dims`, and the query cache is keyed on `model+dims`. This makes a **same-dims model change an online, forward-only re-embed** (chosen over an atomic swap — see Alternatives): the read path queries the new generation immediately while the write path back-populates it opportunity-by-opportunity on the normal refresh cadence. **Accepted cost:** during the migration window, opportunities not yet re-embedded don't match new-generation queries (reduced recall), self-healing as the backfill completes. A **dimension change** is out of this online path — it needs a new `vector(N)` column and an atomic swap, not a forward-only re-embed.
+- **Deploy ordering:** `lookupOpportunitiesByVector` always sends `p_model`/`p_dims`, so the `rpc_opportunity_semantic_search` RPC that accepts them must be deployed **before** any consumer upgrades to this library version — otherwise PostgREST can't resolve the function (`PGRST202`). In the Lookup Service rollout this is data-service (step 1) before the consumers (steps 3–4).
 - Consumers stay thin: they inject the `EmbeddingProvider`, own their cache/status mapping, and call the `data-access` helpers — no matching logic is reimplemented per consumer.
 
 ## Alternatives considered
@@ -58,3 +59,4 @@ Following ADR-0001's test (*true for every consumer → shared; specific to one 
 - **A new `spacecat-shared-embedding-client` package.** Rejected for now: same vendor/auth as `gpt-client`; deferred behind the `EmbeddingProvider` seam so a later extraction is non-breaking.
 - **Overloading `AzureOpenAIClient`.** Rejected: embeddings are a different API surface; a distinct class keeps each client cohesive.
 - **Embedding inside the shared data-access layer.** Rejected: transport/auth belongs in a client (ADR-0001 boundary), and the write side (audit-worker) owns when/what to embed.
+- **Atomic-swap migration (full index rebuild + coordinated cutover) instead of the online, generation-scoped re-embed.** Rejected: it would require rebuilding the whole opportunity index and flipping the read path over in lockstep across four repos — high operational risk and coordination cost for a rare event. The chosen online path (ANN search filtered by `model`+`dims`) lets the read path move to the new generation immediately while the write path back-populates on its normal cadence; the accepted cost is reduced recall for not-yet-re-embedded opportunities during the migration window (see Consequences). Atomic swap remains the required approach for a **dimension** change, which the online path deliberately does not cover.

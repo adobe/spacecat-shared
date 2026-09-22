@@ -216,7 +216,7 @@ export default class AzureEmbeddingClient {
       const startTime = process.hrtime.bigint();
       response = await this.#post(
         JSON.stringify(body),
-        `/openai/deployments/${this.#config.deploymentName}/embeddings`,
+        `/openai/deployments/${encodeURIComponent(this.#config.deploymentName)}/embeddings`,
       );
       this.#logDuration('Azure OpenAI API Embeddings call', startTime);
     } catch (error) {

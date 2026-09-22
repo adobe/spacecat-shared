@@ -150,7 +150,7 @@ Only the embeddings deployment is distinct and required; the endpoint/key/api-ve
 - `AZURE_EMBEDDING_API_VERSION` (optional, falls back to `AZURE_API_VERSION`): API version.
 - `AZURE_EMBEDDING_MAX_RETRIES` (optional, default `3`): retries for transient 429/5xx responses (`0` disables; negative is clamped to `0`).
 
-These parameters can be set through environment variables (via `AzureEmbeddingClient.createFrom(context)`) or passed directly to the constructor (`{ apiEndpoint, apiKey, apiVersion, deploymentName, maxRetries?, retryBaseDelayMs?, retryMaxDelayMs? }`).
+These parameters can be set through environment variables (via `AzureEmbeddingClient.createFrom(context)`, the recommended path) or passed directly to the constructor: `new AzureEmbeddingClient({ apiEndpoint, apiKey, apiVersion, deploymentName, maxRetries?, retryBaseDelayMs?, retryMaxDelayMs? }, log)` — the second `log` argument is required (the client calls `log.debug`/`log.info`; `createFrom` defaults it to `console`).
 
 ### Usage Example
 

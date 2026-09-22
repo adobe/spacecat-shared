@@ -6077,6 +6077,42 @@ describe('TokowakaClient', () => {
       expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
     });
 
+    it('should clear edgeOptimizeStatus LIVE_STALE when deploying', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {}, edgeOptimizeStatus: 'LIVE_STALE' });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
+    });
+
+    it('should clear edgeOptimizeStatus LIVE_LAST_MOD_MISSING when deploying', async () => {
+      const s1 = makeSuggestion('s1', { url: 'https://example.com/page1', transformRules: {}, edgeOptimizeStatus: 'LIVE_LAST_MOD_MISSING' });
+
+      deploySuggestionsStub.resolves({
+        succeededSuggestions: [s1],
+        failedSuggestions: [],
+      });
+
+      await client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [s1],
+        allSuggestions: [s1],
+      });
+
+      expect(s1.getData()).to.not.have.property('edgeOptimizeStatus');
+    });
+
     it('should mark ineligible suggestions as failed with statusCode 400', async () => {
       const s1 = makeSuggestion('s1', { url: 'https://example.com/page1' });
       const ineligible = { suggestion: s1, reason: 'not eligible' };

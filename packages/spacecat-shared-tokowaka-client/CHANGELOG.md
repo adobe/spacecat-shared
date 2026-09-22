@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.24.0...@adobe/spacecat-shared-tokowaka-client-v1.25.0) (2026-09-20)
+
+### Features
+
+* **tokowaka-client:** surface KV lastUpdated and recognize LIVE_* edge-optimize states ([#1930](https://github.com/adobe/spacecat-shared/issues/1930)) ([1aeec29](https://github.com/adobe/spacecat-shared/commit/1aeec298513ee9fc67df832d91c41a20d45872f9))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.24.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.23.3...@adobe/spacecat-shared-tokowaka-client-v1.24.0) (2026-09-10)
 
 ### Features

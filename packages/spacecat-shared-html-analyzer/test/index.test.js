@@ -325,6 +325,62 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Play Pause');
     });
 
+    it('should remove Google Maps widget container (.gm-style) and its label text', async () => {
+      // Regression for LLMO-7779: repsol.es embeds Google Maps via the JS API, which injects
+      // a .gm-style root container. Without removal, map UI labels and coordinate strings
+      // pollute RCV suggestion previews.
+      const html = `<html><body>
+        <h1>Estaciones de servicio</h1>
+        <p>Encuentra tu estación más cercana.</p>
+        <div id="map-container">
+          <div class="gm-style">
+            <div class="gm-style-iw">Map data ©2026 Google</div>
+            <div class="gm-bundled-control">
+              <div class="gmnoprint">
+                <div class="gm-svpc">Pegman</div>
+                <div>40.4168° N, 3.7038° W</div>
+                <button>Zoom in</button>
+              </div>
+            </div>
+            <div class="gm-style-cc">Terms of Use Report a map error</div>
+          </div>
+        </div>
+        <p>Horario: Lunes a viernes 8:00 - 20:00</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Estaciones de servicio');
+      expect(text).to.include('Encuentra tu estación más cercana.');
+      expect(text).to.include('Horario');
+      expect(text).to.not.include('Map data');
+      expect(text).to.not.include('Pegman');
+      expect(text).to.not.include('40.4168');
+      expect(text).to.not.include('Zoom in');
+      expect(text).to.not.include('Terms of Use');
+    });
+
+    it('should remove Google Maps containers matched by class/id convention', async () => {
+      const html = `<html><body>
+        <h1>Contact Us</h1>
+        <div class="google-map-embed">
+          <span>Satellite Terrain Labels</span>
+          <span>Map data ©Google</span>
+        </div>
+        <div id="googlemap-wrapper">
+          <span>Street View</span>
+        </div>
+        <p>Visit us at our office.</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Contact Us');
+      expect(text).to.include('Visit us at our office.');
+      expect(text).to.not.include('Satellite Terrain Labels');
+      expect(text).to.not.include('Street View');
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);

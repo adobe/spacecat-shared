@@ -101,6 +101,36 @@ const VIDEO_PLAYER_SELECTORS = [
   '.playkit-player', // Kaltura PlayKit
 ].join(', ');
 
+// Google Maps widget selectors — embedded maps inject large volumes of UI label text
+// (coordinate strings, "Map data ©Google", street names, control labels) that pollutes
+// RCV suggestion previews and AI content summaries. Iframes are already removed by the
+// media selector above; these catch server-side-rendered and JS-injected map containers.
+const MAPS_WIDGET_SELECTORS = [
+  '.gm-style', // Google Maps JS API root container
+  '[class*="google-map"]', // Common wrapper convention
+  '[id*="google-map"]',
+  '[class*="googlemap"]',
+  '[id*="googlemap"]',
+  '[data-google-maps]',
+  'gmp-map', // Google Maps Web Component (Maps JS API v4+)
+].join(', ');
+
+/**
+ * Remove Google Maps widget containers (browser environment)
+ * @param {Element} element - DOM element to filter
+ */
+function removeMapWidgets(element) {
+  element.querySelectorAll(MAPS_WIDGET_SELECTORS).forEach((n) => n.remove());
+}
+
+/**
+ * Remove Google Maps widget containers (Node.js / Cheerio environment)
+ * @param {CheerioAPI} $ - Cheerio instance
+ */
+function removeMapWidgetsCheerio($) {
+  $(MAPS_WIDGET_SELECTORS).remove();
+}
+
 /**
  * Validates if an element is likely a cookie banner based on text content
  * Optimized: Set lookup + early exit for common keywords (3x faster)
@@ -282,6 +312,9 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // control text (play/pause, caption settings, playback rate, etc.) client-side only
   documentElement.querySelectorAll(VIDEO_PLAYER_SELECTORS).forEach((n) => n.remove());
 
+  // Remove Google Maps widget containers — map UI labels and coordinate text pollute previews
+  removeMapWidgets(documentElement);
+
   // Remove consent banners with intelligent detection
   removeCookieBanners(documentElement);
 
@@ -364,6 +397,9 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
   // Remove video player containers — JS-injected wrappers (e.g. Video.js) that render
   // control text (play/pause, caption settings, playback rate, etc.) client-side only
   $(VIDEO_PLAYER_SELECTORS).remove();
+
+  // Remove Google Maps widget containers — map UI labels and coordinate text pollute previews
+  removeMapWidgetsCheerio($);
 
   // Remove cookie banners with comprehensive detection
   removeCookieBannersCheerio($);

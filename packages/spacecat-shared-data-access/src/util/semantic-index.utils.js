@@ -16,37 +16,24 @@ import { DataAccessError, ValidationError } from '../errors/index.js';
 import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
 
 /**
- * Shared writer + reader for the "semantic index" tables:
- *   - `opportunity_semantic_embedding` — one embedding per opportunity SOURCE text (a topic title
- *     now, a claim later; keyed by `source_type`), searched by nearest-neighbour.
- *   - `semantic_query_embedding` — a global text -> vector cache for the read path.
+ * Shared writer + reader for the "semantic index" tables: `opportunity_semantic_embedding` (one
+ * embedding per opportunity source text, keyed by `source_type`) and `semantic_query_embedding`
+ * (a global query-text -> vector cache).
  *
- * Mirrors `url-index.utils.js`, swapping the canonical URL for an embedding vector. Vectors are
- * produced by the writer (the audit-worker) with the shared model; this layer owns storage, dedup,
- * and the (RPC-backed) ANN read. Text normalization + hashing live here so a value written always
- * matches a later read/re-sync. Requires the `postgrest_writer` role for writes.
+ * Writer and reader share `normalizeText`/`hashText`, so the normalized form is a PERSISTED
+ * format: changing it desyncs stored rows from new lookups.
  */
 
-/** The ANN-indexed entity table(s) the sync/copy helpers may touch. */
+/** Tables the sync/copy helpers are allowed to touch. */
 export const SEMANTIC_INDEX_TABLES = Object.freeze(['opportunity_semantic_embedding']);
-/** The global query-embedding cache table. */
 export const QUERY_EMBEDDING_TABLE = 'semantic_query_embedding';
-/** The Postgres RPC that runs the ANN search (read RPC -> reader fleet). */
 export const SEMANTIC_SEARCH_RPC = 'rpc_opportunity_semantic_search';
-/** The write RPC (-> writer fleet) that copies an opportunity's vectors to another id. */
 export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
 
-/**
- * Chunk multi-row ops so neither the query string (`in(...)`, HTTP 414) nor the request body
- * (upserts, HTTP 413 against the ~1MB ALB limit) exceeds its limit. Vectors are large, so this is
- * smaller than the URL index's chunk.
- */
+/** Multi-row op chunk size; smaller than the URL index's because vectors inflate the payload. */
 export const SEMANTIC_CHUNK_SIZE = 20;
 
-/**
- * Upper bound on a topic/query text (matches the `opportunity_semantic_embedding.source_text`
- * DB CHECK, `1..2048`). The shared default max for `cleanTopicText`.
- */
+/** Max topic/query text length; matches the `source_text` DB CHECK. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
 
 function assertClient(postgrestClient) {
@@ -61,17 +48,14 @@ function assertId(value, name) {
   }
 }
 
-/** `dims` is part of the cache key; unchecked it corrupts it (silent miss / null-dims row). */
 function assertDims(value) {
   if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
     throw new ValidationError('dims must be a positive integer');
   }
 }
 
-/** Upper bound on `model` (stored on every index row + used as a generation filter). */
 export const MAX_MODEL_LENGTH = 128;
 
-/** `model` is part of the cache key / generation filter and is stored on every row; bound it. */
 function assertModel(value) {
   assertId(value, 'model');
   if (value.length > MAX_MODEL_LENGTH) {
@@ -88,26 +72,21 @@ function assertClearable(sources, entityId, sourceType) {
   }
 }
 
-/** Lowercase + collapse-whitespace + trim, so trivial text variants share a row/hash. */
+/** Lowercase, collapse whitespace, and trim, so trivial variants share a hash. */
 export function normalizeText(text) {
   return typeof text === 'string' ? text.replace(/\s+/g, ' ').trim().toLowerCase() : '';
 }
 
-/** Stable content hash of the normalized text (dedup/cache key). */
 export function hashText(normalized) {
   return createHash('sha256').update(normalized).digest('hex');
 }
 
 /**
- * Pure per-topic hygiene shared by the write side (audit-worker `sanitizeTopics`) and the read
- * side (api-service `by-topics` request parsing): both embed scraped/user-supplied text into the
- * same vector space, so both must reject the same junk and de-duplicate on the same key. Returns
- * the embed `text` (trimmed, original case — what gets embedded) and its dedup/lookup `key`
- * (`normalizeText`, the exact value the writer hashes on), or `null` when the input is not a usable
- * topic. The caller owns iteration, its own per-entity/per-request count cap, and the output shape.
+ * Per-topic hygiene shared by writer and reader, so both reject the same input and dedup on the
+ * same key. Returns the trimmed `text` to embed and its normalized `key`, or `null` if unusable.
  *
- * @param {unknown} title - a raw topic title (write) or query string (read)
- * @param {{ maxLength?: number }} [opts] - trimmed-text bound (default `MAX_SOURCE_TEXT_LENGTH`)
+ * @param {unknown} title - a raw topic title or query string
+ * @param {{ maxLength?: number }} [opts] - max trimmed length (default `MAX_SOURCE_TEXT_LENGTH`)
  * @returns {{ text: string, key: string } | null}
  */
 export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {}) {
@@ -121,7 +100,7 @@ export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {
   return { text, key: normalizeText(text) };
 }
 
-/** pgvector wire format: a JSON-ish `[v1,v2,...]` string PostgREST casts to `vector`. */
+/** Serialize to the pgvector `[v1,v2,...]` wire format. */
 export function serializeVector(vector) {
   if (!Array.isArray(vector) || vector.length === 0
     || !vector.every((v) => typeof v === 'number' && Number.isFinite(v))) {
@@ -130,7 +109,7 @@ export function serializeVector(vector) {
   return `[${vector.join(',')}]`;
 }
 
-/** Parse a pgvector `[v1,v2,...]` string (as PostgREST returns it) back to a number[]. */
+/** Parse a pgvector `[v1,v2,...]` string; `null` if malformed. */
 export function parseVector(value) {
   if (Array.isArray(value)) {
     return value;
@@ -143,15 +122,10 @@ export function parseVector(value) {
     return [];
   }
   const nums = inner.split(',').map(Number);
-  // A non-numeric segment (corrupt row) yields NaN; return null (cache-miss semantics) rather
-  // than surface a NaN vector far downstream where serializeVector rejects it misleadingly.
   return nums.some(Number.isNaN) ? null : nums;
 }
 
-/**
- * Build the canonical row set for an entity's sources of one `source_type`: normalize + hash the
- * text, serialize the vector, drop invalids, de-duplicate on hash (first-seen).
- */
+/** Clean + hash the text, validate the vector, drop invalid text, dedup on hash (first-seen). */
 function toRows({
   siteId, entityId, entityType, sourceType, sources,
 }) {
@@ -159,7 +133,6 @@ function toRows({
   const seen = new Set();
   const rows = [];
   for (const src of list) {
-    // Text hygiene (drop-don't-throw): same rule as the read side, incl. the 2048-char bound.
     const cleaned = cleanTopicText(src?.text);
     if (cleaned === null) {
       // eslint-disable-next-line no-continue
@@ -172,9 +145,7 @@ function toRows({
       continue;
     }
     seen.add(sourceHash);
-    // Contract validation (this is the authoritative write side, so be at least as strict as the
-    // query cache): a bad model/dims or a vector whose length disagrees with dims is a hard error,
-    // not a silently-persisted row that surfaces later as wrong neighbours or an opaque DB failure.
+    // Bad text is dropped, but a bad vector contract throws: it would persist as wrong neighbours.
     assertModel(src.model);
     assertDims(src.dims);
     const embedding = serializeVector(src.vector);
@@ -208,7 +179,7 @@ async function upsertRows(postgrestClient, table, rows, onConflict, entityId) {
   }
 }
 
-/** Read the stored source_hashes for one (entity, source_type), paginated. */
+/** Read the stored hashes for one (entity, source_type), paginated so `max-rows` can't truncate. */
 async function fetchHashes(postgrestClient, table, siteId, entityId, sourceType) {
   const hashes = [];
   let offset = 0;
@@ -237,7 +208,7 @@ async function fetchHashes(postgrestClient, table, siteId, entityId, sourceType)
   return hashes;
 }
 
-/** Delete the given source_hashes for one (entity, source_type), chunked. */
+/** Delete the given hashes for one (entity, source_type), chunked (URI limit). */
 async function deleteHashes(postgrestClient, table, siteId, entityId, sourceType, hashes) {
   for (let i = 0; i < hashes.length; i += SEMANTIC_CHUNK_SIZE) {
     const chunk = hashes.slice(i, i + SEMANTIC_CHUNK_SIZE);
@@ -268,19 +239,20 @@ async function clearEntitySource(postgrestClient, table, siteId, entityId, sourc
 }
 
 /**
- * Full-replace the semantic vectors for ONE opportunity, scoped to a single `sourceType`, so
- * re-syncing an entity's topics never disturbs its claims. Upsert-then-prune, mirroring
- * `syncUrlIndex`. Empty `sources` clears the (entity, sourceType) slice; a non-empty input that
- * yields no valid rows throws. Requires the `postgrest_writer` role.
+ * Full-replace one opportunity's vectors for a single `sourceType`; an empty `sources` clears it
+ * (a non-empty input that yields no valid rows throws instead of clearing).
+ *
+ * Same upsert -> prune ordering and single-writer caveat as `syncUrlIndex`. Requires the
+ * `postgrest_writer` role.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
- * @param {string} params.siteId
+ * @param {string} params.siteId - the site the opportunity belongs to
  * @param {string} params.entityId - the opportunity id
  * @param {string} params.entityType - the opportunity type stored on each row
- * @param {string} params.sourceType - `topic` | `claim` | …
+ * @param {string} params.sourceType - the source kind, e.g. `topic`
  * @param {Array<{text: string, vector: number[], model: string, dims: number, sourceId?: string}>}
- *   params.sources - one entry per source text; text is normalized + hashed here.
+ *   params.sources - one entry per source text (normalized + hashed here)
  * @returns {Promise<number>} size of the stored set for this (entity, sourceType) after sync
  */
 export async function syncOpportunitySemantic(postgrestClient, {
@@ -316,19 +288,16 @@ export async function syncOpportunitySemantic(postgrestClient, {
 }
 
 /**
- * Copy every semantic vector row from one opportunity id to another within a site (used when an
- * offsite refresh preserves the previous evergreen content as a new history snapshot: the content —
- * hence the vectors — is identical, so we re-point rather than re-embed). Runs entirely server-side
- * via the `wrpc_copy_opportunity_semantic_vectors` write RPC (`INSERT … SELECT`), so no rows are
- * materialized in the caller. Idempotent (the RPC's `ON CONFLICT DO NOTHING`). Requires the
+ * Copy all vector rows from one opportunity to another within a site, server-side via the copy
+ * RPC, so identical content is re-pointed rather than re-embedded. Idempotent. Requires the
  * `postgrest_writer` role.
  *
- * @param {object} postgrestClient
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
- * @param {string} params.siteId
- * @param {string} params.fromEntityId - source opportunity id (still holding the old vectors)
- * @param {string} params.toEntityId - destination (the new snapshot) opportunity id
- * @returns {Promise<number>} number of rows inserted (a re-copy of already-present rows returns 0)
+ * @param {string} params.siteId - the site both opportunities belong to
+ * @param {string} params.fromEntityId - source opportunity id
+ * @param {string} params.toEntityId - destination opportunity id
+ * @returns {Promise<number>} rows inserted (0 when already copied)
  */
 export async function copyEntityVectors(postgrestClient, {
   siteId, fromEntityId, toEntityId,
@@ -350,27 +319,20 @@ export async function copyEntityVectors(postgrestClient, {
 }
 
 /**
- * Nearest-neighbour search for opportunities related to a query vector, within a site and
- * `sourceType`. Backed by the `rpc_opportunity_semantic_search` read RPC (the `<=>` ANN ordering
- * cannot be expressed through the PostgREST query builder). The RPC dedupes to distinct
- * opportunities keeping the best cosine similarity, applies the score floor, and limits to `k`.
+ * Site-scoped nearest-neighbour search: opportunities whose vectors best match a query vector,
+ * one row per opportunity (best score). Via RPC because PostgREST can't express `<=>` ordering.
+ * `model` + `dims` restrict the search to vectors embedded by the same model as the query.
  *
- * The search is scoped to one embedding **generation** via `model` + `dims`, so a coordinated
- * re-embed to a new model (same dims) never mixes generations in the ANN ranking — search only ever
- * compares vectors produced by the same model. Callers pass the model/dims the query was embedded
- * with (the same values stored on the index rows).
- *
- * @param {object} postgrestClient
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
- * @param {string} params.siteId
- * @param {string} params.sourceType - `topic` | `claim` | …
- * @param {number[]} params.vector - the query embedding (same model/dims as the index)
- * @param {string} params.model - the embedding model the index + query share (generation scope)
- * @param {number} params.dims - the embedding dimension (generation scope)
+ * @param {string} params.siteId - the site to scope the search to
+ * @param {string} params.sourceType - the source kind, e.g. `topic`
+ * @param {number[]} params.vector - the query embedding
+ * @param {string} params.model - the model the query was embedded with
+ * @param {number} params.dims - the query embedding dimension
  * @param {number} [params.k=10] - max opportunities to return
- * @param {number} [params.minScore=0] - cosine-similarity floor; matches below are dropped
- * @returns {Promise<Array<{entityId: string, entityType: string, score: number}>>}
- *   ranked best-first
+ * @param {number} [params.minScore=0] - cosine-similarity floor
+ * @returns {Promise<Array<{entityId: string, entityType: string, score: number}>>} best-first
  */
 export async function lookupOpportunitiesByVector(postgrestClient, {
   siteId, sourceType, vector, model, dims, k = 10, minScore = 0,
@@ -403,8 +365,8 @@ export async function lookupOpportunitiesByVector(postgrestClient, {
 }
 
 /**
- * Point-read the cached embedding for a query string (keyed by normalized text + model + dims).
- * @returns {Promise<{vector: number[], textHash: string}|null>} the cached vector, or null on miss
+ * Read the cached embedding for a query string (keyed by normalized text + model + dims).
+ * @returns {Promise<{vector: number[], textHash: string}|null>} null on miss
  */
 export async function getQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
   assertClient(postgrestClient);
@@ -430,7 +392,7 @@ export async function getQueryEmbedding(postgrestClient, { text, model, dims } =
     return null;
   }
   const vector = parseVector(data[0].embedding);
-  // A corrupt cached vector parses to null; treat it as a miss so the caller re-embeds.
+  // Corrupt row: treat as a miss so the caller re-embeds.
   if (vector === null) {
     return null;
   }
@@ -438,9 +400,9 @@ export async function getQueryEmbedding(postgrestClient, { text, model, dims } =
 }
 
 /**
- * Upsert a query-text embedding into the cache (idempotent on text_hash+model+dims) and stamp
- * `last_access_at`. Requires the `postgrest_writer` role for the update-on-conflict.
- * @returns {Promise<string>} the text_hash
+ * Upsert a query embedding into the cache and stamp `last_access_at`. Requires the
+ * `postgrest_writer` role.
+ * @returns {Promise<string>} the text hash
  */
 export async function upsertQueryEmbedding(postgrestClient, {
   text, model, dims, vector,
@@ -475,9 +437,8 @@ export async function upsertQueryEmbedding(postgrestClient, {
 }
 
 /**
- * Coarsely bump `last_access_at` on a cache hit (housekeeping input). Best-effort at the call site.
- * The caller may pass the `textHash` it already resolved from the preceding `getQueryEmbedding` hit
- * to skip re-normalizing + re-hashing; `text` is used only when `textHash` is absent.
+ * Bump `last_access_at` on a cache hit. Pass the `textHash` from `getQueryEmbedding` to skip
+ * re-hashing; `text` is used only when it's absent.
  * @returns {Promise<void>}
  */
 export async function touchQueryEmbedding(postgrestClient, {

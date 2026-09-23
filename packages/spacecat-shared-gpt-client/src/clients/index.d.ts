@@ -61,16 +61,13 @@ export class AzureOpenAIClient {
   }): Promise<object>;
 }
 
-/**
- * Minimal contract every embedding provider satisfies, so consumers depend on the
- * interface (not the concrete Azure client) and the model/provider stays swappable.
- */
+/** Provider-agnostic embedding contract, so consumers don't depend on the Azure client. */
 export interface EmbeddingProvider {
   /**
-   * Embed each input string, returning one vector per input, in input order.
+   * Embed each input, returning one vector per input, in input order.
    * @param {string[]} inputs - Non-empty array of non-empty strings.
    * @param {object} [options]
-   * @param {number} [options.dimensions] - Optional output dimension (Matryoshka truncation).
+   * @param {number} [options.dimensions] - Optional output dimension.
    */
   createEmbeddings(inputs: string[], options?: { dimensions?: number }): Promise<number[][]>;
 }

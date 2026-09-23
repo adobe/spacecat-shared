@@ -16,11 +16,10 @@ import { hasText, isObject, isValidUrl } from '@adobe/spacecat-shared-utils';
 import { fetch as httpFetch, sanitizeHeaders } from '../utils.js';
 
 /**
- * Minimal contract every embedding provider satisfies, so consumers depend on the
- * interface (not the concrete Azure client) and the model/provider stays swappable.
+ * Provider-agnostic embedding contract, so consumers don't depend on the Azure client.
  * @typedef {Object} EmbeddingProvider
  * @property {(inputs: string[], options?: { dimensions?: number }) => Promise<number[][]>}
- *   createEmbeddings - embed each input string, returning one vector per input, in input order.
+ *   createEmbeddings - one vector per input, in input order.
  */
 
 function validateEmbeddingResponse(response, expectedCount) {
@@ -35,10 +34,9 @@ function validateEmbeddingResponse(response, expectedCount) {
     );
 }
 
-/** Upper bound on any single retry sleep, so a hostile `Retry-After` can't stall the invocation. */
+/** Cap on any single retry sleep, so a large `Retry-After` can't stall the invocation. */
 const DEFAULT_MAX_RETRY_DELAY_MS = 30_000;
 
-/** Transient statuses worth retrying: rate-limit (429) and server errors (5xx). */
 function isRetryableStatus(status) {
   return status === 429 || status >= 500;
 }
@@ -47,11 +45,7 @@ const sleep = (ms) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
 
-/**
- * Backoff for a retryable response: honor a numeric `Retry-After` (seconds) when present, else
- * exponential backoff with full jitter. Always capped at `maxDelayMs` so an unbounded/hostile
- * `Retry-After` can never exceed the caller's execution budget.
- */
+/** Numeric `Retry-After` (seconds) if present, else exponential backoff with jitter; capped. */
 function retryDelayMs(response, attempt, baseDelayMs, maxDelayMs) {
   const retryAfter = Number(response.headers.get('retry-after'));
   const raw = (Number.isFinite(retryAfter) && retryAfter > 0)
@@ -61,16 +55,12 @@ function retryDelayMs(response, attempt, baseDelayMs, maxDelayMs) {
 }
 
 /**
- * Azure OpenAI embeddings client (e.g. text-embedding-3-small). Separate from
- * {@link AzureOpenAIClient} (chat/completions) but same vendor/auth: it reuses the
- * Azure OpenAI endpoint/key/api-version and adds its own embeddings deployment.
- * Implements {@link EmbeddingProvider}.
+ * Azure OpenAI embeddings client. Implements {@link EmbeddingProvider}.
  */
 export default class AzureEmbeddingClient {
   /**
-   * Builds a client from a UniversalContext. Embeddings may share the chat resource, so the
-   * endpoint/key/api-version fall back to the `AZURE_OPENAI_*` values; only the embeddings
-   * deployment (`AZURE_EMBEDDING_DEPLOYMENT`) is distinct and required.
+   * Creates a client from a UniversalContext. Endpoint/key/api-version fall back to the
+   * `AZURE_OPENAI_*` values; `AZURE_EMBEDDING_DEPLOYMENT` is required.
    *
    * @param {object} context - UniversalContext (`env`, optional `log`).
    * @returns {AzureEmbeddingClient}
@@ -131,10 +121,9 @@ export default class AzureEmbeddingClient {
    * @param {string} config.apiKey - Azure OpenAI API key.
    * @param {string} config.apiVersion - Azure OpenAI API version.
    * @param {string} config.deploymentName - The embeddings deployment name.
-   * @param {number} [config.maxRetries=3] - Retries for transient 429/5xx responses (0 disables).
-   * @param {number} [config.retryBaseDelayMs=500] - Base for exponential backoff with jitter.
-   * @param {number} [config.retryMaxDelayMs=30000] - Upper bound on any single retry sleep,
-   *   applied to the `Retry-After` and backoff paths alike.
+   * @param {number} [config.maxRetries=3] - Retries on 429/5xx (0 disables).
+   * @param {number} [config.retryBaseDelayMs=500] - Backoff base delay.
+   * @param {number} [config.retryMaxDelayMs=30000] - Cap on any single retry sleep.
    * @param {object} log - Logger.
    */
   constructor(config, log) {
@@ -148,10 +137,7 @@ export default class AzureEmbeddingClient {
     this.log.debug(`${message}: took ${duration}ms`);
   }
 
-  /**
-   * POST with bounded retry on transient failures (429/5xx): honors a numeric `Retry-After`,
-   * otherwise exponential backoff with jitter. Non-transient (4xx) errors throw immediately.
-   */
+  /** POST with bounded retry on 429/5xx; other errors throw immediately. */
   async #post(body, path) {
     const url = createUrl(`${this.#config.apiEndpoint}${path}?api-version=${this.#config.apiVersion}`);
     const headers = {
@@ -173,7 +159,7 @@ export default class AzureEmbeddingClient {
         return response.json();
       }
 
-      // Cap the body: Azure error payloads can carry deployment name / request-id.
+      // Truncated: Azure error payloads can carry the deployment name / request id.
       // eslint-disable-next-line no-await-in-loop
       const errorBody = (await response.text()).slice(0, 512);
       if (isRetryableStatus(response.status) && attempt < maxRetries) {
@@ -188,13 +174,12 @@ export default class AzureEmbeddingClient {
   }
 
   /**
-   * Embeds each input string, returning one vector per input in input order.
+   * Embeds each input, returning one vector per input in input order.
    *
-   * @param {string[]} inputs - Non-empty array of non-empty strings to embed.
+   * @param {string[]} inputs - Non-empty array of non-empty strings.
    * @param {object} [options]
-   * @param {number} [options.dimensions] - Optional output dimension (Matryoshka truncation);
-   *   omit to use the model's native dimension. Must match the stored index's dimension.
-   * @returns {Promise<number[][]>} One embedding vector per input, aligned to input order.
+   * @param {number} [options.dimensions] - Output dimension; omit for the model's native one.
+   * @returns {Promise<number[][]>}
    */
   async createEmbeddings(inputs, options = {}) {
     if (!Array.isArray(inputs) || inputs.length === 0) {
@@ -229,8 +214,7 @@ export default class AzureEmbeddingClient {
       throw new Error('Invalid response format.');
     }
 
-    // Azure returns each embedding with its input `index`; sort by it so the result
-    // aligns to input order regardless of response ordering.
+    // Response order isn't guaranteed; re-align by each item's input `index`.
     return [...response.data]
       .sort((a, b) => a.index - b.index)
       .map((item) => item.embedding);

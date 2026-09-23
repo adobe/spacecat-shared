@@ -266,7 +266,7 @@ describe('semantic-index.utils', () => {
       expect(client.calls.upsert).to.have.length(1);
       expect(client.calls.upsert[0].options).to.deep.equal({ onConflict: 'entity_id,source_type,source_hash' });
       const row = client.calls.upsert[0].rows[0];
-      // Full row shape — cross-repo write contract (model/dims/original text/hash/null id).
+      // Full row shape (the write contract).
       expect(row).to.include({
         site_id: SITE_ID,
         entity_id: ENTITY_ID,
@@ -294,7 +294,7 @@ describe('semantic-index.utils', () => {
       });
       expect(client.calls.upsert[0].rows[0].source_id).to.equal('sid-1');
 
-      // model/dims/vector-length are hard contract errors on the authoritative write side.
+      // model/dims/vector-length violations throw rather than being dropped.
       await expect(syncOpportunitySemantic(makeClient(), {
         siteId: SITE_ID,
         entityId: ENTITY_ID,
@@ -401,8 +401,7 @@ describe('semantic-index.utils', () => {
     });
 
     it('stops paginating when an exactly-full page is followed by an empty page (boundary)', async () => {
-      // page 1 returns exactly DEFAULT_PAGE_SIZE (keepGoing stays true) -> a second fetch that
-      // returns empty ends the loop via the empty-page branch, not the < PAGE_SIZE branch.
+      // A full page followed by an empty one ends via the empty-page branch.
       const keptHash = hashText(normalizeText('kept'));
       const page1 = Array.from({ length: 1000 }, (_, i) => (i === 0 ? { source_hash: keptHash } : { source_hash: `h${i}` }));
       const client = makeClient({

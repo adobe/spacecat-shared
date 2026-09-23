@@ -101,16 +101,19 @@ const VIDEO_PLAYER_SELECTORS = [
   '.playkit-player', // Kaltura PlayKit
 ].join(', ');
 
-// Google Maps widget selectors — embedded maps inject large volumes of UI label text
-// (coordinate strings, "Map data ©Google", street names, control labels) that pollutes
-// RCV suggestion previews and AI content summaries. Iframes are already removed by the
-// media selector above; these catch server-side-rendered and JS-injected map containers.
+// Google Maps runtime DOM includes tile fallback/control text that pollutes extracted content.
+// Keep customer-authored location data around the map; strip only Google-owned widget nodes.
 const MAPS_WIDGET_SELECTORS = [
   '.gm-style', // Google Maps JS API root container
-  '[class*="google-map"]', // Common wrapper convention
-  '[id*="google-map"]',
-  '[class*="googlemap"]',
-  '[id*="googlemap"]',
+  '.LGLeeN-keyboard-shortcuts-view', // Google Maps keyboard shortcut overlay
+  '.gm-style-cc',
+  '.gm-bundled-control',
+  '.gm-svpc',
+  '.gmnoprint',
+  '[class~="google-map"]', // Exact wrapper token convention
+  '[id="google-map"]',
+  '[class~="googlemap"]',
+  '[id="googlemap"]',
   '[data-google-maps]',
   'gmp-map', // Google Maps Web Component (Maps JS API v4+)
 ].join(', ');

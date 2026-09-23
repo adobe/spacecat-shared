@@ -16,10 +16,59 @@ import {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
+  filterHtmlContent,
   stripTagsToText,
   generateMarkdownDiff,
   getAddedMarkdownBlocks,
 } from '../src/index.js';
+
+function installBrowserDomParserShim() {
+  const previous = {
+    window: globalThis.window,
+    document: globalThis.document,
+    DOMParser: globalThis.DOMParser,
+  };
+
+  const createCheerioElement = ($, element = null) => {
+    const node = {
+      querySelectorAll(selector) {
+        const root = element ? $(element) : $.root();
+        return root.find(selector).toArray().map((child) => createCheerioElement($, child));
+      },
+      remove() {
+        if (element) {
+          $(element).remove();
+        }
+      },
+    };
+    Object.defineProperties(node, {
+      textContent: {
+        get: () => (element ? $(element).text() : $('html').text()),
+      },
+      outerHTML: {
+        get: () => (element ? $.html(element) : $.html('html')),
+      },
+    });
+    return node;
+  };
+
+  globalThis.window = {};
+  globalThis.document = {};
+  globalThis.DOMParser = function DOMParser() {
+    return {
+      parseFromString(html) {
+        const $ = cheerio.load(html);
+        return { documentElement: createCheerioElement($) };
+      },
+    };
+  };
+
+  return () => {
+    globalThis.window = previous.window;
+    globalThis.document = previous.document;
+    globalThis.DOMParser = previous.DOMParser;
+  };
+}
 
 describe('HTML Visibility Analyzer', () => {
   const simpleHtml = '<html><body><h1>Title</h1><p>Content here</p></body></html>';
@@ -326,9 +375,6 @@ describe('HTML Visibility Analyzer', () => {
     });
 
     it('should remove Google Maps widget container (.gm-style) and its label text', async () => {
-      // Regression for LLMO-7779: repsol.es embeds Google Maps via the JS API, which injects
-      // a .gm-style root container. Without removal, map UI labels and coordinate strings
-      // pollute RCV suggestion previews.
       const html = `<html><body>
         <h1>Estaciones de servicio</h1>
         <p>Encuentra tu estación más cercana.</p>
@@ -360,14 +406,54 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Terms of Use');
     });
 
-    it('should remove Google Maps containers matched by class/id convention', async () => {
+    it('should remove Google Maps tile fallback and keyboard shortcut text while preserving location content', async () => {
+      const html = `<html><body>
+        <h1>Buscador de Agencias Distribuidoras de gasóleo</h1>
+        <div class="eyg-office-map station-map">
+          <div class="map-search__block map-search__block--js">
+            <p>GASOLEOS PECES E HIJOS S.L.</p>
+            <p>CL CAPELLANIA 16, 28411</p>
+            <div class="gm-style">
+              <div style="position:absolute; left:0; top:0; width:256px; height:256px">
+                <div>Sorry, we have no imagery here.</div>
+              </div>
+              <div class="gm-style-cc">Map Data Map data ©2026 Google Terms Report a map error</div>
+            </div>
+            <div aria-label="Map">
+              <div class="LGLeeN-keyboard-shortcuts-view">
+                <table><tbody><tr><td>+ Zoom in</td></tr><tr><td>- Zoom out</td></tr></tbody></table>
+                <span>Keyboard shortcuts</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p>Productos Diesel e+ Agrodiesel e+10</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Buscador de Agencias Distribuidoras de gasóleo');
+      expect(text).to.include('GASOLEOS PECES E HIJOS S.L.');
+      expect(text).to.include('CL CAPELLANIA 16, 28411');
+      expect(text).to.include('Productos Diesel e+');
+      expect(text).to.not.include('Sorry, we have no imagery here');
+      expect(text).to.not.include('Map Data');
+      expect(text).to.not.include('Report a map error');
+      expect(text).to.not.include('Zoom in');
+      expect(text).to.not.include('Keyboard shortcuts');
+    });
+
+    it('should remove exact Google Maps wrapper tokens and avoid unrelated content false positives', async () => {
       const html = `<html><body>
         <h1>Contact Us</h1>
-        <div class="google-map-embed">
+        <article class="google-map-api-guide">
+          <p>How to use the Google Maps API for store locators.</p>
+        </article>
+        <div class="google-map">
           <span>Satellite Terrain Labels</span>
           <span>Map data ©Google</span>
         </div>
-        <div id="googlemap-wrapper">
+        <div id="googlemap">
           <span>Street View</span>
         </div>
         <p>Visit us at our office.</p>
@@ -377,8 +463,34 @@ describe('HTML Visibility Analyzer', () => {
 
       expect(text).to.include('Contact Us');
       expect(text).to.include('Visit us at our office.');
+      expect(text).to.include('How to use the Google Maps API for store locators.');
       expect(text).to.not.include('Satellite Terrain Labels');
       expect(text).to.not.include('Street View');
+    });
+
+    it('should remove Google Maps widgets in browser DOMParser mode', async () => {
+      const restoreBrowser = installBrowserDomParserShim();
+      try {
+        const html = `<html><body>
+          <h1>Office locations</h1>
+          <div class="gm-style">
+            <div>Sorry, we have no imagery here.</div>
+            <div class="gm-style-cc">Map Data Terms</div>
+          </div>
+          <gmp-map>Zoom in Map data ©Google</gmp-map>
+          <p>Real office content.</p>
+        </body></html>`;
+
+        const text = await filterHtmlContent(html, true, true);
+
+        expect(text).to.include('Office locations');
+        expect(text).to.include('Real office content.');
+        expect(text).to.not.include('Sorry, we have no imagery here');
+        expect(text).to.not.include('Map Data');
+        expect(text).to.not.include('Zoom in');
+      } finally {
+        restoreBrowser();
+      }
     });
 
     it('should remove noscript elements by default', async () => {

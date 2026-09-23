@@ -110,10 +110,6 @@ const MAPS_WIDGET_SELECTORS = [
   '.gm-bundled-control',
   '.gm-svpc',
   '.gmnoprint',
-  '[class~="google-map"]', // Exact wrapper token convention
-  '[id="google-map"]',
-  '[class~="googlemap"]',
-  '[id="googlemap"]',
   '[data-google-maps]',
   'gmp-map', // Google Maps Web Component (Maps JS API v4+)
 ].join(', ');

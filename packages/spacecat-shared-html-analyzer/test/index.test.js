@@ -443,18 +443,20 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Keyboard shortcuts');
     });
 
-    it('should remove exact Google Maps wrapper tokens and avoid unrelated content false positives', async () => {
+    it('should avoid removing customer-authored Google Maps wrapper content', async () => {
       const html = `<html><body>
         <h1>Contact Us</h1>
         <article class="google-map-api-guide">
           <p>How to use the Google Maps API for store locators.</p>
         </article>
         <div class="google-map">
-          <span>Satellite Terrain Labels</span>
-          <span>Map data ©Google</span>
+          <p>Our office locations are shown on a Google map.</p>
         </div>
         <div id="googlemap">
-          <span>Street View</span>
+          <p>Store locator fallback copy for visitors.</p>
+        </div>
+        <div data-google-maps>
+          <span>Map data ©Google</span>
         </div>
         <p>Visit us at our office.</p>
       </body></html>`;
@@ -464,8 +466,9 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Contact Us');
       expect(text).to.include('Visit us at our office.');
       expect(text).to.include('How to use the Google Maps API for store locators.');
-      expect(text).to.not.include('Satellite Terrain Labels');
-      expect(text).to.not.include('Street View');
+      expect(text).to.include('Our office locations are shown on a Google map.');
+      expect(text).to.include('Store locator fallback copy for visitors.');
+      expect(text).to.not.include('Map data ©Google');
     });
 
     it('should remove Google Maps widgets in browser DOMParser mode', async () => {

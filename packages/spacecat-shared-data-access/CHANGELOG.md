@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.31.0...@adobe/spacecat-shared-data-access-v4.32.0) (2026-09-23)
+
+### Features
+
+* add Azure embedding client and semantic index utils (LLMO-7445) ([#1933](https://github.com/adobe/spacecat-shared/issues/1933)) ([e03a920](https://github.com/adobe/spacecat-shared/commit/e03a9203a2fced47ce2dc1428da3af114d88e91b)), closes [adobe/mysticat-data-service#1064](https://github.com/adobe/mysticat-data-service/issues/1064) [adobe/spacecat-audit-worker#2982](https://github.com/adobe/spacecat-audit-worker/issues/2982) [adobe/spacecat-api-service#3298](https://github.com/adobe/spacecat-api-service/issues/3298)
+
 ## [@adobe/spacecat-shared-data-access-v4.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.30.0...@adobe/spacecat-shared-data-access-v4.31.0) (2026-09-22)
 
 ### Features

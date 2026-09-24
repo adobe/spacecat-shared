@@ -1,3 +1,13 @@
+## [@adobe/spacecat-shared-data-access-v4.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.32.0...@adobe/spacecat-shared-data-access-v4.33.0) (2026-09-24)
+
+### Features
+
+* **data-access:** batch the semantic lookup and query-embedding cache helpers (LLMO-7445) ([#1942](https://github.com/adobe/spacecat-shared/issues/1942)) ([5f1bb09](https://github.com/adobe/spacecat-shared/commit/5f1bb099ccf913208efc6c3876a7b5d4cca2d08a)), closes [adobe/mysticat-data-service#1086](https://github.com/adobe/mysticat-data-service/issues/1086)
+
+### Bug Fixes
+
+* **deps:** update dependency joi to v18.2.5 [security] ([#1923](https://github.com/adobe/spacecat-shared/issues/1923)) ([848625e](https://github.com/adobe/spacecat-shared/commit/848625e6ed024a136e833a969dc6421ecc4586fc))
+
 ## [@adobe/spacecat-shared-data-access-v4.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.31.0...@adobe/spacecat-shared-data-access-v4.32.0) (2026-09-23)
 
 ### Features

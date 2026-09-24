@@ -519,6 +519,8 @@ describe('semantic-index.utils', () => {
       await expect(call({ k: 0 })).to.be.rejectedWith(ValidationError, 'k must be an integer between 1 and 1000');
       await expect(call({ k: 1.5 })).to.be.rejectedWith(ValidationError, 'k must be');
       await expect(call({ k: 1001 })).to.be.rejectedWith(ValidationError, 'k must be');
+      await expect(call({ minScore: '0.5' })).to.be.rejectedWith(ValidationError, 'minScore must be a finite number');
+      await expect(call({ minScore: NaN })).to.be.rejectedWith(ValidationError, 'minScore must be');
     });
 
     it('returns [] without calling the RPC for no vectors', async () => {
@@ -604,6 +606,18 @@ describe('semantic-index.utils', () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
       await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: [[0.1, 0.2]] }))
         .to.be.rejectedWith(DataAccessError, 'Failed semantic search');
+    });
+
+    it('rejects a query_index outside the current group (never spills into another group)', async () => {
+      const row = (queryIndex) => ({
+        query_index: queryIndex, entity_id: 'o1', entity_type: ENTITY_TYPE, score: 0.5,
+      });
+      for (const bad of [20, -1, 1.5, null]) {
+        const client = makeClient({ rpcResult: { data: [row(bad)], error: null } });
+        // eslint-disable-next-line no-await-in-loop
+        await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: vecs(25) }))
+          .to.be.rejectedWith(DataAccessError, `Unexpected query_index ${bad}`);
+      }
     });
   });
 

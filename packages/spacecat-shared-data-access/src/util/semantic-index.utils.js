@@ -372,16 +372,20 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
   if (!Number.isInteger(k) || k < 1 || k > DEFAULT_PAGE_SIZE) {
     throw new ValidationError(`k must be an integer between 1 and ${DEFAULT_PAGE_SIZE}`);
   }
+  if (typeof minScore !== 'number' || !Number.isFinite(minScore)) {
+    throw new ValidationError('minScore must be a finite number');
+  }
   const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
 
   const results = vectors.map(() => []);
   const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
   for (let offset = 0; offset < serialized.length; offset += groupSize) {
+    const group = serialized.slice(offset, offset + groupSize);
     // eslint-disable-next-line no-await-in-loop
     const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
       p_site_id: siteId,
       p_source_type: sourceType,
-      p_query_embeddings: serialized.slice(offset, offset + groupSize),
+      p_query_embeddings: group,
       p_model: model,
       p_dims: dims,
       p_limit: k,
@@ -391,7 +395,15 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       throw new DataAccessError(`Failed semantic search for site ${siteId}`, { siteId, sourceType }, error);
     }
     for (const row of data ?? []) {
-      results[offset + row.query_index].push({
+      // Checked against this group, not all results, so a bad index can't land in another group.
+      const { query_index: queryIndex } = row;
+      if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
+        throw new DataAccessError(
+          `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
+          { siteId, sourceType },
+        );
+      }
+      results[offset + queryIndex].push({
         entityId: row.entity_id,
         entityType: row.entity_type,
         score: row.score,
@@ -445,7 +457,8 @@ export async function getQueryEmbeddings(postgrestClient, { texts, model, dims }
 /**
  * Upsert many query embeddings into the cache and stamp `last_access_at`, in groups of
  * `SEMANTIC_CHUNK_SIZE`. Entries whose text normalizes to the same hash are written once (first
- * wins). Requires the `postgrest_writer` role.
+ * wins). Groups are not atomic: a failure can leave earlier groups written, and retrying is safe
+ * (idempotent upsert). Requires the `postgrest_writer` role.
  * @param {object} params
  * @param {Array<{text: string, vector: number[]}>} params.entries
  * @returns {Promise<string[]>} each entry's text hash, in input order
@@ -477,6 +490,7 @@ export async function upsertQueryEmbeddings(postgrestClient, { entries, model, d
     return textHash;
   });
 
+  // Rows carry full vectors, hence SEMANTIC_CHUNK_SIZE rather than QUERY_HASH_CHUNK_SIZE.
   for (let i = 0; i < rows.length; i += SEMANTIC_CHUNK_SIZE) {
     // eslint-disable-next-line no-await-in-loop
     const { error } = await postgrestClient

@@ -42,6 +42,7 @@ export {
   SEMANTIC_SEARCH_RPC,
   COPY_VECTORS_RPC,
   SEMANTIC_CHUNK_SIZE,
+  QUERY_HASH_CHUNK_SIZE,
   MAX_SOURCE_TEXT_LENGTH,
   normalizeText,
   hashText,
@@ -50,10 +51,10 @@ export {
   parseVector,
   syncOpportunitySemantic,
   copyEntityVectors,
-  lookupOpportunitiesByVector,
-  getQueryEmbedding,
-  upsertQueryEmbedding,
-  touchQueryEmbedding,
+  lookupOpportunitiesByVectors,
+  getQueryEmbeddings,
+  upsertQueryEmbeddings,
+  touchQueryEmbeddings,
 } from './semantic-index.utils.js';
 
 /**

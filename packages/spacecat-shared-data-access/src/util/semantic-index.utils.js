@@ -33,6 +33,9 @@ export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
 /** Multi-row op chunk size; smaller than the URL index's because vectors inflate the payload. */
 export const SEMANTIC_CHUNK_SIZE = 20;
 
+/** Hashes per `.in()` filter (64 hex chars each), kept well under the request URI limit. */
+export const QUERY_HASH_CHUNK_SIZE = 50;
+
 /** Max topic/query text length; matches the `source_text` DB CHECK. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
 
@@ -123,6 +126,22 @@ export function parseVector(value) {
   }
   const nums = inner.split(',').map(Number);
   return nums.some(Number.isNaN) ? null : nums;
+}
+
+function serializeDimsVector(vector, dims) {
+  const serialized = serializeVector(vector);
+  if (vector.length !== dims) {
+    throw new ValidationError(`vector length ${vector.length} does not match dims ${dims}`);
+  }
+  return serialized;
+}
+
+function hashQueryText(text) {
+  const normalized = normalizeText(text);
+  if (normalized === '') {
+    throw new ValidationError('text is required');
+  }
+  return { normalized, textHash: hashText(normalized) };
 }
 
 /** Clean + hash the text, validate the vector, drop invalid text, dedup on hash (first-seen). */
@@ -319,149 +338,183 @@ export async function copyEntityVectors(postgrestClient, {
 }
 
 /**
- * Site-scoped nearest-neighbour search: opportunities whose vectors best match a query vector,
- * one row per opportunity (best score). Via RPC because PostgREST can't express `<=>` ordering.
- * `model` + `dims` restrict the search to vectors embedded by the same model as the query.
+ * Site-scoped nearest-neighbour search for many query vectors: for each one, the opportunities
+ * whose vectors best match it, one row per opportunity (best score). Via RPC because PostgREST
+ * can't express `<=>` ordering. `model` + `dims` restrict the search to vectors embedded by the
+ * same model as the queries.
+ *
+ * Vectors go in groups of up to `SEMANTIC_CHUNK_SIZE`, fewer when `k` is large, so a call's
+ * `group × k` rows stay within PostgREST's max-rows cap.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
  * @param {string} params.siteId - the site to scope the search to
  * @param {string} params.sourceType - the source kind, e.g. `topic`
- * @param {number[]} params.vector - the query embedding
- * @param {string} params.model - the model the query was embedded with
+ * @param {number[][]} params.vectors - the query embeddings
+ * @param {string} params.model - the model the queries were embedded with
  * @param {number} params.dims - the query embedding dimension
- * @param {number} [params.k=10] - max opportunities to return
+ * @param {number} [params.k=10] - max opportunities per query
  * @param {number} [params.minScore=0] - cosine-similarity floor
- * @returns {Promise<Array<{entityId: string, entityType: string, score: number}>>} best-first
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>} one
+ *   best-first list per input vector, in input order
  */
-export async function lookupOpportunitiesByVector(postgrestClient, {
-  siteId, sourceType, vector, model, dims, k = 10, minScore = 0,
+export async function lookupOpportunitiesByVectors(postgrestClient, {
+  siteId, sourceType, vectors, model, dims, k = 10, minScore = 0,
 } = {}) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(sourceType, 'sourceType');
   assertModel(model);
   assertDims(dims);
-  const queryVector = serializeVector(vector);
+  if (!Array.isArray(vectors)) {
+    throw new ValidationError('vectors must be an array');
+  }
+  if (!Number.isInteger(k) || k < 1 || k > DEFAULT_PAGE_SIZE) {
+    throw new ValidationError(`k must be an integer between 1 and ${DEFAULT_PAGE_SIZE}`);
+  }
+  const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
 
-  const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
-    p_site_id: siteId,
-    p_source_type: sourceType,
-    p_query_embedding: queryVector,
-    p_model: model,
-    p_dims: dims,
-    p_limit: k,
-    p_min_score: minScore,
+  const results = vectors.map(() => []);
+  const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
+  for (let offset = 0; offset < serialized.length; offset += groupSize) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
+      p_site_id: siteId,
+      p_source_type: sourceType,
+      p_query_embeddings: serialized.slice(offset, offset + groupSize),
+      p_model: model,
+      p_dims: dims,
+      p_limit: k,
+      p_min_score: minScore,
+    });
+    if (error) {
+      throw new DataAccessError(`Failed semantic search for site ${siteId}`, { siteId, sourceType }, error);
+    }
+    for (const row of data ?? []) {
+      results[offset + row.query_index].push({
+        entityId: row.entity_id,
+        entityType: row.entity_type,
+        score: row.score,
+      });
+    }
+  }
+  return results;
+}
+
+/**
+ * Read the cached embeddings for many query strings (keyed by normalized text + model + dims),
+ * in groups of `QUERY_HASH_CHUNK_SIZE` hashes.
+ * @returns {Promise<Array<{vector: number[], textHash: string}|null>>} one entry per input text,
+ *   in input order; null on a miss
+ */
+export async function getQueryEmbeddings(postgrestClient, { texts, model, dims } = {}) {
+  assertClient(postgrestClient);
+  assertModel(model);
+  assertDims(dims);
+  if (!Array.isArray(texts)) {
+    throw new ValidationError('texts must be an array');
+  }
+  const hashes = texts.map((text) => hashQueryText(text).textHash);
+  const distinct = [...new Set(hashes)];
+
+  const vectorByHash = new Map();
+  for (let i = 0; i < distinct.length; i += QUERY_HASH_CHUNK_SIZE) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data, error } = await postgrestClient
+      .from(QUERY_EMBEDDING_TABLE)
+      .select('text_hash, embedding')
+      .eq('model', model)
+      .eq('dims', dims)
+      .in('text_hash', distinct.slice(i, i + QUERY_HASH_CHUNK_SIZE));
+    if (error) {
+      throw new DataAccessError('Failed to read semantic_query_embedding', { model, dims }, error);
+    }
+    for (const row of data ?? []) {
+      const vector = parseVector(row.embedding);
+      // Corrupt row: treat as a miss so the caller re-embeds.
+      if (vector !== null) {
+        vectorByHash.set(row.text_hash, vector);
+      }
+    }
+  }
+  return hashes.map((textHash) => (vectorByHash.has(textHash)
+    ? { vector: vectorByHash.get(textHash), textHash }
+    : null));
+}
+
+/**
+ * Upsert many query embeddings into the cache and stamp `last_access_at`, in groups of
+ * `SEMANTIC_CHUNK_SIZE`. Entries whose text normalizes to the same hash are written once (first
+ * wins). Requires the `postgrest_writer` role.
+ * @param {object} params
+ * @param {Array<{text: string, vector: number[]}>} params.entries
+ * @returns {Promise<string[]>} each entry's text hash, in input order
+ */
+export async function upsertQueryEmbeddings(postgrestClient, { entries, model, dims } = {}) {
+  assertClient(postgrestClient);
+  assertModel(model);
+  assertDims(dims);
+  if (!Array.isArray(entries)) {
+    throw new ValidationError('entries must be an array');
+  }
+  const lastAccessAt = new Date().toISOString();
+  const seen = new Set();
+  const rows = [];
+  const hashes = entries.map((entry) => {
+    const { normalized, textHash } = hashQueryText(entry?.text);
+    const embedding = serializeDimsVector(entry?.vector, dims);
+    if (!seen.has(textHash)) {
+      seen.add(textHash);
+      rows.push({
+        text_hash: textHash,
+        model,
+        dims,
+        normalized_text: normalized,
+        embedding,
+        last_access_at: lastAccessAt,
+      });
+    }
+    return textHash;
   });
-  if (error) {
-    throw new DataAccessError(`Failed semantic search for site ${siteId}`, { siteId, sourceType }, error);
-  }
 
-  return (data ?? []).map((row) => ({
-    entityId: row.entity_id,
-    entityType: row.entity_type,
-    score: row.score,
-  }));
+  for (let i = 0; i < rows.length; i += SEMANTIC_CHUNK_SIZE) {
+    // eslint-disable-next-line no-await-in-loop
+    const { error } = await postgrestClient
+      .from(QUERY_EMBEDDING_TABLE)
+      .upsert(rows.slice(i, i + SEMANTIC_CHUNK_SIZE), { onConflict: 'text_hash,model,dims' });
+    if (error) {
+      throw new DataAccessError('Failed to upsert semantic_query_embedding', { model, dims }, error);
+    }
+  }
+  return hashes;
 }
 
 /**
- * Read the cached embedding for a query string (keyed by normalized text + model + dims).
- * @returns {Promise<{vector: number[], textHash: string}|null>} null on miss
- */
-export async function getQueryEmbedding(postgrestClient, { text, model, dims } = {}) {
-  assertClient(postgrestClient);
-  assertModel(model);
-  assertDims(dims);
-  const normalized = normalizeText(text);
-  if (normalized === '') {
-    throw new ValidationError('text is required');
-  }
-  const textHash = hashText(normalized);
-
-  const { data, error } = await postgrestClient
-    .from(QUERY_EMBEDDING_TABLE)
-    .select('embedding')
-    .eq('text_hash', textHash)
-    .eq('model', model)
-    .eq('dims', dims)
-    .limit(1);
-  if (error) {
-    throw new DataAccessError('Failed to read semantic_query_embedding', { model, dims }, error);
-  }
-  if (!data || data.length === 0) {
-    return null;
-  }
-  const vector = parseVector(data[0].embedding);
-  // Corrupt row: treat as a miss so the caller re-embeds.
-  if (vector === null) {
-    return null;
-  }
-  return { vector, textHash };
-}
-
-/**
- * Upsert a query embedding into the cache and stamp `last_access_at`. Requires the
- * `postgrest_writer` role.
- * @returns {Promise<string>} the text hash
- */
-export async function upsertQueryEmbedding(postgrestClient, {
-  text, model, dims, vector,
-} = {}) {
-  assertClient(postgrestClient);
-  assertModel(model);
-  assertDims(dims);
-  const normalized = normalizeText(text);
-  if (normalized === '') {
-    throw new ValidationError('text is required');
-  }
-  const textHash = hashText(normalized);
-  const embedding = serializeVector(vector);
-  if (vector.length !== dims) {
-    throw new ValidationError(`vector length ${vector.length} does not match dims ${dims}`);
-  }
-  const row = {
-    text_hash: textHash,
-    model,
-    dims,
-    normalized_text: normalized,
-    embedding,
-    last_access_at: new Date().toISOString(),
-  };
-  const { error } = await postgrestClient
-    .from(QUERY_EMBEDDING_TABLE)
-    .upsert(row, { onConflict: 'text_hash,model,dims' });
-  if (error) {
-    throw new DataAccessError('Failed to upsert semantic_query_embedding', { model, dims }, error);
-  }
-  return textHash;
-}
-
-/**
- * Bump `last_access_at` on a cache hit. Pass the `textHash` from `getQueryEmbedding` to skip
- * re-hashing; `text` is used only when it's absent.
+ * Bump `last_access_at` on cache hits, one update per group of `QUERY_HASH_CHUNK_SIZE` hashes.
+ * Pass the `textHash`es returned by `getQueryEmbeddings`.
  * @returns {Promise<void>}
  */
-export async function touchQueryEmbedding(postgrestClient, {
-  text, model, dims, textHash,
-} = {}) {
+export async function touchQueryEmbeddings(postgrestClient, { textHashes, model, dims } = {}) {
   assertClient(postgrestClient);
   assertModel(model);
   assertDims(dims);
-  let hash = textHash;
-  if (typeof hash !== 'string' || hash.length === 0) {
-    const normalized = normalizeText(text);
-    if (normalized === '') {
-      throw new ValidationError('text or textHash is required');
-    }
-    hash = hashText(normalized);
+  if (!Array.isArray(textHashes)) {
+    throw new ValidationError('textHashes must be an array');
   }
-  const { error } = await postgrestClient
-    .from(QUERY_EMBEDDING_TABLE)
-    .update({ last_access_at: new Date().toISOString() })
-    .eq('text_hash', hash)
-    .eq('model', model)
-    .eq('dims', dims);
-  if (error) {
-    throw new DataAccessError('Failed to touch semantic_query_embedding', { model, dims }, error);
+  textHashes.forEach((hash) => assertId(hash, 'textHash'));
+  const distinct = [...new Set(textHashes)];
+  const lastAccessAt = new Date().toISOString();
+
+  for (let i = 0; i < distinct.length; i += QUERY_HASH_CHUNK_SIZE) {
+    // eslint-disable-next-line no-await-in-loop
+    const { error } = await postgrestClient
+      .from(QUERY_EMBEDDING_TABLE)
+      .update({ last_access_at: lastAccessAt })
+      .eq('model', model)
+      .eq('dims', dims)
+      .in('text_hash', distinct.slice(i, i + QUERY_HASH_CHUNK_SIZE));
+    if (error) {
+      throw new DataAccessError('Failed to touch semantic_query_embedding', { model, dims }, error);
+    }
   }
 }

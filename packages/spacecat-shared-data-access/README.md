@@ -140,6 +140,40 @@ const matches = await lookupEntityIdsByUrl(postgrestClient, {
 
 See the package `CLAUDE.md` ("URL Index") for the canonicalization, single-writer, and site-scoping contracts.
 
+## Semantic Index
+
+For the topic vector index (`opportunity_semantic_embedding`) and the global query-embedding cache (`semantic_query_embedding`), use the shared helpers so the writer and reader share one text normalization and one storage path. They store and read pre-embedded vectors; embedding is the caller's job (e.g. `AzureEmbeddingClient` from `@adobe/spacecat-shared-gpt-client`).
+
+```js
+import {
+  syncOpportunitySemantic, copyEntityVectors, lookupOpportunitiesByVectors,
+  getQueryEmbeddings, upsertQueryEmbeddings, touchQueryEmbeddings,
+} from '@adobe/spacecat-shared-data-access';
+
+const { postgrestClient } = dataAccess.services;
+const scope = { model: 'azure/text-embedding-3-small', dims: 1536 };
+
+// writer (needs the postgrest_writer role): full-replace an opportunity's topic vectors
+await syncOpportunitySemantic(postgrestClient, {
+  siteId, entityId, entityType, sourceType: 'topic', sources: [{ text, vector, ...scope }],
+});
+
+// writer: copy an opportunity's vector rows to another opportunity in the same site
+await copyEntityVectors(postgrestClient, { siteId, fromEntityId, toEntityId });
+
+// query cache, batched: one entry per text, in input order (null on a miss)
+const cached = await getQueryEmbeddings(postgrestClient, { texts, ...scope });
+await upsertQueryEmbeddings(postgrestClient, { entries: [{ text, vector }], ...scope });
+await touchQueryEmbeddings(postgrestClient, { textHashes, ...scope });
+
+// reader, batched: one best-first list of { entityId, entityType, score } per query vector
+const matches = await lookupOpportunitiesByVectors(postgrestClient, {
+  siteId, sourceType: 'topic', vectors, k: 10, minScore: 0.5, ...scope,
+});
+```
+
+The batched helpers group their calls internally (search in groups of up to 20 vectors, cache reads/touches in groups of 50 hashes), so callers pass whole lists rather than looping per item.
+
 ## Field Mapping Behavior
 
 Public model API remains camelCase while Postgres/PostgREST tables are snake_case.

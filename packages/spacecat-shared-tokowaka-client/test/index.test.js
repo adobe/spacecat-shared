@@ -5918,19 +5918,6 @@ describe('TokowakaClient', () => {
 
     const makeHeaders = (plain = {}) => new Headers(plain);
 
-    describe('Request construction', () => {
-      it('sends the shared Adobe-identifying User-Agent alongside x-forwarded-host', async () => {
-        tracingFetchStub.resolves({ status: 200, headers: makeHeaders({ 'content-type': 'text/html' }), text: sinon.stub().resolves('ok') });
-
-        await esmockClient.checkWafConnectivity(mockSiteWaf);
-
-        const fetchOptions = tracingFetchStub.firstCall.args[1];
-        expect(fetchOptions.headers['x-forwarded-host']).to.equal('example.com');
-        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI AdobeEdgeOptimize-AI Spacecat/1.0');
-        expect(fetchOptions.headers['User-Agent']).to.include('Mozilla/5.0');
-      });
-    });
-
     describe('Hard block — status codes', () => {
       [401, 403, 406, 429, 503].forEach((status) => {
         it(`returns blocked:true for HTTP ${status}`, async () => {

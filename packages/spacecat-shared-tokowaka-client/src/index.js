@@ -1487,7 +1487,7 @@ class TokowakaClient {
 
       const response = await tracingFetch(EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT, {
         method: 'GET',
-        headers: { 'x-forwarded-host': targetHost, 'User-Agent': EDGE_OPTIMIZE_PROBE_USER_AGENT },
+        headers: { 'x-forwarded-host': targetHost },
         signal: AbortSignal.timeout(WAF_PROBE_TIMEOUT_MS),
       });
 

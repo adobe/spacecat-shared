@@ -17,7 +17,7 @@ export const PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|
 
 export const WAF_PROBE_TIMEOUT_MS = 15000;
 
-// Shared UA for both checkEdgeOptimizeStatus and checkWafConnectivity.
+// UA sent by checkEdgeOptimizeStatus.
 export const EDGE_OPTIMIZE_PROBE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
   + 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 '
   + 'Tokowaka-AI AdobeEdgeOptimize-AI Spacecat/1.0';

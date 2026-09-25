@@ -219,19 +219,29 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
       })).to.be.rejectedWith(ValidationError, 'entityId is required');
       await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'entityType must be one of: cited-analysis, reddit-analysis, youtube-analysis');
+        siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE, sources: [src('x')],
+      })).to.be.rejectedWith(ValidationError, 'entityType must be one of: cited-analysis, reddit-analysis, youtube-analysis (got undefined)');
       await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'broken-backlinks', sourceType: SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'entityType must be one of');
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'wikipedia-analysis', sourceType: SOURCE_TYPE, sources: [src('x')],
+      })).to.be.rejectedWith(ValidationError, '(got "wikipedia-analysis")');
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'sourceType must be one of: topic');
+      })).to.be.rejectedWith(ValidationError, 'sourceType must be one of: topic (got undefined)');
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: 'claim',
-      })).to.be.rejectedWith(ValidationError, 'sourceType must be one of');
+      })).to.be.rejectedWith(ValidationError, '(got "claim")');
       expect(client.calls.upsert).to.have.length(0);
       expect(client.calls.delete).to.have.length(0);
+    });
+
+    it('clears an entity whose entityType is no longer registered', async () => {
+      const client = makeClient();
+      const count = await syncOpportunitySemantic(client, {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'wikipedia-analysis', sourceType: SOURCE_TYPE, sources: [],
+      });
+      expect(count).to.equal(0);
+      expect(client.calls.delete).to.have.length(1);
+      expect(client.calls.upsert).to.have.length(0);
     });
 
     it('clears the (entity, sourceType) slice when sources is empty', async () => {
@@ -527,7 +537,11 @@ describe('semantic-index.utils', () => {
       await expect(call({ sourceTypes: ['topic', 'claim'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain: topic');
       await expect(call({ sourceTypes: ['*'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain');
       await expect(call({ entityTypes: 'cited-analysis' })).to.be.rejectedWith(ValidationError, 'entityTypes must be an array');
-      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain: cited-analysis, reddit-analysis, youtube-analysis');
+      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain: cited-analysis, reddit-analysis, youtube-analysis (got [null])');
+      await expect(call({ entityTypes: ['wikipedia-analysis'] })).to.be.rejectedWith(ValidationError, '(got ["wikipedia-analysis"])');
+      // eslint-disable-next-line no-sparse-arrays
+      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain: topic (got [null])');
+      await expect(call({ entityTypes: new Array(1) })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain');
       await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
       await expect(call({ dims: undefined })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(call({ vectors: 'x' })).to.be.rejectedWith(ValidationError, 'vectors must be an array');
@@ -597,9 +611,13 @@ describe('semantic-index.utils', () => {
       await lookupOpportunitiesByVectors(client, {
         ...base, entityTypes: [], vectors: [[0.1, 0.2]],
       });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, entityTypes: null, vectors: [[0.1, 0.2]],
+      });
       expect(client.calls.rpc[0].params.p_source_types).to.deep.equal([SOURCE_TYPE]);
       expect(client.calls.rpc[0].params.p_entity_types).to.deep.equal(['reddit-analysis', 'cited-analysis']);
       expect(client.calls.rpc[1].params.p_entity_types).to.equal(null);
+      expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
     });
 
     it('exposes frozen source/entity type registries', () => {
@@ -655,10 +673,16 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[0].params).to.include({ p_limit: 5, p_min_score: 0.3 });
     });
 
-    it('wraps an RPC error', async () => {
+    it('wraps an RPC error with the searched type lists', async () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: [[0.1, 0.2]] }))
-        .to.be.rejectedWith(DataAccessError, 'Failed semantic search');
+      const err = await lookupOpportunitiesByVectors(client, {
+        ...base, entityTypes: ['reddit-analysis'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.include('Failed semantic search');
+      expect(err.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
+      });
     });
 
     it('rejects a query_index outside the current group (never spills into another group)', async () => {

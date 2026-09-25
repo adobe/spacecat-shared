@@ -99,7 +99,7 @@ function assertModel(value) {
 function assertAllowed(value, name, registry) {
   const allowed = Object.values(registry);
   if (!allowed.includes(value)) {
-    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')}`);
+    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')} (got ${JSON.stringify(value)})`);
   }
 }
 
@@ -118,8 +118,15 @@ function toAllowedList(values, name, registry, { required }) {
     throw new ValidationError(`${name} must be an array`);
   }
   const allowed = Object.values(registry);
-  if (!values.every((value) => allowed.includes(value))) {
-    throw new ValidationError(`${name} must only contain: ${allowed.join(', ')}`);
+
+  const rejected = [];
+  for (const value of values) {
+    if (!allowed.includes(value)) {
+      rejected.push(value);
+    }
+  }
+  if (rejected.length > 0) {
+    throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${JSON.stringify(rejected)})`);
   }
   return [...new Set(values)];
 }
@@ -339,7 +346,6 @@ export async function syncOpportunitySemantic(postgrestClient, {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(entityId, 'entityId');
-  assertAllowed(entityType, 'entityType', OPPORTUNITY_SEMANTIC_ENTITY_TYPES);
   assertAllowed(sourceType, 'sourceType', OPPORTUNITY_SEMANTIC_SOURCE_TYPES);
 
   const table = 'opportunity_semantic_embedding';
@@ -353,6 +359,8 @@ export async function syncOpportunitySemantic(postgrestClient, {
     return 0;
   }
 
+  // Only stored rows carry entityType; clearing must still work for a type since removed.
+  assertAllowed(entityType, 'entityType', OPPORTUNITY_SEMANTIC_ENTITY_TYPES);
   await upsertRows(postgrestClient, table, rows, 'entity_id,source_type,source_hash', entityId);
 
   const keep = new Set(rows.map((r) => r.source_hash));
@@ -456,7 +464,11 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_min_score: minScore,
     });
     if (error) {
-      throw new DataAccessError(`Failed semantic search for site ${siteId}`, { siteId, sourceTypes: sourceTypeList }, error);
+      throw new DataAccessError(
+        `Failed semantic search for site ${siteId}`,
+        { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
+        error,
+      );
     }
     for (const row of data ?? []) {
       // Checked against this group, not all results, so a bad index can't land in another group.
@@ -464,7 +476,7 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
         throw new DataAccessError(
           `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
-          { siteId, sourceTypes: sourceTypeList },
+          { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
         );
       }
       results[offset + queryIndex].push({

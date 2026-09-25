@@ -180,7 +180,7 @@ const matches = await lookupOpportunitiesByVectors(postgrestClient, {
 
 `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (kinds of embedded text) and `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` (opportunity types) are the registries for `source_type` and `entity_type`: the writer and reader reject any value outside them. To index a new kind or opportunity type, add it to the registry first.
 
-`SEMANTIC_MATCHING_CONFIG` (`embeddingModel`, `embeddingDims`) is the embedding generation the writer and reader both use; pass it as `model` / `dims` rather than hardcoding the values. It is a code constant, not env config, so the two sides can never disagree.
+`SEMANTIC_MATCHING_CONFIG` (`embeddingModel`, `embeddingDims`) is the embedding generation the writer and reader both use; pass it as `model` / `dims` rather than hardcoding the values. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
 
 The batched helpers group their calls internally (search in groups of up to 20 vectors, cache reads/touches in groups of 50 hashes), so callers pass whole lists rather than looping per item.
 

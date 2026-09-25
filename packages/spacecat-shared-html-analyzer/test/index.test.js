@@ -23,7 +23,8 @@ import {
 } from '../src/index.js';
 
 function installBrowserDomParserShim() {
-  // This minimal shim supports selector/removal behavior only; fixtures must not include scripts.
+  // Cheerio-backed shim verifies call order only, not native NodeList or mutation semantics.
+  // It supports selector/removal behavior only; fixtures must not include scripts.
   const hadWindow = Object.hasOwn(globalThis, 'window');
   const hadDocument = Object.hasOwn(globalThis, 'document');
   const hadDOMParser = Object.hasOwn(globalThis, 'DOMParser');
@@ -38,6 +39,9 @@ function installBrowserDomParserShim() {
       querySelectorAll(selector) {
         const root = element ? $(element) : $.root();
         return root.find(selector).toArray().map((child) => createCheerioElement($, child));
+      },
+      contains(child) {
+        return $.contains(element, child.cheerioElement);
       },
       remove() {
         if (element) {
@@ -425,6 +429,10 @@ describe('HTML Visibility Analyzer', () => {
               </div>
             </div>
             <div class="gm-style-iw">Legacy InfoWindow: Sevilla office.</div>
+            <div class="gm-style">
+              <div>Nested map runtime noise.</div>
+              <div class="gm-style-iw">Nested Valencia office.</div>
+            </div>
             <div class="gm-bundled-control">
               <div class="gmnoprint">
                 <div class="gm-svpc">Pegman</div>
@@ -446,12 +454,15 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Estación Repsol Centro');
       expect(text).to.include('Calle Mayor 1, Madrid');
       expect(text).to.include('Legacy InfoWindow: Sevilla office.');
+      expect(text).to.include('Nested Valencia office.');
       expect(text).to.not.include('Close window');
+      expect(text).to.not.include('Nested map runtime noise.');
       expect(text).to.not.include('Map data');
       expect(text).to.not.include('Pegman');
       expect(text).to.not.include('40.4168');
       expect(text).to.not.include('Zoom in');
       expect(text).to.not.include('Terms of Use');
+      expect(text.indexOf('Calle Mayor 1, Madrid')).to.be.lessThan(text.indexOf('Horario'));
     });
 
     it('should remove Google Maps tile fallback and keyboard shortcut text while preserving location content', async () => {

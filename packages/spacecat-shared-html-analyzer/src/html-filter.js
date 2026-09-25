@@ -119,8 +119,14 @@ const MAPS_CONTROL_SELECTORS = [
  * @param {Element} element - DOM element to filter
  */
 function removeMapWidgets(element) {
-  element.querySelectorAll(MAPS_RUNTIME_ROOT_SELECTOR).forEach((mapRoot) => {
+  const mapRoots = Array.from(element.querySelectorAll(MAPS_RUNTIME_ROOT_SELECTOR));
+  const outermostMapRoots = mapRoots.filter((mapRoot) => !mapRoots.some(
+    (candidate) => candidate !== mapRoot && candidate.contains(mapRoot),
+  ));
+
+  outermostMapRoots.forEach((mapRoot) => {
     mapRoot.querySelectorAll('.gm-style-iw').forEach((infoWindow) => {
+      // Current Maps DOM uses separate header/body nodes; keep their document order.
       const contentParts = infoWindow.querySelectorAll('.gm-style-iw-ch, .gm-style-iw-d');
       const preservedNodes = contentParts.length ? contentParts : [infoWindow];
 
@@ -138,7 +144,12 @@ function removeMapWidgets(element) {
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeMapWidgetsCheerio($) {
-  $(MAPS_RUNTIME_ROOT_SELECTOR).each((i, mapRoot) => {
+  const mapRoots = $(MAPS_RUNTIME_ROOT_SELECTOR).toArray();
+  const outermostMapRoots = mapRoots.filter((mapRoot) => !mapRoots.some(
+    (candidate) => candidate !== mapRoot && $.contains(candidate, mapRoot),
+  ));
+
+  outermostMapRoots.forEach((mapRoot) => {
     const $mapRoot = $(mapRoot);
     $mapRoot.find('.gm-style-iw').each((j, infoWindow) => {
       const $infoWindow = $(infoWindow);

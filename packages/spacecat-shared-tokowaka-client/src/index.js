@@ -45,7 +45,7 @@ import {
   EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
   PRIVATE_HOST_RE,
   WAF_PROBE_TIMEOUT_MS,
-  ADOBE_PROBE_USER_AGENT,
+  EDGE_OPTIMIZE_PROBE_USER_AGENT,
   classifyProbeResponse,
 } from './utils/waf-probe-utils.js';
 
@@ -1342,20 +1342,8 @@ class TokowakaClient {
   /**
    * Checks if Edge Optimize is enabled for a specific page path. Retries on failures.
    *
-   * Fetches the customer's own domain directly (no proxy) and checks the response for
-   * BOTH the routing signal (x-tokowaka-request-id / x-edgeoptimize-request-id header)
-   * and a WAF/bot-block (via classifyProbeResponse, on the same fetched response — no
-   * second request). `edgeOptimizeEnabled` folds both together: it is only `true` when
-   * the request-id header is present AND the response isn't classified as blocked —
-   * routing alone is not sufficient.
-   *
-   * NOTE: this changes what `edgeOptimizeEnabled` means for existing consumers. The
-   * import-worker's `persistEdgeConfig` stamps `routingEnabled` based on this value
-   * (via `isEdgeLive`) — a site with routing confirmed but WAF-blocked will now get
-   * `edgeOptimizeEnabled: false`, and so will NOT have `routingEnabled` stamped until
-   * it clears the WAF block. This is an accepted, intentional tradeoff for now, pending
-   * a follow-up update to the import-worker job to read routing and WAF status as
-   * separate signals if that gap needs closing sooner.
+   * edgeOptimizeEnabled requires both the routing header AND a non-blocked response
+   * (classifyProbeResponse, run on the same fetched response — no second request).
    *
    * @param {Object} site - Site entity
    * @param {string} path - Path to check (e.g., '/products/chair')
@@ -1378,7 +1366,7 @@ class TokowakaClient {
     }
 
     const defaultProbeHeaders = {
-      'User-Agent': ADOBE_PROBE_USER_AGENT,
+      'User-Agent': EDGE_OPTIMIZE_PROBE_USER_AGENT,
       'fastly-debug': '1',
     };
     const customHeaders = currentConfig?.getScraperConfig?.()?.headers ?? {};
@@ -1414,9 +1402,6 @@ class TokowakaClient {
 
         this.log.info(`[edge-optimize-status] Edge optimize headers found: ${requestIdPresent} for ${targetUrl}`);
 
-        // Classify the same response already fetched above for a WAF/bot-block — no second
-        // request. edgeOptimizeEnabled folds both signals together: routing alone isn't
-        // enough if the customer's own WAF is blocking us.
         // eslint-disable-next-line no-await-in-loop
         const { blocked, statusCode } = await classifyProbeResponse(response, targetHost, this.log);
         this.log.info(`[edge-optimize-status] WAF classification for ${targetUrl}: blocked=${blocked}, statusCode=${statusCode}`);
@@ -1469,8 +1454,7 @@ class TokowakaClient {
 
   /**
    * Probes whether a WAF or Bot Manager is blocking Adobe Edge Optimize traffic for the
-   * site, via Adobe's own edge-optimize proxy (not a direct fetch to the customer — see
-   * checkEdgeOptimizeStatus for the direct-fetch WAF check used alongside routing status).
+   * site, via Adobe's own edge-optimize proxy.
    *
    * Probe outcomes:
    * - Hard block: HTTP 401/403/406/429/503 → `{ reachable: false, blocked: true }`
@@ -1503,7 +1487,7 @@ class TokowakaClient {
 
       const response = await tracingFetch(EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT, {
         method: 'GET',
-        headers: { 'x-forwarded-host': targetHost, 'User-Agent': ADOBE_PROBE_USER_AGENT },
+        headers: { 'x-forwarded-host': targetHost, 'User-Agent': EDGE_OPTIMIZE_PROBE_USER_AGENT },
         signal: AbortSignal.timeout(WAF_PROBE_TIMEOUT_MS),
       });
 

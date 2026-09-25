@@ -1418,7 +1418,7 @@ class TokowakaClient {
         if (isTimeout) {
           // eslint-disable-next-line max-len
           this.log.warn(`[edge-optimize-status] Request timed out after ${REQUEST_TIMEOUT_MS}ms for ${targetUrl}, returning edgeOptimizeEnabled: false`);
-          return { edgeOptimizeEnabled: false, blocked: null };
+          return { edgeOptimizeEnabled: false };
         }
 
         attempt += 1;

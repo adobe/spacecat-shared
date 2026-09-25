@@ -5613,7 +5613,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({ edgeOptimizeEnabled: false, blocked: null });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
         expect(tracingFetchStub).to.have.been.calledOnce;
         expect(log.warn).to.have.been.calledWith(
           sinon.match(/\[edge-optimize-status\] Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),

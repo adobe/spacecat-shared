@@ -87,6 +87,15 @@ const ACCESSIBILITY_SELECTORS = [
   '#digiAccess',
 ];
 
+// W3C ARIA live regions for urgent, dynamically triggered notifications (toasts, alerts).
+// aria-live="polite" excluded — used broadly for legitimate dynamic content.
+// Ref: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alert_role
+const TRANSIENT_NOTIFICATION_SELECTORS = [
+  '[role="alert"]',
+  '[aria-live="assertive"]',
+  '#toastContainer',
+].join(', ');
+
 // Video player container selectors — these wrappers are injected client-side by JS video
 // player libraries and contain extensive control/accessibility text (play/pause labels,
 // caption settings dialogs, playback rate menus, etc.) that has no content value for AI
@@ -288,6 +297,8 @@ function filterHtmlBrowser(htmlContent, ignoreNavFooter, returnText, includeNosc
   // Remove accessibility elements
   removeAccessibilityElements(documentElement);
 
+  documentElement.querySelectorAll(TRANSIENT_NOTIFICATION_SELECTORS).forEach((n) => n.remove());
+
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {
     filterNavigationAndFooterBrowser(documentElement);
@@ -370,6 +381,8 @@ async function filterHtmlNode(htmlContent, ignoreNavFooter, returnText, includeN
 
   // Remove accessibility elements
   removeAccessibilityElementsCheerio($);
+
+  $(TRANSIENT_NOTIFICATION_SELECTORS).remove();
 
   // Conditionally remove navigation and footer elements
   if (ignoreNavFooter) {

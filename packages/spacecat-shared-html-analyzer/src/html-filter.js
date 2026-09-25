@@ -105,12 +105,12 @@ const VIDEO_PLAYER_SELECTORS = [
 // Keep customer-authored location data around the map; strip only Google-owned widget nodes.
 const MAPS_WIDGET_SELECTORS = [
   '.gm-style', // Google Maps JS API root container
-  '.LGLeeN-keyboard-shortcuts-view', // Google Maps keyboard shortcut overlay
+  // Controls can be detached from .gm-style in serialized or partial DOM snapshots.
+  '.LGLeeN-keyboard-shortcuts-view',
   '.gm-style-cc',
   '.gm-bundled-control',
   '.gm-svpc',
   '.gmnoprint',
-  '[data-google-maps]',
   'gmp-map', // Google Maps Web Component (Maps JS API v4+)
 ].join(', ');
 

@@ -23,6 +23,7 @@ import {
 } from '../src/index.js';
 
 function installBrowserDomParserShim() {
+  // This minimal shim supports selector/removal behavior only; fixtures must not include scripts.
   const previous = {
     window: globalThis.window,
     document: globalThis.document,
@@ -456,7 +457,7 @@ describe('HTML Visibility Analyzer', () => {
           <p>Store locator fallback copy for visitors.</p>
         </div>
         <div data-google-maps>
-          <span>Map data ©Google</span>
+          <span>Customer-authored store locator content.</span>
         </div>
         <p>Visit us at our office.</p>
       </body></html>`;
@@ -468,7 +469,7 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('How to use the Google Maps API for store locators.');
       expect(text).to.include('Our office locations are shown on a Google map.');
       expect(text).to.include('Store locator fallback copy for visitors.');
-      expect(text).to.not.include('Map data ©Google');
+      expect(text).to.include('Customer-authored store locator content.');
     });
 
     it('should remove Google Maps widgets in browser DOMParser mode', async () => {

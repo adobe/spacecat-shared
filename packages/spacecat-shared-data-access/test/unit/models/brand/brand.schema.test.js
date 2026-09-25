@@ -85,4 +85,108 @@ describe('Brand Schema', () => {
       expect(attributes.semrushSubWorkspaceId.postgrestField).to.be.undefined;
     });
   });
+
+  describe('semrushProvisioningStatus attribute', () => {
+    it('is not required and carries an enum validator', () => {
+      const attr = attributes.semrushProvisioningStatus;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.equal(true);
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts every provisioning-status enum value', () => {
+      for (const value of Brand.PROVISIONING_STATUSES) {
+        expect(attributes.semrushProvisioningStatus.validate(value)).to.be.true;
+      }
+    });
+
+    it('accepts nullish (no async attempt tracked)', () => {
+      expect(attributes.semrushProvisioningStatus.validate(null)).to.be.true;
+      expect(attributes.semrushProvisioningStatus.validate(undefined)).to.be.true;
+    });
+
+    it('rejects an out-of-enum value', () => {
+      expect(attributes.semrushProvisioningStatus.validate('active')).to.be.false;
+      expect(attributes.semrushProvisioningStatus.validate('')).to.be.false;
+    });
+
+    it('uses the default camelToSnake column mapping (no override)', () => {
+      expect(attributes.semrushProvisioningStatus.postgrestField).to.be.undefined;
+    });
+  });
+
+  describe('semrushProvisioningAttemptId / semrushProvisioningJobId attributes', () => {
+    const uuidAttrs = ['semrushProvisioningAttemptId', 'semrushProvisioningJobId'];
+
+    uuidAttrs.forEach((name) => {
+      describe(name, () => {
+        it('is not required and carries a UUID validator', () => {
+          expect(attributes[name]).to.exist;
+          expect(attributes[name].required).to.not.equal(true);
+          expect(attributes[name].validate).to.be.a('function');
+        });
+
+        it('accepts a valid UUID', () => {
+          expect(attributes[name].validate('e48e9db4-3101-4237-8075-a9132333e8c2')).to.be.true;
+        });
+
+        it('accepts nullish (no attempt/job tracked)', () => {
+          expect(attributes[name].validate(null)).to.be.true;
+          expect(attributes[name].validate(undefined)).to.be.true;
+        });
+
+        it('rejects a non-UUID string', () => {
+          expect(attributes[name].validate('not-a-uuid')).to.be.false;
+        });
+      });
+    });
+  });
+
+  describe('semrushProvisioningError attribute', () => {
+    it('is not required and carries a length validator', () => {
+      const attr = attributes.semrushProvisioningError;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.equal(true);
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts a short sanitized message', () => {
+      expect(attributes.semrushProvisioningError.validate('workspace provisioning failed')).to.be.true;
+    });
+
+    it('accepts nullish (no failure recorded)', () => {
+      expect(attributes.semrushProvisioningError.validate(null)).to.be.true;
+      expect(attributes.semrushProvisioningError.validate(undefined)).to.be.true;
+    });
+
+    it('accepts exactly 2000 characters (the DB CHECK boundary)', () => {
+      expect(attributes.semrushProvisioningError.validate('x'.repeat(2000))).to.be.true;
+    });
+
+    it('rejects 2001 characters (matches brands_semrush_provisioning_error_length_check)', () => {
+      expect(attributes.semrushProvisioningError.validate('x'.repeat(2001))).to.be.false;
+    });
+  });
+
+  describe('semrushProvisioningCandidateWorkspaceId attribute (diagnostic, non-canonical)', () => {
+    it('exists with a nullable hasText validator', () => {
+      const attr = attributes.semrushProvisioningCandidateWorkspaceId;
+      expect(attr).to.exist;
+      expect(attr.required).to.not.equal(true);
+      expect(attr.validate).to.be.a('function');
+    });
+
+    it('accepts a non-empty string', () => {
+      expect(attributes.semrushProvisioningCandidateWorkspaceId.validate('candidate-ws-1')).to.be.true;
+    });
+
+    it('accepts nullish (no candidate captured yet)', () => {
+      expect(attributes.semrushProvisioningCandidateWorkspaceId.validate(null)).to.be.true;
+      expect(attributes.semrushProvisioningCandidateWorkspaceId.validate(undefined)).to.be.true;
+    });
+
+    it('rejects the empty string', () => {
+      expect(attributes.semrushProvisioningCandidateWorkspaceId.validate('')).to.be.false;
+    });
+  });
 });

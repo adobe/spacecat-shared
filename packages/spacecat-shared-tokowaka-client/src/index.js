@@ -1345,9 +1345,14 @@ class TokowakaClient {
    * Fetches the customer's own domain directly (no proxy) and checks the response for
    * BOTH the routing signal (x-tokowaka-request-id / x-edgeoptimize-request-id header)
    * and a WAF/bot-block (via classifyProbeResponse, on the same fetched response — no
-   * second request). `edgeOptimizeEnabled` folds both together: it is only `true` when
-   * the request-id header is present AND the response isn't classified as blocked —
-   * routing alone is not sufficient.
+   * second request).
+   *
+   * `edgeOptimizeEnabled` is still the raw routing signal only (unchanged from before —
+   * `blocked` does NOT factor into it yet), to stay fully backward compatible with
+   * existing consumers (e.g. the import-worker's routingEnabled stamping). `blocked`/
+   * `statusCode` are returned (and logged) purely for visibility for now; consuming them
+   * on the frontend, and eventually retiring the separate checkWafConnectivity call in
+   * favor of this, is follow-up work.
    *
    * @param {Object} site - Site entity
    * @param {string} path - Path to check (e.g., '/products/chair')
@@ -1407,11 +1412,15 @@ class TokowakaClient {
         this.log.info(`[edge-optimize-status] Edge optimize headers found: ${requestIdPresent} for ${targetUrl}`);
 
         // Classify the same response already fetched above for a WAF/bot-block — no second
-        // request. edgeOptimizeEnabled folds both signals together: routing alone isn't
-        // enough if the customer's own WAF is blocking us.
+        // request. Logged/returned for visibility only for now — edgeOptimizeEnabled stays
+        // the raw routing signal (does NOT fold in `blocked` yet) so this stays fully
+        // backward compatible: persistEdgeConfig's routingEnabled stamping (and everything
+        // downstream of it) is untouched. Consuming `blocked`/`statusCode` on the frontend,
+        // and eventually retiring the separate checkWafConnectivity call, is follow-up work.
         // eslint-disable-next-line no-await-in-loop
         const { blocked, statusCode } = await classifyProbeResponse(response, targetHost, this.log);
-        const edgeOptimizeEnabled = requestIdPresent && !blocked;
+        this.log.info(`[edge-optimize-status] WAF classification for ${targetUrl}: blocked=${blocked}, statusCode=${statusCode}`);
+        const edgeOptimizeEnabled = requestIdPresent;
 
         return {
           edgeOptimizeEnabled,

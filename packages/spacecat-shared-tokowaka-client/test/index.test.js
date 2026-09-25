@@ -5783,7 +5783,7 @@ describe('TokowakaClient', () => {
       });
     });
 
-    describe('WAF classification merged into routing check', () => {
+    describe('WAF classification alongside routing check (logged/returned, not gating yet)', () => {
       let site;
 
       beforeEach(() => {
@@ -5795,7 +5795,7 @@ describe('TokowakaClient', () => {
         };
       });
 
-      it('routing confirmed but hard-blocked (403) → edgeOptimizeEnabled: false, blocked: true', async () => {
+      it('routing confirmed but hard-blocked (403) → edgeOptimizeEnabled stays true (raw routing signal), blocked: true reported separately', async () => {
         const headersMap = new Map([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
@@ -5809,13 +5809,13 @@ describe('TokowakaClient', () => {
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
+          edgeOptimizeEnabled: true,
           blocked: true,
           statusCode: 403,
         });
       });
 
-      it('routing confirmed but soft-blocked (challenge page body) → edgeOptimizeEnabled: false, blocked: true', async () => {
+      it('routing confirmed but soft-blocked (challenge page body) → edgeOptimizeEnabled stays true (raw routing signal), blocked: true reported separately', async () => {
         const headersMap = new Map([
           ['x-tokowaka-request-id', 'abc123'],
           ['content-type', 'text/html'],
@@ -5831,7 +5831,7 @@ describe('TokowakaClient', () => {
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
         expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
+          edgeOptimizeEnabled: true,
           blocked: true,
           statusCode: 200,
         });

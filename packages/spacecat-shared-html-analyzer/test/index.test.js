@@ -83,12 +83,21 @@ function installBrowserDomParserShim() {
   };
 
   return () => {
-    if (hadWindow) globalThis.window = previous.window;
-    else delete globalThis.window;
-    if (hadDocument) globalThis.document = previous.document;
-    else delete globalThis.document;
-    if (hadDOMParser) globalThis.DOMParser = previous.DOMParser;
-    else delete globalThis.DOMParser;
+    if (hadWindow) {
+      globalThis.window = previous.window;
+    } else {
+      delete globalThis.window;
+    }
+    if (hadDocument) {
+      globalThis.document = previous.document;
+    } else {
+      delete globalThis.document;
+    }
+    if (hadDOMParser) {
+      globalThis.DOMParser = previous.DOMParser;
+    } else {
+      delete globalThis.DOMParser;
+    }
   };
 }
 

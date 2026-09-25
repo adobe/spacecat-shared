@@ -1347,7 +1347,7 @@ class TokowakaClient {
    *
    * @param {Object} site - Site entity
    * @param {string} path - Path to check (e.g., '/products/chair')
-   * @returns {Promise<Object>} - `{ edgeOptimizeEnabled, blocked, statusCode? }`
+   * @returns {Promise<Object>} - `{ edgeOptimizeEnabled }`
    */
   async checkEdgeOptimizeStatus(site, path) {
     if (!isNonEmptyObject(site)) {
@@ -1409,8 +1409,6 @@ class TokowakaClient {
 
         return {
           edgeOptimizeEnabled,
-          blocked,
-          statusCode,
         };
       } catch (error) {
         const isTimeout = error?.code === 'ETIMEOUT';

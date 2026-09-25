@@ -5225,11 +5225,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
         expect(tracingFetchStub).to.have.been.calledOnce;
         expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/');
       });
@@ -5247,11 +5243,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/products');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
         expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
 
@@ -5266,11 +5258,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
       });
 
       it('should work with 404 status and edge optimize enabled', async () => {
@@ -5286,11 +5274,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/not-found');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 404,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
       });
 
       it('should send correct User-Agent header', async () => {
@@ -5550,11 +5534,7 @@ describe('TokowakaClient', () => {
 
         const result = await promise;
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
         expect(tracingFetchStub).to.have.been.calledTwice;
       });
 
@@ -5578,11 +5558,7 @@ describe('TokowakaClient', () => {
 
         const result = await promise;
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
         expect(tracingFetchStub.callCount).to.equal(3);
       });
 
@@ -5775,11 +5751,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/error');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 500,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
       });
     });
 
@@ -5808,11 +5780,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
-          blocked: true,
-          statusCode: 403,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
       });
 
       it('routing confirmed but soft-blocked (challenge page body) → edgeOptimizeEnabled: false, blocked: true', async () => {
@@ -5830,11 +5798,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
-          blocked: true,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
       });
 
       it('routing confirmed and not blocked → edgeOptimizeEnabled: true, blocked: false', async () => {
@@ -5852,11 +5816,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: true,
-          blocked: false,
-          statusCode: 200,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: true });
       });
 
       it('routing not confirmed AND blocked → edgeOptimizeEnabled: false, blocked: true', async () => {
@@ -5870,11 +5830,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({
-          edgeOptimizeEnabled: false,
-          blocked: true,
-          statusCode: 403,
-        });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
       });
     });
   });

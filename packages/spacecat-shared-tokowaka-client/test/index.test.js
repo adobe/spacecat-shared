@@ -5167,8 +5167,9 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: { get: () => null },
+          headers: new Map(),
         };
+        mockResponse.headers.get = () => null;
         tracingFetchStub.resolves(mockResponse);
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
@@ -5187,8 +5188,9 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: { get: () => null },
+          headers: new Map(),
         };
+        mockResponse.headers.get = () => null;
         tracingFetchStub.resolves(mockResponse);
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
@@ -5216,9 +5218,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 200,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.resolves(mockResponse);
@@ -5227,6 +5227,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 200,
         });
         expect(tracingFetchStub).to.have.been.calledOnce;
         expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/');
@@ -5238,9 +5240,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 200,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.resolves(mockResponse);
@@ -5249,6 +5249,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 200,
         });
         expect(tracingFetchStub.firstCall.args[0]).to.equal('https://example.com/products');
       });
@@ -5266,6 +5268,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: false,
+          blocked: false,
+          statusCode: 200,
         });
       });
 
@@ -5275,9 +5279,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 404,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.resolves(mockResponse);
@@ -5286,6 +5288,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 404,
         });
       });
 
@@ -5302,7 +5306,7 @@ describe('TokowakaClient', () => {
 
         const fetchOptions = tracingFetchStub.firstCall.args[1];
         const userAgent = fetchOptions.headers['User-Agent'];
-        expect(userAgent).to.include('Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0');
+        expect(userAgent).to.include('Tokowaka-AI AdobeEdgeOptimize-AI Spacecat/1.0');
         expect(userAgent).to.include('Mozilla/5.0');
       });
 
@@ -5534,9 +5538,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 200,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.onFirstCall().rejects(new Error('Temporary failure'));
@@ -5550,6 +5552,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 200,
         });
         expect(tracingFetchStub).to.have.been.calledTwice;
       });
@@ -5560,9 +5564,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 200,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.onFirstCall().rejects(new Error('Failure 1'));
@@ -5578,6 +5580,8 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 200,
         });
         expect(tracingFetchStub.callCount).to.equal(3);
       });
@@ -5609,7 +5613,7 @@ describe('TokowakaClient', () => {
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
 
-        expect(result).to.deep.equal({ edgeOptimizeEnabled: false });
+        expect(result).to.deep.equal({ edgeOptimizeEnabled: false, blocked: null });
         expect(tracingFetchStub).to.have.been.calledOnce;
         expect(log.warn).to.have.been.calledWith(
           sinon.match(/\[edge-optimize-status\] Request timed out after 5000ms for https:\/\/example.com\/, returning edgeOptimizeEnabled: false/),
@@ -5748,9 +5752,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 200,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.resolves(mockResponse);
@@ -5766,9 +5768,7 @@ describe('TokowakaClient', () => {
         ]);
         const mockResponse = {
           status: 500,
-          headers: {
-            get: (key) => headersMap.get(key) || null,
-          },
+          headers: headersMap,
         };
 
         tracingFetchStub.resolves(mockResponse);
@@ -5777,6 +5777,103 @@ describe('TokowakaClient', () => {
 
         expect(result).to.deep.equal({
           edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 500,
+        });
+      });
+    });
+
+    describe('WAF classification merged into routing check', () => {
+      let site;
+
+      beforeEach(() => {
+        site = {
+          getId: () => 'site-id',
+          getBaseURL: () => 'https://example.com',
+          getConfig: () => ({ getEdgeOptimizeConfig: () => undefined }),
+          getDeliveryType: () => 'aem_edge',
+        };
+      });
+
+      it('routing confirmed but hard-blocked (403) → edgeOptimizeEnabled: false, blocked: true', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+        ]);
+        const mockResponse = {
+          status: 403,
+          headers: headersMap,
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+          blocked: true,
+          statusCode: 403,
+        });
+      });
+
+      it('routing confirmed but soft-blocked (challenge page body) → edgeOptimizeEnabled: false, blocked: true', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+          ['content-type', 'text/html'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: headersMap,
+          text: sinon.stub().resolves('<div class="cf-chl-widget"></div>'),
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+          blocked: true,
+          statusCode: 200,
+        });
+      });
+
+      it('routing confirmed and not blocked → edgeOptimizeEnabled: true, blocked: false', async () => {
+        const headersMap = new Map([
+          ['x-tokowaka-request-id', 'abc123'],
+          ['content-type', 'text/html'],
+        ]);
+        const mockResponse = {
+          status: 200,
+          headers: headersMap,
+          text: sinon.stub().resolves('<html><body>real page content</body></html>'),
+        };
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: true,
+          blocked: false,
+          statusCode: 200,
+        });
+      });
+
+      it('routing not confirmed AND blocked → edgeOptimizeEnabled: false, blocked: true', async () => {
+        const mockResponse = {
+          status: 403,
+          headers: new Map(),
+        };
+        mockResponse.headers.get = () => null;
+
+        tracingFetchStub.resolves(mockResponse);
+
+        const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
+
+        expect(result).to.deep.equal({
+          edgeOptimizeEnabled: false,
+          blocked: true,
+          statusCode: 403,
         });
       });
     });
@@ -5820,6 +5917,19 @@ describe('TokowakaClient', () => {
     });
 
     const makeHeaders = (plain = {}) => new Headers(plain);
+
+    describe('Request construction', () => {
+      it('sends the shared Adobe-identifying User-Agent alongside x-forwarded-host', async () => {
+        tracingFetchStub.resolves({ status: 200, headers: makeHeaders({ 'content-type': 'text/html' }), text: sinon.stub().resolves('ok') });
+
+        await esmockClient.checkWafConnectivity(mockSiteWaf);
+
+        const fetchOptions = tracingFetchStub.firstCall.args[1];
+        expect(fetchOptions.headers['x-forwarded-host']).to.equal('example.com');
+        expect(fetchOptions.headers['User-Agent']).to.include('Tokowaka-AI AdobeEdgeOptimize-AI Spacecat/1.0');
+        expect(fetchOptions.headers['User-Agent']).to.include('Mozilla/5.0');
+      });
+    });
 
     describe('Hard block — status codes', () => {
       [401, 403, 406, 429, 503].forEach((status) => {
@@ -5871,10 +5981,15 @@ describe('TokowakaClient', () => {
         expect(result.blocked).to.equal(true);
       });
 
-      it('detects Imperva challenge via _Incapsula_Resource', async () => {
+      it('does not misclassify a genuine Imperva/Incapsula-fronted page as blocked', async () => {
+        // _incapsula_resource is injected into every page Imperva fronts for
+        // fingerprinting/RASP, blocked or not — it isn't specific to WAF-generated
+        // block/challenge pages, so it was removed from BOT_CHALLENGE_KEYWORDS.
+        // Imperva hard blocks are still caught via HARD_BLOCK_STATUS_CODES.
         tracingFetchStub.resolves(makeSoftBlockResponse('window._incapsula_resource={}'));
         const result = await esmockClient.checkWafConnectivity(mockSiteWaf);
-        expect(result.blocked).to.equal(true);
+        expect(result.blocked).to.equal(false);
+        expect(result.reachable).to.equal(true);
       });
 
       it('detects Akamai error page via errors.edgesuite.net', async () => {

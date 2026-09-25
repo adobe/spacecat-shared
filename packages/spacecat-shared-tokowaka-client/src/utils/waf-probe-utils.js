@@ -17,6 +17,13 @@ export const PRIVATE_HOST_RE = /^(localhost$|127\.|10\.|192\.168\.|172\.(1[6-9]|
 
 export const WAF_PROBE_TIMEOUT_MS = 15000;
 
+// Single, shared, Adobe-identifying UA for every Edge Optimize probe (routing check and
+// WAF check alike) so a customer only ever needs one allowlist rule to cover all of them,
+// and so the two checks can never drift into sending different UAs again.
+export const ADOBE_PROBE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
+  + 'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 '
+  + 'Tokowaka-AI AdobeEdgeOptimize-AI Spacecat/1.0';
+
 // Soft-block detection: vendor-specific technical identifiers that only appear in
 // WAF-generated challenge pages, never in real page content. Broad natural-language
 // terms ('challenge', 'captcha', 'access denied') are intentionally excluded — they
@@ -25,7 +32,11 @@ export const WAF_PROBE_TIMEOUT_MS = 15000;
 export const BOT_CHALLENGE_KEYWORDS = [
   'cf-chl-widget', // Cloudflare challenge widget CSS class
   'completing the challenge', // Cloudflare-specific challenge phrase
-  '_incapsula_resource', // Imperva/Incapsula JS artifact — only in WAF-generated pages
+  // '_incapsula_resource' removed: Imperva/Incapsula injects this fingerprinting/RASP
+  // script into every page it fronts, blocked or not — false-positived real pages
+  // (e.g. hyundaicanada.com's genuine homepage). Imperva hard blocks are still caught
+  // via HARD_BLOCK_STATUS_CODES (403/429/etc.). Same fix already applied to the
+  // vendored copy in spacecat-import-worker's waf-probe.js.
   'errors.edgesuite.net', // Akamai error page domain
   'errors.edgekey.net', // Akamai edge key domain
 ];
@@ -36,14 +47,17 @@ export const BOT_CHALLENGE_KEYWORDS = [
 export const HARD_BLOCK_STATUS_CODES = new Set([401, 403, 406, 429, 503]);
 
 /**
- * Classifies an already-fetched Tokowaka-proxied response into one of four probe outcomes:
+ * Classifies an already-fetched response into one of four probe outcomes. Used both for
+ * responses fetched through the Tokowaka proxy (checkWafConnectivity) and for responses
+ * fetched directly from the customer's own domain (checkEdgeOptimizeStatus) — the
+ * classification logic itself doesn't care which vantage point the response came from:
  *   - Hard block  : HTTP status in HARD_BLOCK_STATUS_CODES → { reachable: false, blocked: true }
  *   - CF challenge: cf-mitigated: challenge header         → { reachable: false, blocked: true }
  *   - Soft block  : 2xx HTML body with vendor keywords     → { reachable: false, blocked: true }
  *   - Clean pass  : 2xx with real content                  → { reachable: true,  blocked: false }
  *   - Other       : unexpected status (e.g. redirect)      → { reachable: false, blocked: false }
  *
- * @param {Response} response - Fetch response from the Tokowaka proxy.
+ * @param {Response} response - Already-fetched response to classify.
  * @param {string} targetHost - Customer hostname, used only for log messages.
  * @param {Object} log - Logger with an `info` method.
  * @returns {Promise<Object>} Classification result.

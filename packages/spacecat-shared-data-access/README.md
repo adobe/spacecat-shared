@@ -148,14 +148,19 @@ For the topic vector index (`opportunity_semantic_embedding`) and the global que
 import {
   syncOpportunitySemantic, copyEntityVectors, lookupOpportunitiesByVectors,
   getQueryEmbeddings, upsertQueryEmbeddings, touchQueryEmbeddings,
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES, OPPORTUNITY_SEMANTIC_ENTITY_TYPES, SEMANTIC_MATCHING_CONFIG,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
-const scope = { model: 'azure/text-embedding-3-small', dims: 1536 };
+const scope = {
+  model: SEMANTIC_MATCHING_CONFIG.embeddingModel, dims: SEMANTIC_MATCHING_CONFIG.embeddingDims,
+};
+const { TOPIC } = OPPORTUNITY_SEMANTIC_SOURCE_TYPES;
+const { CITED_ANALYSIS } = OPPORTUNITY_SEMANTIC_ENTITY_TYPES;
 
 // writer (needs the postgrest_writer role): full-replace an opportunity's topic vectors
 await syncOpportunitySemantic(postgrestClient, {
-  siteId, entityId, entityType, sourceType: 'topic', sources: [{ text, vector, ...scope }],
+  siteId, entityId, entityType: CITED_ANALYSIS, sourceType: TOPIC, sources: [{ text, vector, ...scope }],
 });
 
 // writer: copy an opportunity's vector rows to another opportunity in the same site
@@ -166,11 +171,16 @@ const cached = await getQueryEmbeddings(postgrestClient, { texts, ...scope });
 await upsertQueryEmbeddings(postgrestClient, { entries: [{ text, vector }], ...scope });
 await touchQueryEmbeddings(postgrestClient, { textHashes, ...scope });
 
-// reader, batched: one best-first list of { entityId, entityType, score } per query vector
+// reader, batched: one best-first list of { entityId, entityType, score } per query vector.
+// entityTypes is optional (omitted or [] searches all entity types).
 const matches = await lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceType: 'topic', vectors, k: 10, minScore: 0.5, ...scope,
+  siteId, sourceTypes: [TOPIC], entityTypes: [CITED_ANALYSIS], vectors, k: 10, minScore: 0.5, ...scope,
 });
 ```
+
+`OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (kinds of embedded text) and `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` (opportunity types) are the registries for `source_type` and `entity_type`: the writer and reader reject any value outside them. To index a new kind or opportunity type, add it to the registry first.
+
+`SEMANTIC_MATCHING_CONFIG` (`embeddingModel`, `embeddingDims`) is the embedding generation the writer and reader both use; pass it as `model` / `dims` rather than hardcoding the values. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
 
 The batched helpers group their calls internally (search in groups of up to 20 vectors, cache reads/touches in groups of 50 hashes), so callers pass whole lists rather than looping per item.
 

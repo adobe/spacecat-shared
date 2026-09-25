@@ -54,8 +54,12 @@ function installBrowserDomParserShim() {
           if (!element || !$(element).parent().length) {
             return null;
           }
+          const parentElement = $(element).parent()[0];
           return {
             insertBefore(child, reference) {
+              if ($(reference.cheerioElement).parent()[0] !== parentElement) {
+                throw new Error('NotFoundError');
+              }
               $(reference.cheerioElement).before(child.cheerioElement);
             },
           };
@@ -405,18 +409,22 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Play Pause');
     });
 
-    it('should remove Google Maps widget container (.gm-style) and its label text', async () => {
+    it('should preserve InfoWindow content while removing Google Maps runtime text', async () => {
       const html = `<html><body>
         <h1>Estaciones de servicio</h1>
         <p>Encuentra tu estación más cercana.</p>
         <div id="map-container">
           <div class="gm-style">
             <div class="gm-style-iw">
+              <div class="gm-style-iw-chr">
+                <div class="gm-style-iw-ch">Estación Repsol Centro</div>
+                <button aria-label="Close">Close window</button>
+              </div>
               <div class="gm-style-iw-d">
-                <h2>Estación Repsol Centro</h2>
                 <p>Calle Mayor 1, Madrid</p>
               </div>
             </div>
+            <div class="gm-style-iw">Legacy InfoWindow: Sevilla office.</div>
             <div class="gm-bundled-control">
               <div class="gmnoprint">
                 <div class="gm-svpc">Pegman</div>
@@ -437,6 +445,8 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.include('Horario');
       expect(text).to.include('Estación Repsol Centro');
       expect(text).to.include('Calle Mayor 1, Madrid');
+      expect(text).to.include('Legacy InfoWindow: Sevilla office.');
+      expect(text).to.not.include('Close window');
       expect(text).to.not.include('Map data');
       expect(text).to.not.include('Pegman');
       expect(text).to.not.include('40.4168');
@@ -540,6 +550,11 @@ describe('HTML Visibility Analyzer', () => {
             <div>Sorry, we have no imagery here.</div>
             <div class="gm-style-cc">Map Data Terms</div>
             <div class="gm-style-iw">Open Madrid location details.</div>
+            <div class="gm-style-iw">
+              <div class="gm-style-iw-ch">Barcelona office.</div>
+              <div class="gm-style-iw-d">Carrer de Mallorca 1.</div>
+              <button>Close window</button>
+            </div>
           </div>
           <gmp-map>
             <gmp-advanced-marker>Customer-authored marker details.</gmp-advanced-marker>
@@ -552,7 +567,10 @@ describe('HTML Visibility Analyzer', () => {
         expect(text).to.include('Office locations');
         expect(text).to.include('Real office content.');
         expect(text).to.include('Open Madrid location details.');
+        expect(text).to.include('Barcelona office.');
+        expect(text).to.include('Carrer de Mallorca 1.');
         expect(text).to.include('Customer-authored marker details.');
+        expect(text).to.not.include('Close window');
         expect(text).to.not.include('Sorry, we have no imagery here');
         expect(text).to.not.include('Map Data');
       } finally {
@@ -619,6 +637,11 @@ describe('HTML Visibility Analyzer', () => {
         <div class="gm-style">
           <div>Sorry, we have no imagery here.</div>
           <div class="gm-style-cc">Map data ©2026 Google</div>
+          <div class="gm-style-iw">
+            <div class="gm-style-iw-ch">Madrid office.</div>
+            <div class="gm-style-iw-d">Calle Mayor 1.</div>
+            <button>Close window</button>
+          </div>
         </div>
         <p>Madrid office details.</p>
       </body></html>`;
@@ -626,6 +649,9 @@ describe('HTML Visibility Analyzer', () => {
       const { currentRenderedHtml } = await generateMarkdownDiff(serverHtml, clientHtml, false);
 
       expect(currentRenderedHtml).to.include('Madrid office details.');
+      expect(currentRenderedHtml).to.include('Madrid office.');
+      expect(currentRenderedHtml).to.include('Calle Mayor 1.');
+      expect(currentRenderedHtml).to.not.include('Close window');
       expect(currentRenderedHtml).to.not.include('Sorry, we have no imagery here.');
       expect(currentRenderedHtml).to.not.include('Map data');
     });

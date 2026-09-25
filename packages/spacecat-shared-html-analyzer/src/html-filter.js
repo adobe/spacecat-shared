@@ -101,17 +101,16 @@ const VIDEO_PLAYER_SELECTORS = [
   '.playkit-player', // Kaltura PlayKit
 ].join(', ');
 
-// Google Maps runtime DOM includes tile fallback/control text that pollutes extracted content.
-// Keep customer-authored location data around the map; strip only Google-owned widget nodes.
-const MAPS_WIDGET_SELECTORS = [
-  '.gm-style', // Google Maps JS API root container
-  // Controls can be detached from .gm-style in serialized or partial DOM snapshots.
+// Exact Google Maps runtime classes only; never match customer map wrappers by name or substring.
+// Open InfoWindow content is preserved before the runtime root is removed.
+const MAPS_RUNTIME_ROOT_SELECTOR = '.gm-style';
+const MAPS_CONTROL_SELECTORS = [
+  // These controls can be detached from .gm-style in serialized or partial DOM snapshots.
   '.LGLeeN-keyboard-shortcuts-view',
   '.gm-style-cc',
   '.gm-bundled-control',
   '.gm-svpc',
   '.gmnoprint',
-  'gmp-map', // Google Maps Web Component (Maps JS API v4+)
 ].join(', ');
 
 /**
@@ -119,7 +118,18 @@ const MAPS_WIDGET_SELECTORS = [
  * @param {Element} element - DOM element to filter
  */
 function removeMapWidgets(element) {
-  element.querySelectorAll(MAPS_WIDGET_SELECTORS).forEach((n) => n.remove());
+  element.querySelectorAll(MAPS_RUNTIME_ROOT_SELECTOR).forEach((mapRoot) => {
+    const detailedInfoWindows = mapRoot.querySelectorAll('.gm-style-iw-d');
+    const infoWindows = detailedInfoWindows.length
+      ? detailedInfoWindows
+      : mapRoot.querySelectorAll('.gm-style-iw');
+
+    infoWindows.forEach((infoWindow) => {
+      mapRoot.parentNode?.insertBefore(infoWindow, mapRoot);
+    });
+    mapRoot.remove();
+  });
+  element.querySelectorAll(MAPS_CONTROL_SELECTORS).forEach((n) => n.remove());
 }
 
 /**
@@ -127,7 +137,19 @@ function removeMapWidgets(element) {
  * @param {CheerioAPI} $ - Cheerio instance
  */
 function removeMapWidgetsCheerio($) {
-  $(MAPS_WIDGET_SELECTORS).remove();
+  $(MAPS_RUNTIME_ROOT_SELECTOR).each((i, mapRoot) => {
+    const $mapRoot = $(mapRoot);
+    const $detailedInfoWindows = $mapRoot.find('.gm-style-iw-d');
+    const $infoWindows = $detailedInfoWindows.length
+      ? $detailedInfoWindows
+      : $mapRoot.find('.gm-style-iw');
+
+    $infoWindows.each((j, infoWindow) => {
+      $mapRoot.before(infoWindow);
+    });
+    $mapRoot.remove();
+  });
+  $(MAPS_CONTROL_SELECTORS).remove();
 }
 
 /**

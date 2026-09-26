@@ -2148,22 +2148,6 @@ describe('edge-optimize support', () => {
       expect(cfSendStub.calledOnce).to.equal(true);
     });
 
-    it('does not choke on an association with no ARN field (exercises the `|| \'\'` fallback)', async () => {
-      cfSendStub.onFirstCall().resolves({
-        DistributionConfig: {
-          DefaultCacheBehavior: {
-            FunctionAssociations: { Quantity: 1, Items: [{ EventType: 'viewer-request' }] },
-            LambdaFunctionAssociations: { Quantity: 1, Items: [{ EventType: 'origin-request' }] },
-          },
-        },
-        ETag: 'dist-etag',
-      });
-
-      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
-      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
-      expect(cfSendStub.calledOnce).to.equal(true);
-    });
-
     it('strips EO associations from a named cache behavior', async () => {
       cfSendStub.onFirstCall().resolves({
         DistributionConfig: {

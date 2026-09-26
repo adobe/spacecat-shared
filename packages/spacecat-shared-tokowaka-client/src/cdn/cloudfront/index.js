@@ -1160,20 +1160,14 @@ export async function applyAssociations(
 }
 
 /**
- * Remove Edge Optimize's own routing associations from a CloudFront distribution, across every
- * behavior (the default behavior and every named cache behavior) — the reverse of
- * {@link applyAssociations}. Strips only the EO-owned entries (the `edgeoptimize-routing`
- * viewer-request CloudFront Function, and the `edgeoptimize-origin` origin-request/origin-response
- * Lambda@Edge), preserving every other association a behavior may carry. Does not touch the EO
- * origin, the Lambda function, its execution role, the cache policy, or the connector role itself —
- * those stay in place so re-deploying later recreates nothing. Idempotent: a distribution with no
- * EO associations anywhere is a no-op (no UpdateDistribution call).
+ * Reverse of {@link applyAssociations}: strips only this distribution's EO-owned associations
+ * from every behavior, leaving all other resources in place. Idempotent (no-op when none match).
  *
  * @param {object} credentials - temporary credentials from {@link assumeConnectorRole}.
  * @param {string} distributionId - the CloudFront distribution ID.
  * @param {string} [region] - CloudFront control-plane region.
- * @returns {Promise<{reverted: boolean, behaviors: string[]}>} `behaviors` lists the path patterns
- *   (`'default'` for the default behavior) that had EO associations removed.
+ * @returns {Promise<{reverted: boolean, behaviors: string[]}>} path patterns changed
+ *   (`'default'` for the default behavior).
  */
 export async function removeEdgeOptimizeRouting(
   credentials,
@@ -1187,54 +1181,42 @@ export async function removeEdgeOptimizeRouting(
   const distResult = await client.send(new GetDistributionConfigCommand({ Id: distributionId }));
   const config = distResult.DistributionConfig;
 
-  const behaviors = [
-    { pathPattern: 'default', behavior: config.DefaultCacheBehavior },
-    ...(config.CacheBehaviors?.Items || []).map(
-      (b) => ({ pathPattern: b.PathPattern, behavior: b }),
-    ),
-  ];
-
-  // Match the EXACT per-distribution resource names the automation created (not a loose
-  // `edgeoptimize-*` substring, which could false-positive on a customer-owned function/Lambda
-  // whose ARN merely contains that text). A CloudFront function ARN ends `.../function/<name>`;
-  // a Lambda@Edge association ARN is versioned `.../function:<name>:<version>`.
+  // Match the EXACT per-distribution names the automation created, not an `edgeoptimize-*`
+  // substring that could hit a customer-owned resource. CloudFront function ARNs end
+  // `.../function/<name>`; Lambda@Edge ARNs are versioned `.../function:<name>:<version>`.
   const fnName = eoRoutingFunctionName(distributionId);
   const lambdaName = eoLambdaFunctionName(distributionId);
 
-  const changedPathPatterns = [];
+  const changed = [];
+  const behaviors = [config.DefaultCacheBehavior, ...(config.CacheBehaviors?.Items || [])];
   for (let i = 0; i < behaviors.length; i += 1) {
-    const { pathPattern, behavior } = behaviors[i];
+    const behavior = behaviors[i];
     const existingFns = behavior.FunctionAssociations?.Items || [];
     const existingLambdas = behavior.LambdaFunctionAssociations?.Items || [];
     const remainingFns = existingFns.filter(
-      (a) => !(a.EventType === 'viewer-request' && (a.FunctionARN || '').includes(`:function/${fnName}`)),
+      (a) => !(a.EventType === 'viewer-request' && a.FunctionARN.includes(`:function/${fnName}`)),
     );
     const remainingLambdas = existingLambdas.filter(
-      (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && (a.LambdaFunctionARN || '').includes(`:function:${lambdaName}:`)),
+      (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && a.LambdaFunctionARN.includes(`:function:${lambdaName}:`)),
     );
-    const fnsChanged = remainingFns.length !== existingFns.length;
-    const lambdasChanged = remainingLambdas.length !== existingLambdas.length;
-    if (fnsChanged || lambdasChanged) {
+    if (remainingFns.length !== existingFns.length
+      || remainingLambdas.length !== existingLambdas.length) {
       behavior.FunctionAssociations = { Quantity: remainingFns.length, Items: remainingFns };
       behavior.LambdaFunctionAssociations = {
-        Quantity: remainingLambdas.length,
-        Items: remainingLambdas,
+        Quantity: remainingLambdas.length, Items: remainingLambdas,
       };
-      changedPathPatterns.push(pathPattern);
+      changed.push(behavior.PathPattern ?? 'default');
     }
   }
 
-  if (changedPathPatterns.length === 0) {
-    return { reverted: false, behaviors: [] };
+  if (changed.length) {
+    await client.send(new UpdateDistributionCommand({
+      Id: distributionId,
+      IfMatch: distResult.ETag,
+      DistributionConfig: config,
+    }));
   }
-
-  await client.send(new UpdateDistributionCommand({
-    Id: distributionId,
-    IfMatch: distResult.ETag,
-    DistributionConfig: config,
-  }));
-
-  return { reverted: true, behaviors: changedPathPatterns };
+  return { reverted: changed.length > 0, behaviors: changed };
 }
 
 // Bounded per-probe timeout for the verify fetches. 20s is generous enough for a slow/cold

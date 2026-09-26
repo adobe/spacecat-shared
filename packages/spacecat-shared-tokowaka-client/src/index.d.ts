@@ -335,11 +335,7 @@ export function applyAssociations(
   region?: string,
 ): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
 
-/**
- * Remove Edge Optimize's own routing associations from a CloudFront distribution, across every
- * behavior — the reverse of {@link applyAssociations}. Leaves the EO origin, the Lambda function,
- * its execution role, the cache policy, and the connector role untouched.
- */
+/** Reverse of {@link applyAssociations}; strips only EO-owned associations. */
 export function removeEdgeOptimizeRouting(
   credentials: AWSCredentials,
   distributionId: string,

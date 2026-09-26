@@ -76,6 +76,7 @@ export {
   createLambdaAtEdge,
   getLambdaAtEdgeStatus,
   applyAssociations,
+  removeEdgeOptimizeRouting,
   verifyRouting,
   runDeployStep,
   planDeploy,

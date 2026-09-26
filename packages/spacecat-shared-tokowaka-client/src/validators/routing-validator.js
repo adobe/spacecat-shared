@@ -91,11 +91,10 @@ function classifyResolvedResponse(response, log, url) {
   if (hasRoutingHeader(response)) {
     return { outcome: 'pass', metadata: { origin_status: response.status } };
   }
+  logHeaders(log, url, response.status, response);
   if (response.status === 404) {
-    logHeaders(log, url, response.status, response);
     return { outcome: 'unknown', metadata: { origin_status: response.status } };
   }
-  logHeaders(log, url, response.status, response);
   return { outcome: 'fail', metadata: { origin_status: response.status } };
 }
 

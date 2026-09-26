@@ -29,7 +29,7 @@ export const EDGE_OPTIMIZE_PROBE_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac
 // at any body scan depth.
 export const BOT_CHALLENGE_KEYWORDS = [
   'cf-chl-widget', // Cloudflare challenge widget CSS class
-  'completing the challenge', // Cloudflare-specific challenge phrase
+  'completing the challenge', // Cloudflare-specific challenge phrase; pre-existing risk against real page content, not introduced by checkEdgeOptimizeStatus
   // '_incapsula_resource' removed: Imperva injects it into every page, blocked or not.
   'errors.edgesuite.net', // Akamai error page domain
   'errors.edgekey.net', // Akamai edge key domain

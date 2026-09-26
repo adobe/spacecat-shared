@@ -1402,6 +1402,8 @@ class TokowakaClient {
 
         this.log.info(`[edge-optimize-status] Edge optimize headers found: ${requestIdPresent} for ${targetUrl}`);
 
+        // Classified regardless of requestIdPresent, so blocked/statusCode are logged for
+        // every probed response, not only the ones that affect edgeOptimizeEnabled.
         // eslint-disable-next-line no-await-in-loop
         const { blocked, statusCode } = await classifyProbeResponse(response, targetHost, this.log);
         this.log.info(`[edge-optimize-status] WAF classification for ${targetUrl}: blocked=${blocked}, statusCode=${statusCode}`);

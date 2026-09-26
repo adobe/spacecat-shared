@@ -5041,6 +5041,13 @@ describe('TokowakaClient', () => {
     let tracingFetchStub;
     let esmockClient;
 
+    // Mirrors real Headers.get(): returns null (not undefined) for a missing key,
+    // so tests can't pass by accident on the production `!== null` checks.
+    const makeMockHeaders = (entries = []) => {
+      const map = new Map(entries);
+      return { get: (key) => (map.has(key) ? map.get(key) : null) };
+    };
+
     beforeEach(async () => {
       tracingFetchStub = sinon.stub();
 
@@ -5167,9 +5174,8 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
         tracingFetchStub.resolves(mockResponse);
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
@@ -5188,9 +5194,8 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
         tracingFetchStub.resolves(mockResponse);
 
         const result = await esmockClient.checkEdgeOptimizeStatus(site, '/');
@@ -5213,7 +5218,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should return edgeOptimizeEnabled: true when x-tokowaka-request-id header is present', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
         const mockResponse = {
@@ -5231,7 +5236,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should return edgeOptimizeEnabled: true when x-edgeoptimize-request-id header is present', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-edgeoptimize-request-id', 'xyz789'],
         ]);
         const mockResponse = {
@@ -5250,9 +5255,8 @@ describe('TokowakaClient', () => {
       it('should return edgeOptimizeEnabled: false when headers are not present', async () => {
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5262,7 +5266,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should work with 404 status and edge optimize enabled', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
         const mockResponse = {
@@ -5280,9 +5284,8 @@ describe('TokowakaClient', () => {
       it('should send correct User-Agent header', async () => {
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5306,9 +5309,8 @@ describe('TokowakaClient', () => {
         };
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5331,9 +5333,8 @@ describe('TokowakaClient', () => {
         };
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5357,9 +5358,8 @@ describe('TokowakaClient', () => {
         };
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5379,9 +5379,8 @@ describe('TokowakaClient', () => {
         };
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5402,8 +5401,7 @@ describe('TokowakaClient', () => {
           }),
           getDeliveryType: () => 'aem_edge',
         };
-        const mockResponse = { status: 200, headers: new Map() };
-        mockResponse.headers.get = () => null;
+        const mockResponse = { status: 200, headers: makeMockHeaders() };
         tracingFetchStub.resolves(mockResponse);
 
         await esmockClient.checkEdgeOptimizeStatus(nullScraperSite, '/');
@@ -5420,8 +5418,7 @@ describe('TokowakaClient', () => {
           getConfig: () => null,
           getDeliveryType: () => 'aem_edge',
         };
-        const mockResponse = { status: 200, headers: new Map() };
-        mockResponse.headers.get = () => null;
+        const mockResponse = { status: 200, headers: makeMockHeaders() };
         tracingFetchStub.resolves(mockResponse);
 
         await esmockClient.checkEdgeOptimizeStatus(nullConfigSite, '/');
@@ -5441,8 +5438,7 @@ describe('TokowakaClient', () => {
           }),
           getDeliveryType: () => 'aem_edge',
         };
-        const mockResponse = { status: 200, headers: new Map() };
-        mockResponse.headers.get = () => null;
+        const mockResponse = { status: 200, headers: makeMockHeaders() };
         tracingFetchStub.resolves(mockResponse);
 
         await esmockClient.checkEdgeOptimizeStatus(emptyHeadersSite, '/');
@@ -5456,9 +5452,8 @@ describe('TokowakaClient', () => {
       it('should pass timeout option to tracingFetch', async () => {
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5517,7 +5512,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should succeed on second attempt after first failure', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
         const mockResponse = {
@@ -5539,7 +5534,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should succeed on third attempt after two failures', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-edgeoptimize-request-id', 'xyz789'],
         ]);
         const mockResponse = {
@@ -5566,9 +5561,8 @@ describe('TokowakaClient', () => {
         const networkError = new Error('Connection refused');
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.onFirstCall().rejects(networkError);
         tracingFetchStub.onSecondCall().resolves(mockResponse);
@@ -5606,8 +5600,7 @@ describe('TokowakaClient', () => {
           }),
           getDeliveryType: () => 'aem_edge',
         };
-        const mockResponse = { status: 200, headers: new Map() };
-        mockResponse.headers.get = () => null;
+        const mockResponse = { status: 200, headers: makeMockHeaders() };
 
         tracingFetchStub.onFirstCall().rejects(new Error('Temporary failure'));
         tracingFetchStub.onSecondCall().resolves(mockResponse);
@@ -5641,9 +5634,8 @@ describe('TokowakaClient', () => {
       it('should construct URL correctly with simple path', async () => {
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5655,9 +5647,8 @@ describe('TokowakaClient', () => {
       it('should construct URL correctly with multi-level path', async () => {
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5676,9 +5667,8 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5697,9 +5687,8 @@ describe('TokowakaClient', () => {
 
         const mockResponse = {
           status: 200,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 
@@ -5722,7 +5711,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should handle both headers present', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
           ['x-edgeoptimize-request-id', 'xyz789'],
         ]);
@@ -5739,7 +5728,7 @@ describe('TokowakaClient', () => {
       });
 
       it('should handle 500 error with edge optimize header', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
         const mockResponse = {
@@ -5768,7 +5757,7 @@ describe('TokowakaClient', () => {
       });
 
       it('routing confirmed but hard-blocked (403) → edgeOptimizeEnabled: false, blocked: true', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
         ]);
         const mockResponse = {
@@ -5784,7 +5773,7 @@ describe('TokowakaClient', () => {
       });
 
       it('routing confirmed but soft-blocked (challenge page body) → edgeOptimizeEnabled: false, blocked: true', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
           ['content-type', 'text/html'],
         ]);
@@ -5802,7 +5791,7 @@ describe('TokowakaClient', () => {
       });
 
       it('routing confirmed and not blocked → edgeOptimizeEnabled: true, blocked: false', async () => {
-        const headersMap = new Map([
+        const headersMap = makeMockHeaders([
           ['x-tokowaka-request-id', 'abc123'],
           ['content-type', 'text/html'],
         ]);
@@ -5822,9 +5811,8 @@ describe('TokowakaClient', () => {
       it('routing not confirmed AND blocked → edgeOptimizeEnabled: false, blocked: true', async () => {
         const mockResponse = {
           status: 403,
-          headers: new Map(),
+          headers: makeMockHeaders(),
         };
-        mockResponse.headers.get = () => null;
 
         tracingFetchStub.resolves(mockResponse);
 

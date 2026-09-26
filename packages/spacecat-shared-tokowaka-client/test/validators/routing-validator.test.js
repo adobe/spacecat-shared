@@ -35,6 +35,7 @@ describe('RoutingValidator', () => {
         const key = Object.keys(headers).find((k) => k.toLowerCase() === name.toLowerCase());
         return key ? headers[key] : null;
       },
+      entries: () => Object.entries(headers),
     },
     body: { cancel: sinon.stub().resolves() },
   });
@@ -104,28 +105,44 @@ describe('RoutingValidator', () => {
     expect(result.outcome).to.equal('pass');
   });
 
-  it('returns unknown for a 404 with no routing header', async () => {
-    fetchStub.resolves(mkResponse(404));
+  it('returns unknown for a 404 with no routing header, and logs full headers', async () => {
+    fetchStub.resolves(mkResponse(404, { 'content-type': 'text/html' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 404 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 404)',
+      { headers: { 'content-type': 'text/html' } },
+    );
   });
 
-  it('returns false for a 200 with no routing header', async () => {
-    fetchStub.resolves(mkResponse(200));
+  it('returns false for a 200 with no routing header, and logs full headers', async () => {
+    fetchStub.resolves(mkResponse(200, { 'content-type': 'text/html' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 200 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 200)',
+      { headers: { 'content-type': 'text/html' } },
+    );
   });
 
-  it('returns false for a 403 with no routing header', async () => {
-    fetchStub.resolves(mkResponse(403));
+  it('returns false for a 403 with no routing header, and logs full headers', async () => {
+    fetchStub.resolves(mkResponse(403, { 'x-waf-block-reason': 'rule-42' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 403 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 403)',
+      { headers: { 'x-waf-block-reason': 'rule-42' } },
+    );
   });
 
-  it('returns false for a 500 with no routing header', async () => {
-    fetchStub.resolves(mkResponse(500));
+  it('returns false for a 500 with no routing header, and logs full headers', async () => {
+    fetchStub.resolves(mkResponse(500, { 'x-error-id': 'abc123' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 500 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 500)',
+      { headers: { 'x-error-id': 'abc123' } },
+    );
   });
 
   it('classifies correctly even when response.body is not a cancellable stream', async () => {
@@ -138,12 +155,13 @@ describe('RoutingValidator', () => {
     expect(result).to.deep.equal({ outcome: 'fail', metadata: { origin_status: 200 } });
   });
 
-  it('follows a www-normalization redirect and classifies the second response', async () => {
+  it('follows a www-normalization redirect and classifies the second response, without logging headers for the passing redirect', async () => {
     fetchStub.onCall(0).resolves(mkResponse(301, { location: 'https://www.example.com/a' }));
     fetchStub.onCall(1).resolves(mkResponse(200, { 'x-tokowaka-request-id': 'abc' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'pass', metadata: { origin_status: 200 } });
     expect(fetchStub).to.have.been.calledTwice;
+    expect(log.warn).to.not.have.been.called;
   });
 
   it('follows a www-normalization redirect at the root path', async () => {
@@ -162,17 +180,25 @@ describe('RoutingValidator', () => {
     expect(fetchStub).to.have.been.calledTwice;
   });
 
-  it('does not follow a non-www-normalization redirect (different path)', async () => {
+  it('does not follow a non-www-normalization redirect (different path), and logs full headers', async () => {
     fetchStub.resolves(mkResponse(302, { location: 'https://example.com/b' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 302 } });
     expect(fetchStub).to.have.been.calledOnce;
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 302)',
+      { headers: { location: 'https://example.com/b' } },
+    );
   });
 
-  it('treats a redirect with no location header as unknown', async () => {
+  it('treats a redirect with no location header as unknown, and logs full headers', async () => {
     fetchStub.resolves(mkResponse(302));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 302 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 302)',
+      { headers: {} },
+    );
   });
 
   it('does not follow a redirect that downgrades https to http even for a www-normalization hostname swap', async () => {
@@ -180,20 +206,32 @@ describe('RoutingValidator', () => {
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 301 } });
     expect(fetchStub).to.have.been.calledOnce;
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 301)',
+      { headers: { location: 'http://www.example.com/a' } },
+    );
   });
 
-  it('treats a redirect to an unparseable location as unknown', async () => {
+  it('treats a redirect to an unparseable location as unknown, and logs full headers', async () => {
     fetchStub.resolves(mkResponse(302, { location: '::not a url::' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 302 } });
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://example.com/a (status 302)',
+      { headers: { location: '::not a url::' } },
+    );
   });
 
-  it('treats a second consecutive redirect as unknown (does not follow twice)', async () => {
+  it('treats a second consecutive redirect as unknown (does not follow twice), and logs full headers from the second response', async () => {
     fetchStub.onCall(0).resolves(mkResponse(301, { location: 'https://www.example.com/a' }));
     fetchStub.onCall(1).resolves(mkResponse(302, { location: 'https://www.example.com/b' }));
     const result = await validator.validate(mkSuggestion('https://example.com/a'), {});
     expect(result).to.deep.equal({ outcome: 'unknown', metadata: { origin_status: 302 } });
     expect(fetchStub).to.have.been.calledTwice;
+    expect(log.warn).to.have.been.calledOnceWith(
+      '[routing-validator] non-pass response headers for https://www.example.com/a (status 302)',
+      { headers: { location: 'https://www.example.com/b' } },
+    );
   });
 
   it('recovers after a network error on the first attempt', async () => {

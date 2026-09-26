@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.25.1...@adobe/spacecat-shared-tokowaka-client-v1.25.2) (2026-09-26)
+
+### Bug Fixes
+
+* **tokowaka-client:** merge WAF classification into checkEdgeOptimizeStatus, fix Imperva false-positive ([#1947](https://github.com/adobe/spacecat-shared/issues/1947)) ([d581f56](https://github.com/adobe/spacecat-shared/commit/d581f56fd9f5d1e18939b03eec2bf06572d1483e))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.25.0...@adobe/spacecat-shared-tokowaka-client-v1.25.1) (2026-09-26)
 
 ### Bug Fixes

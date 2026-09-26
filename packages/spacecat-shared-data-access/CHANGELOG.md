@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.33.0...@adobe/spacecat-shared-data-access-v4.33.1) (2026-09-25)
+
+### Bug Fixes
+
+* **data-access:** document the semantic-index helpers in the README (LLMO-7445) ([#1948](https://github.com/adobe/spacecat-shared/issues/1948)) ([9eb4e73](https://github.com/adobe/spacecat-shared/commit/9eb4e73e3a77523b60a912add39571ce4e6656ba)), closes [#1929](https://github.com/adobe/spacecat-shared/issues/1929) [#1942](https://github.com/adobe/spacecat-shared/issues/1942)
+
 ## [@adobe/spacecat-shared-data-access-v4.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.32.0...@adobe/spacecat-shared-data-access-v4.33.0) (2026-09-24)
 
 ### Features

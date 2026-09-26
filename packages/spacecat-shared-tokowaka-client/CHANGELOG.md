@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.25.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.25.0...@adobe/spacecat-shared-tokowaka-client-v1.25.1) (2026-09-26)
+
+### Bug Fixes
+
+* **tokowaka-client:** log full response headers on fail/unknown routing outcomes ([#1952](https://github.com/adobe/spacecat-shared/issues/1952)) ([aa12c39](https://github.com/adobe/spacecat-shared/commit/aa12c392bcdb93c2a118661a12530f8b4b84b0b5))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.25.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.24.0...@adobe/spacecat-shared-tokowaka-client-v1.25.0) (2026-09-20)
 
 ### Features

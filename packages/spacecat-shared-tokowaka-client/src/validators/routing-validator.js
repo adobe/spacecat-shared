@@ -24,6 +24,18 @@ function hasRoutingHeader(response) {
   return REQUEST_ID_HEADERS.some((header) => response.headers.has(header));
 }
 
+function headersToObject(response) {
+  return Object.fromEntries(response.headers.entries());
+}
+
+// Logged (not persisted in metadata) for fail/unknown only -- a pass is definitive and doesn't
+// need debugging context.
+function logHeaders(log, url, status, response) {
+  log.warn(`[routing-validator] non-pass response headers for ${url} (status ${status})`, {
+    headers: headersToObject(response),
+  });
+}
+
 function isAllowedUrl(urlStr) {
   try {
     return new URL(urlStr).protocol === 'https:';
@@ -75,10 +87,11 @@ async function cancelBody(response) {
  *                                                   removal, not proof routing itself is broken)
  *   - no header, any other status (2xx/4xx/5xx) -> fail
  */
-function classifyResolvedResponse(response) {
+function classifyResolvedResponse(response, log, url) {
   if (hasRoutingHeader(response)) {
     return { outcome: 'pass', metadata: { origin_status: response.status } };
   }
+  logHeaders(log, url, response.status, response);
   if (response.status === 404) {
     return { outcome: 'unknown', metadata: { origin_status: response.status } };
   }
@@ -99,26 +112,29 @@ async function fetchOnce(url) {
  * one hop further and that response classified; any other redirect (including a second
  * consecutive one) is left unfollowed and classified as 'unknown'.
  */
-async function checkUrlRoutingStatus(url) {
+async function checkUrlRoutingStatus(url, log) {
   const res = await fetchOnce(url);
   if (res.status >= 300 && res.status < 400) {
     const location = res.headers.get('location');
     const { status } = res;
-    await cancelBody(res);
     if (!location || !isWwwNormalizationRedirect(url, location)) {
+      logHeaders(log, url, status, res);
+      await cancelBody(res);
       return { outcome: 'unknown', metadata: { origin_status: status } };
     }
+    await cancelBody(res);
     const res2 = await fetchOnce(location);
     if (res2.status >= 300 && res2.status < 400) {
       const status2 = res2.status;
+      logHeaders(log, location, status2, res2);
       await cancelBody(res2);
       return { outcome: 'unknown', metadata: { origin_status: status2 } };
     }
-    const result = classifyResolvedResponse(res2);
+    const result = classifyResolvedResponse(res2, log, location);
     await cancelBody(res2);
     return result;
   }
-  const result = classifyResolvedResponse(res);
+  const result = classifyResolvedResponse(res, log, url);
   await cancelBody(res);
   return result;
 }
@@ -137,7 +153,7 @@ async function checkWithRetries(url, log) {
   for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
     try {
       // eslint-disable-next-line no-await-in-loop
-      return await checkUrlRoutingStatus(url);
+      return await checkUrlRoutingStatus(url, log);
     } catch (error) {
       lastError = error;
       log.warn(`[routing-validator] attempt ${attempt}/${totalAttempts} failed for ${url}`, { error: error.message });

@@ -99,7 +99,6 @@ describe('waf-probe-utils', () => {
       [
         ['Cloudflare widget class', 'cf-chl-widget', '<div class="cf-chl-widget"></div>'],
         ['Cloudflare challenge phrase', 'completing the challenge', 'Please completing the challenge to continue'],
-        ['Imperva artifact', '_incapsula_resource', 'window._incapsula_resource={}'],
         ['Akamai edgesuite domain', 'errors.edgesuite.net', 'See errors.edgesuite.net for details'],
         ['Akamai edgekey domain', 'errors.edgekey.net', 'See errors.edgekey.net for details'],
       ].forEach(([label, , body]) => {
@@ -108,6 +107,12 @@ describe('waf-probe-utils', () => {
           const result = await classifyProbeResponse(response, 'example.com', log);
           expect(result).to.deep.equal({ reachable: false, blocked: true, statusCode: 200 });
         });
+      });
+
+      it('does not flag _incapsula_resource as a soft block (Imperva/Incapsula injects it into every page it fronts, blocked or not)', async () => {
+        const response = makeResponse(200, { 'content-type': 'text/html' }, 'window._incapsula_resource={}');
+        const result = await classifyProbeResponse(response, 'example.com', log);
+        expect(result).to.deep.equal({ reachable: true, blocked: false, statusCode: 200 });
       });
 
       it('is case-insensitive for keyword matching', async () => {

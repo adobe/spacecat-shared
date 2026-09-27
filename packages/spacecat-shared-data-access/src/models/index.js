@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
+export * from './abv-onboarding-claim/index.js';
 export * from './access-grant-log/index.js';
 export * from './api-key/index.js';
 export * from './async-job/index.js';

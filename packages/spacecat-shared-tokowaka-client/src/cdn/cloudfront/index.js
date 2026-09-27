@@ -1182,12 +1182,8 @@ export async function removeEdgeOptimizeRouting(
   const distResult = await client.send(new GetDistributionConfigCommand({ Id: distributionId }));
   const config = distResult.DistributionConfig;
 
-  // Match the EXACT per-distribution names deploy creates (eoRoutingFunctionName /
-  // eoLambdaFunctionName), never a looser `edgeoptimize-*` pattern. Deploy has only ever created
-  // these names, so anything else — another distribution's EO names, the unsuffixed base names,
-  // `-v2` forks — is not ours to remove, even though deploy's conflict check tolerates it.
-  // CloudFront function ARNs end `.../function/<name>`; Lambda@Edge ARNs are versioned
-  // `.../function:<name>:<version>`, so the trailing `:` bounds the name.
+  // Only this distribution's exact EO names (deploy never creates others). CF function ARN ends
+  // `.../function/<name>`; Lambda@Edge ARN is `...:function:<name>:<version>`.
   const fnName = eoRoutingFunctionName(distributionId);
   const lambdaName = eoLambdaFunctionName(distributionId);
 

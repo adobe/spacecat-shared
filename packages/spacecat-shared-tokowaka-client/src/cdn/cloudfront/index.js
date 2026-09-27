@@ -1161,7 +1161,8 @@ export async function applyAssociations(
 
 /**
  * Reverse of {@link applyAssociations}: strips only this distribution's EO-owned associations
- * from every behavior, leaving all other resources in place. Idempotent (no-op when none match).
+ * from every behavior. Removes associations only — the EO origin, cache policy, function and
+ * Lambda stay in place, so this is not a full offboarding. Idempotent (no-op when none match).
  *
  * @param {object} credentials - temporary credentials from {@link assumeConnectorRole}.
  * @param {string} distributionId - the CloudFront distribution ID.
@@ -1181,9 +1182,12 @@ export async function removeEdgeOptimizeRouting(
   const distResult = await client.send(new GetDistributionConfigCommand({ Id: distributionId }));
   const config = distResult.DistributionConfig;
 
-  // Match the EXACT per-distribution names the automation created, not an `edgeoptimize-*`
-  // substring that could hit a customer-owned resource. CloudFront function ARNs end
-  // `.../function/<name>`; Lambda@Edge ARNs are versioned `.../function:<name>:<version>`.
+  // Match the EXACT per-distribution names deploy creates (eoRoutingFunctionName /
+  // eoLambdaFunctionName), never a looser `edgeoptimize-*` pattern. Deploy has only ever created
+  // these names, so anything else — another distribution's EO names, the unsuffixed base names,
+  // `-v2` forks — is not ours to remove, even though deploy's conflict check tolerates it.
+  // CloudFront function ARNs end `.../function/<name>`; Lambda@Edge ARNs are versioned
+  // `.../function:<name>:<version>`, so the trailing `:` bounds the name.
   const fnName = eoRoutingFunctionName(distributionId);
   const lambdaName = eoLambdaFunctionName(distributionId);
 
@@ -1194,7 +1198,7 @@ export async function removeEdgeOptimizeRouting(
     const existingFns = behavior.FunctionAssociations?.Items || [];
     const existingLambdas = behavior.LambdaFunctionAssociations?.Items || [];
     const remainingFns = existingFns.filter(
-      (a) => !(a.EventType === 'viewer-request' && a.FunctionARN.includes(`:function/${fnName}`)),
+      (a) => !(a.EventType === 'viewer-request' && a.FunctionARN.endsWith(`:function/${fnName}`)),
     );
     const remainingLambdas = existingLambdas.filter(
       (a) => !(EDGE_OPTIMIZE_LAMBDA_EVENTS.includes(a.EventType) && a.LambdaFunctionARN.includes(`:function:${lambdaName}:`)),

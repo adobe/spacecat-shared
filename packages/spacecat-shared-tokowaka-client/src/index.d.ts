@@ -335,7 +335,10 @@ export function applyAssociations(
   region?: string,
 ): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
 
-/** Reverse of {@link applyAssociations}; strips only EO-owned associations. */
+/**
+ * Reverse of {@link applyAssociations}; strips only this distribution's EO-owned associations.
+ * Not a full offboarding: the EO origin, cache policy, function and Lambda stay in place.
+ */
 export function removeEdgeOptimizeRouting(
   credentials: AWSCredentials,
   distributionId: string,

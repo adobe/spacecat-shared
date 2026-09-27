@@ -2064,8 +2064,8 @@ describe('edge-optimize support', () => {
       expect(update.commandName).to.equal('UpdateDistribution');
       expect(update.input.IfMatch).to.equal('dist-etag');
       const behavior = update.input.DistributionConfig.DefaultCacheBehavior;
-      expect(behavior.FunctionAssociations.Items).to.deep.equal([]);
-      expect(behavior.LambdaFunctionAssociations.Items).to.deep.equal([]);
+      expect(behavior.FunctionAssociations).to.deep.equal({ Quantity: 0, Items: [] });
+      expect(behavior.LambdaFunctionAssociations).to.deep.equal({ Quantity: 0, Items: [] });
     });
 
     it('preserves a pre-existing customer association on the same behavior', async () => {
@@ -2095,10 +2095,12 @@ describe('edge-optimize support', () => {
 
       await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
       const behavior = cfSendStub.secondCall.args[0].input.DistributionConfig.DefaultCacheBehavior;
-      expect(behavior.FunctionAssociations.Items)
-        .to.deep.equal([{ EventType: 'viewer-response', FunctionARN: 'arn:cust-fn' }]);
-      expect(behavior.LambdaFunctionAssociations.Items)
-        .to.deep.equal([{ EventType: 'viewer-response', LambdaFunctionARN: 'arn:cust-lambda' }]);
+      expect(behavior.FunctionAssociations).to.deep.equal({
+        Quantity: 1, Items: [{ EventType: 'viewer-response', FunctionARN: 'arn:cust-fn' }],
+      });
+      expect(behavior.LambdaFunctionAssociations).to.deep.equal({
+        Quantity: 1, Items: [{ EventType: 'viewer-response', LambdaFunctionARN: 'arn:cust-lambda' }],
+      });
     });
 
     it('preserves a customer\'s own viewer-request function and origin-request Lambda (not Edge Optimize\'s)', async () => {
@@ -2148,6 +2150,40 @@ describe('edge-optimize support', () => {
       expect(cfSendStub.calledOnce).to.equal(true);
     });
 
+    it('leaves names that only start with ours (-v2 forks) and the unsuffixed base names', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE-v2' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 2,
+              Items: [
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE-v2:1' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin:1' },
+              ],
+            },
+          },
+          CacheBehaviors: {
+            Items: [{
+              PathPattern: '/legacy/*',
+              FunctionAssociations: {
+                Quantity: 1,
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing' }],
+              },
+            }],
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
     it('strips EO associations from a named cache behavior', async () => {
       cfSendStub.onFirstCall().resolves({
         DistributionConfig: {
@@ -2175,6 +2211,15 @@ describe('edge-optimize support', () => {
 
       const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
       expect(result).to.deep.equal({ reverted: true, behaviors: ['/api/*'] });
+      const update = cfSendStub.secondCall.args[0];
+      expect(update.commandName).to.equal('UpdateDistribution');
+      expect(update.input.IfMatch).to.equal('dist-etag');
+      const config = update.input.DistributionConfig;
+      expect(config.CacheBehaviors.Items[0].FunctionAssociations)
+        .to.deep.equal({ Quantity: 0, Items: [] });
+      expect(config.CacheBehaviors.Items[0].LambdaFunctionAssociations)
+        .to.deep.equal({ Quantity: 0, Items: [] });
+      expect(config.DefaultCacheBehavior).to.deep.equal({});
     });
 
     it('no-ops when the distribution has no EO associations anywhere', async () => {

@@ -45,6 +45,7 @@ import {
   EDGE_OPTIMIZE_PROXY_BASE_URL_DEFAULT,
   PRIVATE_HOST_RE,
   WAF_PROBE_TIMEOUT_MS,
+  EDGE_OPTIMIZE_PROBE_USER_AGENT,
   classifyProbeResponse,
 } from './utils/waf-probe-utils.js';
 
@@ -1339,11 +1340,14 @@ class TokowakaClient {
   }
 
   /**
-   * Checks if Edge Optimize is enabled for a specific page path
-   * Follows one level of redirect and retries on failures
+   * Checks if Edge Optimize is enabled for a specific page path. Retries on failures.
+   *
+   * edgeOptimizeEnabled requires both the routing header AND a non-blocked response
+   * (classifyProbeResponse, run on the same fetched response — no second request).
+   *
    * @param {Object} site - Site entity
    * @param {string} path - Path to check (e.g., '/products/chair')
-   * @returns {Promise<Object>} - Status result with edgeOptimizeEnabled flag
+   * @returns {Promise<Object>} - `{ edgeOptimizeEnabled }`
    */
   async checkEdgeOptimizeStatus(site, path) {
     if (!isNonEmptyObject(site)) {
@@ -1362,8 +1366,7 @@ class TokowakaClient {
     }
 
     const defaultProbeHeaders = {
-      // eslint-disable-next-line max-len
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Tokowaka-AI Tokowaka/1.0 AdobeEdgeOptimize-AI AdobeEdgeOptimize/1.0',
+      'User-Agent': EDGE_OPTIMIZE_PROBE_USER_AGENT,
       'fastly-debug': '1',
     };
     const customHeaders = currentConfig?.getScraperConfig?.()?.headers ?? {};
@@ -1371,6 +1374,7 @@ class TokowakaClient {
 
     const baseURL = getEffectiveBaseURL(site);
     const targetUrl = new URL(path, baseURL).toString();
+    const targetHost = new URL(targetUrl).host;
 
     this.log.info(`[edge-optimize-status] Checking edge optimize status for ${targetUrl}`);
 
@@ -1393,10 +1397,17 @@ class TokowakaClient {
 
         this.log.info(`[edge-optimize-status] Response status: ${response.status} for ${targetUrl}`);
 
-        const edgeOptimizeEnabled = response.headers.get('x-tokowaka-request-id') !== null
+        const requestIdPresent = response.headers.get('x-tokowaka-request-id') !== null
           || response.headers.get('x-edgeoptimize-request-id') !== null;
 
-        this.log.info(`[edge-optimize-status] Edge optimize headers found: ${edgeOptimizeEnabled} for ${targetUrl}`);
+        this.log.info(`[edge-optimize-status] Edge optimize headers found: ${requestIdPresent} for ${targetUrl}`);
+
+        // Classified regardless of requestIdPresent, so blocked/statusCode are logged for
+        // every probed response, not only the ones that affect edgeOptimizeEnabled.
+        // eslint-disable-next-line no-await-in-loop
+        const { blocked, statusCode } = await classifyProbeResponse(response, targetHost, this.log);
+        this.log.info(`[edge-optimize-status] WAF classification for ${targetUrl}: blocked=${blocked}, statusCode=${statusCode}`);
+        const edgeOptimizeEnabled = requestIdPresent && !blocked;
 
         return {
           edgeOptimizeEnabled,
@@ -1442,8 +1453,8 @@ class TokowakaClient {
   }
 
   /**
-   * Probes whether a WAF or Bot Manager is blocking AdobeEdgeOptimize/1.0 traffic
-   * for the site.
+   * Probes whether a WAF or Bot Manager is blocking Adobe Edge Optimize traffic for the
+   * site, via Adobe's own edge-optimize proxy.
    *
    * Probe outcomes:
    * - Hard block: HTTP 401/403/406/429/503 → `{ reachable: false, blocked: true }`

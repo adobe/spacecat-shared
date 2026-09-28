@@ -1311,6 +1311,9 @@ describe('CloudManagerClient', () => {
   describe('pull', () => {
     it('syncs a BYOG repo with fetch + hard-reset (not pull) and auth headers', async () => {
       const client = CloudManagerClient.createFrom(createContext());
+      // No ref: the checked-out branch is resolved via `rev-parse --abbrev-ref
+      // HEAD` (the first git call) and that branch is the one synced.
+      execFileSyncStub.onFirstCall().returns('release/production\n');
 
       await client.pull(
         '/tmp/cm-repo-test',
@@ -1319,23 +1322,26 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID },
       );
 
-      // Sync is deterministic: `git fetch` then `git reset --hard FETCH_HEAD`.
-      // Never `git pull` — pull merges and aborts on a divergent/force-pushed
-      // remote. BYOG fetch does not use --recurse-submodules (submodules are
-      // handled separately after the sync via the rewrite pass).
-      expect(execFileSyncStub).to.have.been.calledTwice;
+      // Sync is deterministic: resolve the current branch, `git fetch <branch>`,
+      // then `git reset --hard FETCH_HEAD`. Never `git pull` — pull merges and
+      // aborts on a divergent/force-pushed remote. BYOG fetch does not use
+      // --recurse-submodules (submodules are handled separately after the sync
+      // via the rewrite pass).
+      expect(execFileSyncStub).to.have.been.calledThrice;
 
-      const fetchArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      expect(getGitArgs(execFileSyncStub.firstCall)).to.deep.equal(['rev-parse', '--abbrev-ref', 'HEAD']);
+
+      const fetchArgStr = getGitArgsStr(execFileSyncStub.secondCall);
       expect(fetchArgStr).to.include('fetch');
       expect(fetchArgStr).to.not.include('pull');
       expect(fetchArgStr).to.not.include('--recurse-submodules');
       expect(fetchArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
       expect(fetchArgStr).to.include('x-api-key: test-client-id');
       expect(fetchArgStr).to.include(`x-gw-ims-org-id: ${TEST_IMS_ORG_ID}`);
-      expect(execFileSyncStub.firstCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
-
-      expect(getGitArgs(execFileSyncStub.secondCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
       expect(execFileSyncStub.secondCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
+
+      expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
+      expect(execFileSyncStub.thirdCall.args[2]).to.have.property('cwd', '/tmp/cm-repo-test');
     });
 
     it('syncs a standard repo with basic auth in URL and no --recurse-submodules', async () => {
@@ -1347,6 +1353,9 @@ describe('CloudManagerClient', () => {
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
 
+      // No ref: rev-parse resolves the current branch (first git call).
+      execFileSyncStub.onFirstCall().returns('release/production\n');
+
       await client.pull(
         '/tmp/cm-repo-test',
         TEST_PROGRAM_ID,
@@ -1354,10 +1363,10 @@ describe('CloudManagerClient', () => {
         { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
       );
 
-      // fetch + reset --hard FETCH_HEAD (no pull).
-      expect(execFileSyncStub).to.have.been.calledTwice;
+      // rev-parse, fetch, reset --hard FETCH_HEAD (no pull).
+      expect(execFileSyncStub).to.have.been.calledThrice;
 
-      const fetchArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      const fetchArgStr = getGitArgsStr(execFileSyncStub.secondCall);
       expect(fetchArgStr).to.include('fetch');
       expect(fetchArgStr).to.not.include('pull');
       expect(fetchArgStr).to.not.include('--recurse-submodules');
@@ -1366,7 +1375,7 @@ describe('CloudManagerClient', () => {
       expect(fetchArgStr).to.not.include('stduser:stdtoken123@');
       expect(fetchArgStr).to.not.include('Bearer');
 
-      expect(getGitArgs(execFileSyncStub.secondCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
+      expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
     });
 
     it('STANDARD: runs sync + update after the sync when .gitmodules is present', async () => {
@@ -1374,6 +1383,8 @@ describe('CloudManagerClient', () => {
       const client = CloudManagerClient.createFrom(
         createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS }),
       );
+      // No ref: rev-parse resolves the current branch (first git call).
+      execFileSyncStub.onFirstCall().returns('release/production\n');
 
       await client.pull(
         '/tmp/cm-repo-test',
@@ -1382,10 +1393,10 @@ describe('CloudManagerClient', () => {
         { repoType: 'standard', repoUrl: TEST_STANDARD_REPO_URL },
       );
 
-      // fetch, reset --hard FETCH_HEAD, submodule sync --recursive,
+      // rev-parse, fetch, reset --hard FETCH_HEAD, submodule sync --recursive,
       // submodule update --init --recursive
-      expect(execFileSyncStub).to.have.callCount(4);
-      expect(getGitArgs(execFileSyncStub.secondCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
+      expect(execFileSyncStub).to.have.callCount(5);
+      expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
       // Submodule git invocations carry the same `-c` extraheader the parent
       // fetch used, so submodule fetches authenticate without persisting any
       // credentials to `.git/config`.
@@ -1393,17 +1404,18 @@ describe('CloudManagerClient', () => {
         '-c',
         'http.https://git.cloudmanager.adobe.com/myorg/.extraheader=Authorization: Basic c3RkdXNlcjpzdGR0b2tlbjEyMw==',
       ];
-      expect(getGitArgs(execFileSyncStub.thirdCall))
-        .to.deep.equal([...expectedAuthArgs, 'submodule', 'sync', '--recursive']);
       expect(getGitArgs(execFileSyncStub.getCall(3)))
+        .to.deep.equal([...expectedAuthArgs, 'submodule', 'sync', '--recursive']);
+      expect(getGitArgs(execFileSyncStub.getCall(4)))
         .to.deep.equal([...expectedAuthArgs, 'submodule', 'update', '--init', '--recursive']);
     });
 
     it('STANDARD: does not fail the sync when submodule init fails', async () => {
       existsSyncStub.returns(true);
-      execFileSyncStub.onFirstCall().returns(''); // fetch
-      execFileSyncStub.onSecondCall().returns(''); // reset --hard FETCH_HEAD
-      execFileSyncStub.onThirdCall().throws(new Error('Git command failed: submodule sync failed'));
+      execFileSyncStub.onFirstCall().returns('release/production\n'); // rev-parse --abbrev-ref HEAD
+      execFileSyncStub.onSecondCall().returns(''); // fetch
+      execFileSyncStub.onThirdCall().returns(''); // reset --hard FETCH_HEAD
+      execFileSyncStub.onCall(3).throws(new Error('Git command failed: submodule sync failed'));
 
       const context = createContext({ CM_STANDARD_REPO_CREDENTIALS: TEST_STANDARD_CREDENTIALS });
       const client = CloudManagerClient.createFrom(context);
@@ -1499,8 +1511,11 @@ describe('CloudManagerClient', () => {
       expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
     });
 
-    it('does not append a ref argument to fetch when ref is not provided', async () => {
+    it('appends the resolved current branch as the fetch ref when ref is not provided', async () => {
       const client = CloudManagerClient.createFrom(createContext());
+      // `rev-parse --abbrev-ref HEAD` reports the checked-out branch (trailing
+      // newline trimmed); that branch is what the fetch syncs.
+      execFileSyncStub.onFirstCall().returns('release/production\n');
 
       await client.pull(
         '/tmp/cm-repo-test',
@@ -1509,16 +1524,16 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID },
       );
 
-      // fetch, reset (no checkout)
-      expect(execFileSyncStub).to.have.been.calledTwice;
-      const fetchArgs = getGitArgs(execFileSyncStub.firstCall);
-      expect(fetchArgs[fetchArgs.length - 1])
-        .to.equal(`${TEST_ENV.CM_REPO_URL}/api/program/${TEST_PROGRAM_ID}/repository/${TEST_REPO_ID}.git`);
-      expect(getGitArgs(execFileSyncStub.secondCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
+      // rev-parse, fetch (current branch appended), reset — no checkout.
+      expect(execFileSyncStub).to.have.been.calledThrice;
+      const fetchArgs = getGitArgs(execFileSyncStub.secondCall);
+      expect(fetchArgs[fetchArgs.length - 1]).to.equal('release/production');
+      expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
     });
 
     it('skips checkout when ref is not provided', async () => {
       const client = CloudManagerClient.createFrom(createContext());
+      execFileSyncStub.onFirstCall().returns('release/production\n'); // rev-parse --abbrev-ref HEAD
 
       await client.pull(
         '/tmp/cm-repo-test',
@@ -1527,12 +1542,12 @@ describe('CloudManagerClient', () => {
         { imsOrgId: TEST_IMS_ORG_ID },
       );
 
-      // fetch, reset — no checkout
-      expect(execFileSyncStub).to.have.been.calledTwice;
+      // rev-parse, fetch, reset — never a checkout (nothing to check out).
+      expect(execFileSyncStub).to.have.been.calledThrice;
 
-      const fetchArgStr = getGitArgsStr(execFileSyncStub.firstCall);
-      expect(fetchArgStr).to.include('fetch');
-      expect(fetchArgStr).to.not.include('checkout');
+      const allArgStrs = execFileSyncStub.getCalls().map((c) => getGitArgsStr(c));
+      expect(allArgStrs.some((s) => s.includes('fetch'))).to.equal(true);
+      expect(allArgStrs.every((s) => !s.includes('checkout'))).to.equal(true);
     });
 
     it('never runs `git pull`, even against a divergent/force-pushed remote', async () => {
@@ -1569,12 +1584,14 @@ describe('CloudManagerClient', () => {
     it('BYOG: runs the submodules rewrite pass after the sync', async () => {
       existsSyncStub.returns(true);
 
-      // 0: fetch (parent only, no --recurse-submodules)
-      // 1: reset --hard FETCH_HEAD
-      // 2: submodule init
-      // 3: config --local (rewrite from `submodules`)
-      // 4: submodule update --force --recursive (with auth)
+      // 0: rev-parse --abbrev-ref HEAD (resolve current branch, no ref given)
+      // 1: fetch (parent only, no --recurse-submodules)
+      // 2: reset --hard FETCH_HEAD
+      // 3: submodule init
+      // 4: config --local (rewrite from `submodules`)
+      // 5: submodule update --force --recursive (with auth)
       execFileSyncStub.returns('');
+      execFileSyncStub.onFirstCall().returns('release/production\n');
 
       const client = CloudManagerClient.createFrom(createContext());
 
@@ -1595,14 +1612,14 @@ describe('CloudManagerClient', () => {
         },
       );
 
-      // First call is fetch WITHOUT --recurse-submodules; second is the reset.
-      const fetchArgStr = getGitArgsStr(execFileSyncStub.firstCall);
+      // Second call is fetch WITHOUT --recurse-submodules; third is the reset.
+      const fetchArgStr = getGitArgsStr(execFileSyncStub.secondCall);
       expect(fetchArgStr).to.include('fetch');
       expect(fetchArgStr).to.not.include('--recurse-submodules');
-      expect(getGitArgs(execFileSyncStub.secondCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
+      expect(getGitArgs(execFileSyncStub.thirdCall)).to.deep.equal(['reset', '--hard', 'FETCH_HEAD']);
 
       // The rewrite wrote the URL straight from the map (no name lookup)
-      const setArgs = getGitArgs(execFileSyncStub.getCall(3));
+      const setArgs = getGitArgs(execFileSyncStub.getCall(4));
       expect(setArgs).to.deep.equal([
         'config', '--local',
         'submodule.sub-a.url',
@@ -1610,7 +1627,7 @@ describe('CloudManagerClient', () => {
       ]);
 
       // Final call is submodule update --force --recursive with auth
-      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(4));
+      const updateArgStr = getGitArgsStr(execFileSyncStub.getCall(5));
       expect(updateArgStr).to.include('submodule update --force --recursive');
       expect(updateArgStr).to.include(`Authorization: Bearer ${TEST_TOKEN}`);
     });

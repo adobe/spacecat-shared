@@ -939,8 +939,8 @@ export default class CloudManagerClient {
    * branches" the moment the local clone diverges from a force-pushed remote —
    * the failure mode of an imported ZIP snapshot after the customer rewrites
    * the ref. fetch + hard-reset instead makes the local working copy exactly
-   * the remote ref, discarding any divergent local-only commits, so a
-   * force-push is a non-event.
+   * the remote ref, discarding any divergent local-only commits and any
+   * uncommitted tracked changes, so a force-push is a non-event.
    *
    * For BYOG repos: uses Bearer token + API key + IMS org ID via extraheader.
    * For standard repos: uses Basic auth via extraheader.
@@ -965,7 +965,8 @@ export default class CloudManagerClient {
    * @param {string} config.imsOrgId - IMS Organization ID
    * @param {string} config.repoType - Repository type ('standard' or VCS type)
    * @param {string} config.repoUrl - Repository URL
-   * @param {string} [config.ref] - Optional. Git ref to checkout before pull (branch, tag, or SHA)
+   * @param {string} [config.ref] - Optional. Git ref to sync to (branch, tag,
+   *   or SHA); checked out first. Defaults to the currently checked-out branch.
    * @param {Array<{sectionName: string, gitmodulesUrl: string, external: boolean,
    *                resolvedUrl?: string}>} [config.submodules] - Optional.
    *   BYOG-only. Same shape as `clone()`. See `#resolveByogSubmodules` for
@@ -992,11 +993,14 @@ export default class CloudManagerClient {
     // ref before we branch and apply.
     const fetchArgs = await this.#buildAuthGitArgs('fetch', programId, repositoryId, { imsOrgId, repoType, repoUrl });
     // Explicitly pass the ref so git records that branch's remote tip in
-    // FETCH_HEAD. Without it, `git fetch <url>` records the remote's default
-    // branch (its HEAD) instead of the branch we actually want to sync.
-    if (hasText(ref)) {
-      fetchArgs.push(ref);
-    }
+    // FETCH_HEAD. Without an explicit ref, `git fetch <url>` records the
+    // remote's default branch (its HEAD); fall back to the currently
+    // checked-out branch so the reset stays on that branch rather than
+    // silently moving it onto the default branch.
+    const syncRef = hasText(ref)
+      ? ref
+      : this.#execGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: clonePath }).trim();
+    fetchArgs.push(syncRef);
     // Always fetch the parent only — never `--recurse-submodules` — so a
     // submodule failure can't take down the parent sync. Submodules are
     // populated below in a path whose errors are caught and logged.
@@ -1005,7 +1009,7 @@ export default class CloudManagerClient {
     // discarding any local-only commits the stale snapshot carried. This is
     // what makes a force-pushed / divergent remote a non-event.
     this.#execGit(['reset', '--hard', 'FETCH_HEAD'], { cwd: clonePath });
-    this.log.info('Changes synced successfully');
+    this.log.info(`Hard-reset to remote ref '${syncRef}'`);
     this.#logTmpDiskUsage('pull');
 
     // Re-populate submodules after the pull in case the pulled commits

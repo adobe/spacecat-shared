@@ -2,7 +2,8 @@ name: spacecat-data-access-it
 
 services:
   db:
-    image: postgres:16-alpine
+    # Needs the `vector` extension (data-service >= v5.134.0); same image the data-service compose uses.
+    image: 682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-pgvector:pg16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -36,16 +37,17 @@ services:
     # v5.80.0 had aged out. Bumped straight to the current tip rather than
     # the oldest still-available tag (v5.104.0) since both are far past v5.80.0 and
     # pinning to the tip buys the most runway before the next forced bump.
+    # v5.137.0 (2026-09-25): v5.115.0 aged out of ECR; also carries the semantic-index schema.
     #
     # To obtain or refresh the digest:
     #   aws ecr describe-images \
     #     --profile <your-profile> --region us-east-1 \
     #     --repository-name mysticat-data-service \
-    #     --image-ids imageTag=v5.115.0 \
+    #     --image-ids imageTag=v5.137.0 \
     #     --query 'imageDetails[0].imageDigest' --output text
     # Then export MYSTICAT_DATA_SERVICE_DIGEST=sha256:<the-digest> before npm run test:it,
     # or set it in the .env file consumed by docker compose. Leave unset for local dev.
-    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.115.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
+    image: ${MYSTICAT_DATA_SERVICE_REPOSITORY:-682033462621.dkr.ecr.us-east-1.amazonaws.com/mysticat-data-service}:${MYSTICAT_DATA_SERVICE_TAG:-v5.137.0}${MYSTICAT_DATA_SERVICE_DIGEST:+@${MYSTICAT_DATA_SERVICE_DIGEST}}
     depends_on:
       db:
         condition: service_healthy

@@ -141,6 +141,14 @@ Retrieves job status and details.
 const job = await client.getJob('job-uuid');
 ```
 
+#### disableSchedule(siteId, scheduleId, options)
+
+Disables a DRS schedule (PATCHes `enabled: false`), stopping its recurring job without deleting it.
+
+```js
+await client.disableSchedule('site-uuid', 'schedule-uuid');
+```
+
 #### submitJob(params)
 
 Submits a generic job to DRS. Used internally by the higher-level methods, but available for custom job types.

@@ -10,6 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText, isInteger, isObject } from '@adobe/spacecat-shared-utils';
+
+import { ValidationError } from '../../errors/index.js';
 import BaseModel from '../base/base.model.js';
 
 class GeoExperiment extends BaseModel {
@@ -26,6 +29,7 @@ class GeoExperiment extends BaseModel {
     IN_PROGRESS: 'IN_PROGRESS',
     COMPLETED: 'COMPLETED',
     FAILED: 'FAILED',
+    CANCELLED: 'CANCELLED',
   };
 
   static PHASES = {
@@ -35,6 +39,8 @@ class GeoExperiment extends BaseModel {
     PROMPT_GENERATION_COMPLETED: 'prompt_generation_completed',
     PRE_ANALYSIS_STARTED: 'pre_analysis_started',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
+    PRE_ANALYSIS_MEASUREMENT_STARTED: 'pre_analysis_measurement_started',
+    PRE_ANALYSIS_MEASUREMENT_DONE: 'pre_analysis_measurement_done',
     DEPLOYMENT_STARTED: 'deployment_started',
     DEPLOYMENT_DONE: 'deployment_done',
     POST_ANALYSIS_STARTED: 'post_analysis_started',
@@ -63,6 +69,7 @@ class GeoExperiment extends BaseModel {
    *   VALIDATION: string,
    *   ROUTING_VALIDATION: string,
    *   OAE_VALIDATION_JOBS: string,
+   *   BASELINE_MEASUREMENT: string,
    * }}
    */
   static METADATA_KEYS = {
@@ -74,7 +81,191 @@ class GeoExperiment extends BaseModel {
     // validation jobs of different types can be tracked against the same experiment without
     // colliding, e.g. { routing: '<jobId>', prerender: '<jobId>' }.
     OAE_VALIDATION_JOBS: 'oaeValidationJobs',
+    // Baseline (window 0) measurement bookkeeping, e.g. { taskId, startedAt, retryCount }.
+    BASELINE_MEASUREMENT: 'baselineMeasurement',
   };
+
+  /**
+   * Kind of an `insightsList` entry. Window 0 is the baseline, window 1 the post-analysis
+   * measurement, windows >= 2 are auto-extend windows.
+   *
+   * @type {{ BASELINE: string, POST_ANALYSIS: string, EXTENSION: string }}
+   */
+  static INSIGHTS_TYPES = {
+    BASELINE: 'baseline',
+    POST_ANALYSIS: 'post_analysis',
+    EXTENSION: 'extension',
+  };
+
+  /**
+   * Fixed windows of `insightsList`; every window >= 2 is an `extension`.
+   *
+   * @type {{ BASELINE: number, POST_ANALYSIS: number }}
+   */
+  static INSIGHTS_WINDOWS = {
+    BASELINE: 0,
+    POST_ANALYSIS: 1,
+  };
+
+  /** Label of the window 1 entry synthesized from the legacy `insightsLocation`. */
+  static LEGACY_POST_ANALYSIS_LABEL = 'Post-analysis';
+
+  /**
+   * The `type` an entry at `window` must have.
+   *
+   * @param {number} window
+   * @returns {string}
+   */
+  static insightsTypeForWindow(window) {
+    if (window === GeoExperiment.INSIGHTS_WINDOWS.BASELINE) {
+      return GeoExperiment.INSIGHTS_TYPES.BASELINE;
+    }
+    return window === GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS
+      ? GeoExperiment.INSIGHTS_TYPES.POST_ANALYSIS
+      : GeoExperiment.INSIGHTS_TYPES.EXTENSION;
+  }
+
+  /**
+   * Why `entry` is not a valid insights entry, or `null` when it is.
+   *
+   * @param {object} entry - `{ window, type, label, location, runRange?, completedAt? }`.
+   * @returns {string|null}
+   */
+  static getInsightsEntryError(entry) {
+    if (!isObject(entry)) {
+      return 'entry must be an object';
+    }
+    const {
+      window, type, label, location, runRange, completedAt,
+    } = entry;
+    if (!isInteger(window) || window < 0) {
+      return 'window must be a non-negative integer';
+    }
+    if (type !== GeoExperiment.insightsTypeForWindow(window)) {
+      return `type must be '${GeoExperiment.insightsTypeForWindow(window)}' for window ${window}`;
+    }
+    if (!hasText(label)) {
+      return 'label must be a non-empty string';
+    }
+    if (!hasText(location) || location.includes('..') || location.includes('://')) {
+      return 'location must be a relative S3 key';
+    }
+    if (runRange !== undefined && !(isObject(runRange)
+      && isInteger(runRange.from) && isInteger(runRange.to) && runRange.from <= runRange.to)) {
+      return 'runRange must be { from, to } integers with from <= to';
+    }
+    const isDate = hasText(completedAt) && !Number.isNaN(Date.parse(completedAt));
+    if (completedAt !== undefined && !isDate) {
+      return 'completedAt must be an ISO date string';
+    }
+    return null;
+  }
+
+  /**
+   * @param {object} entry - `{ window, type, label, location, runRange?, completedAt? }`.
+   * @returns {boolean}
+   */
+  static isValidInsightsEntry(entry) {
+    return GeoExperiment.getInsightsEntryError(entry) === null;
+  }
+
+  /**
+   * Why `value` is not a valid `insightsList`, or `null` when it is: empty, or an array of valid
+   * entries with unique windows.
+   *
+   * @param {*} value
+   * @returns {string|null}
+   */
+  static getInsightsListError(value) {
+    if (value === undefined || value === null) {
+      return null;
+    }
+    if (!Array.isArray(value)) {
+      return 'insightsList must be an array';
+    }
+    for (const [index, entry] of value.entries()) {
+      const error = GeoExperiment.getInsightsEntryError(entry);
+      if (error) {
+        return `insightsList[${index}]: ${error}`;
+      }
+    }
+    if (new Set(value.map((entry) => entry.window)).size !== value.length) {
+      return 'insightsList windows must be unique';
+    }
+    return null;
+  }
+
+  /**
+   * Validator for the `insightsList` attribute (see `getInsightsListError`).
+   *
+   * @param {*} value
+   * @returns {boolean}
+   */
+  static isValidInsightsList(value) {
+    return GeoExperiment.getInsightsListError(value) === null;
+  }
+
+  /**
+   * Sets `insightsList`. Validated here because the generated setter for an `any` attribute
+   * skips the schema validator, which otherwise only runs on create.
+   *
+   * @param {object[]|null|undefined} insightsList
+   * @returns {GeoExperiment}
+   * @throws {ValidationError} When the list is invalid.
+   */
+  setInsightsList(insightsList) {
+    const error = GeoExperiment.getInsightsListError(insightsList);
+    if (error) {
+      throw new ValidationError(`Invalid insightsList: ${error}`);
+    }
+    this.patcher.patchValue('insightsList', insightsList);
+    return this;
+  }
+
+  /**
+   * The insights entries sorted by window, as shallow copies. When there is no window 1 entry,
+   * the legacy `insightsLocation` key (written by older writers, e.g. during a rollback) is
+   * returned as the window 1 entry.
+   *
+   * @returns {object[]}
+   */
+  getInsightsEntries() {
+    const list = this.getInsightsList();
+    const entries = Array.isArray(list) ? list.map((entry) => ({ ...entry })) : [];
+    const location = this.getInsightsLocation();
+    const hasPostAnalysis = entries.some(
+      (entry) => entry.window === GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS,
+    );
+    if (!hasPostAnalysis && hasText(location)) {
+      entries.push({
+        window: GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS,
+        type: GeoExperiment.INSIGHTS_TYPES.POST_ANALYSIS,
+        label: GeoExperiment.LEGACY_POST_ANALYSIS_LABEL,
+        location,
+      });
+    }
+    return entries.sort((a, b) => a.window - b.window);
+  }
+
+  /**
+   * Returns a new entries array with `entry` added, replacing any entry for the same window.
+   * Does not mutate the model; pass the result to `setInsightsList`. This is a read-modify-write
+   * of the whole array, so it assumes a single writer per experiment (the experimentation engine).
+   *
+   * @param {object} entry - A valid insights entry (see `isValidInsightsEntry`).
+   * @returns {object[]}
+   * @throws {ValidationError} When the entry is invalid.
+   */
+  upsertInsightsEntry(entry) {
+    const error = GeoExperiment.getInsightsEntryError(entry);
+    if (error) {
+      throw new ValidationError(`Invalid insights entry: ${error}`);
+    }
+    return [
+      ...this.getInsightsEntries().filter((existing) => existing.window !== entry.window),
+      entry,
+    ].sort((a, b) => a.window - b.window);
+  }
 
   /**
    * Field names within a schedule config block (pre or post phase).

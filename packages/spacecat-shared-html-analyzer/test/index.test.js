@@ -16,10 +16,98 @@ import {
   analyzeTextComparison,
   calculateStats,
   calculateBothScenarioStats,
+  filterHtmlContent,
   stripTagsToText,
   generateMarkdownDiff,
   getAddedMarkdownBlocks,
 } from '../src/index.js';
+
+function installBrowserDomParserShim() {
+  // Cheerio-backed shim verifies call order only, not native NodeList or mutation semantics.
+  // It supports selector/removal behavior only; fixtures must not include scripts.
+  const hadWindow = Object.hasOwn(globalThis, 'window');
+  const hadDocument = Object.hasOwn(globalThis, 'document');
+  const hadDOMParser = Object.hasOwn(globalThis, 'DOMParser');
+  const previous = {
+    window: globalThis.window,
+    document: globalThis.document,
+    DOMParser: globalThis.DOMParser,
+  };
+
+  const createCheerioElement = ($, element = null) => {
+    const node = {
+      querySelectorAll(selector) {
+        const root = element ? $(element) : $.root();
+        return root.find(selector).toArray().map((child) => createCheerioElement($, child));
+      },
+      contains(child) {
+        return $.contains(element, child.cheerioElement);
+      },
+      remove() {
+        if (element) {
+          $(element).remove();
+        }
+      },
+    };
+    Object.defineProperties(node, {
+      cheerioElement: {
+        value: element,
+      },
+      parentNode: {
+        get: () => {
+          if (!element || !$(element).parent().length) {
+            return null;
+          }
+          const parentElement = $(element).parent()[0];
+          return {
+            insertBefore(child, reference) {
+              if ($(reference.cheerioElement).parent()[0] !== parentElement) {
+                throw new Error('NotFoundError');
+              }
+              $(reference.cheerioElement).before(child.cheerioElement);
+            },
+          };
+        },
+      },
+      textContent: {
+        get: () => (element ? $(element).text() : $('html').text()),
+      },
+      outerHTML: {
+        get: () => (element ? $.html(element) : $.html('html')),
+      },
+    });
+    return node;
+  };
+
+  globalThis.window = {};
+  globalThis.document = {};
+  globalThis.DOMParser = function DOMParser() {
+    return {
+      parseFromString(html) {
+        const $ = cheerio.load(html);
+        return { documentElement: createCheerioElement($) };
+      },
+    };
+  };
+
+  return () => {
+    if (hadWindow) {
+      globalThis.window = previous.window;
+    } else {
+      delete globalThis.window;
+    }
+    if (hadDocument) {
+      globalThis.document = previous.document;
+    } else {
+      delete globalThis.document;
+    }
+    if (hadDOMParser) {
+      globalThis.DOMParser = previous.DOMParser;
+    } else {
+      delete globalThis.DOMParser;
+    }
+  };
+}
 
 describe('HTML Visibility Analyzer', () => {
   const simpleHtml = '<html><body><h1>Title</h1><p>Content here</p></body></html>';
@@ -360,6 +448,182 @@ describe('HTML Visibility Analyzer', () => {
       expect(text).to.not.include('Play Pause');
     });
 
+    it('should preserve InfoWindow content while removing Google Maps runtime text', async () => {
+      const html = `<html><body>
+        <h1>Estaciones de servicio</h1>
+        <p>Encuentra tu estación más cercana.</p>
+        <div id="map-container">
+          <div class="gm-style">
+            <div class="gm-style-iw">
+              <div class="gm-style-iw-chr">
+                <div class="gm-style-iw-ch">Estación Repsol Centro</div>
+                <button aria-label="Close">Close window</button>
+              </div>
+              <div class="gm-style-iw-d">
+                <p>Calle Mayor 1, Madrid</p>
+              </div>
+            </div>
+            <div class="gm-style-iw">Legacy InfoWindow: Sevilla office.</div>
+            <div class="gm-style">
+              <div>Nested map runtime noise.</div>
+              <div class="gm-style-iw">Nested Valencia office.</div>
+            </div>
+            <div class="gm-bundled-control">
+              <div class="gmnoprint">
+                <div class="gm-svpc">Pegman</div>
+                <div>40.4168° N, 3.7038° W</div>
+                <button>Zoom in</button>
+              </div>
+            </div>
+            <div class="gm-style-cc">Map data ©2026 Google Terms of Use Report a map error</div>
+          </div>
+        </div>
+        <p>Horario: Lunes a viernes 8:00 - 20:00</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Estaciones de servicio');
+      expect(text).to.include('Encuentra tu estación más cercana.');
+      expect(text).to.include('Horario');
+      expect(text).to.include('Estación Repsol Centro');
+      expect(text).to.include('Calle Mayor 1, Madrid');
+      expect(text).to.include('Legacy InfoWindow: Sevilla office.');
+      expect(text).to.include('Nested Valencia office.');
+      expect(text).to.not.include('Close window');
+      expect(text).to.not.include('Nested map runtime noise.');
+      expect(text).to.not.include('Map data');
+      expect(text).to.not.include('Pegman');
+      expect(text).to.not.include('40.4168');
+      expect(text).to.not.include('Zoom in');
+      expect(text).to.not.include('Terms of Use');
+      expect(text.indexOf('Calle Mayor 1, Madrid')).to.be.lessThan(text.indexOf('Horario'));
+    });
+
+    it('should remove Google Maps tile fallback and keyboard shortcut text while preserving location content', async () => {
+      const html = `<html><body>
+        <h1>Buscador de Agencias Distribuidoras de gasóleo</h1>
+        <div class="eyg-office-map station-map">
+          <div class="map-search__block map-search__block--js">
+            <p>GASOLEOS PECES E HIJOS S.L.</p>
+            <p>CL CAPELLANIA 16, 28411</p>
+            <div class="gm-style">
+              <div style="position:absolute; left:0; top:0; width:256px; height:256px">
+                <div>Sorry, we have no imagery here.</div>
+              </div>
+              <div class="gm-style-cc">Map Data Map data ©2026 Google Terms Report a map error</div>
+            </div>
+            <div aria-label="Map">
+              <div class="LGLeeN-keyboard-shortcuts-view">
+                <table><tbody><tr><td>+ Zoom in</td></tr><tr><td>- Zoom out</td></tr></tbody></table>
+                <span>Keyboard shortcuts</span>
+              </div>
+            </div>
+            <div class="gm-style-cc">Detached attribution</div>
+            <div class="gm-bundled-control">Detached bundled control</div>
+            <div class="gm-svpc">Detached Street View control</div>
+            <div class="gmnoprint">Detached non-printing control</div>
+          </div>
+        </div>
+        <p>Productos Diesel e+ Agrodiesel e+10</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, false);
+
+      expect(text).to.include('Buscador de Agencias Distribuidoras de gasóleo');
+      expect(text).to.include('GASOLEOS PECES E HIJOS S.L.');
+      expect(text).to.include('CL CAPELLANIA 16, 28411');
+      expect(text).to.include('Productos Diesel e+');
+      expect(text).to.not.include('Sorry, we have no imagery here');
+      expect(text).to.not.include('Map Data');
+      expect(text).to.not.include('Report a map error');
+      expect(text).to.not.include('Zoom in');
+      expect(text).to.not.include('Keyboard shortcuts');
+      expect(text).to.not.include('Detached attribution');
+      expect(text).to.not.include('Detached bundled control');
+      expect(text).to.not.include('Detached Street View control');
+      expect(text).to.not.include('Detached non-printing control');
+    });
+
+    it('should avoid removing customer-authored Google Maps wrapper content', async () => {
+      const html = `<html><body>
+        <h1>Contact Us</h1>
+        <article class="google-map-api-guide">
+          <p>How to use the Google Maps API for store locators.</p>
+        </article>
+        <div class="google-map">
+          <p>Our office locations are shown on a Google map.</p>
+        </div>
+        <div id="googlemap">
+          <p>Store locator fallback copy for visitors.</p>
+        </div>
+        <div data-google-maps>
+          <span>Customer-authored store locator content.</span>
+        </div>
+        <gmp-map>
+          <gmp-advanced-marker>
+            <span>Madrid showroom: Calle de Alcalá 10.</span>
+          </gmp-advanced-marker>
+        </gmp-map>
+        <div class="custom-gm-style">
+          <span>Customer content with a similar class name.</span>
+        </div>
+        <div class="gmnoprint-content">
+          <span>Printable customer directions.</span>
+        </div>
+        <p>Visit us at our office.</p>
+      </body></html>`;
+
+      const text = await stripTagsToText(html, true);
+
+      expect(text).to.include('Contact Us');
+      expect(text).to.include('Visit us at our office.');
+      expect(text).to.include('How to use the Google Maps API for store locators.');
+      expect(text).to.include('Our office locations are shown on a Google map.');
+      expect(text).to.include('Store locator fallback copy for visitors.');
+      expect(text).to.include('Customer-authored store locator content.');
+      expect(text).to.include('Madrid showroom: Calle de Alcalá 10.');
+      expect(text).to.include('Customer content with a similar class name.');
+      expect(text).to.include('Printable customer directions.');
+    });
+
+    it('should remove Google Maps widgets in browser DOMParser mode', async () => {
+      const restoreBrowser = installBrowserDomParserShim();
+      try {
+        const html = `<html><body>
+          <h1>Office locations</h1>
+          <div class="gm-style">
+            <div>Sorry, we have no imagery here.</div>
+            <div class="gm-style-cc">Map Data Terms</div>
+            <div class="gm-style-iw">Open Madrid location details.</div>
+            <div class="gm-style-iw">
+              <div class="gm-style-iw-ch">Barcelona office.</div>
+              <div class="gm-style-iw-d">Carrer de Mallorca 1.</div>
+              <button>Close window</button>
+            </div>
+          </div>
+          <gmp-map>
+            <gmp-advanced-marker>Customer-authored marker details.</gmp-advanced-marker>
+          </gmp-map>
+          <p>Real office content.</p>
+        </body></html>`;
+
+        const text = await filterHtmlContent(html, true, true);
+
+        expect(text).to.include('Office locations');
+        expect(text).to.include('Real office content.');
+        expect(text).to.include('Open Madrid location details.');
+        expect(text).to.include('Barcelona office.');
+        expect(text).to.include('Carrer de Mallorca 1.');
+        expect(text).to.include('Customer-authored marker details.');
+        expect(text).to.not.include('Close window');
+        expect(text).to.not.include('Sorry, we have no imagery here');
+        expect(text).to.not.include('Map Data');
+      } finally {
+        restoreBrowser();
+      }
+    });
+
     it('should remove noscript elements by default', async () => {
       const html = '<html><body><h1>Title</h1><noscript>Please enable JavaScript</noscript><p>Content</p></body></html>';
       const text = await stripTagsToText(html);
@@ -412,6 +676,32 @@ describe('HTML Visibility Analyzer', () => {
   });
 
   describe('generateMarkdownDiff + getAddedMarkdownBlocks', () => {
+    it('should exclude Google Maps runtime text from rendered markdown', async () => {
+      const serverHtml = '<html><body><h1>Locations</h1></body></html>';
+      const clientHtml = `<html><body>
+        <h1>Locations</h1>
+        <div class="gm-style">
+          <div>Sorry, we have no imagery here.</div>
+          <div class="gm-style-cc">Map data ©2026 Google</div>
+          <div class="gm-style-iw">
+            <div class="gm-style-iw-ch">Madrid office.</div>
+            <div class="gm-style-iw-d">Calle Mayor 1.</div>
+            <button>Close window</button>
+          </div>
+        </div>
+        <p>Madrid office details.</p>
+      </body></html>`;
+
+      const { currentRenderedHtml } = await generateMarkdownDiff(serverHtml, clientHtml, false);
+
+      expect(currentRenderedHtml).to.include('Madrid office details.');
+      expect(currentRenderedHtml).to.include('Madrid office.');
+      expect(currentRenderedHtml).to.include('Calle Mayor 1.');
+      expect(currentRenderedHtml).to.not.include('Close window');
+      expect(currentRenderedHtml).to.not.include('Sorry, we have no imagery here.');
+      expect(currentRenderedHtml).to.not.include('Map data');
+    });
+
     it('should not show JSON-LD as added when content is identical but DOM nesting differs', async () => {
       const jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@type': 'WebPage', name: 'Test' });
       // Server-side: skip button has 3-space indentation (from DOM nesting)

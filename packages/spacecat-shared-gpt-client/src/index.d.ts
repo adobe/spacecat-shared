@@ -17,3 +17,4 @@ export {
   FirefallClient,
   GenvarClient,
 };
+export { AzureOpenAIClient, AzureEmbeddingClient, EmbeddingProvider } from './clients';

@@ -1,3 +1,37 @@
+## [@adobe/spacecat-shared-data-access-v4.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.33.1...@adobe/spacecat-shared-data-access-v4.34.0) (2026-09-28)
+
+### Features
+
+* **data-access:** add geo-experiment baseline measurement phases and insightsList window entries ([#1956](https://github.com/adobe/spacecat-shared/issues/1956)) ([e0bec9c](https://github.com/adobe/spacecat-shared/commit/e0bec9cc2fc04228444e280cb27655c814b33d2c))
+
+## [@adobe/spacecat-shared-data-access-v4.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.33.0...@adobe/spacecat-shared-data-access-v4.33.1) (2026-09-25)
+
+### Bug Fixes
+
+* **data-access:** document the semantic-index helpers in the README (LLMO-7445) ([#1948](https://github.com/adobe/spacecat-shared/issues/1948)) ([9eb4e73](https://github.com/adobe/spacecat-shared/commit/9eb4e73e3a77523b60a912add39571ce4e6656ba)), closes [#1929](https://github.com/adobe/spacecat-shared/issues/1929) [#1942](https://github.com/adobe/spacecat-shared/issues/1942)
+
+## [@adobe/spacecat-shared-data-access-v4.33.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.32.0...@adobe/spacecat-shared-data-access-v4.33.0) (2026-09-24)
+
+### Features
+
+* **data-access:** batch the semantic lookup and query-embedding cache helpers (LLMO-7445) ([#1942](https://github.com/adobe/spacecat-shared/issues/1942)) ([5f1bb09](https://github.com/adobe/spacecat-shared/commit/5f1bb099ccf913208efc6c3876a7b5d4cca2d08a)), closes [adobe/mysticat-data-service#1086](https://github.com/adobe/mysticat-data-service/issues/1086)
+
+### Bug Fixes
+
+* **deps:** update dependency joi to v18.2.5 [security] ([#1923](https://github.com/adobe/spacecat-shared/issues/1923)) ([848625e](https://github.com/adobe/spacecat-shared/commit/848625e6ed024a136e833a969dc6421ecc4586fc))
+
+## [@adobe/spacecat-shared-data-access-v4.32.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.31.0...@adobe/spacecat-shared-data-access-v4.32.0) (2026-09-23)
+
+### Features
+
+* add Azure embedding client and semantic index utils (LLMO-7445) ([#1933](https://github.com/adobe/spacecat-shared/issues/1933)) ([e03a920](https://github.com/adobe/spacecat-shared/commit/e03a9203a2fced47ce2dc1428da3af114d88e91b)), closes [adobe/mysticat-data-service#1064](https://github.com/adobe/mysticat-data-service/issues/1064) [adobe/spacecat-audit-worker#2982](https://github.com/adobe/spacecat-audit-worker/issues/2982) [adobe/spacecat-api-service#3298](https://github.com/adobe/spacecat-api-service/issues/3298)
+
+## [@adobe/spacecat-shared-data-access-v4.31.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.30.0...@adobe/spacecat-shared-data-access-v4.31.0) (2026-09-22)
+
+### Features
+
+* cancel ongoing exp ([#1902](https://github.com/adobe/spacecat-shared/issues/1902)) ([727998a](https://github.com/adobe/spacecat-shared/commit/727998a2a1eb8ef2cd81ad4f47e565e5380e9b6e))
+
 ## [@adobe/spacecat-shared-data-access-v4.30.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.29.1...@adobe/spacecat-shared-data-access-v4.30.0) (2026-09-17)
 
 ### Features

@@ -60,3 +60,26 @@ export class AzureOpenAIClient {
     responseFormat?: string;
   }): Promise<object>;
 }
+
+/** Provider-agnostic embedding contract, so consumers don't depend on the Azure client. */
+export interface EmbeddingProvider {
+  /**
+   * Embed each input, returning one vector per input, in input order.
+   * @param {string[]} inputs - Non-empty array of non-empty strings.
+   * @param {object} [options]
+   * @param {number} [options.dimensions] - Optional output dimension.
+   */
+  createEmbeddings(inputs: string[], options?: { dimensions?: number }): Promise<number[][]>;
+}
+
+export class AzureEmbeddingClient implements EmbeddingProvider {
+  /**
+   * Creates a new AzureEmbeddingClient from the given UniversalContext. The endpoint/key/
+   * api-version fall back to the `AZURE_OPENAI_*` values; `AZURE_EMBEDDING_DEPLOYMENT` is required.
+   * @param {UniversalContext} context
+   * @returns {AzureEmbeddingClient}
+   */
+  static createFrom(context: UniversalContext): AzureEmbeddingClient;
+
+  createEmbeddings(inputs: string[], options?: { dimensions?: number }): Promise<number[][]>;
+}

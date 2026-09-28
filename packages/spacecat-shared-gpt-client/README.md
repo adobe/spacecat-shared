@@ -136,6 +136,35 @@ fetchJSONResponse('Provide a list of 3 colors in JSON format');
 
 Ensure that you replace `'path/to/azure-openai-client'` with the actual path to the `AzureOpenAIClient` class in your project and adjust the configuration parameters according to your Azure OpenAI resource credentials.
 
+## Azure Embeddings
+
+The `AzureEmbeddingClient` calls Azure OpenAI's **embeddings** API (e.g. `text-embedding-3-small`). It is separate from `AzureOpenAIClient` (chat/completions) but shares the same vendor/auth, and implements the minimal `EmbeddingProvider` interface (`createEmbeddings(inputs, options?) => number[][]`) so consumers can depend on the interface rather than the concrete client. It embeds a batch of input strings and returns one vector per input, in input order, with bounded retry/backoff (429/5xx, honoring `Retry-After`, capped).
+
+### Configuration
+
+Only the embeddings deployment is distinct and required; the endpoint/key/api-version fall back to the chat client's `AZURE_OPENAI_*` values when embeddings share the same Azure resource:
+
+- `AZURE_EMBEDDING_DEPLOYMENT` (**required**): the deployment name of the embeddings model (e.g. `text-embedding-3-small`).
+- `AZURE_EMBEDDING_ENDPOINT` (optional, falls back to `AZURE_OPENAI_ENDPOINT`): the resource endpoint if embeddings live on a different Azure resource than chat.
+- `AZURE_EMBEDDING_KEY` (optional, falls back to `AZURE_OPENAI_KEY`): API key for that resource.
+- `AZURE_EMBEDDING_API_VERSION` (optional, falls back to `AZURE_API_VERSION`): API version.
+- `AZURE_EMBEDDING_MAX_RETRIES` (optional, default `3`): retries for transient 429/5xx responses (`0` disables; negative is clamped to `0`).
+
+These parameters can be set through environment variables (via `AzureEmbeddingClient.createFrom(context)`, the recommended path) or passed directly to the constructor: `new AzureEmbeddingClient({ apiEndpoint, apiKey, apiVersion, deploymentName, maxRetries?, retryBaseDelayMs?, retryMaxDelayMs? }, log)` — the second `log` argument is required (the client calls `log.debug`/`log.info`; `createFrom` defaults it to `console`).
+
+### Usage Example
+
+```javascript
+import { AzureEmbeddingClient } from '@adobe/spacecat-shared-gpt-client';
+
+// Assuming AZURE_EMBEDDING_DEPLOYMENT (+ AZURE_OPENAI_* or AZURE_EMBEDDING_*) are set on context.env
+const client = AzureEmbeddingClient.createFrom(context);
+const [vectorA, vectorB] = await client.createEmbeddings(['running shoes', 'trail runners']);
+// each vector is a number[] at the model's native dimension (1536 for text-embedding-3-small)
+```
+
+Both the write path (opportunity topic vectors) and the read path (query text) in the Lookup Service embed via this client against the **same deployment**, so their vectors share one embedding space by construction.
+
 ## Firefall
 The `FirefallClient` library offers a streamlined way to interact with the Firefall API, enabling applications to fetch insights, recommendations, and codes based on provided prompts. Designed with simplicity and efficiency in mind, this client handles all aspects of communication with the Firefall API, including request authentication, error handling, and response parsing.
 

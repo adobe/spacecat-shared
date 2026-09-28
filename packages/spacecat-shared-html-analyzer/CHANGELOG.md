@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-html-analyzer-v1.3.7](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.6...@adobe/spacecat-shared-html-analyzer-v1.3.7) (2026-09-25)
+
+### Bug Fixes
+
+* **html-analyzer:** strip Google Maps tile fallback controls ([#1941](https://github.com/adobe/spacecat-shared/issues/1941)) ([9644766](https://github.com/adobe/spacecat-shared/commit/964476642187d48b5b4422305d8ba318da8177e6))
+
 ## [@adobe/spacecat-shared-html-analyzer-v1.3.6](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-html-analyzer-v1.3.5...@adobe/spacecat-shared-html-analyzer-v1.3.6) (2026-09-17)
 
 ### Bug Fixes

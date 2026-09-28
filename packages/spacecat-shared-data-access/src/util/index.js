@@ -36,6 +36,27 @@ export {
   lookupEntityIdsByUrl,
 } from './url-index.utils.js';
 
+export {
+  SEMANTIC_INDEX_TABLES,
+  QUERY_EMBEDDING_TABLE,
+  SEMANTIC_SEARCH_RPC,
+  COPY_VECTORS_RPC,
+  SEMANTIC_CHUNK_SIZE,
+  QUERY_HASH_CHUNK_SIZE,
+  MAX_SOURCE_TEXT_LENGTH,
+  normalizeText,
+  hashText,
+  cleanTopicText,
+  serializeVector,
+  parseVector,
+  syncOpportunitySemantic,
+  copyEntityVectors,
+  lookupOpportunitiesByVectors,
+  getQueryEmbeddings,
+  upsertQueryEmbeddings,
+  touchQueryEmbeddings,
+} from './semantic-index.utils.js';
+
 /**
  * Datastore types that collections can use to declare their storage backend.
  * @readonly

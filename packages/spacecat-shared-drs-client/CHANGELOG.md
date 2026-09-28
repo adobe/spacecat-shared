@@ -1,3 +1,10 @@
+# [@adobe/spacecat-shared-drs-client-v1.16.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.15.1...@adobe/spacecat-shared-drs-client-v1.16.0) (2026-09-22)
+
+
+### Features
+
+* cancel ongoing exp ([#1902](https://github.com/adobe/spacecat-shared/issues/1902)) ([727998a](https://github.com/adobe/spacecat-shared/commit/727998a2a1eb8ef2cd81ad4f47e565e5380e9b6e))
+
 # [@adobe/spacecat-shared-drs-client-v1.15.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-drs-client-v1.15.0...@adobe/spacecat-shared-drs-client-v1.15.1) (2026-09-04)
 
 

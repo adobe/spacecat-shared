@@ -836,18 +836,13 @@ export function facsWrapper(fn, {
           })
           : Promise.resolve([]),
       ]);
-      const groupMappingsList = Array.isArray(groupMappings) ? groupMappings : [];
-      stateGrants = [
-        ...(userMapping?.granted_capabilities || []),
-        ...(orgMapping?.granted_capabilities || []),
-        ...groupMappingsList.flatMap((mapping) => mapping?.granted_capabilities || []),
-      ];
+      const capsOf = (mapping) => mapping?.granted_capabilities || [];
+      const groupCaps = groupMappings.flatMap(capsOf);
+      stateGrants = [...capsOf(userMapping), ...capsOf(orgMapping), ...groupCaps];
       grantSources = [
-        ...(userMapping?.granted_capabilities?.includes(routeCapability) ? ['user'] : []),
-        ...(orgMapping?.granted_capabilities?.includes(routeCapability) ? ['org'] : []),
-        ...(groupMappingsList.some(
-          (mapping) => mapping?.granted_capabilities?.includes(routeCapability),
-        ) ? ['group'] : []),
+        ...(capsOf(userMapping).includes(routeCapability) ? ['user'] : []),
+        ...(capsOf(orgMapping).includes(routeCapability) ? ['org'] : []),
+        ...(groupCaps.includes(routeCapability) ? ['group'] : []),
       ];
     } catch (e) {
       // Fail closed on state-layer read errors.

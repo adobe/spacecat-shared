@@ -102,18 +102,36 @@ function assertModel(value) {
 
 const MAX_ECHOED_VALUE_LENGTH = 200;
 
-// Renders a rejected value for an error message without letting it throw or grow unbounded.
-function describeValue(value) {
-  let text;
+function stringifyValue(value) {
   try {
-    text = JSON.stringify(value);
+    const json = JSON.stringify(value);
+    if (json !== undefined) {
+      return json;
+    }
   } catch {
-    text = undefined;
+    // BigInt, circular, or a throwing toJSON: fall back to String().
   }
-  if (text === undefined) {
-    text = String(value);
+  try {
+    return String(value);
+  } catch {
+    return '[unprintable]';
   }
-  return text.length > MAX_ECHOED_VALUE_LENGTH ? `${text.slice(0, MAX_ECHOED_VALUE_LENGTH)}…` : text;
+}
+
+// Never throws; ASCII-only so the message is safe to copy into an HTTP header.
+function describeValue(value) {
+  const text = Array.isArray(value)
+    ? `[${value.map(stringifyValue).join(',')}]`
+    : stringifyValue(value);
+  return text.length > MAX_ECHOED_VALUE_LENGTH ? `${text.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : text;
+}
+
+// PGRST202 = PostgREST has no function with this signature, usually a deploy-ordering gap.
+function rpcError(message, rpc, details, error) {
+  const hint = error?.code === 'PGRST202'
+    ? `: ${rpc} signature not found; is the data-service release carrying it deployed?`
+    : '';
+  return new DataAccessError(`${message}${hint}`, details, error);
 }
 
 function assertAllowed(value, name, registry) {
@@ -420,7 +438,7 @@ export async function copyEntityVectors(postgrestClient, {
     p_to_entity_id: toEntityId,
   });
   if (error) {
-    throw new DataAccessError(`Failed to copy semantic vectors for entity ${fromEntityId}`, { fromEntityId, toEntityId }, error);
+    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { fromEntityId, toEntityId }, error);
   }
   return data ?? 0;
 }
@@ -485,11 +503,9 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_min_score: minScore,
     });
     if (error) {
-      const hint = error.code === 'PGRST202'
-        ? `: ${SEMANTIC_SEARCH_RPC} signature not found; is the data-service release carrying it deployed?`
-        : '';
-      throw new DataAccessError(
-        `Failed semantic search for site ${siteId}${hint}`,
+      throw rpcError(
+        `Failed semantic search for site ${siteId}`,
+        SEMANTIC_SEARCH_RPC,
         { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
         error,
       );

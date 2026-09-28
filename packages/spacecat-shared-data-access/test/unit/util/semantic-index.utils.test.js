@@ -42,6 +42,7 @@ const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'cited-analysis';
 const SOURCE_TYPE = 'topic';
 const INVALID_SOURCE_TYPE = 'not-a-source-type';
+const INVALID_ENTITY_TYPE = 'not-an-entity-type';
 const { model: MODEL, dims: DIMS } = SEMANTIC_MATCHING_CONFIG.embedding;
 
 /**
@@ -243,8 +244,8 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE, sources: [src('x')],
       })).to.be.rejectedWith(ValidationError, /^entityType must be one of: .+ \(got undefined\)$/);
       await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'wikipedia-analysis', sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(ValidationError, '(got "wikipedia-analysis")');
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: INVALID_ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
+      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_ENTITY_TYPE}")`);
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
       })).to.be.rejectedWith(ValidationError, /^sourceType must be one of: .+ \(got undefined\)$/);
@@ -261,7 +262,11 @@ describe('semantic-index.utils', () => {
     it('clears an entity whose entityType is no longer registered', async () => {
       const client = makeClient();
       const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'wikipedia-analysis', sourceType: SOURCE_TYPE, sources: [],
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: INVALID_ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [],
       });
       expect(count).to.equal(0);
       expect(client.calls.delete).to.have.length(1);
@@ -540,6 +545,20 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
       })).to.be.rejectedWith(DataAccessError, 'Failed to copy semantic vectors');
     });
+
+    it('adds the deploy-ordering hint when PostgREST cannot find the copy RPC', async () => {
+      const cause = { code: 'PGRST202', message: 'Could not find the function' };
+      const client = makeClient({ rpcResult: { data: null, error: cause } });
+      const err = await copyEntityVectors(client, {
+        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(
+        `Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} signature not found; is the data-service release carrying it deployed?`,
+      );
+      expect(err.details).to.deep.equal({ fromEntityId: 'a', toEntityId: 'b' });
+      expect(err.cause).to.equal(cause);
+    });
   });
 
   describe('lookupOpportunitiesByVectors', () => {
@@ -561,9 +580,9 @@ describe('semantic-index.utils', () => {
       await expect(call({ sourceTypes: ['*'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain');
       await expect(call({ entityTypes: 'cited-analysis' })).to.be.rejectedWith(ValidationError, 'entityTypes must be an array');
       await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, /^entityTypes must only contain: .+ \(got \[null\]\)$/);
-      await expect(call({ entityTypes: ['wikipedia-analysis'] })).to.be.rejectedWith(ValidationError, '(got ["wikipedia-analysis"])');
+      await expect(call({ entityTypes: [INVALID_ENTITY_TYPE] })).to.be.rejectedWith(ValidationError, `(got ["${INVALID_ENTITY_TYPE}"])`);
       // eslint-disable-next-line no-sparse-arrays
-      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \[null\]\)$/);
+      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \[undefined\]\)$/);
       await expect(call({ entityTypes: new Array(1) })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain');
       await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
       await expect(call({ dims: undefined })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
@@ -649,11 +668,20 @@ describe('semantic-index.utils', () => {
       });
       const circular = {};
       circular.self = circular;
-      await expect(call({ sourceTypes: [10n] })).to.be.rejectedWith(ValidationError, '(got 10)');
-      await expect(call({ entityTypes: [circular] })).to.be.rejectedWith(ValidationError, '(got [object Object])');
+      await expect(call({ sourceTypes: [10n] })).to.be.rejectedWith(ValidationError, '(got [10])');
+      await expect(call({ entityTypes: ['topic', circular] })).to.be.rejectedWith(ValidationError, '(got ["topic",[object Object]])');
       const err = await call({ sourceTypes: ['x'.repeat(500)] }).catch((e) => e);
       expect(err).to.be.instanceOf(ValidationError);
-      expect(err.message).to.match(/\(got \["x{198}…\)$/);
+      expect(err.message).to.match(/\(got \["x{198}\.\.\.\)$/);
+      // eslint-disable-next-line no-control-regex
+      expect(err.message).to.match(/^[\x00-\x7F]*$/);
+    });
+
+    it('renders a value that neither JSON nor String can print', async () => {
+      const unprintable = Object.assign(Object.create(null), { big: 10n });
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: unprintable,
+      })).to.be.rejectedWith(ValidationError, '(got [unprintable])');
     });
 
     it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
@@ -714,6 +742,9 @@ describe('semantic-index.utils', () => {
         `Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} signature not found; is the data-service release carrying it deployed?`,
       );
       expect(err.cause).to.equal(cause);
+      expect(err.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null,
+      });
     });
 
     it('rejects a query_index outside the current group (never spills into another group)', async () => {

@@ -41,6 +41,8 @@ const SITE_ID = 'site-1';
 const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'cited-analysis';
 const SOURCE_TYPE = 'topic';
+const INVALID_SOURCE_TYPE = 'not-a-source-type';
+const { model: MODEL, dims: DIMS } = SEMANTIC_MATCHING_CONFIG.embedding;
 
 /**
  * Chainable, awaitable fake `@supabase/postgrest-js` client. Each chain is classified at its
@@ -148,11 +150,30 @@ function makeClient(config = {}) {
 }
 
 const src = (text, vector = [0.1, 0.2], extra = {}) => ({
-  text, vector, model: 'azure/text-embedding-3-small', dims: 2, ...extra,
+  text, vector, model: MODEL, dims: 2, ...extra,
 });
 
 describe('semantic-index.utils', () => {
   describe('pure helpers', () => {
+    it('exposes frozen source/entity type registries', () => {
+      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.deep.equal({ TOPIC: 'topic' });
+      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.deep.equal({
+        CITED_ANALYSIS: 'cited-analysis',
+        REDDIT_ANALYSIS: 'reddit-analysis',
+        YOUTUBE_ANALYSIS: 'youtube-analysis',
+      });
+      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_SOURCE_TYPES)).to.equal(true);
+      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_ENTITY_TYPES)).to.equal(true);
+    });
+
+    it('exposes the frozen embedding generation', () => {
+      expect(SEMANTIC_MATCHING_CONFIG).to.deep.equal({
+        embedding: { model: 'azure/text-embedding-3-small', dims: 1536 },
+      });
+      expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG)).to.equal(true);
+      expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG.embedding)).to.equal(true);
+    });
+
     it('normalizeText lowercases, collapses whitespace, trims; non-string -> empty', () => {
       expect(normalizeText('  Running   SHOES ')).to.equal('running shoes');
       expect(normalizeText(42)).to.equal('');
@@ -220,16 +241,19 @@ describe('semantic-index.utils', () => {
       })).to.be.rejectedWith(ValidationError, 'entityId is required');
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(ValidationError, 'entityType must be one of: cited-analysis, reddit-analysis, youtube-analysis (got undefined)');
+      })).to.be.rejectedWith(ValidationError, /^entityType must be one of: .+ \(got undefined\)$/);
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: 'wikipedia-analysis', sourceType: SOURCE_TYPE, sources: [src('x')],
       })).to.be.rejectedWith(ValidationError, '(got "wikipedia-analysis")');
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'sourceType must be one of: topic (got undefined)');
+      })).to.be.rejectedWith(ValidationError, /^sourceType must be one of: .+ \(got undefined\)$/);
       await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: 'claim',
-      })).to.be.rejectedWith(ValidationError, '(got "claim")');
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: INVALID_SOURCE_TYPE,
+      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_SOURCE_TYPE}")`);
       expect(client.calls.upsert).to.have.length(0);
       expect(client.calls.delete).to.have.length(0);
     });
@@ -300,7 +324,7 @@ describe('semantic-index.utils', () => {
         entity_id: ENTITY_ID,
         source_type: SOURCE_TYPE,
         entity_type: ENTITY_TYPE,
-        model: 'azure/text-embedding-3-small',
+        model: MODEL,
         dims: 2,
         source_text: 'Running Shoes', // original case, not normalized
         source_id: null,
@@ -335,7 +359,7 @@ describe('semantic-index.utils', () => {
         entityId: ENTITY_ID,
         entityType: ENTITY_TYPE,
         sourceType: SOURCE_TYPE,
-        sources: [src('x', [0.1, 0.2], { dims: 1536 })], // vector length 2 != dims 1536
+        sources: [src('x', [0.1, 0.2], { dims: DIMS })], // vector length 2 != DIMS
       })).to.be.rejectedWith(ValidationError, 'does not match dims');
       await expect(syncOpportunitySemantic(makeClient(), {
         siteId: SITE_ID,
@@ -519,7 +543,6 @@ describe('semantic-index.utils', () => {
   });
 
   describe('lookupOpportunitiesByVectors', () => {
-    const MODEL = 'azure/text-embedding-3-small';
     const base = {
       siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], model: MODEL, dims: 2,
     };
@@ -534,13 +557,13 @@ describe('semantic-index.utils', () => {
       await expect(call({ sourceTypes: undefined })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
       await expect(call({ sourceTypes: [] })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
       await expect(call({ sourceTypes: 'topic' })).to.be.rejectedWith(ValidationError, 'sourceTypes must be an array');
-      await expect(call({ sourceTypes: ['topic', 'claim'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain: topic');
+      await expect(call({ sourceTypes: ['topic', INVALID_SOURCE_TYPE] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \["not-a-source-type"\]\)$/);
       await expect(call({ sourceTypes: ['*'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain');
       await expect(call({ entityTypes: 'cited-analysis' })).to.be.rejectedWith(ValidationError, 'entityTypes must be an array');
-      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain: cited-analysis, reddit-analysis, youtube-analysis (got [null])');
+      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, /^entityTypes must only contain: .+ \(got \[null\]\)$/);
       await expect(call({ entityTypes: ['wikipedia-analysis'] })).to.be.rejectedWith(ValidationError, '(got ["wikipedia-analysis"])');
       // eslint-disable-next-line no-sparse-arrays
-      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain: topic (got [null])');
+      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \[null\]\)$/);
       await expect(call({ entityTypes: new Array(1) })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain');
       await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
       await expect(call({ dims: undefined })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
@@ -620,23 +643,17 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
     });
 
-    it('exposes frozen source/entity type registries', () => {
-      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.deep.equal({ TOPIC: 'topic' });
-      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.deep.equal({
-        CITED_ANALYSIS: 'cited-analysis',
-        REDDIT_ANALYSIS: 'reddit-analysis',
-        YOUTUBE_ANALYSIS: 'youtube-analysis',
+    it('renders rejected values safely: unserializable falls back to String, long ones are truncated', async () => {
+      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
+        ...base, vectors: [[0.1, 0.2]], ...over,
       });
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_SOURCE_TYPES)).to.equal(true);
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_ENTITY_TYPES)).to.equal(true);
-    });
-
-    it('exposes the frozen embedding generation', () => {
-      expect(SEMANTIC_MATCHING_CONFIG).to.deep.equal({
-        embeddingModel: 'azure/text-embedding-3-small',
-        embeddingDims: 1536,
-      });
-      expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG)).to.equal(true);
+      const circular = {};
+      circular.self = circular;
+      await expect(call({ sourceTypes: [10n] })).to.be.rejectedWith(ValidationError, '(got 10)');
+      await expect(call({ entityTypes: [circular] })).to.be.rejectedWith(ValidationError, '(got [object Object])');
+      const err = await call({ sourceTypes: ['x'.repeat(500)] }).catch((e) => e);
+      expect(err).to.be.instanceOf(ValidationError);
+      expect(err.message).to.match(/\(got \["x{198}…\)$/);
     });
 
     it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
@@ -680,9 +697,23 @@ describe('semantic-index.utils', () => {
       }).catch((e) => e);
       expect(err).to.be.instanceOf(DataAccessError);
       expect(err.message).to.include('Failed semantic search');
+      expect(err.message).to.not.include('signature not found');
       expect(err.details).to.deep.equal({
         siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
       });
+    });
+
+    it('adds a deploy-ordering hint when PostgREST cannot find the RPC signature', async () => {
+      const cause = { code: 'PGRST202', message: 'Could not find the function' };
+      const client = makeClient({ rpcResult: { data: null, error: cause } });
+      const err = await lookupOpportunitiesByVectors(client, {
+        ...base, vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(
+        `Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} signature not found; is the data-service release carrying it deployed?`,
+      );
+      expect(err.cause).to.equal(cause);
     });
 
     it('rejects a query_index outside the current group (never spills into another group)', async () => {
@@ -699,7 +730,6 @@ describe('semantic-index.utils', () => {
   });
 
   describe('semantic_query_embedding cache', () => {
-    const MODEL = 'azure/text-embedding-3-small';
     const scope = { model: MODEL, dims: 2 };
     const texts = (n) => Array.from({ length: n }, (_, i) => `topic ${i}`);
 

@@ -60,13 +60,17 @@ export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES = Object.freeze({
 });
 
 /**
- * The embedding generation every semantic writer and reader uses: stored on each row and part of
- * the query-cache key. `embeddingDims` must match the data-service `vector(1536)` columns and
- * CHECKs. A code constant, not env config: writer and reader must never disagree.
+ * Shared semantic-matching settings. `embedding` is the generation every semantic writer and
+ * reader uses: stored on each row and part of the query-cache key; spread it into the helpers'
+ * `model` / `dims`. `embedding.dims` must match the data-service `vector(1536)` columns and CHECKs.
+ * A code constant, not env config: writer and reader agree as long as both run the same
+ * data-access version.
  */
 export const SEMANTIC_MATCHING_CONFIG = Object.freeze({
-  embeddingModel: 'azure/text-embedding-3-small',
-  embeddingDims: 1536,
+  embedding: Object.freeze({
+    model: 'azure/text-embedding-3-small',
+    dims: 1536,
+  }),
 });
 
 function assertClient(postgrestClient) {
@@ -96,10 +100,26 @@ function assertModel(value) {
   }
 }
 
+const MAX_ECHOED_VALUE_LENGTH = 200;
+
+// Renders a rejected value for an error message without letting it throw or grow unbounded.
+function describeValue(value) {
+  let text;
+  try {
+    text = JSON.stringify(value);
+  } catch {
+    text = undefined;
+  }
+  if (text === undefined) {
+    text = String(value);
+  }
+  return text.length > MAX_ECHOED_VALUE_LENGTH ? `${text.slice(0, MAX_ECHOED_VALUE_LENGTH)}…` : text;
+}
+
 function assertAllowed(value, name, registry) {
   const allowed = Object.values(registry);
   if (!allowed.includes(value)) {
-    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')} (got ${JSON.stringify(value)})`);
+    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')} (got ${describeValue(value)})`);
   }
 }
 
@@ -126,7 +146,7 @@ function toAllowedList(values, name, registry, { required }) {
     }
   }
   if (rejected.length > 0) {
-    throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${JSON.stringify(rejected)})`);
+    throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${describeValue(rejected)})`);
   }
   return [...new Set(values)];
 }
@@ -333,8 +353,8 @@ async function clearEntitySource(postgrestClient, table, siteId, entityId, sourc
  * @param {object} params
  * @param {string} params.siteId - the site the opportunity belongs to
  * @param {string} params.entityId - the opportunity id
- * @param {string} params.entityType - the opportunity type stored on each row, one of
- *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`
+ * @param {string} [params.entityType] - the opportunity type stored on each row, one of
+ *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; required when `sources` yields rows
  * @param {string} params.sourceType - the source kind, one of `OPPORTUNITY_SEMANTIC_SOURCE_TYPES`
  * @param {Array<{text: string, vector: number[], model: string, dims: number, sourceId?: string}>}
  *   params.sources - one entry per source text (normalized + hashed here)
@@ -346,6 +366,7 @@ export async function syncOpportunitySemantic(postgrestClient, {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(entityId, 'entityId');
+  // Strict even when clearing: it scopes the delete, so retire a kind only after its rows are gone.
   assertAllowed(sourceType, 'sourceType', OPPORTUNITY_SEMANTIC_SOURCE_TYPES);
 
   const table = 'opportunity_semantic_embedding';
@@ -464,8 +485,11 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_min_score: minScore,
     });
     if (error) {
+      const hint = error.code === 'PGRST202'
+        ? `: ${SEMANTIC_SEARCH_RPC} signature not found; is the data-service release carrying it deployed?`
+        : '';
       throw new DataAccessError(
-        `Failed semantic search for site ${siteId}`,
+        `Failed semantic search for site ${siteId}${hint}`,
         { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
         error,
       );

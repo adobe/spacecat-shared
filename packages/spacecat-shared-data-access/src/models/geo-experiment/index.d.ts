@@ -47,7 +47,8 @@ export interface GeoExperiment extends BaseModel {
   getStartTime(): string | undefined;
   getEndTime(): string | undefined;
   getMetadata(): object | undefined;
-  getInsightsLocation(): string | GeoExperimentInsightsEntry[] | undefined;
+  getInsightsLocation(): string | undefined;
+  getInsightsList(): GeoExperimentInsightsEntry[] | undefined;
   getInsightsEntries(): GeoExperimentInsightsEntry[];
   upsertInsightsEntry(entry: GeoExperimentInsightsEntry): GeoExperimentInsightsEntry[];
   getError(): object | undefined;
@@ -67,7 +68,8 @@ export interface GeoExperiment extends BaseModel {
   setStartTime(startTime?: string): GeoExperiment;
   setEndTime(endTime?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
-  setInsightsLocation(insightsLocation?: string | GeoExperimentInsightsEntry[]): GeoExperiment;
+  setInsightsLocation(insightsLocation?: string): GeoExperiment;
+  setInsightsList(insightsList?: GeoExperimentInsightsEntry[]): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
 }

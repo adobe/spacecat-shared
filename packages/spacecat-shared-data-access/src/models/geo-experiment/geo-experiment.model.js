@@ -85,7 +85,7 @@ class GeoExperiment extends BaseModel {
   };
 
   /**
-   * Kind of an `insightsLocation` entry. Window 0 is the baseline, window 1 the post-analysis
+   * Kind of an `insightsList` entry. Window 0 is the baseline, window 1 the post-analysis
    * measurement, windows >= 2 are auto-extend windows.
    *
    * @type {{ BASELINE: string, POST_ANALYSIS: string, EXTENSION: string }}
@@ -115,18 +115,15 @@ class GeoExperiment extends BaseModel {
   }
 
   /**
-   * Validator for the `insightsLocation` attribute: empty, a legacy S3 key string (transitional,
-   * read as the window 1 entry), or an array of valid entries with unique windows.
+   * Validator for the `insightsList` attribute: empty, or an array of valid entries with unique
+   * windows.
    *
    * @param {*} value
    * @returns {boolean}
    */
-  static isValidInsightsLocation(value) {
-    if (!value) {
+  static isValidInsightsList(value) {
+    if (value === undefined || value === null) {
       return true;
-    }
-    if (typeof value === 'string') {
-      return hasText(value);
     }
     if (!Array.isArray(value) || !value.every(GeoExperiment.isValidInsightsEntry)) {
       return false;
@@ -135,22 +132,23 @@ class GeoExperiment extends BaseModel {
   }
 
   /**
-   * The `insightsLocation` entries sorted by window. A legacy string is returned as the single
-   * window 1 entry; an empty value as `[]`.
+   * The `insightsList` entries sorted by window. Experiments written before `insightsList`
+   * existed only carry the legacy `insightsLocation` key, returned as the single window 1 entry.
    *
    * @returns {object[]}
    */
   getInsightsEntries() {
-    const value = this.getInsightsLocation();
-    if (Array.isArray(value)) {
-      return [...value].sort((a, b) => a.window - b.window);
+    const list = this.getInsightsList();
+    if (Array.isArray(list) && list.length > 0) {
+      return [...list].sort((a, b) => a.window - b.window);
     }
-    if (hasText(value)) {
+    const location = this.getInsightsLocation();
+    if (hasText(location)) {
       return [{
         window: GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS,
         type: GeoExperiment.INSIGHTS_TYPES.POST_ANALYSIS,
         label: 'Post-analysis',
-        location: value,
+        location,
       }];
     }
     return [];
@@ -158,7 +156,7 @@ class GeoExperiment extends BaseModel {
 
   /**
    * Returns a new entries array with `entry` added, replacing any entry for the same window.
-   * Does not mutate the model; pass the result to `setInsightsLocation`.
+   * Does not mutate the model; pass the result to `setInsightsList`.
    *
    * @param {object} entry - A valid insights entry (see `isValidInsightsEntry`).
    * @returns {object[]}

@@ -82,8 +82,12 @@ const schema = new SchemaBuilder(GeoExperiment, GeoExperimentCollection)
     validate: (value) => !value || isObject(value),
   })
   .addAttribute('insightsLocation', {
+    type: 'string',
+    validate: (value) => !value || hasText(value),
+  })
+  .addAttribute('insightsList', {
     type: 'any',
-    validate: (value) => GeoExperiment.isValidInsightsLocation(value),
+    validate: (value) => GeoExperiment.isValidInsightsList(value),
   })
   .addAttribute('error', {
     type: 'any',

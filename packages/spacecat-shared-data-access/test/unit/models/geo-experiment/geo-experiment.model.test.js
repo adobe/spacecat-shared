@@ -164,6 +164,7 @@ describe('GeoExperimentModel', () => {
 
     beforeEach(() => {
       instance.setInsightsLocation(legacy);
+      instance.setInsightsList(null);
     });
 
     it('exposes INSIGHTS_TYPES and INSIGHTS_WINDOWS', () => {
@@ -185,34 +186,36 @@ describe('GeoExperimentModel', () => {
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, location: '' })).to.equal(false);
     });
 
-    it('validates insightsLocation values', () => {
-      expect(GeoExperiment.isValidInsightsLocation(undefined)).to.equal(true);
-      expect(GeoExperiment.isValidInsightsLocation(null)).to.equal(true);
-      expect(GeoExperiment.isValidInsightsLocation('')).to.equal(true);
-      expect(GeoExperiment.isValidInsightsLocation('geo-experiments/e/insights.json')).to.equal(true);
-      expect(GeoExperiment.isValidInsightsLocation([])).to.equal(true);
-      expect(GeoExperiment.isValidInsightsLocation([baseline, post])).to.equal(true);
+    it('validates insightsList values', () => {
+      expect(GeoExperiment.isValidInsightsList(undefined)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsList(null)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsList([])).to.equal(true);
+      expect(GeoExperiment.isValidInsightsList([baseline, post])).to.equal(true);
       const duplicateWindow = [baseline, { ...post, window: 0 }];
-      expect(GeoExperiment.isValidInsightsLocation(duplicateWindow)).to.equal(false);
-      expect(GeoExperiment.isValidInsightsLocation([{ ...baseline, type: 'x' }])).to.equal(false);
-      expect(GeoExperiment.isValidInsightsLocation({ window: 0 })).to.equal(false);
-      expect(GeoExperiment.isValidInsightsLocation(42)).to.equal(false);
+      expect(GeoExperiment.isValidInsightsList(duplicateWindow)).to.equal(false);
+      expect(GeoExperiment.isValidInsightsList([{ ...baseline, type: 'x' }])).to.equal(false);
+      expect(GeoExperiment.isValidInsightsList('geo-experiments/e/insights.json')).to.equal(false);
+      expect(GeoExperiment.isValidInsightsList({ window: 0 })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsList(42)).to.equal(false);
     });
 
-    it('reads a legacy string as the window 1 entry', () => {
+    it('falls back to the legacy insightsLocation as the window 1 entry', () => {
+      expect(instance.getInsightsEntries()).to.deep.equal([legacyEntry]);
+      instance.setInsightsList([]);
       expect(instance.getInsightsEntries()).to.deep.equal([legacyEntry]);
     });
 
-    it('reads an empty value as no entries', () => {
+    it('reads no insights as no entries', () => {
       instance.setInsightsLocation(null);
       expect(instance.getInsightsEntries()).to.deep.equal([]);
     });
 
-    it('returns array entries sorted by window without mutating the stored value', () => {
+    it('prefers insightsList, sorted by window, without mutating the stored value', () => {
       const stored = [post, baseline];
-      instance.setInsightsLocation(stored);
+      instance.setInsightsList(stored);
       expect(instance.getInsightsEntries()).to.deep.equal([baseline, post]);
       expect(stored).to.deep.equal([post, baseline]);
+      expect(instance.getInsightsLocation()).to.equal(legacy);
     });
 
     it('upserts an entry, replacing the same window and keeping the rest', () => {
@@ -220,17 +223,17 @@ describe('GeoExperimentModel', () => {
       const withBaseline = instance.upsertInsightsEntry(baseline);
       expect(withBaseline).to.deep.equal([baseline]);
 
-      instance.setInsightsLocation(withBaseline);
+      instance.setInsightsList(withBaseline);
       const withPost = instance.upsertInsightsEntry(post);
       expect(withPost).to.deep.equal([baseline, post]);
-      expect(instance.getInsightsLocation()).to.deep.equal([baseline]);
+      expect(instance.getInsightsList()).to.deep.equal([baseline]);
 
-      instance.setInsightsLocation(withPost);
+      instance.setInsightsList(withPost);
       const rerun = { ...baseline, label: 'Baseline (runs 1-15)' };
       expect(instance.upsertInsightsEntry(rerun)).to.deep.equal([rerun, post]);
     });
 
-    it('upserts next to a legacy string entry', () => {
+    it('upserts next to the legacy insightsLocation entry', () => {
       expect(instance.upsertInsightsEntry(baseline)).to.deep.equal([baseline, legacyEntry]);
     });
 

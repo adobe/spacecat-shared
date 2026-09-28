@@ -32,4 +32,12 @@ export const FT_MAC_FACS_PERMISSIONS = Object.freeze({
   ASO: 'FT_SITES-44631',
 });
 
+export const FACS_SUBJECT_TYPES = Object.freeze({
+  USER: 'user',
+  ORG: 'org',
+  GROUP: 'group',
+});
+
+export const FACS_GROUPS_CLAIM = 'facs_grps';
+
 export const X_PRODUCT_HEADER = 'x-product';

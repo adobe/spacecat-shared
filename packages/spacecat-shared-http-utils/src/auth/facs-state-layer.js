@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { FACS_SUBJECT_TYPES } from './constants.js';
+
 /**
  * Default IMS authentication source suffix used when normalising bare tenant
  * idents into the canonical `<ident>@<authSrc>` form expected on
@@ -63,7 +65,7 @@ export function normalizeImsOrgId(orgIdent, authSrc = DEFAULT_IMS_AUTH_SRC) {
  * @param {object} keys
  * @param {string} keys.imsOrgId - Canonical `<ident>@<authSrc>` form.
  * @param {string} keys.product - Upper-cased product code, e.g. `'LLMO'`.
- * @param {'user'|'org'} keys.subjectType
+ * @param {'user'|'org'|'group'} keys.subjectType
  * @param {string} keys.subjectId
  * @param {string} keys.resourceType - Canonical, e.g. `'brand'`.
  * @param {string} keys.resourceId
@@ -93,4 +95,44 @@ export async function findFacsResourceBinding(postgrestClient, {
     throw new Error(`findFacsResourceBinding failed: ${error.message}`);
   }
   return data ?? null;
+}
+
+/**
+ * Resource-binding lookup for IMS group subjects. Returns all active group
+ * mapping rows that match any supplied IMS group ident for the resource.
+ *
+ * @param {object} postgrestClient - From `context.dataAccess.services.postgrestClient`.
+ * @param {object} keys
+ * @param {string} keys.imsOrgId - Canonical `<ident>@<authSrc>` form.
+ * @param {string} keys.product - Upper-cased product code, e.g. `'LLMO'`.
+ * @param {string[]} keys.groupIds - IMS group idents as decimal strings.
+ * @param {string} keys.resourceType - Canonical, e.g. `'brand'`.
+ * @param {string} keys.resourceId
+ * @returns {Promise<Array<{id: string, granted_capabilities: string[], subject_id: string}>>}
+ */
+export async function findFacsResourceBindingsForGroups(postgrestClient, {
+  imsOrgId,
+  product,
+  groupIds,
+  resourceType,
+  resourceId,
+}) {
+  if (!Array.isArray(groupIds) || groupIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await postgrestClient
+    .from('facs_access_mappings')
+    .select('id, granted_capabilities, subject_id')
+    .eq('ims_org_id', imsOrgId)
+    .eq('product', product)
+    .eq('subject_type', FACS_SUBJECT_TYPES.GROUP)
+    .in('subject_id', groupIds)
+    .eq('resource_type', resourceType)
+    .eq('resource_id', resourceId)
+    .is('revoked_at', null);
+  if (error) {
+    throw new Error(`findFacsResourceBindingsForGroups failed: ${error.message}`);
+  }
+  return data ?? [];
 }

@@ -229,6 +229,45 @@ describe('AuthInfo', () => {
     });
   });
 
+  describe('getFacsGroups', () => {
+    it('returns [] when profile is not set', () => {
+      const authInfo = new AuthInfo();
+      expect(authInfo.getFacsGroups()).to.deep.equal([]);
+    });
+
+    it('returns [] when facs_grps is missing or non-array', () => {
+      const authInfo = new AuthInfo().withProfile({ facs_grps: '945801205' });
+      expect(authInfo.getFacsGroups()).to.deep.equal([]);
+    });
+
+    it('sanitizes, coerces numeric ids, dedupes, and preserves order', () => {
+      const authInfo = new AuthInfo().withProfile({
+        facs_grps: [
+          '945801205',
+          123,
+          '00123',
+          123,
+          '945801205',
+          'abc',
+          -1,
+          1.2,
+          Infinity,
+          '123456789012345678901',
+          '',
+          null,
+        ],
+      });
+      expect(authInfo.getFacsGroups()).to.deep.equal(['945801205', '123', '00123']);
+    });
+
+    it('caps sanitized groups at 100', () => {
+      const groups = Array.from({ length: 105 }, (_, i) => String(i + 1));
+      const authInfo = new AuthInfo().withProfile({ facs_grps: groups });
+      expect(authInfo.getFacsGroups()).to.have.length(100);
+      expect(authInfo.getFacsGroups()[99]).to.equal('100');
+    });
+  });
+
   describe('hasOrganization', () => {
     it('returns false when orgId is undefined', () => {
       const authInfo = new AuthInfo().withProfile({

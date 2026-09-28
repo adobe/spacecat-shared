@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { FACS_GROUPS_CLAIM } from './constants.js';
+
 /**
  * The auth info class represents information about the current authentication state.
  */
@@ -101,6 +103,32 @@ export default class AuthInfo {
   }
 
   hasFacsPermission(permission) { return this.getFacsPermissions().includes(permission); }
+
+  getFacsGroups() {
+    const groups = this.profile?.[FACS_GROUPS_CLAIM];
+    if (!Array.isArray(groups)) {
+      return [];
+    }
+
+    const out = [];
+    const seen = new Set();
+    for (const group of groups) {
+      let groupId;
+      if (typeof group === 'string') {
+        groupId = group;
+      } else if (Number.isInteger(group) && Number.isFinite(group) && group >= 0) {
+        groupId = String(group);
+      }
+      if (groupId && /^[0-9]{1,20}$/.test(groupId) && !seen.has(groupId)) {
+        seen.add(groupId);
+        out.push(groupId);
+        if (out.length >= 100) {
+          break;
+        }
+      }
+    }
+    return out;
+  }
 
   hasOrganization(orgId) {
     // Fail-closed on a missing or non-string org id, mirroring getFacsPermissions: an

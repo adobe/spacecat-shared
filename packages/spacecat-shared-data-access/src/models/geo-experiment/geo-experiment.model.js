@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
+import { hasText, isInteger, isObject } from '@adobe/spacecat-shared-utils';
+
 import BaseModel from '../base/base.model.js';
 
 class GeoExperiment extends BaseModel {
@@ -36,6 +38,8 @@ class GeoExperiment extends BaseModel {
     PROMPT_GENERATION_COMPLETED: 'prompt_generation_completed',
     PRE_ANALYSIS_STARTED: 'pre_analysis_started',
     PRE_ANALYSIS_DONE: 'pre_analysis_done',
+    PRE_ANALYSIS_MEASUREMENT_STARTED: 'pre_analysis_measurement_started',
+    PRE_ANALYSIS_MEASUREMENT_DONE: 'pre_analysis_measurement_done',
     DEPLOYMENT_STARTED: 'deployment_started',
     DEPLOYMENT_DONE: 'deployment_done',
     POST_ANALYSIS_STARTED: 'post_analysis_started',
@@ -64,6 +68,7 @@ class GeoExperiment extends BaseModel {
    *   VALIDATION: string,
    *   ROUTING_VALIDATION: string,
    *   OAE_VALIDATION_JOBS: string,
+   *   BASELINE_MEASUREMENT: string,
    * }}
    */
   static METADATA_KEYS = {
@@ -75,7 +80,98 @@ class GeoExperiment extends BaseModel {
     // validation jobs of different types can be tracked against the same experiment without
     // colliding, e.g. { routing: '<jobId>', prerender: '<jobId>' }.
     OAE_VALIDATION_JOBS: 'oaeValidationJobs',
+    // Baseline (window 0) measurement bookkeeping, e.g. { taskId, startedAt, retryCount }.
+    BASELINE_MEASUREMENT: 'baselineMeasurement',
   };
+
+  /**
+   * Kind of an `insightsLocation` entry. Window 0 is the baseline, window 1 the post-analysis
+   * measurement, windows >= 2 are auto-extend windows.
+   *
+   * @type {{ BASELINE: string, POST_ANALYSIS: string, EXTENSION: string }}
+   */
+  static INSIGHTS_TYPES = {
+    BASELINE: 'baseline',
+    POST_ANALYSIS: 'post_analysis',
+    EXTENSION: 'extension',
+  };
+
+  static INSIGHTS_WINDOWS = {
+    BASELINE: 0,
+    POST_ANALYSIS: 1,
+  };
+
+  /**
+   * @param {object} entry - `{ window, type, label, location, runRange?, completedAt? }`.
+   * @returns {boolean}
+   */
+  static isValidInsightsEntry(entry) {
+    return isObject(entry)
+      && isInteger(entry.window)
+      && entry.window >= 0
+      && Object.values(GeoExperiment.INSIGHTS_TYPES).includes(entry.type)
+      && hasText(entry.label)
+      && hasText(entry.location);
+  }
+
+  /**
+   * Validator for the `insightsLocation` attribute: empty, a legacy S3 key string (transitional,
+   * read as the window 1 entry), or an array of valid entries with unique windows.
+   *
+   * @param {*} value
+   * @returns {boolean}
+   */
+  static isValidInsightsLocation(value) {
+    if (!value) {
+      return true;
+    }
+    if (typeof value === 'string') {
+      return hasText(value);
+    }
+    if (!Array.isArray(value) || !value.every(GeoExperiment.isValidInsightsEntry)) {
+      return false;
+    }
+    return new Set(value.map((entry) => entry.window)).size === value.length;
+  }
+
+  /**
+   * The `insightsLocation` entries sorted by window. A legacy string is returned as the single
+   * window 1 entry; an empty value as `[]`.
+   *
+   * @returns {object[]}
+   */
+  getInsightsEntries() {
+    const value = this.getInsightsLocation();
+    if (Array.isArray(value)) {
+      return [...value].sort((a, b) => a.window - b.window);
+    }
+    if (hasText(value)) {
+      return [{
+        window: GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS,
+        type: GeoExperiment.INSIGHTS_TYPES.POST_ANALYSIS,
+        label: 'Post-analysis',
+        location: value,
+      }];
+    }
+    return [];
+  }
+
+  /**
+   * Returns a new entries array with `entry` added, replacing any entry for the same window.
+   * Does not mutate the model; pass the result to `setInsightsLocation`.
+   *
+   * @param {object} entry - A valid insights entry (see `isValidInsightsEntry`).
+   * @returns {object[]}
+   */
+  upsertInsightsEntry(entry) {
+    if (!GeoExperiment.isValidInsightsEntry(entry)) {
+      throw new Error(`Invalid insights entry: ${JSON.stringify(entry)}`);
+    }
+    return [
+      ...this.getInsightsEntries().filter((existing) => existing.window !== entry.window),
+      entry,
+    ].sort((a, b) => a.window - b.window);
+  }
 
   /**
    * Field names within a schedule config block (pre or post phase).

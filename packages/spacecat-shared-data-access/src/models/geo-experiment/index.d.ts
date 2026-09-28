@@ -19,6 +19,17 @@ import type {
   Site,
 } from '../index';
 
+export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | 'extension';
+
+export interface GeoExperimentInsightsEntry {
+  window: number;
+  type: GeoExperimentInsightsType;
+  label: string;
+  location: string;
+  runRange?: { from: number; to: number };
+  completedAt?: string;
+}
+
 export interface GeoExperiment extends BaseModel {
   getSiteId(): string;
   getOpportunityId(): string | undefined;
@@ -36,7 +47,9 @@ export interface GeoExperiment extends BaseModel {
   getStartTime(): string | undefined;
   getEndTime(): string | undefined;
   getMetadata(): object | undefined;
-  getInsightsLocation(): string | undefined;
+  getInsightsLocation(): string | GeoExperimentInsightsEntry[] | undefined;
+  getInsightsEntries(): GeoExperimentInsightsEntry[];
+  upsertInsightsEntry(entry: GeoExperimentInsightsEntry): GeoExperimentInsightsEntry[];
   getError(): object | undefined;
   getUpdatedBy(): string;
 
@@ -54,7 +67,7 @@ export interface GeoExperiment extends BaseModel {
   setStartTime(startTime?: string): GeoExperiment;
   setEndTime(endTime?: string): GeoExperiment;
   setMetadata(metadata?: object): GeoExperiment;
-  setInsightsLocation(insightsLocation?: string): GeoExperiment;
+  setInsightsLocation(insightsLocation?: string | GeoExperimentInsightsEntry[]): GeoExperiment;
   setError(error?: object): GeoExperiment;
   setUpdatedBy(updatedBy: string): GeoExperiment;
 }

@@ -81,6 +81,7 @@ describe('GeoExperimentModel', () => {
       VALIDATION: 'validation',
       ROUTING_VALIDATION: 'routingValidation',
       OAE_VALIDATION_JOBS: 'oaeValidationJobs',
+      BASELINE_MEASUREMENT: 'baselineMeasurement',
     });
   });
 
@@ -142,6 +143,100 @@ describe('GeoExperimentModel', () => {
 
   it('exposes the routing-validation phase', () => {
     expect(GeoExperiment.PHASES.ROUTING_VALIDATION).to.equal('routing_validation');
+  });
+
+  it('exposes the baseline-measurement phases', () => {
+    expect(GeoExperiment.PHASES.PRE_ANALYSIS_MEASUREMENT_STARTED).to.equal('pre_analysis_measurement_started');
+    expect(GeoExperiment.PHASES.PRE_ANALYSIS_MEASUREMENT_DONE).to.equal('pre_analysis_measurement_done');
+  });
+
+  describe('insights entries', () => {
+    const baseline = {
+      window: 0, type: 'baseline', label: 'Baseline (runs 1-14)', location: 'geo-experiments/e/baseline/insights.json',
+    };
+    const post = {
+      window: 1, type: 'post_analysis', label: 'Post-analysis (runs 1-14)', location: 'geo-experiments/e/insights.json',
+    };
+    const legacy = 'geo-experiments/site-123/exp-456-insights.json';
+    const legacyEntry = {
+      window: 1, type: 'post_analysis', label: 'Post-analysis', location: legacy,
+    };
+
+    beforeEach(() => {
+      instance.setInsightsLocation(legacy);
+    });
+
+    it('exposes INSIGHTS_TYPES and INSIGHTS_WINDOWS', () => {
+      expect(GeoExperiment.INSIGHTS_TYPES).to.deep.equal({
+        BASELINE: 'baseline', POST_ANALYSIS: 'post_analysis', EXTENSION: 'extension',
+      });
+      expect(GeoExperiment.INSIGHTS_WINDOWS).to.deep.equal({ BASELINE: 0, POST_ANALYSIS: 1 });
+    });
+
+    it('validates entries', () => {
+      expect(GeoExperiment.isValidInsightsEntry(baseline)).to.equal(true);
+      const withRange = { ...baseline, runRange: { from: 1, to: 14 }, completedAt: '2026-09-25T00:00:00Z' };
+      expect(GeoExperiment.isValidInsightsEntry(withRange)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsEntry(null)).to.equal(false);
+      expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: -1 })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: 0.5 })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsEntry({ ...baseline, type: 'unknown' })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsEntry({ ...baseline, label: '' })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsEntry({ ...baseline, location: '' })).to.equal(false);
+    });
+
+    it('validates insightsLocation values', () => {
+      expect(GeoExperiment.isValidInsightsLocation(undefined)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsLocation(null)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsLocation('')).to.equal(true);
+      expect(GeoExperiment.isValidInsightsLocation('geo-experiments/e/insights.json')).to.equal(true);
+      expect(GeoExperiment.isValidInsightsLocation([])).to.equal(true);
+      expect(GeoExperiment.isValidInsightsLocation([baseline, post])).to.equal(true);
+      const duplicateWindow = [baseline, { ...post, window: 0 }];
+      expect(GeoExperiment.isValidInsightsLocation(duplicateWindow)).to.equal(false);
+      expect(GeoExperiment.isValidInsightsLocation([{ ...baseline, type: 'x' }])).to.equal(false);
+      expect(GeoExperiment.isValidInsightsLocation({ window: 0 })).to.equal(false);
+      expect(GeoExperiment.isValidInsightsLocation(42)).to.equal(false);
+    });
+
+    it('reads a legacy string as the window 1 entry', () => {
+      expect(instance.getInsightsEntries()).to.deep.equal([legacyEntry]);
+    });
+
+    it('reads an empty value as no entries', () => {
+      instance.setInsightsLocation(null);
+      expect(instance.getInsightsEntries()).to.deep.equal([]);
+    });
+
+    it('returns array entries sorted by window without mutating the stored value', () => {
+      const stored = [post, baseline];
+      instance.setInsightsLocation(stored);
+      expect(instance.getInsightsEntries()).to.deep.equal([baseline, post]);
+      expect(stored).to.deep.equal([post, baseline]);
+    });
+
+    it('upserts an entry, replacing the same window and keeping the rest', () => {
+      instance.setInsightsLocation(null);
+      const withBaseline = instance.upsertInsightsEntry(baseline);
+      expect(withBaseline).to.deep.equal([baseline]);
+
+      instance.setInsightsLocation(withBaseline);
+      const withPost = instance.upsertInsightsEntry(post);
+      expect(withPost).to.deep.equal([baseline, post]);
+      expect(instance.getInsightsLocation()).to.deep.equal([baseline]);
+
+      instance.setInsightsLocation(withPost);
+      const rerun = { ...baseline, label: 'Baseline (runs 1-15)' };
+      expect(instance.upsertInsightsEntry(rerun)).to.deep.equal([rerun, post]);
+    });
+
+    it('upserts next to a legacy string entry', () => {
+      expect(instance.upsertInsightsEntry(baseline)).to.deep.equal([baseline, legacyEntry]);
+    });
+
+    it('rejects an invalid entry on upsert', () => {
+      expect(() => instance.upsertInsightsEntry({ window: 0 })).to.throw('Invalid insights entry');
+    });
   });
 
   it('gets and sets promptsLocation', () => {

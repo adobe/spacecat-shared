@@ -16,6 +16,7 @@ import { stub } from 'sinon';
 import sinonChai from 'sinon-chai';
 
 import GeoExperiment from '../../../../src/models/geo-experiment/geo-experiment.model.js';
+import { ValidationError } from '../../../../src/errors/index.js';
 import { createElectroMocks } from '../../util.js';
 
 chaiUse(chaiAsPromised);
@@ -178,12 +179,64 @@ describe('GeoExperimentModel', () => {
       expect(GeoExperiment.isValidInsightsEntry(baseline)).to.equal(true);
       const withRange = { ...baseline, runRange: { from: 1, to: 14 }, completedAt: '2026-09-25T00:00:00Z' };
       expect(GeoExperiment.isValidInsightsEntry(withRange)).to.equal(true);
+      const withIsoMs = { ...withRange, completedAt: new Date().toISOString() };
+      expect(GeoExperiment.isValidInsightsEntry(withIsoMs)).to.equal(true);
+      expect(GeoExperiment.isValidInsightsEntry({
+        window: 3, type: 'extension', label: 'Extension 2', location: 'geo-experiments/e/insights/window-3/insights.json',
+      })).to.equal(true);
       expect(GeoExperiment.isValidInsightsEntry(null)).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: -1 })).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: 0.5 })).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, type: 'unknown' })).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, label: '' })).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, location: '' })).to.equal(false);
+    });
+
+    it('explains why an entry is invalid, naming the field', () => {
+      const cases = [
+        [null, 'entry must be an object'],
+        [{ ...baseline, window: '0' }, 'window must be a non-negative integer'],
+        [{ ...baseline, type: 'extension' }, "type must be 'baseline' for window 0"],
+        [{ ...post, type: 'baseline' }, "type must be 'post_analysis' for window 1"],
+        [{ ...post, window: 2 }, "type must be 'extension' for window 2"],
+        [{ ...baseline, label: 3 }, 'label must be a non-empty string'],
+        [{ ...baseline, location: '../etc/passwd' }, 'location must be a relative S3 key'],
+        [{ ...baseline, location: 's3://bucket/key.json' }, 'location must be a relative S3 key'],
+        [{ ...baseline, runRange: 'x' }, 'runRange must be { from, to } integers with from <= to'],
+        [{ ...baseline, runRange: { from: 5, to: 1 } }, 'runRange must be { from, to } integers with from <= to'],
+        [{ ...baseline, runRange: { from: 1 } }, 'runRange must be { from, to } integers with from <= to'],
+        [{ ...baseline, completedAt: 123 }, 'completedAt must be an ISO date string'],
+        [{ ...baseline, completedAt: 'yesterday' }, 'completedAt must be an ISO date string'],
+      ];
+      cases.forEach(([entry, message]) => {
+        expect(GeoExperiment.getInsightsEntryError(entry)).to.equal(message);
+      });
+      expect(GeoExperiment.getInsightsEntryError(baseline)).to.equal(null);
+    });
+
+    it('explains why a list is invalid', () => {
+      expect(GeoExperiment.getInsightsListError('x')).to.equal('insightsList must be an array');
+      expect(GeoExperiment.getInsightsListError([baseline, { ...post, label: '' }]))
+        .to.equal('insightsList[1]: label must be a non-empty string');
+      expect(GeoExperiment.getInsightsListError([baseline, baseline]))
+        .to.equal('insightsList windows must be unique');
+      expect(GeoExperiment.getInsightsListError([baseline, post])).to.equal(null);
+    });
+
+    it('rejects an invalid list on set, before it can be saved', () => {
+      expect(() => instance.setInsightsList([baseline, baseline]))
+        .to.throw(ValidationError, 'Invalid insightsList: insightsList windows must be unique');
+      expect(() => instance.setInsightsList('geo-experiments/e/insights.json'))
+        .to.throw(ValidationError, 'insightsList must be an array');
+      expect(() => instance.setInsightsList([{ ...baseline, location: '' }]))
+        .to.throw(ValidationError, 'insightsList[0]: location must be a relative S3 key');
+      expect(instance.getInsightsList()).to.equal(null);
+    });
+
+    it('sets a valid list and returns the model', () => {
+      expect(instance.setInsightsList([baseline, post])).to.equal(instance);
+      expect(instance.getInsightsList()).to.deep.equal([baseline, post]);
+      expect(instance.setInsightsList(undefined)).to.equal(instance);
     });
 
     it('validates insightsList values', () => {
@@ -218,6 +271,18 @@ describe('GeoExperimentModel', () => {
       expect(instance.getInsightsLocation()).to.equal(legacy);
     });
 
+    it('adds the legacy insightsLocation as window 1 when the list has no window 1 entry', () => {
+      instance.setInsightsList([baseline]);
+      expect(instance.getInsightsEntries()).to.deep.equal([baseline, legacyEntry]);
+    });
+
+    it('returns copies, so editing an entry does not touch the stored list', () => {
+      instance.setInsightsList([baseline]);
+      const [entry] = instance.getInsightsEntries();
+      entry.label = 'changed';
+      expect(instance.getInsightsList()[0].label).to.equal(baseline.label);
+    });
+
     it('upserts an entry, replacing the same window and keeping the rest', () => {
       instance.setInsightsLocation(null);
       const withBaseline = instance.upsertInsightsEntry(baseline);
@@ -238,7 +303,8 @@ describe('GeoExperimentModel', () => {
     });
 
     it('rejects an invalid entry on upsert', () => {
-      expect(() => instance.upsertInsightsEntry({ window: 0 })).to.throw('Invalid insights entry');
+      expect(() => instance.upsertInsightsEntry({ window: 0 }))
+        .to.throw(ValidationError, "Invalid insights entry: type must be 'baseline' for window 0");
     });
   });
 

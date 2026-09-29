@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tier-client-v1.7.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.6.3...@adobe/spacecat-shared-tier-client-v1.7.0) (2026-09-29)
+
+### Features
+
+* **tier-client:** allow caller-supplied entitlement quotas [SITES-52547] ([#1955](https://github.com/adobe/spacecat-shared/issues/1955)) ([1384335](https://github.com/adobe/spacecat-shared/commit/13843354425608f3991578033bb4172f94d398dd))
+
 ## [@adobe/spacecat-shared-tier-client-v1.6.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tier-client-v1.6.2...@adobe/spacecat-shared-tier-client-v1.6.3) (2026-06-03)
 
 ### Bug Fixes

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.34.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.33.1...@adobe/spacecat-shared-data-access-v4.34.0) (2026-09-28)
+
+### Features
+
+* **data-access:** add geo-experiment baseline measurement phases and insightsList window entries ([#1956](https://github.com/adobe/spacecat-shared/issues/1956)) ([e0bec9c](https://github.com/adobe/spacecat-shared/commit/e0bec9cc2fc04228444e280cb27655c814b33d2c))
+
 ## [@adobe/spacecat-shared-data-access-v4.33.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.33.0...@adobe/spacecat-shared-data-access-v4.33.1) (2026-09-25)
 
 ### Bug Fixes

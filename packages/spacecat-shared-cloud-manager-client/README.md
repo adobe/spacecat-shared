@@ -198,7 +198,7 @@ await client.cleanup(clonePath);
 ## API overview
 
 - **`clone(programId, repositoryId, config)`** – Clone repo to a unique temp directory. Config: `{ imsOrgId, repoType, repoUrl, ref, submodules }`. Optional `ref` checks out a specific branch/tag after clone (failure to checkout does not fail the clone). Optional `submodules` is BYOG-only and drives the submodule rewrite — see "Submodule handling" below.
-- **`pull(clonePath, programId, repositoryId, config)`** – Pull latest changes into an existing clone. Config: `{ imsOrgId, repoType, repoUrl, ref, submodules }`. Optional `ref` checks out the branch before pulling. `submodules` follows the same shape as `clone()`.
+- **`pull(clonePath, programId, repositoryId, config)`** – Sync an existing clone to the authoritative remote by fetching and **hard-resetting** the working copy to the remote `ref`, discarding local-only commits and any uncommitted tracked changes — so a force-pushed / divergent remote is a non-event. Config: `{ imsOrgId, repoType, repoUrl, ref, submodules }`. Optional `ref` is checked out first and is the branch synced; without it, the currently checked-out branch is synced. `submodules` follows the same shape as `clone()`.
 - **`push(clonePath, programId, repositoryId, config)`** – Push a ref to the remote. Config: `{ imsOrgId, repoType, repoUrl, ref }`. The `ref` is **required** and specifies the branch to push.
 - **`checkout(clonePath, ref)`** – Checkout a specific git ref (branch, tag, or SHA) in an existing clone. Unlike the optional checkout in `clone()`, this throws on failure.
 - **`zipRepository(clonePath)`** – Zip the clone (including `.git` history) and return a Buffer.

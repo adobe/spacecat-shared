@@ -21,14 +21,31 @@ import {
   encodeCursor,
   entityToTableName,
   fromDbRecord,
+  rpcError,
   snakeToCamel,
   toDbField,
   toDbRecord,
   toModelField,
 } from '../../../src/util/postgrest.utils.js';
+import DataAccessError from '../../../src/errors/data-access.error.js';
 import SiteSchema from '../../../src/models/site/site.schema.js';
 
 describe('postgrest utils', () => {
+  describe('rpcError', () => {
+    it('wraps the PostgREST error without a hint for other codes', () => {
+      const cause = { code: '22023', message: 'bad input' };
+      const err = rpcError('Failed x', 'rpc_x', { id: 1 }, cause);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal('Failed x');
+      expect(err.details).to.deep.equal({ id: 1 });
+      expect(err.cause).to.equal(cause);
+    });
+
+    it('names the likely causes on PGRST202', () => {
+      const err = rpcError('Failed x', 'rpc_x', {}, { code: 'PGRST202' });
+      expect(err.message).to.equal('Failed x: rpc_x signature not found (data-service release not deployed, argument names/types drifted, or a stale PostgREST schema cache)');
+    });
+  });
   it('transforms camel/snake case values', () => {
     expect(camelToSnake('auditType')).to.equal('audit_type');
     expect(snakeToCamel('audit_type')).to.equal('auditType');

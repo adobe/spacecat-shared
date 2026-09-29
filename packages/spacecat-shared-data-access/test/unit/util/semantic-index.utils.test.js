@@ -19,6 +19,9 @@ import {
   QUERY_EMBEDDING_TABLE,
   SEMANTIC_SEARCH_RPC,
   COPY_VECTORS_RPC,
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
+  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
+  SEMANTIC_MATCHING_CONFIG,
   normalizeText,
   hashText,
   cleanTopicText,
@@ -38,6 +41,10 @@ const SITE_ID = 'site-1';
 const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'cited-analysis';
 const SOURCE_TYPE = 'topic';
+const INVALID_SOURCE_TYPE = 'not-a-source-type';
+const INVALID_ENTITY_TYPE = 'not-an-entity-type';
+const PGRST202_HINT = 'signature not found (data-service release not deployed, argument names/types drifted, or a stale PostgREST schema cache)';
+const { model: MODEL, dims: DIMS } = SEMANTIC_MATCHING_CONFIG.embedding;
 
 /**
  * Chainable, awaitable fake `@supabase/postgrest-js` client. Each chain is classified at its
@@ -145,11 +152,30 @@ function makeClient(config = {}) {
 }
 
 const src = (text, vector = [0.1, 0.2], extra = {}) => ({
-  text, vector, model: 'azure/text-embedding-3-small', dims: 2, ...extra,
+  text, vector, model: MODEL, dims: 2, ...extra,
 });
 
 describe('semantic-index.utils', () => {
   describe('pure helpers', () => {
+    it('exposes frozen source/entity type registries', () => {
+      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.deep.equal({ TOPIC: 'topic' });
+      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.deep.equal({
+        CITED_ANALYSIS: 'cited-analysis',
+        REDDIT_ANALYSIS: 'reddit-analysis',
+        YOUTUBE_ANALYSIS: 'youtube-analysis',
+      });
+      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_SOURCE_TYPES)).to.equal(true);
+      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_ENTITY_TYPES)).to.equal(true);
+    });
+
+    it('exposes the frozen embedding generation', () => {
+      expect(SEMANTIC_MATCHING_CONFIG).to.deep.equal({
+        embedding: { model: 'azure/text-embedding-3-small', dims: 1536 },
+      });
+      expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG)).to.equal(true);
+      expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG.embedding)).to.equal(true);
+    });
+
     it('normalizeText lowercases, collapses whitespace, trims; non-string -> empty', () => {
       expect(normalizeText('  Running   SHOES ')).to.equal('running shoes');
       expect(normalizeText(42)).to.equal('');
@@ -205,6 +231,13 @@ describe('semantic-index.utils', () => {
   });
 
   describe('syncOpportunitySemantic', () => {
+    it('renders a value that neither JSON nor String can print', async () => {
+      const unprintable = Object.assign(Object.create(null), { big: 10n });
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: unprintable,
+      })).to.be.rejectedWith(ValidationError, '(got [unprintable])');
+    });
+
     it('validates required args', async () => {
       await expect(syncOpportunitySemantic(null))
         .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
@@ -216,11 +249,36 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
       })).to.be.rejectedWith(ValidationError, 'entityId is required');
       await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'entityType is required');
+        siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE, sources: [src('x')],
+      })).to.be.rejectedWith(ValidationError, /^entityType must be one of: .+ \(got undefined\)$/);
+      await expect(syncOpportunitySemantic(client, {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: INVALID_ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
+      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_ENTITY_TYPE}")`);
       await expect(syncOpportunitySemantic(client, {
         siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'sourceType is required');
+      })).to.be.rejectedWith(ValidationError, /^sourceType must be one of: .+ \(got undefined\)$/);
+      await expect(syncOpportunitySemantic(client, {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: ENTITY_TYPE,
+        sourceType: INVALID_SOURCE_TYPE,
+      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_SOURCE_TYPE}")`);
+      expect(client.calls.upsert).to.have.length(0);
+      expect(client.calls.delete).to.have.length(0);
+    });
+
+    it('clears an entity whose entityType is no longer registered', async () => {
+      const client = makeClient();
+      const count = await syncOpportunitySemantic(client, {
+        siteId: SITE_ID,
+        entityId: ENTITY_ID,
+        entityType: INVALID_ENTITY_TYPE,
+        sourceType: SOURCE_TYPE,
+        sources: [],
+      });
+      expect(count).to.equal(0);
+      expect(client.calls.delete).to.have.length(1);
+      expect(client.calls.upsert).to.have.length(0);
     });
 
     it('clears the (entity, sourceType) slice when sources is empty', async () => {
@@ -279,7 +337,7 @@ describe('semantic-index.utils', () => {
         entity_id: ENTITY_ID,
         source_type: SOURCE_TYPE,
         entity_type: ENTITY_TYPE,
-        model: 'azure/text-embedding-3-small',
+        model: MODEL,
         dims: 2,
         source_text: 'Running Shoes', // original case, not normalized
         source_id: null,
@@ -314,7 +372,7 @@ describe('semantic-index.utils', () => {
         entityId: ENTITY_ID,
         entityType: ENTITY_TYPE,
         sourceType: SOURCE_TYPE,
-        sources: [src('x', [0.1, 0.2], { dims: 1536 })], // vector length 2 != dims 1536
+        sources: [src('x', [0.1, 0.2], { dims: DIMS })], // vector length 2 != DIMS
       })).to.be.rejectedWith(ValidationError, 'does not match dims');
       await expect(syncOpportunitySemantic(makeClient(), {
         siteId: SITE_ID,
@@ -491,16 +549,30 @@ describe('semantic-index.utils', () => {
 
     it('wraps an RPC error', async () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      await expect(copyEntityVectors(client, {
+      const err = await copyEntityVectors(client, {
         siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      })).to.be.rejectedWith(DataAccessError, 'Failed to copy semantic vectors');
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.include('Failed to copy semantic vectors');
+      expect(err.message).to.not.include('signature not found');
+    });
+
+    it('adds the deploy-ordering hint when PostgREST cannot find the copy RPC', async () => {
+      const cause = { code: 'PGRST202', message: 'Could not find the function' };
+      const client = makeClient({ rpcResult: { data: null, error: cause } });
+      const err = await copyEntityVectors(client, {
+        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} ${PGRST202_HINT}`);
+      expect(err.details).to.deep.equal({ siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' });
+      expect(err.cause).to.equal(cause);
     });
   });
 
   describe('lookupOpportunitiesByVectors', () => {
-    const MODEL = 'azure/text-embedding-3-small';
     const base = {
-      siteId: SITE_ID, sourceType: SOURCE_TYPE, model: MODEL, dims: 2,
+      siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], model: MODEL, dims: 2,
     };
     const vecs = (n) => Array.from({ length: n }, () => [0.1, 0.2]);
     const groupSizes = (client) => client.calls.rpc.map((c) => c.params.p_query_embeddings.length);
@@ -510,7 +582,17 @@ describe('semantic-index.utils', () => {
         ...base, vectors: [[0.1, 0.2]], ...over,
       });
       await expect(call({ siteId: undefined })).to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(call({ sourceType: undefined })).to.be.rejectedWith(ValidationError, 'sourceType is required');
+      await expect(call({ sourceTypes: undefined })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
+      await expect(call({ sourceTypes: [] })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
+      await expect(call({ sourceTypes: 'topic' })).to.be.rejectedWith(ValidationError, 'sourceTypes must be an array');
+      await expect(call({ sourceTypes: ['topic', INVALID_SOURCE_TYPE] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \["not-a-source-type"\]\)$/);
+      await expect(call({ sourceTypes: ['*'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain');
+      await expect(call({ entityTypes: 'cited-analysis' })).to.be.rejectedWith(ValidationError, 'entityTypes must be an array');
+      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, /^entityTypes must only contain: .+ \(got \[null\]\)$/);
+      await expect(call({ entityTypes: [INVALID_ENTITY_TYPE] })).to.be.rejectedWith(ValidationError, `(got ["${INVALID_ENTITY_TYPE}"])`);
+      // eslint-disable-next-line no-sparse-arrays
+      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \[undefined\]\)$/);
+      await expect(call({ entityTypes: new Array(1) })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain');
       await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
       await expect(call({ dims: undefined })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(call({ vectors: 'x' })).to.be.rejectedWith(ValidationError, 'vectors must be an array');
@@ -559,13 +641,61 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[0].name).to.equal(SEMANTIC_SEARCH_RPC);
       expect(client.calls.rpc[0].params).to.deep.equal({
         p_site_id: SITE_ID,
-        p_source_type: SOURCE_TYPE,
+        p_source_types: [SOURCE_TYPE],
+        p_entity_types: null,
         p_query_embeddings: ['[0.1,0.2]', '[0.3,0.4]', '[0.5,0.6]'],
         p_model: MODEL,
         p_dims: 2,
         p_limit: 10,
         p_min_score: 0,
       });
+    });
+
+    it('dedups type lists; an empty entityTypes sends no entity filter', async () => {
+      const client = makeClient({ rpcResult: { data: [], error: null } });
+      await lookupOpportunitiesByVectors(client, {
+        ...base,
+        sourceTypes: [SOURCE_TYPE, SOURCE_TYPE],
+        entityTypes: ['reddit-analysis', 'cited-analysis', 'reddit-analysis'],
+        vectors: [[0.1, 0.2]],
+      });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, entityTypes: [], vectors: [[0.1, 0.2]],
+      });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, entityTypes: null, vectors: [[0.1, 0.2]],
+      });
+      expect(client.calls.rpc[0].params.p_source_types).to.deep.equal([SOURCE_TYPE]);
+      expect(client.calls.rpc[0].params.p_entity_types).to.deep.equal(['reddit-analysis', 'cited-analysis']);
+      expect(client.calls.rpc[1].params.p_entity_types).to.equal(null);
+      expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
+    });
+
+    it('renders rejected values safely: unserializable falls back to String, long ones are truncated', async () => {
+      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
+        ...base, vectors: [[0.1, 0.2]], ...over,
+      });
+      const circular = {};
+      circular.self = circular;
+      await expect(call({ sourceTypes: [10n] })).to.be.rejectedWith(ValidationError, '(got [10])');
+      await expect(call({ entityTypes: ['topic', circular] })).to.be.rejectedWith(ValidationError, '(got ["topic",[object Object]])');
+      const err = await call({ sourceTypes: ['x'.repeat(500)] }).catch((e) => e);
+      expect(err).to.be.instanceOf(ValidationError);
+      expect(err.message).to.match(/\(got \["x{198}\.\.\.\)$/);
+    });
+
+    it('sanitizes rejected values to printable ASCII so the message is safe for an HTTP header', async () => {
+      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
+        ...base, vectors: [[0.1, 0.2]], ...over,
+      });
+      const printable = /^[\x20-\x7E]*$/;
+      const emoji = await call({ sourceTypes: ['\u{1F600}'] }).catch((e) => e);
+      expect(emoji.message).to.include('(got ["??"])').and.match(printable);
+      const control = await call({ entityTypes: ['a\x7Fb'] }).catch((e) => e);
+      expect(control.message).to.include('(got ["a?b"])').and.match(printable);
+      // Sanitized before truncating, so a multi-byte value can't leave half a surrogate pair.
+      const long = await call({ sourceTypes: ['\u{1F600}'.repeat(300)] }).catch((e) => e);
+      expect(long.message).to.match(/\(got \["\?{198}\.\.\.\)$/).and.match(printable);
     });
 
     it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
@@ -602,10 +732,31 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[0].params).to.include({ p_limit: 5, p_min_score: 0.3 });
     });
 
-    it('wraps an RPC error', async () => {
+    it('wraps an RPC error with the searched type lists', async () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: [[0.1, 0.2]] }))
-        .to.be.rejectedWith(DataAccessError, 'Failed semantic search');
+      const err = await lookupOpportunitiesByVectors(client, {
+        ...base, entityTypes: ['reddit-analysis'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.include('Failed semantic search');
+      expect(err.message).to.not.include('signature not found');
+      expect(err.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
+      });
+    });
+
+    it('adds a deploy-ordering hint when PostgREST cannot find the RPC signature', async () => {
+      const cause = { code: 'PGRST202', message: 'Could not find the function' };
+      const client = makeClient({ rpcResult: { data: null, error: cause } });
+      const err = await lookupOpportunitiesByVectors(client, {
+        ...base, vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.equal(`Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} ${PGRST202_HINT}`);
+      expect(err.cause).to.equal(cause);
+      expect(err.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null,
+      });
     });
 
     it('rejects a query_index outside the current group (never spills into another group)', async () => {
@@ -622,7 +773,6 @@ describe('semantic-index.utils', () => {
   });
 
   describe('semantic_query_embedding cache', () => {
-    const MODEL = 'azure/text-embedding-3-small';
     const scope = { model: MODEL, dims: 2 };
     const texts = (n) => Array.from({ length: n }, (_, i) => `topic ${i}`);
 

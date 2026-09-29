@@ -12,8 +12,10 @@
 
 import { createHash } from 'crypto';
 
+import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
+
 import { DataAccessError, ValidationError } from '../errors/index.js';
-import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
+import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
 
 /**
  * Shared writer + reader for the "semantic index" tables: `opportunity_semantic_embedding` (one
@@ -38,6 +40,38 @@ export const QUERY_HASH_CHUNK_SIZE = 50;
 
 /** Max topic/query text length; matches the `source_text` DB CHECK. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
+
+/**
+ * Kinds of source text in `opportunity_semantic_embedding.source_type`. The writer and reader
+ * reject any other value; add a kind here before indexing or searching it.
+ */
+export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES = Object.freeze({
+  TOPIC: 'topic',
+});
+
+/**
+ * Opportunity types allowed in `opportunity_semantic_embedding.entity_type`. The writer and
+ * reader reject any other value; add a type here before indexing or filtering by it.
+ */
+export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES = Object.freeze({
+  CITED_ANALYSIS: OPPORTUNITY_TYPES.CITED_ANALYSIS,
+  REDDIT_ANALYSIS: OPPORTUNITY_TYPES.REDDIT_ANALYSIS,
+  YOUTUBE_ANALYSIS: OPPORTUNITY_TYPES.YOUTUBE_ANALYSIS,
+});
+
+/**
+ * Shared semantic-matching settings. `embedding` is the generation every semantic writer and
+ * reader uses: stored on each row and part of the query-cache key; spread it into the helpers'
+ * `model` / `dims`. `embedding.dims` must match the data-service `vector(1536)` columns and CHECKs.
+ * A code constant, not env config: writer and reader agree as long as both run the same
+ * data-access version.
+ */
+export const SEMANTIC_MATCHING_CONFIG = Object.freeze({
+  embedding: Object.freeze({
+    model: 'azure/text-embedding-3-small',
+    dims: 1536,
+  }),
+});
 
 function assertClient(postgrestClient) {
   if (!postgrestClient || typeof postgrestClient.from !== 'function') {
@@ -64,6 +98,69 @@ function assertModel(value) {
   if (value.length > MAX_MODEL_LENGTH) {
     throw new ValidationError(`model must be at most ${MAX_MODEL_LENGTH} characters`);
   }
+}
+
+const MAX_ECHOED_VALUE_LENGTH = 200;
+
+function stringifyValue(value) {
+  try {
+    const json = JSON.stringify(value);
+    if (json !== undefined) {
+      return json;
+    }
+  } catch {
+    // BigInt, circular, or a throwing toJSON: fall back to String().
+  }
+  try {
+    return String(value);
+  } catch {
+    return '[unprintable]';
+  }
+}
+
+// Never throws; printable ASCII only (sanitized before truncating, so no split surrogate pair),
+// so the message is safe to copy into an HTTP header such as `x-error`.
+function describeValue(value) {
+  const text = Array.isArray(value)
+    ? `[${value.map(stringifyValue).join(',')}]`
+    : stringifyValue(value);
+  const safe = text.replace(/[^\x20-\x7E]/g, '?');
+  return safe.length > MAX_ECHOED_VALUE_LENGTH ? `${safe.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : safe;
+}
+
+function assertAllowed(value, name, registry) {
+  const allowed = Object.values(registry);
+  if (!allowed.includes(value)) {
+    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')} (got ${describeValue(value)})`);
+  }
+}
+
+/**
+ * Validates a type list against its registry and dedups it, so its length never exceeds the
+ * registry's. Omitted/empty returns null (no filter) unless `required`.
+ */
+function toAllowedList(values, name, registry, { required }) {
+  if (values === undefined || values === null || (Array.isArray(values) && values.length === 0)) {
+    if (required) {
+      throw new ValidationError(`${name} must be a non-empty array`);
+    }
+    return null;
+  }
+  if (!Array.isArray(values)) {
+    throw new ValidationError(`${name} must be an array`);
+  }
+  const allowed = Object.values(registry);
+
+  const rejected = [];
+  for (const value of values) {
+    if (!allowed.includes(value)) {
+      rejected.push(value);
+    }
+  }
+  if (rejected.length > 0) {
+    throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${describeValue(rejected)})`);
+  }
+  return [...new Set(values)];
 }
 
 /** Only an empty/omitted `sources` clears; a non-empty input reduced to nothing throws. */
@@ -268,8 +365,9 @@ async function clearEntitySource(postgrestClient, table, siteId, entityId, sourc
  * @param {object} params
  * @param {string} params.siteId - the site the opportunity belongs to
  * @param {string} params.entityId - the opportunity id
- * @param {string} params.entityType - the opportunity type stored on each row
- * @param {string} params.sourceType - the source kind, e.g. `topic`
+ * @param {string} [params.entityType] - the opportunity type stored on each row, one of
+ *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; required when `sources` yields rows
+ * @param {string} params.sourceType - the source kind, one of `OPPORTUNITY_SEMANTIC_SOURCE_TYPES`
  * @param {Array<{text: string, vector: number[], model: string, dims: number, sourceId?: string}>}
  *   params.sources - one entry per source text (normalized + hashed here)
  * @returns {Promise<number>} size of the stored set for this (entity, sourceType) after sync
@@ -280,8 +378,8 @@ export async function syncOpportunitySemantic(postgrestClient, {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   assertId(entityId, 'entityId');
-  assertId(entityType, 'entityType');
-  assertId(sourceType, 'sourceType');
+  // Strict even when clearing: it scopes the delete, so retire a kind only after its rows are gone.
+  assertAllowed(sourceType, 'sourceType', OPPORTUNITY_SEMANTIC_SOURCE_TYPES);
 
   const table = 'opportunity_semantic_embedding';
   const rows = toRows({
@@ -294,6 +392,8 @@ export async function syncOpportunitySemantic(postgrestClient, {
     return 0;
   }
 
+  // Only stored rows carry entityType; clearing must still work for a type since removed.
+  assertAllowed(entityType, 'entityType', OPPORTUNITY_SEMANTIC_ENTITY_TYPES);
   await upsertRows(postgrestClient, table, rows, 'entity_id,source_type,source_hash', entityId);
 
   const keep = new Set(rows.map((r) => r.source_hash));
@@ -332,7 +432,7 @@ export async function copyEntityVectors(postgrestClient, {
     p_to_entity_id: toEntityId,
   });
   if (error) {
-    throw new DataAccessError(`Failed to copy semantic vectors for entity ${fromEntityId}`, { fromEntityId, toEntityId }, error);
+    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { siteId, fromEntityId, toEntityId }, error);
   }
   return data ?? 0;
 }
@@ -349,7 +449,10 @@ export async function copyEntityVectors(postgrestClient, {
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
  * @param {string} params.siteId - the site to scope the search to
- * @param {string} params.sourceType - the source kind, e.g. `topic`
+ * @param {string[]} params.sourceTypes - source kinds to search, from
+ *   `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (required, non-empty)
+ * @param {string[]} [params.entityTypes] - opportunity types to narrow to, from
+ *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; omitted or empty searches all
  * @param {number[][]} params.vectors - the query embeddings
  * @param {string} params.model - the model the queries were embedded with
  * @param {number} params.dims - the query embedding dimension
@@ -359,11 +462,12 @@ export async function copyEntityVectors(postgrestClient, {
  *   best-first list per input vector, in input order
  */
 export async function lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceType, vectors, model, dims, k = 10, minScore = 0,
+  siteId, sourceTypes, entityTypes, vectors, model, dims, k = 10, minScore = 0,
 } = {}) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
-  assertId(sourceType, 'sourceType');
+  const sourceTypeList = toAllowedList(sourceTypes, 'sourceTypes', OPPORTUNITY_SEMANTIC_SOURCE_TYPES, { required: true });
+  const entityTypeList = toAllowedList(entityTypes, 'entityTypes', OPPORTUNITY_SEMANTIC_ENTITY_TYPES, { required: false });
   assertModel(model);
   assertDims(dims);
   if (!Array.isArray(vectors)) {
@@ -384,7 +488,8 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
     // eslint-disable-next-line no-await-in-loop
     const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
       p_site_id: siteId,
-      p_source_type: sourceType,
+      p_source_types: sourceTypeList,
+      p_entity_types: entityTypeList,
       p_query_embeddings: group,
       p_model: model,
       p_dims: dims,
@@ -392,7 +497,12 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_min_score: minScore,
     });
     if (error) {
-      throw new DataAccessError(`Failed semantic search for site ${siteId}`, { siteId, sourceType }, error);
+      throw rpcError(
+        `Failed semantic search for site ${siteId}`,
+        SEMANTIC_SEARCH_RPC,
+        { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
+        error,
+      );
     }
     for (const row of data ?? []) {
       // Checked against this group, not all results, so a bad index can't land in another group.
@@ -400,7 +510,7 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
         throw new DataAccessError(
           `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
-          { siteId, sourceType },
+          { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
         );
       }
       results[offset + queryIndex].push({

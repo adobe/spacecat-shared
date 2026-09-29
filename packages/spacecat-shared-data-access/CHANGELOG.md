@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.35.0...@adobe/spacecat-shared-data-access-v4.36.0) (2026-09-29)
+
+### Features
+
+* **data-access:** AbvOnboardingClaim model over abv_onboarding_claims RPCs (SITES-52547 Task 1b) ([#1954](https://github.com/adobe/spacecat-shared/issues/1954)) ([805d7d2](https://github.com/adobe/spacecat-shared/commit/805d7d2e3b3fb5fa442cc7626cabfe12054c5272))
+
 ## [@adobe/spacecat-shared-data-access-v4.35.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.34.0...@adobe/spacecat-shared-data-access-v4.35.0) (2026-09-29)
 
 ### Features

@@ -12,6 +12,8 @@
 
 import pluralize from 'pluralize';
 
+import DataAccessError from '../errors/data-access.error.js';
+
 const DEFAULT_PAGE_SIZE = 1000;
 
 const ENTITY_TABLE_OVERRIDES = {
@@ -199,6 +201,17 @@ const applyWhere = (query, whereFn, toDbMap) => {
   return applyExpr(query, expression);
 };
 
+/**
+ * Wraps a PostgREST RPC error in a `DataAccessError`. A `PGRST202` (no function with this
+ * signature) gets a hint listing its usual causes.
+ */
+const rpcError = (message, rpc, details, error) => {
+  const hint = error.code === 'PGRST202'
+    ? `: ${rpc} signature not found (data-service release not deployed, argument names/types drifted, or a stale PostgREST schema cache)`
+    : '';
+  return new DataAccessError(`${message}${hint}`, details, error);
+};
+
 export {
   DEFAULT_PAGE_SIZE,
   applyWhere,
@@ -208,6 +221,7 @@ export {
   encodeCursor,
   entityToTableName,
   fromDbRecord,
+  rpcError,
   snakeToCamel,
   toDbField,
   toDbRecord,

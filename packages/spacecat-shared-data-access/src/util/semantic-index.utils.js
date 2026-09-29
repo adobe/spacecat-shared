@@ -15,7 +15,7 @@ import { createHash } from 'crypto';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../errors/index.js';
-import { DEFAULT_PAGE_SIZE } from './postgrest.utils.js';
+import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
 
 /**
  * Shared writer + reader for the "semantic index" tables: `opportunity_semantic_embedding` (one
@@ -118,20 +118,14 @@ function stringifyValue(value) {
   }
 }
 
-// Never throws; ASCII-only so the message is safe to copy into an HTTP header.
+// Never throws; printable ASCII only (sanitized before truncating, so no split surrogate pair),
+// so the message is safe to copy into an HTTP header such as `x-error`.
 function describeValue(value) {
   const text = Array.isArray(value)
     ? `[${value.map(stringifyValue).join(',')}]`
     : stringifyValue(value);
-  return text.length > MAX_ECHOED_VALUE_LENGTH ? `${text.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : text;
-}
-
-// PGRST202 = PostgREST has no function with this signature, usually a deploy-ordering gap.
-function rpcError(message, rpc, details, error) {
-  const hint = error?.code === 'PGRST202'
-    ? `: ${rpc} signature not found; is the data-service release carrying it deployed?`
-    : '';
-  return new DataAccessError(`${message}${hint}`, details, error);
+  const safe = text.replace(/[^\x20-\x7E]/g, '?');
+  return safe.length > MAX_ECHOED_VALUE_LENGTH ? `${safe.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : safe;
 }
 
 function assertAllowed(value, name, registry) {
@@ -438,7 +432,7 @@ export async function copyEntityVectors(postgrestClient, {
     p_to_entity_id: toEntityId,
   });
   if (error) {
-    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { fromEntityId, toEntityId }, error);
+    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { siteId, fromEntityId, toEntityId }, error);
   }
   return data ?? 0;
 }

@@ -43,6 +43,7 @@ const ENTITY_TYPE = 'cited-analysis';
 const SOURCE_TYPE = 'topic';
 const INVALID_SOURCE_TYPE = 'not-a-source-type';
 const INVALID_ENTITY_TYPE = 'not-an-entity-type';
+const PGRST202_HINT = 'signature not found (data-service release not deployed, argument names/types drifted, or a stale PostgREST schema cache)';
 const { model: MODEL, dims: DIMS } = SEMANTIC_MATCHING_CONFIG.embedding;
 
 /**
@@ -230,6 +231,13 @@ describe('semantic-index.utils', () => {
   });
 
   describe('syncOpportunitySemantic', () => {
+    it('renders a value that neither JSON nor String can print', async () => {
+      const unprintable = Object.assign(Object.create(null), { big: 10n });
+      await expect(syncOpportunitySemantic(makeClient(), {
+        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: unprintable,
+      })).to.be.rejectedWith(ValidationError, '(got [unprintable])');
+    });
+
     it('validates required args', async () => {
       await expect(syncOpportunitySemantic(null))
         .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
@@ -541,9 +549,12 @@ describe('semantic-index.utils', () => {
 
     it('wraps an RPC error', async () => {
       const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      await expect(copyEntityVectors(client, {
+      const err = await copyEntityVectors(client, {
         siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      })).to.be.rejectedWith(DataAccessError, 'Failed to copy semantic vectors');
+      }).catch((e) => e);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.message).to.include('Failed to copy semantic vectors');
+      expect(err.message).to.not.include('signature not found');
     });
 
     it('adds the deploy-ordering hint when PostgREST cannot find the copy RPC', async () => {
@@ -553,10 +564,8 @@ describe('semantic-index.utils', () => {
         siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
       }).catch((e) => e);
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.equal(
-        `Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} signature not found; is the data-service release carrying it deployed?`,
-      );
-      expect(err.details).to.deep.equal({ fromEntityId: 'a', toEntityId: 'b' });
+      expect(err.message).to.equal(`Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} ${PGRST202_HINT}`);
+      expect(err.details).to.deep.equal({ siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' });
       expect(err.cause).to.equal(cause);
     });
   });
@@ -673,15 +682,20 @@ describe('semantic-index.utils', () => {
       const err = await call({ sourceTypes: ['x'.repeat(500)] }).catch((e) => e);
       expect(err).to.be.instanceOf(ValidationError);
       expect(err.message).to.match(/\(got \["x{198}\.\.\.\)$/);
-      // eslint-disable-next-line no-control-regex
-      expect(err.message).to.match(/^[\x00-\x7F]*$/);
     });
 
-    it('renders a value that neither JSON nor String can print', async () => {
-      const unprintable = Object.assign(Object.create(null), { big: 10n });
-      await expect(syncOpportunitySemantic(makeClient(), {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: unprintable,
-      })).to.be.rejectedWith(ValidationError, '(got [unprintable])');
+    it('sanitizes rejected values to printable ASCII so the message is safe for an HTTP header', async () => {
+      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
+        ...base, vectors: [[0.1, 0.2]], ...over,
+      });
+      const printable = /^[\x20-\x7E]*$/;
+      const emoji = await call({ sourceTypes: ['\u{1F600}'] }).catch((e) => e);
+      expect(emoji.message).to.include('(got ["??"])').and.match(printable);
+      const control = await call({ entityTypes: ['a\x7Fb'] }).catch((e) => e);
+      expect(control.message).to.include('(got ["a?b"])').and.match(printable);
+      // Sanitized before truncating, so a multi-byte value can't leave half a surrogate pair.
+      const long = await call({ sourceTypes: ['\u{1F600}'.repeat(300)] }).catch((e) => e);
+      expect(long.message).to.match(/\(got \["\?{198}\.\.\.\)$/).and.match(printable);
     });
 
     it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
@@ -738,9 +752,7 @@ describe('semantic-index.utils', () => {
         ...base, vectors: [[0.1, 0.2]],
       }).catch((e) => e);
       expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.equal(
-        `Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} signature not found; is the data-service release carrying it deployed?`,
-      );
+      expect(err.message).to.equal(`Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} ${PGRST202_HINT}`);
       expect(err.cause).to.equal(cause);
       expect(err.details).to.deep.equal({
         siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null,

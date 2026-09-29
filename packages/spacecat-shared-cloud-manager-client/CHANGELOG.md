@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-cloud-manager-client-v1.5.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.5.0...@adobe/spacecat-shared-cloud-manager-client-v1.5.1) (2026-09-28)
+
+### Bug Fixes
+
+* **cloud-manager-client:** sync via fetch + hard reset instead of git pull (SITES-52042) ([#1940](https://github.com/adobe/spacecat-shared/issues/1940)) ([a48a197](https://github.com/adobe/spacecat-shared/commit/a48a1979ae9d06d89db592b735ef152f3b936127))
+
 ## [@adobe/spacecat-shared-cloud-manager-client-v1.5.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-cloud-manager-client-v1.4.6...@adobe/spacecat-shared-cloud-manager-client-v1.5.0) (2026-07-28)
 
 ### Features

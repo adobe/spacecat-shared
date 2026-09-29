@@ -12,6 +12,7 @@
 
 import type PostgrestClient from '@supabase/postgrest-js/dist/cjs/PostgrestClient';
 
+import type { AbvOnboardingClaimCollection } from '../models/abv-onboarding-claim';
 import type { ApiKeyCollection } from '../models/api-key';
 import type { AsyncJobCollection } from '../models/async-job';
 import type { AuditCollection } from '../models/audit';
@@ -67,6 +68,7 @@ export interface DataAccessServices {
 
 export interface DataAccess {
   services: DataAccessServices;
+  AbvOnboardingClaim: AbvOnboardingClaimCollection;
   ApiKey: ApiKeyCollection;
   AsyncJob: AsyncJobCollection;
   Audit: AuditCollection;

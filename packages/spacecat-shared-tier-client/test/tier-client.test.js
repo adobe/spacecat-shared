@@ -350,6 +350,37 @@ describe('TierClient', () => {
       });
     });
 
+    it('uses caller-supplied quotas verbatim when provided', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await tierClient.createEntitlement('FREE_TRIAL', { quotas: { llmo_trial_prompts: 500 } });
+
+      expect(mockDataAccess.Entitlement.create.firstCall.args[0].quotas)
+        .to.deep.equal({ llmo_trial_prompts: 500 });
+    });
+
+    it('ignores caller-supplied quotas when an entitlement already exists', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.allBySiteId.resolves([mockSiteEnrollment]);
+
+      await tierClient.createEntitlement('FREE_TRIAL', { quotas: { llmo_trial_prompts: 500 } });
+
+      expect(mockDataAccess.Entitlement.create).to.not.have.been.called;
+    });
+
+    it('falls back to the default quota when opts is null', async () => {
+      mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
+      mockDataAccess.Entitlement.create.resolves(mockEntitlement);
+      mockDataAccess.SiteEnrollment.create.resolves(mockSiteEnrollment);
+
+      await tierClient.createEntitlement('FREE_TRIAL', null);
+
+      expect(mockDataAccess.Entitlement.create.firstCall.args[0].quotas)
+        .to.deep.equal({ llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 });
+    });
+
     it('should throw error for invalid tier', async () => {
       mockDataAccess.Entitlement.findByOrganizationIdAndProductCode.resolves(null);
 

@@ -14,6 +14,16 @@ import { isNonEmptyObject, hasText } from '@adobe/spacecat-shared-utils';
 import { MYSTICAT_ENUMS_BY_TYPE } from '@mysticat/data-service-types';
 
 const ENTITLEMENT_TIERS = MYSTICAT_ENUMS_BY_TYPE.ENTITLEMENT_TIER;
+
+/**
+ * Default quotas applied to a newly created entitlement when the caller does not
+ * supply its own. Preserves the historical behavior (LLMO trial-prompt allowance).
+ */
+const DEFAULT_ENTITLEMENT_QUOTAS = {
+  llmo_trial_prompts: 200,
+  llmo_trial_prompts_consumed: 0,
+};
+
 /**
  * TierClient provides methods to manage entitlements and site enrollments.
  */
@@ -132,10 +142,14 @@ class TierClient {
    * Creates entitlement for organization and site enrollment for site.
    * If entitlement exists with different tier, updates the tier.
    * @param {string} tier - Entitlement tier.
+   * @param {object} [opts] - Optional settings.
+   * @param {object} [opts.quotas] - Quotas to apply to a newly created entitlement.
+   * When provided, it is used verbatim; when omitted, the default quotas are applied.
+   * Only affects newly created entitlements (ignored when an entitlement already exists).
    * @returns {Promise<object>} Object with created/updated
    * entitlement and siteEnrollment (if site provided).
    */
-  async createEntitlement(tier) {
+  async createEntitlement(tier, opts = {}) {
     try {
       if (!Object.values(ENTITLEMENT_TIERS).includes(tier)) {
         throw new Error(`Invalid tier: ${tier}. Valid tiers: ${Object.values(ENTITLEMENT_TIERS).join(', ')}`);
@@ -171,14 +185,12 @@ class TierClient {
       }
 
       // No existing entitlement, create new one
+      const quotas = opts?.quotas ?? { ...DEFAULT_ENTITLEMENT_QUOTAS };
       const entitlement = await this.Entitlement.create({
         organizationId: orgId,
         productCode: this.productCode,
         tier,
-        quotas: {
-          llmo_trial_prompts: 200,
-          llmo_trial_prompts_consumed: 0,
-        },
+        quotas,
       });
 
       // If no site provided, return entitlement only

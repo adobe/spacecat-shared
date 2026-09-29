@@ -19,6 +19,8 @@ export interface AbvOnboardingClaimArtifacts {
 
 export type AbvOnboardingClaimStatus = 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CONFLICT';
 
+export type AbvOnboardingClaimTerminalStatus = Exclude<AbvOnboardingClaimStatus, 'IN_PROGRESS'>;
+
 export interface AbvClaim {
   id: string;
   imsOrgId: string;
@@ -35,7 +37,7 @@ export interface AbvClaim {
 
 export interface AbvOnboardingClaim extends BaseModel {
   getImsOrgId(): string;
-  getBaseUrl(): string;
+  getBaseURL(): string;
   getStatus(): AbvOnboardingClaimStatus;
   getFactId(): string;
   getHolder(): string;
@@ -53,7 +55,7 @@ export interface AbvOnboardingClaimCollection extends BaseCollection<AbvOnboardi
   }): Promise<{ acquired: boolean; claim: AbvClaim }>;
   finalize(
     claim: AbvClaim,
-    opts: { status: AbvOnboardingClaimStatus; artifacts?: AbvOnboardingClaimArtifacts; reason?: string },
+    opts: { status: AbvOnboardingClaimTerminalStatus; artifacts?: AbvOnboardingClaimArtifacts; reason?: string },
   ): Promise<void>;
   invalidate(params: { imsOrgId: string; baseURL: string }): Promise<void>;
 }

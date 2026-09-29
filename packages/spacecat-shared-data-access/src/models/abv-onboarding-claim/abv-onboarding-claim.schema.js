@@ -27,7 +27,7 @@ const schema = new SchemaBuilder(AbvOnboardingClaim, AbvOnboardingClaimCollectio
   .addAttribute('imsOrgId', {
     type: 'string', required: true, readOnly: true, postgrestField: 'ims_org_id',
   })
-  .addAttribute('baseUrl', {
+  .addAttribute('baseURL', {
     type: 'string', required: true, readOnly: true, postgrestField: 'base_url',
   })
   .addAttribute('status', {

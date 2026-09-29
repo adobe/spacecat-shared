@@ -16,10 +16,13 @@ import BaseCollection from '../base/base.collection.js';
 import DataAccessError from '../../errors/data-access.error.js';
 import { uuidv7 } from '../../util/uuid.js';
 
+const TERMINAL_STATUSES = ['COMPLETED', 'FAILED', 'CONFLICT'];
+
 /**
  * Maps a raw abv_onboarding_claims row (snake_case, as returned by the RPCs)
  * to a camelCase claim object. The computed `acquired` flag is intentionally
- * dropped -- it is returned separately by `acquire`.
+ * dropped -- it is returned separately by `acquire`. The holder token is only
+ * exposed to the attempt that acquired the claim: finalize authenticates on it.
  *
  * @param {object} row - Raw RPC row.
  * @returns {object} The mapped claim.
@@ -30,7 +33,7 @@ const toClaim = (row) => ({
   baseURL: row.base_url,
   status: row.status,
   factId: row.fact_id,
-  holder: row.holder,
+  holder: row.acquired ? row.holder : null,
   leaseExpiresAt: row.lease_expires_at,
   artifacts: row.artifacts,
   reason: row.reason,
@@ -100,8 +103,9 @@ class AbvOnboardingClaimCollection extends BaseCollection {
 
   /**
    * Sets a terminal status on the claim via the wrpc_finalize_abv_claim RPC, conditional
-   * (server-side) on the caller still being the current holder with a live lease. The RPC
-   * no-ops when the holder no longer matches. `artifacts` are persisted only for COMPLETED.
+   * (server-side) on the claim still being IN_PROGRESS and the caller being the current
+   * holder with a live lease; otherwise the RPC no-ops, so a COMPLETED claim is never
+   * overwritten. `artifacts` are persisted only for COMPLETED.
    *
    * @async
    * @param {object} claim - The claim previously returned by `acquire` (carries `holder`).
@@ -116,6 +120,9 @@ class AbvOnboardingClaimCollection extends BaseCollection {
     if (!isNonEmptyObject(claim)
       || !hasText(claim.imsOrgId) || !hasText(claim.baseURL) || !hasText(claim.holder)) {
       throw new DataAccessError('finalize: a claim with imsOrgId, baseURL and holder is required', this);
+    }
+    if (!TERMINAL_STATUSES.includes(status)) {
+      throw new DataAccessError(`finalize: status must be one of ${TERMINAL_STATUSES.join(', ')}`, this);
     }
 
     const { error } = await this.postgrestService.rpc('wrpc_finalize_abv_claim', {

@@ -48,7 +48,7 @@ describe('AbvOnboardingClaimCollection', () => {
   const mockRecord = {
     abvOnboardingClaimId: 'id-1',
     imsOrgId: 'a1b2c3d4e5f6a7b8c9d0e1f2@AdobeOrg',
-    baseUrl: 'https://example.com',
+    baseURL: 'https://example.com',
     status: 'IN_PROGRESS',
     factId: 'fact-1',
     holder: 'e3b0c442-98fc-4c14-9afb-1c2d3e4f5a6b',
@@ -85,6 +85,11 @@ describe('AbvOnboardingClaimCollection', () => {
       expect(instance.schema).to.equal(schema);
       expect(instance.log).to.equal(mockLogger);
       expect(instance.tableName).to.equal('abv_onboarding_claims');
+    });
+
+    it('names the base URL attribute baseURL, mapped to base_url', () => {
+      expect(schema.getAttribute('baseUrl')).to.be.undefined;
+      expect(schema.getAttribute('baseURL')).to.include({ postgrestField: 'base_url' });
     });
   });
 
@@ -149,6 +154,23 @@ describe('AbvOnboardingClaimCollection', () => {
       expect(result.acquired).to.be.false;
       expect(result.claim.status).to.equal('COMPLETED');
       expect(result.claim.artifacts).to.deep.equal({ siteId: 's1', entitlementId: 'e1' });
+    });
+
+    it('never exposes a holder token on a blocked acquire', async () => {
+      const rpc = stub().resolves({
+        data: [{ ...claimRow, holder: 'live-holder-token', acquired: false }],
+        error: null,
+      });
+      instance.postgrestService = { rpc };
+
+      const result = await instance.acquire({
+        imsOrgId: claimRow.ims_org_id,
+        baseURL: claimRow.base_url,
+        leaseMs: 60000,
+      });
+
+      expect(result.acquired).to.be.false;
+      expect(result.claim.holder).to.be.null;
     });
 
     it('sends p_fact_id = null when factId is omitted', async () => {
@@ -253,6 +275,17 @@ describe('AbvOnboardingClaimCollection', () => {
       await expect(instance.finalize(null, { status: 'FAILED' }))
         .to.be.rejectedWith(DataAccessError);
       expect(rpc).to.not.have.been.called;
+    });
+
+    [undefined, 'IN_PROGRESS', 'DONE'].forEach((status) => {
+      it(`rejects non-terminal status ${status} before calling the RPC`, async () => {
+        const rpc = stub();
+        instance.postgrestService = { rpc };
+
+        await expect(instance.finalize(claim, { status }))
+          .to.be.rejectedWith(DataAccessError, 'finalize: status must be one of COMPLETED, FAILED, CONFLICT');
+        expect(rpc).to.not.have.been.called;
+      });
     });
   });
 

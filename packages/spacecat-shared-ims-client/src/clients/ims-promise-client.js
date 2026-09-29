@@ -97,7 +97,15 @@ export default class ImsPromiseClient extends ImsBaseClient {
     this.type = type;
   }
 
-  async getPromiseToken(accessToken, enableEncryption = false) {
+  /**
+   * Creates a promise token for the given access token.
+   * @param {string} accessToken - The authenticating access token.
+   * @param {boolean} [enableEncryption=false] - Whether to encrypt the returned promise token.
+   * @param {number} [ttl] - Optional token lifetime sent to IMS. Only included in the
+   *   request when it is a finite number greater than zero.
+   * @returns {Promise<{promise_token: string, token_type: string, expires_in: number}>}
+   */
+  async getPromiseToken(accessToken, enableEncryption = false, ttl = undefined) {
     if (this.type === ImsPromiseClient.CLIENT_TYPE.CONSUMER) {
       throw new Error('Consumer type does not support getPromiseToken method.');
     }
@@ -112,6 +120,7 @@ export default class ImsPromiseClient extends ImsBaseClient {
           grant_type: 'promise',
           promise_definition_id: this.config.promiseDefinitionId,
           authenticating_token: accessToken,
+          ...(Number.isFinite(ttl) && ttl > 0 ? { ttl } : {}),
         },
         { noAuth: true, noContentType: true },
       );

@@ -42,6 +42,8 @@ export class ImsPromiseClient {
    * @param {string} accessToken The access token to get a promise token for.
    * @param {boolean} enableEncryption Whether to enable encryption of the promise
    *                                   token, default false.
+   * @param {number} [ttl] Optional token lifetime sent to IMS. Only included in the
+   *                       request when it is a finite number greater than zero.
    * @throws Error when encryption is enabled and the encryption secret and salt is not set.
    * @returns {Promise<{
    *        promise_token: string,
@@ -49,7 +51,11 @@ export class ImsPromiseClient {
    *        expires_in: number,
    *    }>} The promise token.
    */
-  getPromiseToken(accessToken: string, enableEncryption?: boolean): Promise<object>;
+  getPromiseToken(
+    accessToken: string,
+    enableEncryption?: boolean,
+    ttl?: number,
+  ): Promise<object>;
 
   /**
    * Exchanges a promise token for an access token.

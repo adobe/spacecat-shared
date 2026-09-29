@@ -175,12 +175,14 @@ Checks for valid entitlement on organization and valid site enrollment on site.
 
 **Returns:** Promise<object> - Object with entitlement and/or siteEnrollment based on what exists
 
-### createEntitlement(tier)
+### createEntitlement(tier, opts)
 
 Creates entitlement for organization and site enrollment for site.
 
 **Parameters:**
 - `tier` (string): Entitlement tier (must be a valid tier from EntitlementModel.TIERS)
+- `opts` (object, optional):
+  - `quotas` (object, optional): Quotas for a newly created entitlement, used verbatim. Defaults to `{ llmo_trial_prompts: 200, llmo_trial_prompts_consumed: 0 }`. Ignored when the organization already has an entitlement.
 
 **Returns:** Promise<object> - Object with created entitlement and siteEnrollment
 

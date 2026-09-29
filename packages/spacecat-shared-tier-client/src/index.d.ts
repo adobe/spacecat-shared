@@ -43,7 +43,10 @@ export declare class TierClient {
   constructor(context: TierClientContext, organization: Organization, site: Site | null | undefined, productCode: string);
   
   checkValidEntitlement(): Promise<TierClientResult>;
-  createEntitlement(tier: string): Promise<TierClientResult>;
+  createEntitlement(
+    tier: string,
+    opts?: { quotas?: Record<string, number> } | null,
+  ): Promise<TierClientResult>;
   revokeSiteEnrollment(): Promise<object>;
   
   static createForOrg(context: TierClientContext, organization: Organization, productCode: string): TierClient;

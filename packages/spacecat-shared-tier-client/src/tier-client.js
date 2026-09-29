@@ -185,7 +185,7 @@ class TierClient {
       }
 
       // No existing entitlement, create new one
-      const quotas = opts.quotas ?? { ...DEFAULT_ENTITLEMENT_QUOTAS };
+      const quotas = opts?.quotas ?? { ...DEFAULT_ENTITLEMENT_QUOTAS };
       const entitlement = await this.Entitlement.create({
         organizationId: orgId,
         productCode: this.productCode,

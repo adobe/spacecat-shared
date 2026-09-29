@@ -13,6 +13,7 @@
 import { DataAccessError } from '../../errors/index.js';
 import { collectionNameToEntityName, decapitalize } from '../../util/util.js';
 
+import AbvOnboardingClaimCollection from '../abv-onboarding-claim/abv-onboarding-claim.collection.js';
 import ApiKeyCollection from '../api-key/api-key.collection.js';
 import AsyncJobCollection from '../async-job/async-job.collection.js';
 import ContactSalesLeadCollection from '../contact-sales-lead/contact-sales-lead.collection.js';
@@ -62,6 +63,7 @@ import TaskManagementConnectionCollection from '../task-management-connection/ta
 import TicketCollection from '../ticket/ticket.collection.js';
 import TicketSuggestionCollection from '../ticket-suggestion/ticket-suggestion.collection.js';
 
+import AbvOnboardingClaimSchema from '../abv-onboarding-claim/abv-onboarding-claim.schema.js';
 import ApiKeySchema from '../api-key/api-key.schema.js';
 import AsyncJobSchema from '../async-job/async-job.schema.js';
 import ContactSalesLeadSchema from '../contact-sales-lead/contact-sales-lead.schema.js';
@@ -205,6 +207,7 @@ class EntityRegistry {
 }
 
 // Register entities (Configuration is handled separately via S3)
+EntityRegistry.registerEntity(AbvOnboardingClaimSchema, AbvOnboardingClaimCollection);
 EntityRegistry.registerEntity(ApiKeySchema, ApiKeyCollection);
 EntityRegistry.registerEntity(AsyncJobSchema, AsyncJobCollection);
 EntityRegistry.registerEntity(ContactSalesLeadSchema, ContactSalesLeadCollection);

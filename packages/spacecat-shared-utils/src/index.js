@@ -92,7 +92,14 @@ export { getStoredMetrics, storeMetrics, calculateCPCValue } from './metrics-sto
 
 export { s3Wrapper, getObjectFromKey } from './s3.js';
 
-export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './constants.js';
+export {
+  OPPORTUNITY_TYPES,
+  DEFAULT_CPC_VALUE,
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
+  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
+  SUGGESTION_SEMANTIC_SOURCE_TYPES,
+  SUGGESTION_SEMANTIC_ENTITY_TYPES,
+} from './constants.js';
 
 export { fetch, resetFetchContext, clearFetchCache } from './adobe-fetch.js';
 export { tracingFetch, SPACECAT_USER_AGENT } from './tracing-fetch.js';

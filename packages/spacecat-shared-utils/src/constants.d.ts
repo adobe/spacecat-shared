@@ -11,3 +11,24 @@
  */
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './index.js';
+
+export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES: Readonly<{
+  TOPIC: 'topic';
+}>;
+
+export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES: Readonly<{
+  CITED_ANALYSIS: 'cited-analysis';
+  REDDIT_ANALYSIS: 'reddit-analysis';
+  YOUTUBE_ANALYSIS: 'youtube-analysis';
+}>;
+
+export const SUGGESTION_SEMANTIC_SOURCE_TYPES: Readonly<{
+  TOPIC: 'topic';
+  TITLE: 'title';
+}>;
+
+export const SUGGESTION_SEMANTIC_ENTITY_TYPES: Readonly<{
+  CITED_ANALYSIS: 'cited-analysis';
+  REDDIT_ANALYSIS: 'reddit-analysis';
+  YOUTUBE_ANALYSIS: 'youtube-analysis';
+}>;

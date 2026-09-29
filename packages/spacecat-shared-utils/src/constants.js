@@ -77,3 +77,40 @@ export const OPPORTUNITY_TYPES = /** @type {const} */ ({
 });
 
 export const DEFAULT_CPC_VALUE = 1.5;
+
+/**
+ * Kinds of source text in `opportunity_semantic_embedding.source_type`. The semantic lookup writer
+ * and reader reject any other value; add a kind here before indexing or searching it.
+ */
+export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES = Object.freeze({
+  TOPIC: 'topic',
+});
+
+/**
+ * Opportunity types allowed in `opportunity_semantic_embedding.entity_type`. The writer and reader
+ * reject any other value; add a type here before indexing or filtering by it.
+ */
+export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES = Object.freeze({
+  CITED_ANALYSIS: OPPORTUNITY_TYPES.CITED_ANALYSIS,
+  REDDIT_ANALYSIS: OPPORTUNITY_TYPES.REDDIT_ANALYSIS,
+  YOUTUBE_ANALYSIS: OPPORTUNITY_TYPES.YOUTUBE_ANALYSIS,
+});
+
+/**
+ * Kinds of source text in `suggestion_semantic_embedding.source_type`: the suggestion's derived
+ * topics and its title. Same enforcement as `OPPORTUNITY_SEMANTIC_SOURCE_TYPES`.
+ */
+export const SUGGESTION_SEMANTIC_SOURCE_TYPES = Object.freeze({
+  TOPIC: 'topic',
+  TITLE: 'title',
+});
+
+/**
+ * Parent opportunity types allowed in `suggestion_semantic_embedding.entity_type`. Same
+ * enforcement as `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`.
+ */
+export const SUGGESTION_SEMANTIC_ENTITY_TYPES = Object.freeze({
+  CITED_ANALYSIS: OPPORTUNITY_TYPES.CITED_ANALYSIS,
+  REDDIT_ANALYSIS: OPPORTUNITY_TYPES.REDDIT_ANALYSIS,
+  YOUTUBE_ANALYSIS: OPPORTUNITY_TYPES.YOUTUBE_ANALYSIS,
+});

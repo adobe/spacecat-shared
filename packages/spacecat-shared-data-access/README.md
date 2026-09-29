@@ -170,9 +170,11 @@ await upsertQueryEmbeddings(postgrestClient, { entries: [{ text, vector }], ...s
 await touchQueryEmbeddings(postgrestClient, { textHashes, ...scope });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
-// entityTypes is optional (omitted or [] searches all entity types).
+// entityTypes is optional (omitted or [] searches all entity types). statuses is optional too
+// (omitted or [] searches all); it is applied before k, so hidden opportunities can't take the slots.
 const matches = await lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes: [TOPIC], entityTypes: [CITED_ANALYSIS], vectors, k: 10, minScore: 0.5, ...scope,
+  siteId, sourceTypes: [TOPIC], entityTypes: [CITED_ANALYSIS], statuses: ['NEW', 'IN_PROGRESS'],
+  vectors, k: 10, minScore: 0.5, ...scope,
 });
 ```
 

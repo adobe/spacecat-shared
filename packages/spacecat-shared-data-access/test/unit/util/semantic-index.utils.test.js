@@ -671,6 +671,33 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
     });
 
+    it('sends deduped statuses as p_statuses, and omits p_statuses when none are given', async () => {
+      const client = makeClient({ rpcResult: { data: [], error: null } });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW', 'RESOLVED', 'NEW'], vectors: [[0.1, 0.2]],
+      });
+      await lookupOpportunitiesByVectors(client, { ...base, statuses: [], vectors: [[0.1, 0.2]] });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: null, vectors: [[0.1, 0.2]],
+      });
+      expect(client.calls.rpc[0].params.p_statuses).to.deep.equal(['NEW', 'RESOLVED']);
+      expect(client.calls.rpc[1].params).to.not.have.property('p_statuses');
+      expect(client.calls.rpc[2].params).to.not.have.property('p_statuses');
+    });
+
+    it('rejects statuses that are not a list of non-empty strings', async () => {
+      const call = (statuses) => lookupOpportunitiesByVectors(makeClient(), {
+        ...base, statuses, vectors: [[0.1, 0.2]],
+      });
+      await expect(call('NEW')).to.be.rejectedWith(ValidationError, 'statuses must be an array');
+      await expect(call(['NEW', ' '])).to.be.rejectedWith(
+        ValidationError,
+        'statuses must only contain non-empty strings (got [" "])',
+      );
+      await expect(call(['NEW', 1])).to.be.rejectedWith(ValidationError, '(got [1])');
+      await expect(call(new Array(1))).to.be.rejectedWith(ValidationError, 'statuses must only contain');
+    });
+
     it('renders rejected values safely: unserializable falls back to String, long ones are truncated', async () => {
       const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
         ...base, vectors: [[0.1, 0.2]], ...over,
@@ -742,6 +769,12 @@ describe('semantic-index.utils', () => {
       expect(err.message).to.not.include('signature not found');
       expect(err.details).to.deep.equal({
         siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
+      });
+      const withStatuses = await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(withStatuses.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null, statuses: ['NEW'],
       });
     });
 

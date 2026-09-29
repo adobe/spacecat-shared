@@ -163,6 +163,31 @@ function toAllowedList(values, name, registry, { required }) {
   return [...new Set(values)];
 }
 
+/**
+ * Omitted or empty means no status filter. Not checked against `Opportunity.STATUSES` (importing
+ * the model here is a dependency cycle); the data-service matches the enum, so a typo matches
+ * nothing.
+ */
+function toStatusList(statuses) {
+  if (statuses === undefined || statuses === null
+    || (Array.isArray(statuses) && statuses.length === 0)) {
+    return null;
+  }
+  if (!Array.isArray(statuses)) {
+    throw new ValidationError('statuses must be an array');
+  }
+  const rejected = [];
+  for (const status of statuses) {
+    if (typeof status !== 'string' || status.trim() === '') {
+      rejected.push(status);
+    }
+  }
+  if (rejected.length > 0) {
+    throw new ValidationError(`statuses must only contain non-empty strings (got ${describeValue(rejected)})`);
+  }
+  return [...new Set(statuses)];
+}
+
 /** Only an empty/omitted `sources` clears; a non-empty input reduced to nothing throws. */
 function assertClearable(sources, entityId, sourceType) {
   const explicitClear = sources === undefined || sources === null
@@ -453,6 +478,8 @@ export async function copyEntityVectors(postgrestClient, {
  *   `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (required, non-empty)
  * @param {string[]} [params.entityTypes] - opportunity types to narrow to, from
  *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; omitted or empty searches all
+ * @param {string[]} [params.statuses] - opportunity statuses (`Opportunity.STATUSES` values) to
+ *   narrow to, applied before `k`; omitted or empty searches all
  * @param {number[][]} params.vectors - the query embeddings
  * @param {string} params.model - the model the queries were embedded with
  * @param {number} params.dims - the query embedding dimension
@@ -462,12 +489,13 @@ export async function copyEntityVectors(postgrestClient, {
  *   best-first list per input vector, in input order
  */
 export async function lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes, entityTypes, vectors, model, dims, k = 10, minScore = 0,
+  siteId, sourceTypes, entityTypes, statuses, vectors, model, dims, k = 10, minScore = 0,
 } = {}) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   const sourceTypeList = toAllowedList(sourceTypes, 'sourceTypes', OPPORTUNITY_SEMANTIC_SOURCE_TYPES, { required: true });
   const entityTypeList = toAllowedList(entityTypes, 'entityTypes', OPPORTUNITY_SEMANTIC_ENTITY_TYPES, { required: false });
+  const statusList = toStatusList(statuses);
   assertModel(model);
   assertDims(dims);
   if (!Array.isArray(vectors)) {
@@ -495,12 +523,19 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_dims: dims,
       p_limit: k,
       p_min_score: minScore,
+      // Only when set: a data-service without p_statuses rejects the unknown argument.
+      ...(statusList ? { p_statuses: statusList } : {}),
     });
     if (error) {
       throw rpcError(
         `Failed semantic search for site ${siteId}`,
         SEMANTIC_SEARCH_RPC,
-        { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
+        {
+          siteId,
+          sourceTypes: sourceTypeList,
+          entityTypes: entityTypeList,
+          ...(statusList ? { statuses: statusList } : {}),
+        },
         error,
       );
     }

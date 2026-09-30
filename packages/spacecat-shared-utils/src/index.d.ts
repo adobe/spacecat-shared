@@ -17,6 +17,17 @@ export { AUTHORING_TYPES, DELIVERY_TYPES } from './aem.js';
 
 export { OPPORTUNITY_TYPES } from './constants.js';
 
+export {
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
+  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
+  SUGGESTION_SEMANTIC_SOURCE_TYPES,
+  SUGGESTION_SEMANTIC_ENTITY_TYPES,
+  OpportunitySemanticSourceType,
+  OpportunitySemanticEntityType,
+  SuggestionSemanticSourceType,
+  SuggestionSemanticEntityType,
+} from './constants.js';
+
 export const DEFAULT_CPC_VALUE: number;
 
 /** UTILITY FUNCTIONS */

@@ -11,3 +11,32 @@
  */
 
 export { OPPORTUNITY_TYPES, DEFAULT_CPC_VALUE } from './index.js';
+
+// test/constants.test.js fails if these registries drift from constants.js.
+export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES: Readonly<{
+  TOPIC: 'topic';
+}>;
+
+export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES: Readonly<{
+  CITED_ANALYSIS: 'cited-analysis';
+  REDDIT_ANALYSIS: 'reddit-analysis';
+  YOUTUBE_ANALYSIS: 'youtube-analysis';
+}>;
+
+export const SUGGESTION_SEMANTIC_SOURCE_TYPES: Readonly<{
+  TOPIC: 'topic';
+  TITLE: 'title';
+}>;
+
+export const SUGGESTION_SEMANTIC_ENTITY_TYPES: Readonly<{
+  CITED_ANALYSIS: 'cited-analysis';
+  REDDIT_ANALYSIS: 'reddit-analysis';
+  YOUTUBE_ANALYSIS: 'youtube-analysis';
+}>;
+
+type ValueOf<T> = T[keyof T];
+
+export type OpportunitySemanticSourceType = ValueOf<typeof OPPORTUNITY_SEMANTIC_SOURCE_TYPES>;
+export type OpportunitySemanticEntityType = ValueOf<typeof OPPORTUNITY_SEMANTIC_ENTITY_TYPES>;
+export type SuggestionSemanticSourceType = ValueOf<typeof SUGGESTION_SEMANTIC_SOURCE_TYPES>;
+export type SuggestionSemanticEntityType = ValueOf<typeof SUGGESTION_SEMANTIC_ENTITY_TYPES>;

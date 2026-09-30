@@ -670,7 +670,7 @@ describe('TokowakaClient', () => {
     });
 
     ['PreconditionFailed', 'ConditionalRequestConflict'].forEach((name) => {
-      it(`should reject with status 412 and warn (not error) on S3 ${name}`, async () => {
+      it(`should reject with status 412 without logging a warning or error on S3 ${name}`, async () => {
         const conflict = new Error('At least one of the pre-conditions you specified did not hold');
         conflict.name = name;
         s3Client.send.rejects(conflict);
@@ -688,10 +688,27 @@ describe('TokowakaClient', () => {
           expect(error.message).to.include('Metaconfig was modified concurrently');
           expect(error.status).to.equal(412);
         }
-        expect(log.warn).to.have.been.calledWithMatch('changed since it was read');
+        expect(log.debug).to.have.been.calledWithMatch('changed since it was read');
+        expect(log.warn).to.not.have.been.called;
         expect(log.error).to.not.have.been.called;
         expect(invalidateStub).to.not.have.been.called;
       });
+    });
+
+    it('should treat a 412 as an ordinary upload failure when no condition was sent', async () => {
+      s3Client.send.rejects(Object.assign(new Error('Precondition Failed'), {
+        name: 'PreconditionFailed',
+        $metadata: { httpStatusCode: 412 },
+      }));
+
+      try {
+        await client.uploadMetaconfig('https://example.com/page1', { siteId: 'site-123' });
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed');
+        expect(error.status).to.equal(500);
+      }
+      expect(log.error).to.have.been.calledWithMatch('Failed to upload metaconfig to S3');
     });
   });
 
@@ -942,10 +959,56 @@ describe('TokowakaClient', () => {
         await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
         expect.fail('Should have thrown error');
       } catch (error) {
-        expect(error.message).to.include('Failed to update metaconfig with deployed paths: Metaconfig was modified concurrently');
+        expect(error.message).to.include('Failed to update metaconfig with deployed paths: Metaconfig kept being modified concurrently; gave up after 8 attempts');
         expect(error.status).to.equal(500);
       }
       expect(metaconfigPuts()).to.have.length(8);
+      expect(log.error).to.have.been.calledWithMatch('Gave up writing metaconfig for https://example.com after 8 attempts');
+    });
+
+    it('updateMetaconfig should fail with 500 (not the internal 412) when retries are exhausted', async () => {
+      const s3 = simulateS3Metaconfig([{ etag: '"v1"', metaconfig: { siteId: 'site-123', apiKeys: ['key-1'] } }]);
+      s3.failPutsUntilRead(Infinity);
+
+      try {
+        await client.updateMetaconfig('https://example.com/page1', 'site-123', { enhancements: false });
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Metaconfig kept being modified concurrently; gave up after 8 attempts');
+        expect(error.status).to.equal(500);
+      }
+    });
+
+    it('should refuse to write unconditionally when S3 returns no ETag', async () => {
+      simulateS3Metaconfig([{ etag: undefined, metaconfig: { siteId: 'site-123', apiKeys: ['key-1'] } }]);
+
+      try {
+        await client.updateMetaconfig('https://example.com/page1', 'site-123', { enhancements: false });
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.equal('Metaconfig ETag missing; refusing unconditional write');
+        expect(error.status).to.equal(500);
+      }
+      expect(metaconfigPuts()).to.have.length(0);
+    });
+
+    it('should not require an ETag when there is nothing to write', async () => {
+      simulateS3Metaconfig([{
+        etag: undefined,
+        metaconfig: { siteId: 'site-123', prerender: { allowList: ['/*'] } },
+      }]);
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pattern = {
+        getId: () => 'path-1',
+        getData: () => ({ allowedRegexPatterns: ['/products/*'], edgeDeployed: Date.now() }),
+        setData: sinon.stub(),
+        setUpdatedBy: sinon.stub(),
+      };
+
+      const result = await client.rollbackSuggestions(mockSite, prerenderOpportunity, [pattern]);
+
+      expect(result.succeededSuggestions).to.include(pattern);
+      expect(metaconfigPuts()).to.have.length(0);
     });
 
     it('should back off with capped, jittered delays between attempts', async () => {
@@ -1247,6 +1310,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfig)),
         },
+        ETag: '"metaconfig-etag"',
         Metadata: {},
       });
       // Mock uploadMetaconfig S3 upload
@@ -1357,6 +1421,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithoutPatches)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1416,6 +1481,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1457,6 +1523,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingWithMultipleKeys)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1536,6 +1603,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithNullPatches)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1577,6 +1645,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithTokowakaEnabled)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1599,6 +1668,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithEnhancements)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1620,6 +1690,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithoutTokowakaEnabled)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1641,6 +1712,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithoutEnhancements)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1664,6 +1736,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1687,6 +1760,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1710,6 +1784,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithoutForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1733,6 +1808,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1776,6 +1852,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1799,6 +1876,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithForceFail)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1834,6 +1912,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1859,6 +1938,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1885,6 +1965,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithPrerender)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -1961,6 +2042,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(configWithoutPrerender)),
         },
+        ETag: '"metaconfig-etag"',
       });
 
       const siteId = 'site-789';
@@ -2041,6 +2123,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
         },
+        ETag: '"metaconfig-etag"',
         Metadata: {},
       });
 
@@ -2066,6 +2149,7 @@ describe('TokowakaClient', () => {
         Body: {
           transformToString: sinon.stub().resolves(JSON.stringify(existingMetaconfigWithPrerender)),
         },
+        ETag: '"metaconfig-etag"',
         Metadata: {},
       });
 

@@ -383,6 +383,13 @@ class TokowakaClient {
       if (!next) {
         return null;
       }
+      // Without an ETag the write would be unconditional and could drop concurrent updates
+      if (current && !hasText(current.etag)) {
+        throw this.#createError(
+          'Metaconfig ETag missing; refusing unconditional write',
+          HTTP_INTERNAL_SERVER_ERROR,
+        );
+      }
 
       const conditions = current ? { ifMatch: current.etag } : { ifNoneMatch: '*' };
       try {
@@ -390,8 +397,18 @@ class TokowakaClient {
         const s3Path = await this.uploadMetaconfig(url, next.metaconfig, next.metadata, conditions);
         return { metaconfig: next.metaconfig, s3Path };
       } catch (error) {
-        if (error.status !== HTTP_PRECONDITION_FAILED || attempt >= METACONFIG_WRITE_MAX_ATTEMPTS) {
+        if (error.status !== HTTP_PRECONDITION_FAILED) {
           throw error;
+        }
+        if (attempt >= METACONFIG_WRITE_MAX_ATTEMPTS) {
+          this.log.error(
+            `Gave up writing metaconfig for ${url} after ${attempt} attempts: `
+            + 'it kept being modified concurrently',
+          );
+          throw this.#createError(
+            `Metaconfig kept being modified concurrently; gave up after ${attempt} attempts`,
+            HTTP_INTERNAL_SERVER_ERROR,
+          );
         }
         const delayMs = Math.floor(Math.random() * Math.min(
           METACONFIG_WRITE_MAX_DELAY_MS,
@@ -438,6 +455,10 @@ class TokowakaClient {
    * @param {boolean} metadata.isStageDomain - Whether this is a staging
    *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   * @throws {Error} - 400 "already exists" if a metaconfig exists, including one created by a
+   *   concurrent request. Not idempotent: if S3 stores the object but the response is lost,
+   *   the retried write sees it and also fails with "already exists"; call fetchMetaconfig to
+   *   read the stored metaconfig (and its API key).
    */
   async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
@@ -540,6 +561,8 @@ class TokowakaClient {
         ...existingMetaconfig,
         tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
         enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
+        // Explicit options.patches replace the stored patches entirely (on every attempt), so
+        // paths added by a concurrent deploy are dropped in that case; only merging is safe.
         patches: isNonEmptyObject(options.patches)
           ? options.patches
           : (existingMetaconfig.patches ?? {}),
@@ -571,8 +594,8 @@ class TokowakaClient {
    * @param {string} [conditions.ifMatch] - Only write if the stored object still has this ETag
    * @param {string} [conditions.ifNoneMatch] - Use '*' to only write if no object exists yet
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
-   * @throws {Error} - With status 412 when a precondition fails because the metaconfig was
-   *   changed concurrently
+   * @throws {Error} - With status 412 when a condition was passed and it failed because the
+   *   metaconfig was changed concurrently
   */
   async uploadMetaconfig(url, metaconfig, metadata = {}, { ifMatch, ifNoneMatch } = {}) {
     if (!hasText(url)) {
@@ -618,9 +641,9 @@ class TokowakaClient {
 
       return s3Path;
     } catch (error) {
-      if (isConditionalWriteConflict(error)) {
-        // Expected under concurrent deploys; callers re-read and retry, so warn instead of error
-        this.log.warn(`Metaconfig at s3://${bucketName}/${s3Path} changed since it was read: ${error.message}`);
+      if ((hasText(ifMatch) || hasText(ifNoneMatch)) && isConditionalWriteConflict(error)) {
+        // Expected under concurrent writes; the caller re-reads and retries (and logs that)
+        this.log.debug(`Metaconfig at s3://${bucketName}/${s3Path} changed since it was read: ${error.message}`);
         throw Object.assign(
           new Error(`Metaconfig was modified concurrently: ${error.message}`),
           { status: HTTP_PRECONDITION_FAILED },

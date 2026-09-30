@@ -252,12 +252,13 @@ describe('AuthInfo', () => {
           -1,
           1.2,
           Infinity,
-          '123456789012345678901',
+          '12345678901234567890',
+          '0',
           '',
           null,
         ],
       });
-      expect(authInfo.getFacsGroups()).to.deep.equal(['945801205', '123', '00123']);
+      expect(authInfo.getFacsGroups()).to.deep.equal(['945801205', '123']);
     });
 
     it('caps sanitized groups at 100', () => {

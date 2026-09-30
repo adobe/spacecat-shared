@@ -158,6 +158,6 @@ The FACS wrapper evaluates route capabilities from the union of:
 `facs_grps` is a string array of IMS group idents that have mappings for the
 current org/product. `AuthInfo#getFacsGroups()` sanitizes that claim by accepting
 strings or finite non-negative integers, coercing integers to strings, keeping
-only decimal idents matching `^[0-9]{1,20}$`, deduplicating, and capping the
+only decimal idents matching `^[1-9][0-9]{0,18}$`, deduplicating, and capping the
 result at 100 entries. Group subjects are grant-only and additive; there are no
 deny records.

@@ -119,7 +119,7 @@ export default class AuthInfo {
       } else if (Number.isInteger(group) && Number.isFinite(group) && group >= 0) {
         groupId = String(group);
       }
-      if (groupId && /^[0-9]{1,20}$/.test(groupId) && !seen.has(groupId)) {
+      if (groupId && /^[1-9][0-9]{0,18}$/.test(groupId) && !seen.has(groupId)) {
         seen.add(groupId);
         out.push(groupId);
         if (out.length >= 100) {

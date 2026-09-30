@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-utils-v1.127.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.126.0...@adobe/spacecat-shared-utils-v1.127.0) (2026-09-30)
+
+### Features
+
+* **utils:** add semantic lookup source/entity type registries (LLMO-7445) ([#1959](https://github.com/adobe/spacecat-shared/issues/1959)) ([0acce60](https://github.com/adobe/spacecat-shared/commit/0acce60aa0620287a5a8f26f72009cbb0916c307))
+
 ## [@adobe/spacecat-shared-utils-v1.126.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.2...@adobe/spacecat-shared-utils-v1.126.0) (2026-08-17)
 
 ### Features

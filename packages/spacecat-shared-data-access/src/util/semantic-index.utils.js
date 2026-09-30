@@ -15,6 +15,7 @@ import { createHash } from 'crypto';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../errors/index.js';
+import Opportunity from '../models/opportunity/opportunity.model.js';
 import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
 
 /**
@@ -161,31 +162,6 @@ function toAllowedList(values, name, registry, { required }) {
     throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${describeValue(rejected)})`);
   }
   return [...new Set(values)];
-}
-
-/**
- * Omitted or empty means no status filter. Not checked against `Opportunity.STATUSES` (importing
- * the model here is a dependency cycle); the data-service matches the enum, so a typo matches
- * nothing.
- */
-function toStatusList(statuses) {
-  if (statuses === undefined || statuses === null
-    || (Array.isArray(statuses) && statuses.length === 0)) {
-    return null;
-  }
-  if (!Array.isArray(statuses)) {
-    throw new ValidationError('statuses must be an array');
-  }
-  const rejected = [];
-  for (const status of statuses) {
-    if (typeof status !== 'string' || status.trim() === '') {
-      rejected.push(status);
-    }
-  }
-  if (rejected.length > 0) {
-    throw new ValidationError(`statuses must only contain non-empty strings (got ${describeValue(rejected)})`);
-  }
-  return [...new Set(statuses)];
 }
 
 /** Only an empty/omitted `sources` clears; a non-empty input reduced to nothing throws. */
@@ -495,7 +471,7 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
   assertId(siteId, 'siteId');
   const sourceTypeList = toAllowedList(sourceTypes, 'sourceTypes', OPPORTUNITY_SEMANTIC_SOURCE_TYPES, { required: true });
   const entityTypeList = toAllowedList(entityTypes, 'entityTypes', OPPORTUNITY_SEMANTIC_ENTITY_TYPES, { required: false });
-  const statusList = toStatusList(statuses);
+  const statusList = toAllowedList(statuses, 'statuses', Opportunity.STATUSES, { required: false });
   assertModel(model);
   assertDims(dims);
   if (!Array.isArray(vectors)) {
@@ -509,6 +485,12 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
   }
   const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
 
+  const details = {
+    siteId,
+    sourceTypes: sourceTypeList,
+    entityTypes: entityTypeList,
+    ...(statusList ? { statuses: statusList } : {}),
+  };
   const results = vectors.map(() => []);
   const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
   for (let offset = 0; offset < serialized.length; offset += groupSize) {
@@ -523,21 +505,11 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_dims: dims,
       p_limit: k,
       p_min_score: minScore,
-      // Only when set: a data-service without p_statuses rejects the unknown argument.
+      // Rollout shim: always send p_statuses (null if unset) once data-service #1132 is out.
       ...(statusList ? { p_statuses: statusList } : {}),
     });
     if (error) {
-      throw rpcError(
-        `Failed semantic search for site ${siteId}`,
-        SEMANTIC_SEARCH_RPC,
-        {
-          siteId,
-          sourceTypes: sourceTypeList,
-          entityTypes: entityTypeList,
-          ...(statusList ? { statuses: statusList } : {}),
-        },
-        error,
-      );
+      throw rpcError(`Failed semantic search for site ${siteId}`, SEMANTIC_SEARCH_RPC, details, error);
     }
     for (const row of data ?? []) {
       // Checked against this group, not all results, so a bad index can't land in another group.
@@ -545,7 +517,7 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
         throw new DataAccessError(
           `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
-          { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
+          details,
         );
       }
       results[offset + queryIndex].push({

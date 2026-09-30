@@ -50,6 +50,30 @@ const fetch = createFetchCompat(postgrestFetch);
 export * from '../errors/index.js';
 export * from '../models/index.js';
 export * from '../util/index.js';
+// Not in util/index.js: semantic-index imports the Opportunity model, which imports util/index.js.
+export {
+  SEMANTIC_INDEX_TABLES,
+  QUERY_EMBEDDING_TABLE,
+  SEMANTIC_SEARCH_RPC,
+  COPY_VECTORS_RPC,
+  SEMANTIC_CHUNK_SIZE,
+  QUERY_HASH_CHUNK_SIZE,
+  MAX_SOURCE_TEXT_LENGTH,
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
+  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
+  SEMANTIC_MATCHING_CONFIG,
+  normalizeText,
+  hashText,
+  cleanTopicText,
+  serializeVector,
+  parseVector,
+  syncOpportunitySemantic,
+  copyEntityVectors,
+  lookupOpportunitiesByVectors,
+  getQueryEmbeddings,
+  upsertQueryEmbeddings,
+  touchQueryEmbeddings,
+} from '../util/semantic-index.utils.js';
 
 const createPostgrestService = (config, client = undefined) => {
   if (client) {

@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@adobe/fetch": "^4.2.3",
-    "@adobe/spacecat-shared-utils": "1.105.0",
+    "@adobe/spacecat-shared-utils": "1.127.0",
     "@aws-sdk/client-s3": "^3.940.0",
     "@smithy/util-retry": "^4.0.0",
     "@supabase/postgrest-js": "2.117.1",

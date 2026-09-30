@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.37.0...@adobe/spacecat-shared-data-access-v4.38.0) (2026-09-30)
+
+### Features
+
+* **data-access:** import semantic type registries from spacecat-shared-utils (LLMO-7445) ([#1963](https://github.com/adobe/spacecat-shared/issues/1963)) ([6538368](https://github.com/adobe/spacecat-shared/commit/6538368946be6493d14a165c222f51accd1b10ba))
+
 ## [@adobe/spacecat-shared-data-access-v4.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.36.0...@adobe/spacecat-shared-data-access-v4.37.0) (2026-09-30)
 
 ### Features

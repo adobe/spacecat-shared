@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.36.0...@adobe/spacecat-shared-data-access-v4.37.0) (2026-09-30)
+
+### Features
+
+* **data-access:** filter lookupOpportunitiesByVectors by opportunity status (LLMO-7445) ([#1960](https://github.com/adobe/spacecat-shared/issues/1960)) ([7609486](https://github.com/adobe/spacecat-shared/commit/76094863bab4f70f057b1acc3b8c2fba0f0f2c75))
+
 ## [@adobe/spacecat-shared-data-access-v4.36.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.35.0...@adobe/spacecat-shared-data-access-v4.36.0) (2026-09-29)
 
 ### Features

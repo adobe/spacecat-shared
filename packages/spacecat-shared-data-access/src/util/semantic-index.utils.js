@@ -12,7 +12,10 @@
 
 import { createHash } from 'crypto';
 
-import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
+import {
+  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
+  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
+} from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../errors/index.js';
 import Opportunity from '../models/opportunity/opportunity.model.js';
@@ -42,23 +45,8 @@ export const QUERY_HASH_CHUNK_SIZE = 50;
 /** Max topic/query text length; matches the `source_text` DB CHECK. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
 
-/**
- * Kinds of source text in `opportunity_semantic_embedding.source_type`. The writer and reader
- * reject any other value; add a kind here before indexing or searching it.
- */
-export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES = Object.freeze({
-  TOPIC: 'topic',
-});
-
-/**
- * Opportunity types allowed in `opportunity_semantic_embedding.entity_type`. The writer and
- * reader reject any other value; add a type here before indexing or filtering by it.
- */
-export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES = Object.freeze({
-  CITED_ANALYSIS: OPPORTUNITY_TYPES.CITED_ANALYSIS,
-  REDDIT_ANALYSIS: OPPORTUNITY_TYPES.REDDIT_ANALYSIS,
-  YOUTUBE_ANALYSIS: OPPORTUNITY_TYPES.YOUTUBE_ANALYSIS,
-});
+// Owned by utils; re-exported so existing data-access consumers keep working.
+export { OPPORTUNITY_SEMANTIC_ENTITY_TYPES, OPPORTUNITY_SEMANTIC_SOURCE_TYPES };
 
 /**
  * Shared semantic-matching settings. `embedding` is the generation every semantic writer and

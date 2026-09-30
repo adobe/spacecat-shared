@@ -12,6 +12,7 @@
 
 import { expect, use as chaiUse } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
+import * as utils from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../../../src/errors/index.js';
 import {
@@ -157,15 +158,9 @@ const src = (text, vector = [0.1, 0.2], extra = {}) => ({
 
 describe('semantic-index.utils', () => {
   describe('pure helpers', () => {
-    it('exposes frozen source/entity type registries', () => {
-      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.deep.equal({ TOPIC: 'topic' });
-      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.deep.equal({
-        CITED_ANALYSIS: 'cited-analysis',
-        REDDIT_ANALYSIS: 'reddit-analysis',
-        YOUTUBE_ANALYSIS: 'youtube-analysis',
-      });
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_SOURCE_TYPES)).to.equal(true);
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_ENTITY_TYPES)).to.equal(true);
+    it('re-exports the source/entity type registries from utils', () => {
+      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.equal(utils.OPPORTUNITY_SEMANTIC_SOURCE_TYPES);
+      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.equal(utils.OPPORTUNITY_SEMANTIC_ENTITY_TYPES);
     });
 
     it('exposes the frozen embedding generation', () => {

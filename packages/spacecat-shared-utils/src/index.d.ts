@@ -22,6 +22,10 @@ export {
   OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
   SUGGESTION_SEMANTIC_SOURCE_TYPES,
   SUGGESTION_SEMANTIC_ENTITY_TYPES,
+  OpportunitySemanticSourceType,
+  OpportunitySemanticEntityType,
+  SuggestionSemanticSourceType,
+  SuggestionSemanticEntityType,
 } from './constants.js';
 
 export const DEFAULT_CPC_VALUE: number;

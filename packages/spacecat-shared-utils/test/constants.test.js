@@ -10,7 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
+import { readFileSync } from 'fs';
 import { expect } from 'chai';
+import * as constants from '../src/constants.js';
 import {
   OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
   OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
@@ -38,11 +40,25 @@ describe('semantic lookup type registries', () => {
   });
 
   it('freezes every registry', () => {
-    [
+    Object.entries({
       OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
       OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
       SUGGESTION_SEMANTIC_SOURCE_TYPES,
       SUGGESTION_SEMANTIC_ENTITY_TYPES,
-    ].forEach((registry) => expect(Object.isFrozen(registry)).to.equal(true));
+    }).forEach(([name, registry]) => expect(Object.isFrozen(registry), name).to.equal(true));
+  });
+
+  it('declares every frozen registry in constants.d.ts with the same values', () => {
+    const dts = readFileSync(new URL('../src/constants.d.ts', import.meta.url), 'utf8');
+    const declared = Object.fromEntries(
+      [...dts.matchAll(/export const (\w+): Readonly<\{([^}]*)\}>;/g)].map(([, name, body]) => [
+        name,
+        Object.fromEntries([...body.matchAll(/(\w+): '([^']*)';/g)].map(([, key, value]) => [key, value])),
+      ]),
+    );
+    const frozen = Object.fromEntries(
+      Object.entries(constants).filter(([, value]) => typeof value === 'object' && Object.isFrozen(value)),
+    );
+    expect(declared).to.deep.equal(frozen);
   });
 });

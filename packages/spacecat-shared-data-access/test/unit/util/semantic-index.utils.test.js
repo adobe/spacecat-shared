@@ -671,6 +671,35 @@ describe('semantic-index.utils', () => {
       expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
     });
 
+    it('sends deduped statuses as p_statuses, and omits p_statuses when none are given', async () => {
+      const client = makeClient({ rpcResult: { data: [], error: null } });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW', 'RESOLVED', 'NEW'], vectors: [[0.1, 0.2]],
+      });
+      await lookupOpportunitiesByVectors(client, { ...base, statuses: [], vectors: [[0.1, 0.2]] });
+      await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: null, vectors: [[0.1, 0.2]],
+      });
+      expect(client.calls.rpc[0].params.p_statuses).to.deep.equal(['NEW', 'RESOLVED']);
+      expect(client.calls.rpc[1].params).to.not.have.property('p_statuses');
+      expect(client.calls.rpc[2].params).to.not.have.property('p_statuses');
+    });
+
+    it('rejects statuses outside Opportunity.STATUSES without calling the RPC', async () => {
+      const client = makeClient();
+      const call = (statuses) => lookupOpportunitiesByVectors(client, {
+        ...base, statuses, vectors: [[0.1, 0.2]],
+      });
+      await expect(call('NEW')).to.be.rejectedWith(ValidationError, 'statuses must be an array');
+      await expect(call(['NEW', 'new', ' NEW'])).to.be.rejectedWith(
+        ValidationError,
+        'statuses must only contain: NEW, IN_PROGRESS, IGNORED, RESOLVED (got ["new"," NEW"])',
+      );
+      await expect(call(['NEW', 1])).to.be.rejectedWith(ValidationError, '(got [1])');
+      await expect(call(new Array(1))).to.be.rejectedWith(ValidationError, 'statuses must only contain');
+      expect(client.calls.rpc).to.be.empty;
+    });
+
     it('renders rejected values safely: unserializable falls back to String, long ones are truncated', async () => {
       const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
         ...base, vectors: [[0.1, 0.2]], ...over,
@@ -743,6 +772,12 @@ describe('semantic-index.utils', () => {
       expect(err.details).to.deep.equal({
         siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
       });
+      const withStatuses = await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(withStatuses.details).to.deep.equal({
+        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null, statuses: ['NEW'],
+      });
     });
 
     it('adds a deploy-ordering hint when PostgREST cannot find the RPC signature', async () => {
@@ -757,6 +792,11 @@ describe('semantic-index.utils', () => {
       expect(err.details).to.deep.equal({
         siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null,
       });
+      const withStatuses = await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(withStatuses.message).to.equal(`Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} ${PGRST202_HINT}`);
+      expect(withStatuses.details.statuses).to.deep.equal(['NEW']);
     });
 
     it('rejects a query_index outside the current group (never spills into another group)', async () => {
@@ -769,6 +809,11 @@ describe('semantic-index.utils', () => {
         await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: vecs(25) }))
           .to.be.rejectedWith(DataAccessError, `Unexpected query_index ${bad}`);
       }
+      const client = makeClient({ rpcResult: { data: [row(5)], error: null } });
+      const err = await lookupOpportunitiesByVectors(client, {
+        ...base, statuses: ['NEW'], vectors: [[0.1, 0.2]],
+      }).catch((e) => e);
+      expect(err.details.statuses).to.deep.equal(['NEW']);
     });
   });
 

@@ -15,6 +15,7 @@ import { createHash } from 'crypto';
 import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../errors/index.js';
+import Opportunity from '../models/opportunity/opportunity.model.js';
 import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
 
 /**
@@ -453,6 +454,8 @@ export async function copyEntityVectors(postgrestClient, {
  *   `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (required, non-empty)
  * @param {string[]} [params.entityTypes] - opportunity types to narrow to, from
  *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; omitted or empty searches all
+ * @param {string[]} [params.statuses] - opportunity statuses (`Opportunity.STATUSES` values) to
+ *   narrow to, applied before `k`; omitted or empty searches all
  * @param {number[][]} params.vectors - the query embeddings
  * @param {string} params.model - the model the queries were embedded with
  * @param {number} params.dims - the query embedding dimension
@@ -462,12 +465,13 @@ export async function copyEntityVectors(postgrestClient, {
  *   best-first list per input vector, in input order
  */
 export async function lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes, entityTypes, vectors, model, dims, k = 10, minScore = 0,
+  siteId, sourceTypes, entityTypes, statuses, vectors, model, dims, k = 10, minScore = 0,
 } = {}) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
   const sourceTypeList = toAllowedList(sourceTypes, 'sourceTypes', OPPORTUNITY_SEMANTIC_SOURCE_TYPES, { required: true });
   const entityTypeList = toAllowedList(entityTypes, 'entityTypes', OPPORTUNITY_SEMANTIC_ENTITY_TYPES, { required: false });
+  const statusList = toAllowedList(statuses, 'statuses', Opportunity.STATUSES, { required: false });
   assertModel(model);
   assertDims(dims);
   if (!Array.isArray(vectors)) {
@@ -481,6 +485,12 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
   }
   const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
 
+  const details = {
+    siteId,
+    sourceTypes: sourceTypeList,
+    entityTypes: entityTypeList,
+    ...(statusList ? { statuses: statusList } : {}),
+  };
   const results = vectors.map(() => []);
   const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
   for (let offset = 0; offset < serialized.length; offset += groupSize) {
@@ -495,14 +505,11 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       p_dims: dims,
       p_limit: k,
       p_min_score: minScore,
+      // Rollout shim: always send p_statuses (null if unset) once data-service #1132 is out.
+      ...(statusList ? { p_statuses: statusList } : {}),
     });
     if (error) {
-      throw rpcError(
-        `Failed semantic search for site ${siteId}`,
-        SEMANTIC_SEARCH_RPC,
-        { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
-        error,
-      );
+      throw rpcError(`Failed semantic search for site ${siteId}`, SEMANTIC_SEARCH_RPC, details, error);
     }
     for (const row of data ?? []) {
       // Checked against this group, not all results, so a bad index can't land in another group.
@@ -510,7 +517,7 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
       if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
         throw new DataAccessError(
           `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
-          { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
+          details,
         );
       }
       results[offset + queryIndex].push({

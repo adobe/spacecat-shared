@@ -710,9 +710,16 @@ export default class TokowakaClient {
   fetchMetaconfig(url: string): Promise<TokowakaMetaconfig | null>;
   
   /**
-   * Uploads domain-level metaconfig to S3
+   * Uploads domain-level metaconfig to S3.
+   * Pass `conditions` for an S3 conditional write; a failed precondition (the metaconfig
+   * changed concurrently) rejects with an error whose `status` is 412.
    */
-  uploadMetaconfig(url: string, metaconfig: TokowakaMetaconfig): Promise<string>;
+  uploadMetaconfig(
+    url: string,
+    metaconfig: TokowakaMetaconfig,
+    metadata?: Record<string, string>,
+    conditions?: { ifMatch?: string; ifNoneMatch?: string },
+  ): Promise<string>;
   
   /**
    * Merges existing configuration with new configuration

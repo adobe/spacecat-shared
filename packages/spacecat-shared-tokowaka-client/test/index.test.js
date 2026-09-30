@@ -26,6 +26,28 @@ describe('TokowakaClient', () => {
   let mockOpportunity;
   let mockSuggestions;
 
+  // Serves the metaconfig through S3 GetObject (the read path used by conditional writes).
+  // Accepts a metaconfig, null (object missing) or a function returning either.
+  const serveMetaconfigFromS3 = (metaconfigOrFn, etag = '"metaconfig-etag"') => {
+    s3Client.send
+      .withArgs(sinon.match((cmd) => cmd.constructor.name === 'GetObjectCommand'
+        && cmd.input.Key.endsWith('/config')))
+      .callsFake(async () => {
+        const metaconfig = typeof metaconfigOrFn === 'function'
+          ? await metaconfigOrFn()
+          : metaconfigOrFn;
+        if (!metaconfig) {
+          const error = new Error('NoSuchKey');
+          error.name = 'NoSuchKey';
+          throw error;
+        }
+        return {
+          Body: { transformToString: async () => JSON.stringify(metaconfig) },
+          ETag: etag,
+          Metadata: {},
+        };
+      });
+  };
   beforeEach(() => {
     s3Client = {
       send: sinon.stub().resolves(),
@@ -608,6 +630,398 @@ describe('TokowakaClient', () => {
       const command = s3Client.send.firstCall.args[0];
       expect(command.input.Bucket).to.equal('test-bucket');
       expect(command.input.Metadata).to.be.undefined;
+    });
+
+    it('should not send S3 preconditions when no conditions are given', async () => {
+      sinon.stub(client, 'invalidateCdnCache').resolves([]);
+      await client.uploadMetaconfig('https://example.com/page1', { siteId: 'site-123' });
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input).to.not.have.property('IfMatch');
+      expect(command.input).to.not.have.property('IfNoneMatch');
+    });
+
+    it('should send If-Match when an ETag condition is given', async () => {
+      sinon.stub(client, 'invalidateCdnCache').resolves([]);
+      await client.uploadMetaconfig(
+        'https://example.com/page1',
+        { siteId: 'site-123' },
+        {},
+        { ifMatch: '"etag-1"' },
+      );
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.IfMatch).to.equal('"etag-1"');
+      expect(command.input).to.not.have.property('IfNoneMatch');
+    });
+
+    it('should send If-None-Match when a create-only condition is given', async () => {
+      sinon.stub(client, 'invalidateCdnCache').resolves([]);
+      await client.uploadMetaconfig(
+        'https://example.com/page1',
+        { siteId: 'site-123' },
+        {},
+        { ifNoneMatch: '*' },
+      );
+
+      const command = s3Client.send.firstCall.args[0];
+      expect(command.input.IfNoneMatch).to.equal('*');
+      expect(command.input).to.not.have.property('IfMatch');
+    });
+
+    ['PreconditionFailed', 'ConditionalRequestConflict'].forEach((name) => {
+      it(`should reject with status 412 and warn (not error) on S3 ${name}`, async () => {
+        const conflict = new Error('At least one of the pre-conditions you specified did not hold');
+        conflict.name = name;
+        s3Client.send.rejects(conflict);
+        const invalidateStub = sinon.stub(client, 'invalidateCdnCache').resolves([]);
+
+        try {
+          await client.uploadMetaconfig(
+            'https://example.com/page1',
+            { siteId: 'site-123' },
+            {},
+            { ifMatch: '"stale-etag"' },
+          );
+          expect.fail('Should have thrown error');
+        } catch (error) {
+          expect(error.message).to.include('Metaconfig was modified concurrently');
+          expect(error.status).to.equal(412);
+        }
+        expect(log.warn).to.have.been.calledWithMatch('changed since it was read');
+        expect(log.error).to.not.have.been.called;
+        expect(invalidateStub).to.not.have.been.called;
+      });
+    });
+  });
+
+  describe('concurrent metaconfig writes', () => {
+    const conflictError = () => Object.assign(
+      new Error('At least one of the pre-conditions you specified did not hold'),
+      { name: 'PreconditionFailed', $metadata: { httpStatusCode: 412 } },
+    );
+    const isPut = sinon.match((cmd) => cmd.constructor.name === 'PutObjectCommand'
+      && cmd.input.Key === 'opportunities/example.com/config');
+    const metaconfigPuts = () => s3Client.send.getCalls()
+      .map((call) => call.args[0])
+      .filter((cmd) => isPut.test(cmd));
+
+    // Simulates S3: each GET returns the next stored version, and a PUT only succeeds
+    // when its If-Match / If-None-Match still holds against the stored version
+    const simulateS3Metaconfig = (versions) => {
+      let reads = 0;
+      let stored = null;
+      s3Client.send
+        .withArgs(sinon.match((cmd) => cmd.constructor.name === 'GetObjectCommand'
+          && cmd.input.Key === 'opportunities/example.com/config'))
+        .callsFake(async () => {
+          stored = versions[Math.min(reads, versions.length - 1)];
+          reads += 1;
+          if (!stored) {
+            throw Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
+          }
+          return {
+            Body: { transformToString: async () => JSON.stringify(stored.metaconfig) },
+            ETag: stored.etag,
+            Metadata: stored.metadata || {},
+          };
+        });
+      return {
+        failPutsUntilRead: (n) => {
+          s3Client.send.withArgs(isPut).callsFake(async () => {
+            if (reads < n) {
+              throw conflictError();
+            }
+            return {};
+          });
+        },
+      };
+    };
+
+    beforeEach(() => {
+      sinon.stub(Math, 'random').returns(0);
+      sinon.stub(client, 'invalidateCdnCache').resolves([]);
+    });
+
+    // In-memory S3 object that enforces If-Match / If-None-Match like S3 does. The first
+    // `readBarrier` reads wait for each other, so every request reads the same version first.
+    const inMemoryS3Metaconfig = (initial, { readBarrier = 0 } = {}) => {
+      let stored = initial;
+      let version = 1;
+      let reads = 0;
+      let releaseBarrier;
+      const barrier = new Promise((resolve) => {
+        releaseBarrier = resolve;
+      });
+      s3Client.send
+        .withArgs(sinon.match((cmd) => cmd.constructor.name === 'GetObjectCommand'
+          && cmd.input.Key === 'opportunities/example.com/config'))
+        .callsFake(async () => {
+          const snapshot = stored && JSON.stringify(stored);
+          const etag = `"v${version}"`;
+          reads += 1;
+          if (reads <= readBarrier) {
+            if (reads === readBarrier) {
+              releaseBarrier();
+            }
+            await barrier;
+          }
+          if (!snapshot) {
+            throw Object.assign(new Error('NoSuchKey'), { name: 'NoSuchKey' });
+          }
+          return { Body: { transformToString: async () => snapshot }, ETag: etag, Metadata: {} };
+        });
+      s3Client.send.withArgs(isPut).callsFake(async (cmd) => {
+        const { IfMatch, IfNoneMatch, Body } = cmd.input;
+        if ((IfNoneMatch === '*' && stored) || (IfMatch && IfMatch !== `"v${version}"`)) {
+          throw conflictError();
+        }
+        stored = JSON.parse(Body);
+        version += 1;
+        return {};
+      });
+      return { current: () => stored };
+    };
+
+    const makeEntity = (id, data) => {
+      let storedData = { ...data };
+      return {
+        getId: () => id,
+        getStatus: () => 'NEW',
+        getUpdatedAt: () => '2025-01-15T10:00:00.000Z',
+        getData: () => storedData,
+        setData: (d) => {
+          storedData = d;
+        },
+        setUpdatedBy: sinon.stub(),
+        save: sinon.stub().resolves(),
+      };
+    };
+
+    it('should keep the paths of every deploy batch when batches run in parallel', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      const s3 = inMemoryS3Metaconfig(
+        { siteId: 'site-123', prerender: true, patches: { '/old': true } },
+        { readBarrier: 4 },
+      );
+      const batch = (i) => [makeEntity(`sugg-${i}`, {
+        url: `https://example.com/batch-${i}`,
+        recommendedAction: 'New Heading',
+        checkType: 'heading-empty',
+        transformRules: { action: 'replace', selector: 'h1' },
+      })];
+
+      const results = await Promise.all([1, 2, 3, 4]
+        .map((i) => client.deploySuggestions(mockSite, mockOpportunity, batch(i))));
+
+      results.forEach((result) => expect(result.succeededSuggestions).to.have.length(1));
+      expect(s3.current().patches).to.deep.equal({
+        '/old': true,
+        '/batch-1': true,
+        '/batch-2': true,
+        '/batch-3': true,
+        '/batch-4': true,
+      });
+    });
+
+    it('should keep every pattern when pattern deploys run in parallel on a site without metaconfig', async () => {
+      const s3 = inMemoryS3Metaconfig(null, { readBarrier: 2 });
+      const products = makeEntity('p1', { allowedRegexPatterns: ['/products/*'] });
+      const blog = makeEntity('p2', { allowedRegexPatterns: ['/blog/*'] });
+
+      const results = await Promise.all([products, blog].map((suggestion) => client.deployToEdge({
+        site: mockSite,
+        opportunity: mockOpportunity,
+        targetSuggestions: [suggestion],
+        allSuggestions: [products, blog],
+      })));
+
+      results.forEach((result) => expect(result.failedSuggestions).to.have.length(0));
+      expect(s3.current().siteId).to.equal('site-123');
+      expect(s3.current().prerender.allowList).to.have.members(['/products/*', '/blog/*']);
+      expect(metaconfigPuts()[0].input.IfNoneMatch).to.equal('*');
+    });
+
+    it('should not undo a concurrent deploy when rolling back a pattern', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      const s3 = inMemoryS3Metaconfig(
+        { siteId: 'site-123', prerender: { allowList: ['/*', '/products/*'] }, patches: {} },
+        { readBarrier: 2 },
+      );
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pattern = makeEntity('path-1', {
+        allowedRegexPatterns: ['/products/*'],
+        edgeDeployed: Date.now(),
+      });
+
+      const [rollback] = await Promise.all([
+        client.rollbackSuggestions(mockSite, prerenderOpportunity, [pattern]),
+        client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions),
+      ]);
+
+      expect(rollback.succeededSuggestions).to.include(pattern);
+      expect(s3.current().prerender.allowList).to.deep.equal(['/*']);
+      expect(s3.current().patches).to.deep.equal({ '/page1': true });
+    });
+
+    it('should fail only the pattern suggestions when the metaconfig cannot be read during rollback', async () => {
+      s3Client.send
+        .withArgs(sinon.match((cmd) => cmd.constructor.name === 'GetObjectCommand'
+          && cmd.input.Key === 'opportunities/example.com/config'))
+        .rejects(Object.assign(new Error('Access Denied'), { name: 'AccessDenied' }));
+      const prerenderOpportunity = { getId: () => 'opp-p', getType: () => 'prerender' };
+      const pattern = makeEntity('path-1', {
+        allowedRegexPatterns: ['/products/*'],
+        edgeDeployed: Date.now(),
+      });
+
+      const result = await client.rollbackSuggestions(mockSite, prerenderOpportunity, [pattern]);
+
+      expect(result.failedSuggestions).to.deep.equal([
+        { suggestion: pattern, reason: 'Internal server error', statusCode: 500 },
+      ]);
+      expect(pattern.getData()).to.have.property('edgeDeployed');
+      expect(metaconfigPuts()).to.have.length(0);
+      expect(log.error).to.have.been.calledWithMatch('[edge-rollback] Metaconfig update failed: S3 fetch failed: Access Denied');
+    });
+
+    it('should re-read and re-apply deployed paths when another deploy wrote first', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      const s3 = simulateS3Metaconfig([
+        { etag: '"v1"', metaconfig: { siteId: 'site-123', prerender: true, patches: { '/old': true } } },
+        // A parallel deploy batch added /other-batch between our read and our write
+        {
+          etag: '"v2"',
+          metaconfig: {
+            siteId: 'site-123', prerender: true, patches: { '/old': true, '/other-batch': true },
+          },
+        },
+      ]);
+      s3.failPutsUntilRead(2);
+
+      const result = await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+
+      expect(result.succeededSuggestions).to.have.length(2);
+      const puts = metaconfigPuts();
+      expect(puts).to.have.length(2);
+      expect(puts[0].input.IfMatch).to.equal('"v1"');
+      expect(puts[1].input.IfMatch).to.equal('"v2"');
+      expect(JSON.parse(puts[1].input.Body).patches).to.deep.equal({
+        '/old': true,
+        '/other-batch': true,
+        '/page1': true,
+      });
+      expect(log.warn).to.have.been.calledWithMatch('was modified concurrently, re-reading and retrying (attempt 2/8)');
+    });
+
+    it('should fail the deploy when the metaconfig was deleted before the paths were written', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      simulateS3Metaconfig([null]);
+
+      try {
+        await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to update metaconfig with deployed paths: Metaconfig no longer exists');
+        expect(error.status).to.equal(500);
+      }
+      expect(metaconfigPuts()).to.have.length(0);
+    });
+
+    it('should give up after the maximum number of attempts', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      const s3 = simulateS3Metaconfig([{ etag: '"v1"', metaconfig: { siteId: 'site-123', prerender: true } }]);
+      s3.failPutsUntilRead(Infinity);
+
+      try {
+        await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('Failed to update metaconfig with deployed paths: Metaconfig was modified concurrently');
+        expect(error.status).to.equal(500);
+      }
+      expect(metaconfigPuts()).to.have.length(8);
+    });
+
+    it('should back off with capped, jittered delays between attempts', async () => {
+      Math.random.returns(0.5);
+      const clock = sinon.useFakeTimers({ toFake: ['setTimeout'] });
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      const s3 = simulateS3Metaconfig([{ etag: '"v1"', metaconfig: { siteId: 'site-123', prerender: true } }]);
+      s3.failPutsUntilRead(Infinity);
+
+      const deploy = client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions)
+        .catch((error) => error);
+      await clock.runAllAsync();
+      const error = await deploy;
+      clock.restore();
+
+      expect(error.status).to.equal(500);
+      const delays = log.warn.getCalls()
+        .map((call) => call.args[0].match(/re-reading and retrying \(attempt \d\/8\) in (\d+)ms/))
+        .filter(Boolean)
+        .map((match) => Number(match[1]));
+      expect(delays).to.deep.equal([50, 100, 200, 400, 800, 1000, 1000]);
+    });
+
+    it('should not retry errors other than write conflicts', async () => {
+      sinon.stub(client, 'fetchConfig').resolves(null);
+      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123', prerender: true });
+      simulateS3Metaconfig([{ etag: '"v1"', metaconfig: { siteId: 'site-123', prerender: true } }]);
+      s3Client.send.withArgs(isPut).rejects(new Error('Access Denied'));
+
+      try {
+        await client.deploySuggestions(mockSite, mockOpportunity, mockSuggestions);
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('S3 upload failed: Access Denied');
+      }
+      expect(metaconfigPuts()).to.have.length(1);
+    });
+
+    it('updateMetaconfig should write conditionally and apply its changes to the latest version', async () => {
+      const s3 = simulateS3Metaconfig([
+        { etag: '"v1"', metaconfig: { siteId: 'site-123', apiKeys: ['key-1'], patches: { '/a': true } } },
+        {
+          etag: '"v2"',
+          metaconfig: { siteId: 'site-123', apiKeys: ['key-1'], patches: { '/a': true, '/b': true } },
+        },
+      ]);
+      s3.failPutsUntilRead(2);
+
+      const result = await client.updateMetaconfig('https://example.com/page1', 'site-123', { enhancements: false });
+
+      const puts = metaconfigPuts();
+      expect(puts.map((cmd) => cmd.input.IfMatch)).to.deep.equal(['"v1"', '"v2"']);
+      expect(result.patches).to.deep.equal({ '/a': true, '/b': true });
+      expect(result.enhancements).to.equal(false);
+      expect(JSON.parse(puts[1].input.Body)).to.deep.equal(result);
+    });
+
+    it('createMetaconfig should only create when none exists and fail if another request created it first', async () => {
+      const s3 = simulateS3Metaconfig([
+        null,
+        { etag: '"v1"', metaconfig: { siteId: 'site-123', apiKeys: ['other-key'] } },
+      ]);
+      s3.failPutsUntilRead(2);
+
+      try {
+        await client.createMetaconfig('https://example.com/page1', 'site-123');
+        expect.fail('Should have thrown error');
+      } catch (error) {
+        expect(error.message).to.include('already exists');
+        expect(error.status).to.equal(400);
+      }
+      const puts = metaconfigPuts();
+      expect(puts).to.have.length(1);
+      expect(puts[0].input.IfNoneMatch).to.equal('*');
+      expect(puts[0].input).to.not.have.property('IfMatch');
     });
   });
 
@@ -2013,6 +2427,8 @@ describe('TokowakaClient', () => {
         siteId: 'site-123',
         prerender: true,
       });
+      // The deployed-paths update re-reads the metaconfig from S3 for its conditional write
+      serveMetaconfigFromS3({ siteId: 'site-123', prerender: true });
       // Stub uploadMetaconfig
       sinon.stub(client, 'uploadMetaconfig').resolves('opportunities/example.com/config');
     });
@@ -2217,9 +2633,7 @@ describe('TokowakaClient', () => {
 
     it('should add to existing patches in metaconfig when deploying new endpoints', async () => {
       // Set up metaconfig with existing patches
-      // Reset the stub to provide consistent behavior
-      client.fetchMetaconfig.reset();
-      client.fetchMetaconfig.resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: true,
         patches: {
@@ -3104,7 +3518,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*', '/products/*'] },
       });
@@ -3135,7 +3549,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/products/*'] },
       });
@@ -3166,7 +3580,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*', '/products/*'] },
       });
@@ -3209,7 +3623,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*'] },
       });
@@ -3264,7 +3678,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*'] },
       });
@@ -3310,7 +3724,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       }));
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*'] },
       });
@@ -3364,7 +3778,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/products/*'] },
       });
@@ -3407,7 +3821,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       }));
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/products/*'] },
       });
@@ -3456,7 +3870,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3499,7 +3913,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/products/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3552,7 +3966,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*', '/products/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3601,7 +4015,7 @@ describe('TokowakaClient', () => {
       };
 
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*', '/products/*', '/blog/*'] },
       });
 
@@ -3646,7 +4060,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3688,7 +4102,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3715,7 +4129,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      serveMetaconfigFromS3({ siteId: 'site-123' });
       sinon.stub(client, 'uploadMetaconfig').resolves();
 
       const result = await client.rollbackSuggestions(
@@ -3741,7 +4155,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves(null);
+      serveMetaconfigFromS3(null);
       sinon.stub(client, 'uploadMetaconfig').resolves();
 
       const result = await client.rollbackSuggestions(
@@ -3766,7 +4180,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({ siteId: 'site-123' });
+      serveMetaconfigFromS3({ siteId: 'site-123' });
       const uploadStub = sinon.stub(client, 'uploadMetaconfig').resolves();
 
       const result = await client.rollbackSuggestions(
@@ -3792,7 +4206,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/*'] },
       });
@@ -3821,7 +4235,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/products/*'] },
       });
@@ -3864,7 +4278,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -3910,7 +4324,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         siteId: 'site-123',
         prerender: { allowList: ['/products/*', '/blog/*'] },
       });
@@ -3961,7 +4375,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -4014,7 +4428,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/products/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -4067,7 +4481,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*', '/products/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -4115,7 +4529,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*', '/blog/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -4162,7 +4576,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -4211,7 +4625,7 @@ describe('TokowakaClient', () => {
         save: sinon.stub().resolves(),
       };
 
-      sinon.stub(client, 'fetchMetaconfig').resolves({
+      serveMetaconfigFromS3({
         prerender: { allowList: ['/*'] },
       });
       sinon.stub(client, 'uploadMetaconfig').resolves();
@@ -6038,7 +6452,8 @@ describe('TokowakaClient', () => {
 
     beforeEach(() => {
       deploySuggestionsStub = sinon.stub(client, 'deploySuggestions');
-      fetchMetaconfigStub = sinon.stub(client, 'fetchMetaconfig');
+      fetchMetaconfigStub = sinon.stub();
+      serveMetaconfigFromS3(() => fetchMetaconfigStub());
       uploadMetaconfigStub = sinon.stub(client, 'uploadMetaconfig').resolves();
     });
 

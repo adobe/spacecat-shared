@@ -19,7 +19,6 @@ import {
   SEMANTIC_INDEX_TABLES,
   QUERY_EMBEDDING_TABLE,
   SEMANTIC_SEARCH_RPC,
-  COPY_VECTORS_RPC,
   OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
   OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
   SEMANTIC_MATCHING_CONFIG,
@@ -29,7 +28,6 @@ import {
   serializeVector,
   parseVector,
   syncOpportunitySemantic,
-  copyEntityVectors,
   lookupOpportunitiesByVectors,
   getQueryEmbeddings,
   upsertQueryEmbeddings,
@@ -221,7 +219,6 @@ describe('semantic-index.utils', () => {
       expect(SEMANTIC_INDEX_TABLES).to.deep.equal(['opportunity_semantic_embedding']);
       expect(QUERY_EMBEDDING_TABLE).to.equal('semantic_query_embedding');
       expect(SEMANTIC_SEARCH_RPC).to.equal('rpc_opportunity_semantic_search');
-      expect(COPY_VECTORS_RPC).to.equal('wrpc_copy_opportunity_semantic_vectors');
     });
   });
 
@@ -507,61 +504,6 @@ describe('semantic-index.utils', () => {
         sources: sources20,
       });
       expect(client20.calls.upsert).to.have.length(1);
-    });
-  });
-
-  describe('copyEntityVectors', () => {
-    it('validates the client + ids', async () => {
-      await expect(copyEntityVectors({}, { siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
-      await expect(copyEntityVectors(makeClient(), { fromEntityId: 'a', toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'fromEntityId is required');
-      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, fromEntityId: 'a' }))
-        .to.be.rejectedWith(ValidationError, 'toEntityId is required');
-    });
-
-    it('calls the copy RPC and returns the inserted count', async () => {
-      const client = makeClient({ rpcResult: { data: 3, error: null } });
-      const n = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      });
-      expect(n).to.equal(3);
-      expect(client.calls.rpc).to.deep.equal([{
-        name: 'wrpc_copy_opportunity_semantic_vectors',
-        params: { p_site_id: SITE_ID, p_from_entity_id: 'a', p_to_entity_id: 'b' },
-      }]);
-    });
-
-    it('returns 0 when the RPC reports no inserted rows (null data)', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: null } });
-      const n = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      });
-      expect(n).to.equal(0);
-    });
-
-    it('wraps an RPC error', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      const err = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.include('Failed to copy semantic vectors');
-      expect(err.message).to.not.include('signature not found');
-    });
-
-    it('adds the deploy-ordering hint when PostgREST cannot find the copy RPC', async () => {
-      const cause = { code: 'PGRST202', message: 'Could not find the function' };
-      const client = makeClient({ rpcResult: { data: null, error: cause } });
-      const err = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.equal(`Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} ${PGRST202_HINT}`);
-      expect(err.details).to.deep.equal({ siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' });
-      expect(err.cause).to.equal(cause);
     });
   });
 

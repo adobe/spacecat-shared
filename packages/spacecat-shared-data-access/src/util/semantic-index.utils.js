@@ -30,11 +30,10 @@ import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
  * format: changing it desyncs stored rows from new lookups.
  */
 
-/** Tables the sync/copy helpers are allowed to touch. */
+/** Tables the sync helpers are allowed to touch. */
 export const SEMANTIC_INDEX_TABLES = Object.freeze(['opportunity_semantic_embedding']);
 export const QUERY_EMBEDDING_TABLE = 'semantic_query_embedding';
 export const SEMANTIC_SEARCH_RPC = 'rpc_opportunity_semantic_search';
-export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
 
 /** Multi-row op chunk size; smaller than the URL index's because vectors inflate the payload. */
 export const SEMANTIC_CHUNK_SIZE = 20;
@@ -393,37 +392,6 @@ export async function syncOpportunitySemantic(postgrestClient, {
   }
 
   return rows.length;
-}
-
-/**
- * Copy all vector rows from one opportunity to another within a site, server-side via the copy
- * RPC, so identical content is re-pointed rather than re-embedded. Idempotent. Requires the
- * `postgrest_writer` role.
- *
- * @param {object} postgrestClient - `@supabase/postgrest-js` client
- * @param {object} params
- * @param {string} params.siteId - the site both opportunities belong to
- * @param {string} params.fromEntityId - source opportunity id
- * @param {string} params.toEntityId - destination opportunity id
- * @returns {Promise<number>} rows inserted (0 when already copied)
- */
-export async function copyEntityVectors(postgrestClient, {
-  siteId, fromEntityId, toEntityId,
-} = {}) {
-  assertClient(postgrestClient);
-  assertId(siteId, 'siteId');
-  assertId(fromEntityId, 'fromEntityId');
-  assertId(toEntityId, 'toEntityId');
-
-  const { data, error } = await postgrestClient.rpc(COPY_VECTORS_RPC, {
-    p_site_id: siteId,
-    p_from_entity_id: fromEntityId,
-    p_to_entity_id: toEntityId,
-  });
-  if (error) {
-    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { siteId, fromEntityId, toEntityId }, error);
-  }
-  return data ?? 0;
 }
 
 /**

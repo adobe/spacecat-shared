@@ -148,7 +148,7 @@ For the vector indexes (`opportunity_semantic_embedding`, `suggestion_semantic_e
 import {
   indexSemanticTopics, embedQueries,
   lookupOpportunitiesByTopic, lookupSuggestionsByTopic,
-  SEMANTIC_TARGETS, SEMANTIC_MATCHING_CONFIG,
+  SEMANTIC_TARGETS,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
@@ -164,31 +164,32 @@ const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
     fields: [{ matchFieldType: 'topic', texts: ['running shoes'] }],
   }],
 });
-// result: { entities: [{ entityId, fields: [{ matchFieldType, inserted, deleted, unchanged, ... }] }],
+// result: { entities: [{ entityId, fields: [{ matchFieldType, rejected, inserted, deleted, unchanged, ... }] }],
 //           embedded, cacheHits, cacheError? }
 
-// query side: normalize, read the cache, embed the misses within a time budget.
+// query side: validate (at most MAX_QUERY_TEXTS distinct texts, each up to 2048 chars), read the
+// cache (best-effort), embed the distinct misses in one call within a time budget.
 // cacheWrites (touch hits + store misses) is best-effort; await it or hand it to waitUntil.
 const { vectors, cacheWrites } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
 // matchFieldTypes / entityTypes / statuses are optional filters (omitted or [] means no filter).
 // statuses is applied before k, so filtered-out rows never take result slots.
-const scope = { ...SEMANTIC_MATCHING_CONFIG.embedding }; // { model, dims }
+// Searches run in the SEMANTIC_MATCHING_CONFIG.embedding generation, like the writer.
 const opportunities = await lookupOpportunitiesByTopic(postgrestClient, {
   siteId, matchFieldTypes: ['topic'], entityTypes: ['cited-analysis'],
-  statuses: ['NEW', 'IN_PROGRESS'], vectors, k: 10, minScore: 0.5, ...scope,
+  statuses: ['NEW', 'IN_PROGRESS'], vectors, k: 10, minScore: 0.5,
 });
 // suggestions: entityTypes are parent opportunity types, statuses are Suggestion.STATUSES,
 // opportunityStatuses filter on the parent opportunity.
 const suggestions = await lookupSuggestionsByTopic(postgrestClient, {
-  siteId, opportunityStatuses: ['NEW'], vectors, ...scope,
+  siteId, opportunityStatuses: ['NEW'], vectors,
 });
 ```
 
 The match type (`topic`, later `claim`) is never a parameter: each dimension has its own writer and readers (`...Topics` / `...ByTopic`), which set `match_type` internally. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
-`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
+`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; the writer, `embedQueries` and the lookups read it from there rather than taking it as a parameter. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
 
 The writer reads the query cache but never writes it. The low-level cache helpers (`getQueryEmbeddings`, `upsertQueryEmbeddings`, `touchQueryEmbeddings`) are still exported.
 

@@ -18,6 +18,7 @@ import {
   cleanTopicText,
   embedQueries,
   EMBEDDING_BATCH_SIZE,
+  MAX_QUERY_TEXTS,
   EmbeddingUnavailableError,
   getQueryEmbeddings,
   hashText,
@@ -42,8 +43,9 @@ import {
 
 chaiUse(chaiAsPromised);
 
-const SITE_ID = 'site-1';
-const ENTITY_ID = 'oppty-1';
+const SITE_ID = '9a1b2c3d-4e5f-4a6b-8c7d-1e2f3a4b5c6d';
+const ENTITY_ID = '1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e';
+const ENTITY_ID_2 = '2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f';
 const ENTITY_TYPE = 'cited-analysis';
 const FIELD = 'title';
 const TOPIC = 'topic';
@@ -226,6 +228,9 @@ describe('semantic-index.utils', () => {
       expect(cleanTopicText('a'.repeat(MAX_SOURCE_TEXT_LENGTH + 1))).to.equal(null);
       expect(cleanTopicText('abcd', { maxLength: 3 })).to.equal(null);
       expect(cleanTopicText('abc', { maxLength: 3 })).to.deep.equal({ text: 'abc', key: 'abc' });
+      // The limit applies to the normalized key: lowercasing U+0130 yields two code units.
+      expect(cleanTopicText('\u0130'.repeat(2), { maxLength: 3 })).to.equal(null);
+      expect(cleanTopicText('a  b', { maxLength: 3 })).to.deep.equal({ text: 'a  b', key: 'a b' });
     });
 
     it('serializeVector formats a numeric array; rejects invalid input', () => {
@@ -285,7 +290,7 @@ describe('semantic-index.utils', () => {
       await expect(run(makeClient(), { target: 'toString' }))
         .to.be.rejectedWith(ValidationError, 'target must be one of');
       await expect(run(makeClient(), { siteId: '' }))
-        .to.be.rejectedWith(ValidationError, 'siteId is required');
+        .to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got "")');
       await expect(run(makeClient(), { entities: 'x' }))
         .to.be.rejectedWith(ValidationError, 'entities must be an array');
       await expect(run(makeClient(), { entities: [null] }))
@@ -293,7 +298,9 @@ describe('semantic-index.utils', () => {
       await expect(run(makeClient(), { entities: [{ entityId: ENTITY_ID }] }))
         .to.be.rejectedWith(ValidationError, `fields must be an array (entity "${ENTITY_ID}")`);
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityId: '' })] }))
-        .to.be.rejectedWith(ValidationError, 'entityId is required');
+        .to.be.rejectedWith(ValidationError, 'entityId must be a valid UUID (got "")');
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityId: 'oppty-1' })] }))
+        .to.be.rejectedWith(ValidationError, 'entityId must be a valid UUID (got "oppty-1")');
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], '')])] }))
         .to.be.rejectedWith(ValidationError, 'matchFieldType must be a non-empty string of at most 64 characters');
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], 'x'.repeat(65))])] }))
@@ -342,6 +349,7 @@ describe('semantic-index.utils', () => {
           fields: [{
             matchFieldType: FIELD,
             submitted: 4,
+            rejected: 1,
             inserted: 2,
             deleted: 0,
             unchanged: 0,
@@ -397,7 +405,11 @@ describe('semantic-index.utils', () => {
     it('clears a group with texts: [] and makes no embedding call', async () => {
       const client = makeClient(byTable({ stored: [storedRow('a'), storedRow('b')] }));
       const embedder = makeEmbedder();
-      const out = await run(client, { entities: [entity([topicEntry([])]), entity([topicEntry(null)], { entityId: 'oppty-2' })] }, embedder);
+      const entities = [
+        entity([topicEntry([])]),
+        entity([topicEntry(null)], { entityId: ENTITY_ID_2 }),
+      ];
+      const out = await run(client, { entities }, embedder);
       expect(out.entities.map((e) => e.fields[0].deleted)).to.deep.equal([2, 0]);
       expect(out.entities[1].fields[0].submitted).to.equal(0);
       expect(embedder.calls).to.have.length(0);
@@ -440,7 +452,7 @@ describe('semantic-index.utils', () => {
       const out = await run(client, {
         entities: [
           entity([topicEntry(['Shared', 'short'])]),
-          entity([topicEntry(['shared']), { matchFieldType: 'quote', texts: ['fresh'] }], { entityId: 'oppty-2' }),
+          entity([topicEntry(['shared']), { matchFieldType: 'quote', texts: ['fresh'] }], { entityId: ENTITY_ID_2 }),
         ],
       }, embedder);
 
@@ -487,7 +499,7 @@ describe('semantic-index.utils', () => {
         { data: page, error: null }, { data: null, error: null }, { data: [], error: null },
       ];
       const client = makeClient({ selectFn: () => pages.shift() });
-      const entities = [entity([topicEntry([])]), ...Array.from({ length: 50 }, (_, i) => entity([topicEntry([])], { entityId: `e${i}` }))];
+      const entities = [entity([topicEntry([])]), ...Array.from({ length: 50 }, (_, i) => entity([topicEntry([])], { entityId: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}` }))];
       const out = await run(client, { entities });
       expect(client.calls.select.map((c) => [c.inFilter.values.length, c.range[0]]))
         .to.deep.equal([[50, 0], [50, 1000], [1, 0]]);
@@ -535,8 +547,38 @@ describe('semantic-index.utils', () => {
         .to.be.rejectedWith(ValidationError, 'embeddingClient with createEmbeddings() is required');
       await expect(embedQueries(makeClient(), makeEmbedder(), 'x'))
         .to.be.rejectedWith(ValidationError, 'texts must be an array');
-      await expect(embedQueries(makeClient(), makeEmbedder(), [' ']))
-        .to.be.rejectedWith(ValidationError, 'text is required');
+      await expect(embedQueries(makeClient(), makeEmbedder(), ['ok', ' ']))
+        .to.be.rejectedWith(ValidationError, 'texts[1] must be a non-empty string of at most 2048 characters');
+      await expect(embedQueries(makeClient(), makeEmbedder(), ['x'.repeat(MAX_SOURCE_TEXT_LENGTH + 1)]))
+        .to.be.rejectedWith(ValidationError, 'texts[0] must be a non-empty string');
+      const tooMany = Array.from({ length: MAX_QUERY_TEXTS + 1 }, (_, i) => `t${i}`);
+      await expect(embedQueries(makeClient(), makeEmbedder(), tooMany))
+        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} distinct entries (got ${MAX_QUERY_TEXTS + 1})`);
+      for (const timeoutMs of [0, -1, NaN, Infinity, '10']) {
+        // eslint-disable-next-line no-await-in-loop
+        await expect(embedQueries(makeClient(), makeEmbedder(), ['a'], { timeoutMs }))
+          .to.be.rejectedWith(ValidationError, 'timeoutMs must be a positive finite number');
+      }
+    });
+
+    it('accepts MAX_QUERY_TEXTS distinct texts and dedupes repeats before embedding', async () => {
+      const calls = [];
+      const embedder = {
+        createEmbeddings: async (texts) => {
+          calls.push(texts);
+          return texts.map((text) => vec(text === 'a' ? 0.1 : 0.2));
+        },
+      };
+      const out = await embedQueries(makeClient(), embedder, ['A', 'b', ' a ', 'b']);
+      expect(calls).to.deep.equal([['a', 'b']]);
+      expect(out.vectors).to.deep.equal([vec(0.1), vec(0.2), vec(0.1), vec(0.2)]);
+      expect(out).to.include({ hits: 0, misses: 2 });
+      await out.cacheWrites;
+
+      const max = Array.from({ length: MAX_QUERY_TEXTS }, (_, i) => `t${i}`);
+      const full = await embedQueries(makeClient(), makeEmbedder(), [...max, 't0']);
+      expect(full.vectors).to.have.length(MAX_QUERY_TEXTS + 1);
+      expect(full.misses).to.equal(MAX_QUERY_TEXTS);
     });
 
     it('serves hits from the cache, embeds misses, and writes the cache in the background', async () => {
@@ -573,10 +615,18 @@ describe('semantic-index.utils', () => {
       expect(client.calls.upsert).to.have.length(0);
     });
 
-    it('propagates a cache read failure', async () => {
+    it('embeds everything and logs when the cache read fails', async () => {
       const client = makeClient({ selectFn: () => ({ data: null, error: { message: 'x' } }) });
-      await expect(embedQueries(client, makeEmbedder(), ['a']))
-        .to.be.rejectedWith(DataAccessError, 'Failed to read semantic_query_embedding');
+      const embedder = makeEmbedder();
+      const warnings = [];
+      const out = await embedQueries(client, embedder, ['a', 'b'], { log: { warn: (m) => warnings.push(m) } });
+      expect(out.vectors).to.deep.equal([vec(0.1), vec(0.1)]);
+      expect(out).to.include({ hits: 0, misses: 2 });
+      expect(embedder.calls).to.deep.equal([['a', 'b']]);
+      expect(warnings).to.deep.equal([
+        '[semantic-index] getQueryEmbeddings failed (non-fatal): Failed to read semantic_query_embedding',
+      ]);
+      await out.cacheWrites;
     });
 
     it('raises EmbeddingUnavailableError on failure, timeout, or a malformed response', async () => {
@@ -629,20 +679,16 @@ describe('semantic-index.utils', () => {
     name, fn, target, rpc,
   }) => {
     describe(name, () => {
-      const base = {
-        siteId: SITE_ID, model: MODEL, dims: 2,
-      };
-      const vecs = (n) => Array.from({ length: n }, () => [0.1, 0.2]);
-      const call = (over) => fn(makeClient(), { ...base, vectors: [[0.1, 0.2]], ...over });
+      const base = { siteId: SITE_ID };
+      const vecs = (n) => Array.from({ length: n }, () => vec(0.1));
+      const call = (over) => fn(makeClient(), { ...base, vectors: vecs(1), ...over });
       const groupSizes = (client) => client.calls.rpc
         .map((c) => c.params.p_query_embeddings.length);
 
       it('validates args, filters, vectors, k and minScore', async () => {
         await expect(fn(null, base)).to.be.rejectedWith(ValidationError, 'postgrestClient is required');
-        await expect(fn(makeClient())).to.be.rejectedWith(ValidationError, 'siteId is required');
-        await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
-        await expect(call({ model: 'm'.repeat(MAX_MODEL_LENGTH + 1) })).to.be.rejectedWith(ValidationError, 'model must be at most');
-        await expect(call({ dims: 0 })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
+        await expect(fn(makeClient())).to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got undefined)');
+        await expect(call({ siteId: 'site-1' })).to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got "site-1")');
         await expect(call({ matchFieldTypes: 'question' })).to.be.rejectedWith(ValidationError, 'matchFieldTypes must be an array');
         await expect(call({ matchFieldTypes: [''] })).to.be.rejectedWith(ValidationError, 'each matchFieldTypes value must be a non-empty string of at most 64');
         await expect(call({ entityTypes: [42] })).to.be.rejectedWith(ValidationError, 'each entityTypes value must be a non-empty string of at most 255 characters (got 42)');
@@ -658,6 +704,14 @@ describe('semantic-index.utils', () => {
         await expect(call({ k: 1001 })).to.be.rejectedWith(ValidationError, 'k must be');
         await expect(call({ minScore: '0.5' })).to.be.rejectedWith(ValidationError, 'minScore must be a finite number');
         await expect(call({ minScore: NaN })).to.be.rejectedWith(ValidationError, 'minScore must be');
+      });
+
+      it('searches the configured generation, ignoring a caller-supplied model/dims', async () => {
+        const client = makeClient();
+        await fn(client, {
+          ...base, vectors: vecs(1), model: 'other', dims: 2,
+        });
+        expect(client.calls.rpc[0].params).to.include({ p_model: MODEL, p_dims: DIMS });
       });
 
       it('returns [] without calling the RPC for no vectors', async () => {
@@ -693,12 +747,12 @@ describe('semantic-index.utils', () => {
           p_match_field_types: null,
           p_entity_types: null,
           p_model: MODEL,
-          p_dims: 2,
+          p_dims: DIMS,
           p_limit: 10,
           p_min_score: 0,
           p_statuses: null,
         });
-        expect(params.p_query_embeddings).to.deep.equal(['[0.1,0.2]', '[0.1,0.2]']);
+        expect(params.p_query_embeddings).to.deep.equal(vecs(2).map(serializeVector));
       });
 
       it('dedupes filter lists and treats empty lists as no filter', async () => {
@@ -781,9 +835,7 @@ describe('semantic-index.utils', () => {
   });
 
   describe('lookupSuggestionsByTopic status filters', () => {
-    const base = {
-      siteId: SITE_ID, model: MODEL, dims: 2, vectors: [[0.1, 0.2]],
-    };
+    const base = { siteId: SITE_ID, vectors: [vec(0.1)] };
 
     it('validates statuses against Suggestion and opportunityStatuses against Opportunity', async () => {
       const client = makeClient();
@@ -821,6 +873,8 @@ describe('semantic-index.utils', () => {
     it('getQueryEmbeddings validates its inputs', async () => {
       await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], model: 'm'.repeat(MAX_MODEL_LENGTH + 1), dims: 2 }))
+        .to.be.rejectedWith(ValidationError, `model must be at most ${MAX_MODEL_LENGTH} characters`);
       await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], model: MODEL, dims: 1.5 }))
         .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(getQueryEmbeddings(makeClient(), { texts: 'x', ...scope }))

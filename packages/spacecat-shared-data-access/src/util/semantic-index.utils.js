@@ -12,6 +12,8 @@
 
 import { createHash } from 'crypto';
 
+import { isValidUUID } from '@adobe/spacecat-shared-utils';
+
 import { DataAccessError, ValidationError } from '../errors/index.js';
 import Opportunity from '../models/opportunity/opportunity.model.js';
 import Suggestion from '../models/suggestion/suggestion.model.js';
@@ -67,6 +69,9 @@ export const QUERY_HASH_CHUNK_SIZE = 50;
 
 /** Texts per `createEmbeddings` call (Azure accepts up to 2048 inputs per request). */
 export const EMBEDDING_BATCH_SIZE = 256;
+
+/** Max distinct query texts per `embedQueries` call, so its misses fit one embed call. */
+export const MAX_QUERY_TEXTS = EMBEDDING_BATCH_SIZE;
 
 /** Max text length; matches the `text` DB CHECKs. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
@@ -159,6 +164,12 @@ function describeValue(value) {
   return safe.length > MAX_ECHOED_VALUE_LENGTH ? `${safe.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : safe;
 }
 
+function assertUuid(value, name) {
+  if (!isValidUUID(value)) {
+    throw new ValidationError(`${name} must be a valid UUID (got ${describeValue(value)})`);
+  }
+}
+
 function assertBoundedString(value, name, maxLength) {
   if (typeof value !== 'string' || value.length === 0 || value.length > maxLength) {
     throw new ValidationError(
@@ -223,7 +234,7 @@ export function hashText(normalized) {
  * or `null` if unusable.
  *
  * @param {unknown} title - a raw indexed text or query string
- * @param {{ maxLength?: number }} [opts] - max trimmed length (default `MAX_SOURCE_TEXT_LENGTH`)
+ * @param {{ maxLength?: number }} [opts] - max normalized length (default `MAX_SOURCE_TEXT_LENGTH`)
  * @returns {{ text: string, key: string } | null}
  */
 export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {}) {
@@ -231,10 +242,12 @@ export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {
     return null;
   }
   const text = title.trim();
-  if (text.length === 0 || text.length > maxLength) {
+  const key = normalizeText(text);
+  // The normalized key is what gets stored; lowercasing can lengthen a string.
+  if (key.length === 0 || key.length > maxLength) {
     return null;
   }
-  return { text, key: normalizeText(text) };
+  return { text, key };
 }
 
 /** Serialize to the pgvector `[v1,v2,...]` wire format. */
@@ -348,15 +361,14 @@ const groupKey = (entityId, matchType, matchFieldType) => `${entityId}\u0000${ma
 function toGroup({
   entityId, entityType, matchType, matchFieldType, texts,
 }) {
-  assertId(entityId, 'entityId');
+  assertUuid(entityId, 'entityId');
   assertBoundedString(matchFieldType, 'matchFieldType', MAX_MATCH_FIELD_TYPE_LENGTH);
   if (texts !== undefined && texts !== null && !Array.isArray(texts)) {
     throw new ValidationError(`texts must be an array (entity ${entityId}, field ${matchFieldType})`);
   }
   const input = texts ?? [];
-  const keys = [...new Set(input
-    .map((text) => cleanTopicText(text)?.key)
-    .filter((key) => typeof key === 'string'))];
+  const cleaned = input.map((text) => cleanTopicText(text)?.key);
+  const keys = [...new Set(cleaned.filter((key) => typeof key === 'string'))];
   // A non-empty input reduced to nothing is a caller bug, not a request to clear.
   if (input.length > 0 && keys.length === 0) {
     throw new ValidationError(
@@ -367,7 +379,13 @@ function toGroup({
     assertBoundedString(entityType, 'entityType', MAX_ENTITY_TYPE_LENGTH);
   }
   return {
-    entityId, entityType, matchType, matchFieldType, submitted: input.length, keys,
+    entityId,
+    entityType,
+    matchType,
+    matchFieldType,
+    submitted: input.length,
+    rejected: cleaned.filter((key) => key === undefined).length,
+    keys,
   };
 }
 
@@ -529,7 +547,7 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
   assertClient(postgrestClient);
   assertEmbeddingClient(embeddingClient);
   const { table } = resolveTarget(target);
-  assertId(siteId, 'siteId');
+  assertUuid(siteId, 'siteId');
   if (!Array.isArray(entities)) {
     throw new ValidationError('entities must be an array');
   }
@@ -640,6 +658,7 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
     byEntity.get(group.entityId).push({
       matchFieldType: group.matchFieldType,
       submitted: group.submitted,
+      rejected: group.rejected,
       inserted: toInsert.length,
       deleted: staleIds.length,
       unchanged,
@@ -666,12 +685,15 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
  * @param {string} params.target - `SEMANTIC_TARGETS` value (`opportunity` | `suggestion`)
  * @param {string} params.siteId - the site every entity belongs to
  * @param {Array<{entityId: string, entityType: string, fields: Array<{matchFieldType: string,
- *   texts: string[]}>}>} params.entities - `entityType` is free-form (e.g. the opportunity type);
- *   `matchFieldType` is a free-form identifier of the field the texts came from (e.g. `topic`)
+ *   texts: string[]}>}>} params.entities - `entityType` is free-form (e.g. the opportunity type)
+ *   and fixed per entity: unchanged rows keep the one they were written with. `matchFieldType`
+ *   is a free-form identifier of the field the texts came from (e.g. `topic`)
  * @returns {Promise<{entities: Array<{entityId: string, fields: Array<{matchFieldType: string,
- *   submitted: number, inserted: number, deleted: number, unchanged: number}>}>,
+ *   submitted: number, rejected: number, inserted: number, deleted: number,
+ *   unchanged: number}>}>,
  *   embedded: number, cacheHits: number, cacheError?: Error}>} `cacheError` is set when the
- *   query-cache read failed and every new text was embedded instead
+ *   query-cache read failed and every new text was embedded instead; `rejected` counts texts
+ *   dropped as empty or over `MAX_SOURCE_TEXT_LENGTH`
  */
 export function indexSemanticTopics(postgrestClient, embeddingClient, params) {
   return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
@@ -691,18 +713,19 @@ async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
 
 /**
  * Read side: one vector per query text (embedded in normalized form). One batched cache read, then
- * one embed call for the misses within `timeoutMs`. The cache writes (access bump for hits,
- * populate for misses) are best-effort and come back as a promise the caller awaits alongside the
- * search; they never fail the lookup.
+ * one embed call for the distinct misses within `timeoutMs`. A cache read failure only costs extra
+ * embeddings (logged). The cache writes (access bump for hits, populate for misses) are best-effort
+ * and come back as a promise the caller awaits alongside the search; they never fail the lookup.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
- * @param {string[]} texts - query texts; each must normalize to a non-empty string
+ * @param {string[]} texts - query texts; each must be non-empty and at most
+ *   `MAX_SOURCE_TEXT_LENGTH` once normalized, and at most `MAX_QUERY_TEXTS` distinct texts
  * @param {object} [opts]
  * @param {number} [opts.timeoutMs=EMBEDDING_TIMEOUT_MS] - budget for the embed call
- * @param {object} [opts.log] - logger for non-fatal cache write failures
+ * @param {object} [opts.log] - logger for non-fatal cache failures
  * @returns {Promise<{vectors: number[][], cacheWrites: Promise<unknown>, hits: number,
- *   misses: number}>} vectors in `texts` order
+ *   misses: number}>} vectors in `texts` order; `hits` / `misses` count distinct texts
  * @throws {EmbeddingUnavailableError} when the embed call fails, times out, or is malformed
  */
 export async function embedQueries(postgrestClient, embeddingClient, texts, {
@@ -713,19 +736,43 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
   if (!Array.isArray(texts)) {
     throw new ValidationError('texts must be an array');
   }
+  if (typeof timeoutMs !== 'number' || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new ValidationError('timeoutMs must be a positive finite number');
+  }
+  const keys = texts.map((text, i) => {
+    const cleaned = cleanTopicText(text);
+    if (!cleaned) {
+      throw new ValidationError(
+        `texts[${i}] must be a non-empty string of at most ${MAX_SOURCE_TEXT_LENGTH} characters`,
+      );
+    }
+    return cleaned.key;
+  });
+  const distinct = [...new Set(keys)];
+  if (distinct.length > MAX_QUERY_TEXTS) {
+    throw new ValidationError(`texts must have at most ${MAX_QUERY_TEXTS} distinct entries (got ${distinct.length})`);
+  }
   const { model, dims } = SEMANTIC_MATCHING_CONFIG.embedding;
   const cacheKey = { model, dims };
-  const normalized = texts.map((text) => hashQueryText(text).normalized);
+  // warn, not debug: a persistently failing cache turns every repeat query into an embed call.
+  const swallow = (label) => (e) => {
+    log?.warn?.(`[semantic-index] ${label} failed (non-fatal): ${e.message}`);
+  };
 
-  const cached = await getQueryEmbeddings(postgrestClient, { texts: normalized, ...cacheKey });
-  const vectors = cached.map((hit) => (hit?.vector?.length === dims ? hit.vector : null));
-  const missIndexes = [];
-  vectors.forEach((vector, i) => {
-    if (!vector) {
-      missIndexes.push(i);
-    }
-  });
-  const misses = missIndexes.map((i) => normalized[i]);
+  const vectorByKey = new Map();
+  const hitHashes = [];
+  try {
+    const cached = await getQueryEmbeddings(postgrestClient, { texts: distinct, ...cacheKey });
+    cached.forEach((hit, i) => {
+      if (hit?.vector?.length === dims) {
+        vectorByKey.set(distinct[i], hit.vector);
+        hitHashes.push(hit.textHash);
+      }
+    });
+  } catch (e) {
+    swallow('getQueryEmbeddings')(e);
+  }
+  const misses = distinct.filter((key) => !vectorByKey.has(key));
 
   if (misses.length > 0) {
     let embedded;
@@ -735,30 +782,23 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
       throw new EmbeddingUnavailableError(`Embedding call failed: ${e.message}`, { misses: misses.length }, e);
     }
     assertVectors(embedded, misses.length, dims, misses.length);
-    missIndexes.forEach((idx, j) => {
-      vectors[idx] = embedded[j];
-    });
+    misses.forEach((key, i) => vectorByKey.set(key, embedded[i]));
   }
 
-  // warn, not debug: a persistently failing upsert turns every repeat query into an embed call.
-  const swallow = (label) => (e) => {
-    log?.warn?.(`[semantic-index] ${label} failed (non-fatal): ${e.message}`);
-  };
-  const missSet = new Set(missIndexes);
-  const hitHashes = cached
-    .filter((hit, i) => hit && !missSet.has(i))
-    .map((hit) => hit.textHash);
   const cacheWrites = Promise.all([
     touchQueryEmbeddings(postgrestClient, { textHashes: hitHashes, ...cacheKey })
       .catch(swallow('touchQueryEmbeddings')),
     upsertQueryEmbeddings(postgrestClient, {
-      entries: missIndexes.map((idx) => ({ text: normalized[idx], vector: vectors[idx] })),
+      entries: misses.map((key) => ({ text: key, vector: vectorByKey.get(key) })),
       ...cacheKey,
     }).catch(swallow('upsertQueryEmbeddings')),
   ]);
 
   return {
-    vectors, cacheWrites, hits: texts.length - misses.length, misses: misses.length,
+    vectors: keys.map((key) => vectorByKey.get(key)),
+    cacheWrites,
+    hits: distinct.length - misses.length,
+    misses: misses.length,
   };
 }
 
@@ -822,14 +862,11 @@ async function searchByVectors(postgrestClient, target, {
   return results;
 }
 
-function searchCommon(postgrestClient, {
-  siteId, matchFieldTypes, entityTypes, model, dims,
-}) {
+function searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes }) {
   assertClient(postgrestClient);
-  assertId(siteId, 'siteId');
-  assertModel(model);
-  assertDims(dims);
+  assertUuid(siteId, 'siteId');
   return {
+    ...SEMANTIC_MATCHING_CONFIG.embedding,
     matchFieldTypes: toFilterList(matchFieldTypes, 'matchFieldTypes', MAX_MATCH_FIELD_TYPE_LENGTH),
     entityTypes: toFilterList(entityTypes, 'entityTypes', MAX_ENTITY_TYPE_LENGTH),
   };
@@ -845,27 +882,22 @@ function searchCommon(postgrestClient, {
  * @param {string[]} [params.entityTypes] - opportunity types to narrow to; omitted or empty = all
  * @param {string[]} [params.statuses] - opportunity statuses (`Opportunity.STATUSES` values) to
  *   narrow to, applied before `k`; omitted or empty = all
- * @param {number[][]} params.vectors - the query embeddings
- * @param {string} params.model - the model the queries were embedded with
- * @param {number} params.dims - the query embedding dimension
+ * @param {number[][]} params.vectors - the query embeddings (from `embedQueries`); searched in
+ *   the `SEMANTIC_MATCHING_CONFIG.embedding` generation
  * @param {number} [params.k=10] - max opportunities per query
  * @param {number} [params.minScore=0] - cosine-similarity floor
  * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>} one
  *   best-first list per input vector, in input order
  */
 export async function lookupOpportunitiesByTopic(postgrestClient, {
-  siteId, matchFieldTypes, entityTypes, statuses, vectors, model, dims, k = 10, minScore = 0,
+  siteId, matchFieldTypes, entityTypes, statuses, vectors, k = 10, minScore = 0,
 } = {}) {
-  const lists = searchCommon(postgrestClient, {
-    siteId, matchFieldTypes, entityTypes, model, dims,
-  });
+  const common = searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes });
   return searchByVectors(postgrestClient, SEMANTIC_TARGETS.OPPORTUNITY, {
     siteId,
     matchType: SEMANTIC_MATCH_TYPES.TOPIC,
-    ...lists,
+    ...common,
     vectors,
-    model,
-    dims,
     k,
     minScore,
     statusParams: { p_statuses: toStatusList(statuses, 'statuses', Opportunity.STATUSES) },
@@ -881,19 +913,15 @@ export async function lookupOpportunitiesByTopic(postgrestClient, {
  * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
  */
 export async function lookupSuggestionsByTopic(postgrestClient, {
-  siteId, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors, model, dims,
+  siteId, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors,
   k = 10, minScore = 0,
 } = {}) {
-  const lists = searchCommon(postgrestClient, {
-    siteId, matchFieldTypes, entityTypes, model, dims,
-  });
+  const common = searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes });
   return searchByVectors(postgrestClient, SEMANTIC_TARGETS.SUGGESTION, {
     siteId,
     matchType: SEMANTIC_MATCH_TYPES.TOPIC,
-    ...lists,
+    ...common,
     vectors,
-    model,
-    dims,
     k,
     minScore,
     statusParams: {

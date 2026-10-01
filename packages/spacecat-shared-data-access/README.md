@@ -146,7 +146,7 @@ For the topic vector index (`opportunity_semantic_embedding`) and the global que
 
 ```js
 import {
-  syncOpportunitySemantic, copyEntityVectors, lookupOpportunitiesByVectors,
+  syncOpportunitySemantic, lookupOpportunitiesByVectors,
   getQueryEmbeddings, upsertQueryEmbeddings, touchQueryEmbeddings,
   OPPORTUNITY_SEMANTIC_SOURCE_TYPES, OPPORTUNITY_SEMANTIC_ENTITY_TYPES, SEMANTIC_MATCHING_CONFIG,
 } from '@adobe/spacecat-shared-data-access';
@@ -160,9 +160,6 @@ const { CITED_ANALYSIS } = OPPORTUNITY_SEMANTIC_ENTITY_TYPES;
 await syncOpportunitySemantic(postgrestClient, {
   siteId, entityId, entityType: CITED_ANALYSIS, sourceType: TOPIC, sources: [{ text, vector, ...scope }],
 });
-
-// writer: copy an opportunity's vector rows to another opportunity in the same site
-await copyEntityVectors(postgrestClient, { siteId, fromEntityId, toEntityId });
 
 // query cache, batched: one entry per text, in input order (null on a miss)
 const cached = await getQueryEmbeddings(postgrestClient, { texts, ...scope });

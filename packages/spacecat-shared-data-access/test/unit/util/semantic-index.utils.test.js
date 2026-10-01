@@ -440,6 +440,18 @@ describe('semantic-index.utils', () => {
       expect(client.calls.delete).to.have.length(0);
     });
 
+    it('deletes an old-generation row whose text is no longer submitted', async () => {
+      const client = makeClient(byTable({
+        stored: [storedRow('a'), storedRow('gone', { model: 'azure/old-model' })],
+      }));
+      const out = await run(client, { entities: [entity([topicEntry(['a'])])] });
+      expect(out.entities[0].fields[0]).to.include({ inserted: 0, deleted: 1, unchanged: 1 });
+      expect(client.calls.upsert).to.have.length(0);
+      expect(client.calls.delete).to.deep.equal([{
+        table: OPP_TABLE, eqs: { site_id: SITE_ID }, inFilter: { column: 'id', values: ['id-gone'] },
+      }]);
+    });
+
     it('dedupes texts across entities and reuses cached query embeddings', async () => {
       const cachedVector = vec(0.5);
       const client = makeClient(byTable({
@@ -553,7 +565,10 @@ describe('semantic-index.utils', () => {
         .to.be.rejectedWith(ValidationError, 'texts[0] must be a non-empty string');
       const tooMany = Array.from({ length: MAX_QUERY_TEXTS + 1 }, (_, i) => `t${i}`);
       await expect(embedQueries(makeClient(), makeEmbedder(), tooMany))
-        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} distinct entries (got ${MAX_QUERY_TEXTS + 1})`);
+        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} entries (got ${MAX_QUERY_TEXTS + 1})`);
+      // Repeats count too: each entry gets its own vector and search.
+      await expect(embedQueries(makeClient(), makeEmbedder(), Array(MAX_QUERY_TEXTS + 1).fill('same')))
+        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} entries`);
       for (const timeoutMs of [0, -1, NaN, Infinity, '10']) {
         // eslint-disable-next-line no-await-in-loop
         await expect(embedQueries(makeClient(), makeEmbedder(), ['a'], { timeoutMs }))
@@ -561,7 +576,7 @@ describe('semantic-index.utils', () => {
       }
     });
 
-    it('accepts MAX_QUERY_TEXTS distinct texts and dedupes repeats before embedding', async () => {
+    it('accepts MAX_QUERY_TEXTS texts in one embed call and dedupes repeats', async () => {
       const calls = [];
       const embedder = {
         createEmbeddings: async (texts) => {
@@ -576,9 +591,29 @@ describe('semantic-index.utils', () => {
       await out.cacheWrites;
 
       const max = Array.from({ length: MAX_QUERY_TEXTS }, (_, i) => `t${i}`);
-      const full = await embedQueries(makeClient(), makeEmbedder(), [...max, 't0']);
-      expect(full.vectors).to.have.length(MAX_QUERY_TEXTS + 1);
+      const embedder2 = makeEmbedder();
+      const full = await embedQueries(makeClient(), embedder2, max);
+      expect(full.vectors).to.have.length(MAX_QUERY_TEXTS);
       expect(full.misses).to.equal(MAX_QUERY_TEXTS);
+      expect(embedder2.calls).to.have.length(1);
+      expect(embedder2.calls[0]).to.have.length(MAX_QUERY_TEXTS);
+      expect(full).to.not.have.property('cacheError');
+    });
+
+    it('serves repeated cache hits once and fans the vectors back out', async () => {
+      const hit = vec(0.7);
+      const client = makeClient({
+        selectFn: () => ({ data: [{ text_hash: hashText('cached'), embedding: serializeVector(hit) }], error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await embedQueries(client, embedder, ['Cached', 'cached ', 'fresh']);
+      expect(out.vectors).to.deep.equal([hit, hit, vec(0.1)]);
+      expect(out).to.include({ hits: 1, misses: 1 });
+      expect(embedder.calls).to.deep.equal([['fresh']]);
+      await out.cacheWrites;
+      expect(client.calls.update).to.have.length(1);
+      expect(client.calls.update[0].inFilter.values).to.deep.equal([hashText('cached')]);
+      expect(client.calls.upsert[0].rows.map((r) => r.text)).to.deep.equal(['fresh']);
     });
 
     it('serves hits from the cache, embeds misses, and writes the cache in the background', async () => {
@@ -626,6 +661,8 @@ describe('semantic-index.utils', () => {
       expect(warnings).to.deep.equal([
         '[semantic-index] getQueryEmbeddings failed (non-fatal): Failed to read semantic_query_embedding',
       ]);
+      expect(out.cacheError).to.be.instanceOf(DataAccessError);
+      expect(out.cacheError.message).to.equal('Failed to read semantic_query_embedding');
       await out.cacheWrites;
     });
 

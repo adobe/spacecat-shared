@@ -76,9 +76,6 @@ export {
   embedQueries,
   lookupOpportunitiesByTopic,
   lookupSuggestionsByTopic,
-  getQueryEmbeddings,
-  upsertQueryEmbeddings,
-  touchQueryEmbeddings,
 } from '../util/semantic-index.utils.js';
 
 const createPostgrestService = (config, client = undefined) => {

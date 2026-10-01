@@ -167,10 +167,10 @@ const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
 // result: { entities: [{ entityId, fields: [{ matchFieldType, rejected, inserted, deleted, unchanged, ... }] }],
 //           embedded, cacheHits, cacheError? }
 
-// query side: validate (at most MAX_QUERY_TEXTS distinct texts, each up to 2048 chars), read the
+// query side: validate (at most MAX_QUERY_TEXTS texts, each up to 2048 chars once normalized), read the
 // cache (best-effort), embed the distinct misses in one call within a time budget.
 // cacheWrites (touch hits + store misses) is best-effort; await it or hand it to waitUntil.
-const { vectors, cacheWrites } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
+const { vectors, cacheWrites, cacheError } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
 // matchFieldTypes / entityTypes / statuses are optional filters (omitted or [] means no filter).
@@ -191,7 +191,7 @@ The match type (`topic`, later `claim`) is never a parameter: each dimension has
 
 `SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; the writer, `embedQueries` and the lookups read it from there rather than taking it as a parameter. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
 
-The writer reads the query cache but never writes it. The low-level cache helpers (`getQueryEmbeddings`, `upsertQueryEmbeddings`, `touchQueryEmbeddings`) are still exported.
+The writer reads the query cache but never writes it; only `embedQueries` does. The low-level cache helpers are internal, so nothing outside data-access can write vectors that the writer and readers trust.
 
 Calls are grouped internally (embeddings in batches of 256, writes and searches in groups of 20, id/hash reads and deletes in groups of 50), so callers pass whole lists rather than looping per item.
 

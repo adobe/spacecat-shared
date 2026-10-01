@@ -70,8 +70,8 @@ export const QUERY_HASH_CHUNK_SIZE = 50;
 /** Texts per `createEmbeddings` call (Azure accepts up to 2048 inputs per request). */
 export const EMBEDDING_BATCH_SIZE = 256;
 
-/** Max distinct query texts per `embedQueries` call, so its misses fit one embed call. */
-export const MAX_QUERY_TEXTS = EMBEDDING_BATCH_SIZE;
+/** Max query texts per `embedQueries` call; keep <= `EMBEDDING_BATCH_SIZE` (one embed call). */
+export const MAX_QUERY_TEXTS = 256;
 
 /** Max text length; matches the `text` DB CHECKs. */
 export const MAX_SOURCE_TEXT_LENGTH = 2048;
@@ -714,18 +714,20 @@ async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
 /**
  * Read side: one vector per query text (embedded in normalized form). One batched cache read, then
  * one embed call for the distinct misses within `timeoutMs`. A cache read failure only costs extra
- * embeddings (logged). The cache writes (access bump for hits, populate for misses) are best-effort
- * and come back as a promise the caller awaits alongside the search; they never fail the lookup.
+ * embeddings (logged and returned as `cacheError`). The cache writes (access bump for hits,
+ * populate for misses) are best-effort and come back as a promise the caller awaits alongside the
+ * search; they never fail the lookup.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
  * @param {string[]} texts - query texts; each must be non-empty and at most
- *   `MAX_SOURCE_TEXT_LENGTH` once normalized, and at most `MAX_QUERY_TEXTS` distinct texts
+ *   `MAX_SOURCE_TEXT_LENGTH` once normalized; at most `MAX_QUERY_TEXTS` texts
  * @param {object} [opts]
  * @param {number} [opts.timeoutMs=EMBEDDING_TIMEOUT_MS] - budget for the embed call
  * @param {object} [opts.log] - logger for non-fatal cache failures
  * @returns {Promise<{vectors: number[][], cacheWrites: Promise<unknown>, hits: number,
- *   misses: number}>} vectors in `texts` order; `hits` / `misses` count distinct texts
+ *   misses: number, cacheError?: Error}>} vectors in `texts` order; `hits` / `misses` count
+ *   distinct texts
  * @throws {EmbeddingUnavailableError} when the embed call fails, times out, or is malformed
  */
 export async function embedQueries(postgrestClient, embeddingClient, texts, {
@@ -739,19 +741,20 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
   if (typeof timeoutMs !== 'number' || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
     throw new ValidationError('timeoutMs must be a positive finite number');
   }
+  // Total, not distinct: every entry gets a vector and a search, even a repeat.
+  if (texts.length > MAX_QUERY_TEXTS) {
+    throw new ValidationError(`texts must have at most ${MAX_QUERY_TEXTS} entries (got ${texts.length})`);
+  }
   const keys = texts.map((text, i) => {
     const cleaned = cleanTopicText(text);
     if (!cleaned) {
       throw new ValidationError(
-        `texts[${i}] must be a non-empty string of at most ${MAX_SOURCE_TEXT_LENGTH} characters`,
+        `texts[${i}] must be a non-empty string of at most ${MAX_SOURCE_TEXT_LENGTH} characters once normalized`,
       );
     }
     return cleaned.key;
   });
   const distinct = [...new Set(keys)];
-  if (distinct.length > MAX_QUERY_TEXTS) {
-    throw new ValidationError(`texts must have at most ${MAX_QUERY_TEXTS} distinct entries (got ${distinct.length})`);
-  }
   const { model, dims } = SEMANTIC_MATCHING_CONFIG.embedding;
   const cacheKey = { model, dims };
   // warn, not debug: a persistently failing cache turns every repeat query into an embed call.
@@ -761,6 +764,7 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
 
   const vectorByKey = new Map();
   const hitHashes = [];
+  let cacheError;
   try {
     const cached = await getQueryEmbeddings(postgrestClient, { texts: distinct, ...cacheKey });
     cached.forEach((hit, i) => {
@@ -770,6 +774,7 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
       }
     });
   } catch (e) {
+    cacheError = e;
     swallow('getQueryEmbeddings')(e);
   }
   const misses = distinct.filter((key) => !vectorByKey.has(key));
@@ -799,6 +804,7 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
     cacheWrites,
     hits: distinct.length - misses.length,
     misses: misses.length,
+    ...(cacheError && { cacheError }),
   };
 }
 

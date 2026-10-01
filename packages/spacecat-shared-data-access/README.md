@@ -146,26 +146,25 @@ For the vector indexes (`opportunity_semantic_embedding`, `suggestion_semantic_e
 
 ```js
 import {
-  indexSemanticTexts, embedQueries,
-  lookupOpportunitiesByVectors, lookupSuggestionsByVectors,
-  SEMANTIC_TARGETS, SEMANTIC_MATCH_TYPES, SEMANTIC_MATCHING_CONFIG,
+  indexSemanticTopics, embedQueries,
+  lookupOpportunitiesByTopic, lookupSuggestionsByTopic,
+  SEMANTIC_TARGETS, SEMANTIC_MATCHING_CONFIG,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
-const { TOPIC } = SEMANTIC_MATCH_TYPES;
 
-// writer (needs the postgrest_writer role): full-replace each (entity, matchType, matchFieldType)
-// group in one call. Unchanged texts are kept, new ones embedded in batches (cache-first),
-// stale ones deleted; groups not listed are left alone. texts: [] clears a group.
-const result = await indexSemanticTexts(postgrestClient, embeddingClient, {
+// writer (needs the postgrest_writer role): full-replace each (entity, matchFieldType) topic group
+// in one call. Unchanged texts are kept, new ones embedded in batches (cache-first), stale ones
+// deleted; fields not listed are left alone. texts: [] clears a field.
+const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
   target: SEMANTIC_TARGETS.OPPORTUNITY, // or SEMANTIC_TARGETS.SUGGESTION
   siteId,
   entities: [{
     entityId, entityType: 'cited-analysis',
-    entries: [{ matchType: TOPIC, matchFieldType: 'title', texts: ['running shoes'] }],
+    fields: [{ matchFieldType: 'topic', texts: ['running shoes'] }],
   }],
 });
-// result: { entities: [{ entityId, entries: [{ ..., inserted, deleted, unchanged }] }],
+// result: { entities: [{ entityId, fields: [{ matchFieldType, inserted, deleted, unchanged, ... }] }],
 //           embedded, cacheHits, cacheError? }
 
 // query side: normalize, read the cache, embed the misses within a time budget.
@@ -173,22 +172,21 @@ const result = await indexSemanticTexts(postgrestClient, embeddingClient, {
 const { vectors, cacheWrites } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
-// matchType is required; matchFieldTypes / entityTypes / statuses are optional filters
-// (omitted or [] means no filter). statuses is applied before k, so filtered-out rows never
-// take result slots.
+// matchFieldTypes / entityTypes / statuses are optional filters (omitted or [] means no filter).
+// statuses is applied before k, so filtered-out rows never take result slots.
 const scope = { ...SEMANTIC_MATCHING_CONFIG.embedding }; // { model, dims }
-const opportunities = await lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, matchType: TOPIC, matchFieldTypes: ['title'], entityTypes: ['cited-analysis'],
+const opportunities = await lookupOpportunitiesByTopic(postgrestClient, {
+  siteId, matchFieldTypes: ['topic'], entityTypes: ['cited-analysis'],
   statuses: ['NEW', 'IN_PROGRESS'], vectors, k: 10, minScore: 0.5, ...scope,
 });
 // suggestions: entityTypes are parent opportunity types, statuses are Suggestion.STATUSES,
 // opportunityStatuses filter on the parent opportunity.
-const suggestions = await lookupSuggestionsByVectors(postgrestClient, {
-  siteId, matchType: TOPIC, opportunityStatuses: ['NEW'], vectors, ...scope,
+const suggestions = await lookupSuggestionsByTopic(postgrestClient, {
+  siteId, opportunityStatuses: ['NEW'], vectors, ...scope,
 });
 ```
 
-`matchType` is one of `SEMANTIC_MATCH_TYPES` (`topic`, `claim`). `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
+The match type (`topic`, later `claim`) is never a parameter: each dimension has its own writer and readers (`...Topics` / `...ByTopic`), which set `match_type` internally. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
 `SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
 

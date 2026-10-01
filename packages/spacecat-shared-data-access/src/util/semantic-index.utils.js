@@ -28,8 +28,8 @@ import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
  * lookups.
  */
 
-/** Which lookup an indexed row serves; the endpoint picks it, callers never do. */
-export const SEMANTIC_MATCH_TYPES = Object.freeze({
+// Which lookup an indexed row serves. Set by the dimension functions below, never by callers.
+const SEMANTIC_MATCH_TYPES = Object.freeze({
   TOPIC: 'topic',
   CLAIM: 'claim',
 });
@@ -164,13 +164,6 @@ function assertBoundedString(value, name, maxLength) {
     throw new ValidationError(
       `${name} must be a non-empty string of at most ${maxLength} characters (got ${describeValue(value)})`,
     );
-  }
-}
-
-function assertMatchType(value) {
-  const allowed = Object.values(SEMANTIC_MATCH_TYPES);
-  if (!allowed.includes(value)) {
-    throw new ValidationError(`matchType must be one of: ${allowed.join(', ')} (got ${describeValue(value)})`);
   }
 }
 
@@ -356,10 +349,9 @@ function toGroup({
   entityId, entityType, matchType, matchFieldType, texts,
 }) {
   assertId(entityId, 'entityId');
-  assertMatchType(matchType);
   assertBoundedString(matchFieldType, 'matchFieldType', MAX_MATCH_FIELD_TYPE_LENGTH);
   if (texts !== undefined && texts !== null && !Array.isArray(texts)) {
-    throw new ValidationError(`texts must be an array (entity ${entityId}, ${matchType}/${matchFieldType})`);
+    throw new ValidationError(`texts must be an array (entity ${entityId}, field ${matchFieldType})`);
   }
   const input = texts ?? [];
   const keys = [...new Set(input
@@ -368,7 +360,7 @@ function toGroup({
   // A non-empty input reduced to nothing is a caller bug, not a request to clear.
   if (input.length > 0 && keys.length === 0) {
     throw new ValidationError(
-      `texts contained no valid entries; pass [] to clear ${matchType}/${matchFieldType} for entity ${entityId}`,
+      `texts contained no valid entries; pass [] to clear field ${matchFieldType} for entity ${entityId}`,
     );
   }
   if (keys.length > 0) {
@@ -531,31 +523,7 @@ export async function touchQueryEmbeddings(postgrestClient, { textHashes, model,
   }
 }
 
-/**
- * Batched writer: full-replaces many entities' indexed texts in one pass, embedding only what is
- * new. Per (entity, matchType, matchFieldType): texts already stored keep their row and vector,
- * new texts are reused from `semantic_query_embedding` when cached (read-only) and otherwise
- * embedded in one batched call shared by all entities, and rows no longer submitted are deleted.
- * An empty `texts` clears that group; groups not submitted are left untouched.
- *
- * Every input is validated and every vector resolved before the first write, so a validation or
- * embedding failure writes nothing. Writes are not atomic across chunks; a retry is safe. Same
- * single-writer caveat as the URL index. Requires the `postgrest_writer` role.
- *
- * @param {object} postgrestClient - `@supabase/postgrest-js` client
- * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
- * @param {object} params
- * @param {string} params.target - `SEMANTIC_TARGETS` value (`opportunity` | `suggestion`)
- * @param {string} params.siteId - the site every entity belongs to
- * @param {Array<{entityId: string, entityType: string, entries: Array<{matchType: string,
- *   matchFieldType: string, texts: string[]}>}>} params.entities - `entityType` is free-form
- *   (e.g. the opportunity type); `matchType` is a `SEMANTIC_MATCH_TYPES` value; `matchFieldType`
- *   is a free-form field identifier (e.g. `topic`, `title`)
- * @returns {Promise<{entities: Array<{entityId: string, entries: Array<{matchType: string,
- *   matchFieldType: string, submitted: number, inserted: number, deleted: number,
- *   unchanged: number}>}>, embedded: number, cacheHits: number, cacheError?: Error}>}
- */
-export async function indexSemanticTexts(postgrestClient, embeddingClient, {
+async function indexSemanticMatches(postgrestClient, embeddingClient, matchType, {
   target, siteId, entities,
 } = {}) {
   assertClient(postgrestClient);
@@ -570,15 +538,17 @@ export async function indexSemanticTexts(postgrestClient, embeddingClient, {
   const groups = [];
   const seenGroups = new Set();
   for (const entity of entities) {
-    if (!Array.isArray(entity?.entries)) {
-      throw new ValidationError(`entries must be an array (entity ${describeValue(entity?.entityId)})`);
+    if (!Array.isArray(entity?.fields)) {
+      throw new ValidationError(`fields must be an array (entity ${describeValue(entity?.entityId)})`);
     }
-    for (const entry of entity.entries) {
-      const group = toGroup({ ...entry, entityId: entity.entityId, entityType: entity.entityType });
-      const key = groupKey(group.entityId, group.matchType, group.matchFieldType);
+    for (const field of entity.fields) {
+      const group = toGroup({
+        ...field, matchType, entityId: entity.entityId, entityType: entity.entityType,
+      });
+      const key = groupKey(group.entityId, matchType, group.matchFieldType);
       if (seenGroups.has(key)) {
         throw new ValidationError(
-          `duplicate entry ${group.matchType}/${group.matchFieldType} for entity ${group.entityId}`,
+          `duplicate matchFieldType ${group.matchFieldType} for entity ${group.entityId}`,
         );
       }
       seenGroups.add(key);
@@ -591,7 +561,7 @@ export async function indexSemanticTexts(postgrestClient, embeddingClient, {
   }
   const details = { table, siteId };
 
-  // Stored rows of the submitted groups only: other (matchType, matchFieldType)s stay as they are.
+  // Stored rows of the submitted groups only: other match and field types stay as they are.
   const entityIds = [...new Set(groups.map((g) => g.entityId))];
   const storedByGroup = new Map();
   for (const row of await fetchStoredRows(postgrestClient, table, siteId, entityIds, details)) {
@@ -665,7 +635,6 @@ export async function indexSemanticTexts(postgrestClient, embeddingClient, {
       byEntity.set(group.entityId, []);
     }
     byEntity.get(group.entityId).push({
-      matchType: group.matchType,
       matchFieldType: group.matchFieldType,
       submitted: group.submitted,
       inserted: toInsert.length,
@@ -673,8 +642,36 @@ export async function indexSemanticTexts(postgrestClient, embeddingClient, {
       unchanged,
     });
   }
-  result.entities = [...byEntity.entries()].map(([entityId, entries]) => ({ entityId, entries }));
+  result.entities = [...byEntity.entries()].map(([entityId, fields]) => ({ entityId, fields }));
   return result;
+}
+
+/**
+ * Batched topic writer: full-replaces many entities' topic texts in one pass, embedding only what
+ * is new. Per (entity, matchFieldType): texts already stored keep their row and vector, new texts
+ * are reused from `semantic_query_embedding` when cached (read-only) and otherwise embedded in
+ * batched calls shared by all entities, and rows no longer submitted are deleted. An empty `texts`
+ * clears that field; fields not submitted, and other match types, are left untouched.
+ *
+ * Every input is validated and every vector resolved before the first write, so a validation or
+ * embedding failure writes nothing. Writes are not atomic across chunks; a retry is safe. Same
+ * single-writer caveat as the URL index. Requires the `postgrest_writer` role.
+ *
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
+ * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
+ * @param {object} params
+ * @param {string} params.target - `SEMANTIC_TARGETS` value (`opportunity` | `suggestion`)
+ * @param {string} params.siteId - the site every entity belongs to
+ * @param {Array<{entityId: string, entityType: string, fields: Array<{matchFieldType: string,
+ *   texts: string[]}>}>} params.entities - `entityType` is free-form (e.g. the opportunity type);
+ *   `matchFieldType` is a free-form identifier of the field the texts came from (e.g. `topic`)
+ * @returns {Promise<{entities: Array<{entityId: string, fields: Array<{matchFieldType: string,
+ *   submitted: number, inserted: number, deleted: number, unchanged: number}>}>,
+ *   embedded: number, cacheHits: number, cacheError?: Error}>} `cacheError` is set when the
+ *   query-cache read failed and every new text was embedded instead
+ */
+export function indexSemanticTopics(postgrestClient, embeddingClient, params) {
+  return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
 }
 
 async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
@@ -823,11 +820,10 @@ async function searchByVectors(postgrestClient, target, {
 }
 
 function searchCommon(postgrestClient, {
-  siteId, matchType, matchFieldTypes, entityTypes, model, dims,
+  siteId, matchFieldTypes, entityTypes, model, dims,
 }) {
   assertClient(postgrestClient);
   assertId(siteId, 'siteId');
-  assertMatchType(matchType);
   assertModel(model);
   assertDims(dims);
   return {
@@ -837,12 +833,11 @@ function searchCommon(postgrestClient, {
 }
 
 /**
- * Nearest-neighbour search of the opportunity index for many query vectors.
+ * Nearest-neighbour topic search of the opportunity index for many query vectors.
  *
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {object} params
  * @param {string} params.siteId - the site to scope the search to
- * @param {string} params.matchType - `SEMANTIC_MATCH_TYPES` value (set by the endpoint)
  * @param {string[]} [params.matchFieldTypes] - field types to narrow to; omitted or empty = all
  * @param {string[]} [params.entityTypes] - opportunity types to narrow to; omitted or empty = all
  * @param {string[]} [params.statuses] - opportunity statuses (`Opportunity.STATUSES` values) to
@@ -855,16 +850,15 @@ function searchCommon(postgrestClient, {
  * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>} one
  *   best-first list per input vector, in input order
  */
-export async function lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, matchType, matchFieldTypes, entityTypes, statuses, vectors, model, dims,
-  k = 10, minScore = 0,
+export async function lookupOpportunitiesByTopic(postgrestClient, {
+  siteId, matchFieldTypes, entityTypes, statuses, vectors, model, dims, k = 10, minScore = 0,
 } = {}) {
   const lists = searchCommon(postgrestClient, {
-    siteId, matchType, matchFieldTypes, entityTypes, model, dims,
+    siteId, matchFieldTypes, entityTypes, model, dims,
   });
   return searchByVectors(postgrestClient, SEMANTIC_TARGETS.OPPORTUNITY, {
     siteId,
-    matchType,
+    matchType: SEMANTIC_MATCH_TYPES.TOPIC,
     ...lists,
     vectors,
     model,
@@ -876,23 +870,23 @@ export async function lookupOpportunitiesByVectors(postgrestClient, {
 }
 
 /**
- * Nearest-neighbour search of the suggestion index for many query vectors. Same contract as
- * `lookupOpportunitiesByVectors`; `entityTypes` are parent opportunity types, `statuses` are
+ * Nearest-neighbour topic search of the suggestion index for many query vectors. Same contract as
+ * `lookupOpportunitiesByTopic`; `entityTypes` are parent opportunity types, `statuses` are
  * `Suggestion.STATUSES` values and `opportunityStatuses` are the parent opportunity's
  * (`Opportunity.STATUSES`), both applied before `k`.
  *
  * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
  */
-export async function lookupSuggestionsByVectors(postgrestClient, {
-  siteId, matchType, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors, model,
-  dims, k = 10, minScore = 0,
+export async function lookupSuggestionsByTopic(postgrestClient, {
+  siteId, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors, model, dims,
+  k = 10, minScore = 0,
 } = {}) {
   const lists = searchCommon(postgrestClient, {
-    siteId, matchType, matchFieldTypes, entityTypes, model, dims,
+    siteId, matchFieldTypes, entityTypes, model, dims,
   });
   return searchByVectors(postgrestClient, SEMANTIC_TARGETS.SUGGESTION, {
     siteId,
-    matchType,
+    matchType: SEMANTIC_MATCH_TYPES.TOPIC,
     ...lists,
     vectors,
     model,

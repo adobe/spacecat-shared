@@ -52,7 +52,6 @@ export * from '../models/index.js';
 export * from '../util/index.js';
 // Not in util/index.js: semantic-index imports the Opportunity model, which imports util/index.js.
 export {
-  SEMANTIC_MATCH_TYPES,
   SEMANTIC_TARGETS,
   SEMANTIC_INDEX_TABLES,
   SEMANTIC_SEARCH_RPCS,
@@ -72,10 +71,10 @@ export {
   cleanTopicText,
   serializeVector,
   parseVector,
-  indexSemanticTexts,
+  indexSemanticTopics,
   embedQueries,
-  lookupOpportunitiesByVectors,
-  lookupSuggestionsByVectors,
+  lookupOpportunitiesByTopic,
+  lookupSuggestionsByTopic,
   getQueryEmbeddings,
   upsertQueryEmbeddings,
   touchQueryEmbeddings,

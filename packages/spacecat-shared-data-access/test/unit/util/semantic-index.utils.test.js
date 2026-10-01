@@ -21,9 +21,9 @@ import {
   EmbeddingUnavailableError,
   getQueryEmbeddings,
   hashText,
-  indexSemanticTexts,
-  lookupOpportunitiesByVectors,
-  lookupSuggestionsByVectors,
+  indexSemanticTopics,
+  lookupOpportunitiesByTopic,
+  lookupSuggestionsByTopic,
   MAX_MODEL_LENGTH,
   MAX_SOURCE_TEXT_LENGTH,
   MAX_TYPE_FILTER_ITEMS,
@@ -32,7 +32,6 @@ import {
   QUERY_EMBEDDING_TABLE,
   SEMANTIC_CHUNK_SIZE,
   SEMANTIC_INDEX_TABLES,
-  SEMANTIC_MATCH_TYPES,
   SEMANTIC_MATCHING_CONFIG,
   SEMANTIC_SEARCH_RPCS,
   SEMANTIC_TARGETS,
@@ -47,7 +46,7 @@ const SITE_ID = 'site-1';
 const ENTITY_ID = 'oppty-1';
 const ENTITY_TYPE = 'cited-analysis';
 const FIELD = 'title';
-const { TOPIC, CLAIM } = SEMANTIC_MATCH_TYPES;
+const TOPIC = 'topic';
 const OPP_TABLE = 'opportunity_semantic_embedding';
 const SUG_TABLE = 'suggestion_semantic_embedding';
 const OPP_RPC = 'rpc_opportunity_semantic_search';
@@ -181,9 +180,7 @@ function makeClient(config = {}) {
 describe('semantic-index.utils', () => {
   describe('constants and pure helpers', () => {
     it('exposes match types, targets, tables and RPCs', () => {
-      expect(SEMANTIC_MATCH_TYPES).to.deep.equal({ TOPIC: 'topic', CLAIM: 'claim' });
       expect(SEMANTIC_TARGETS).to.deep.equal({ OPPORTUNITY: 'opportunity', SUGGESTION: 'suggestion' });
-      expect(Object.isFrozen(SEMANTIC_MATCH_TYPES)).to.equal(true);
       expect(Object.isFrozen(SEMANTIC_TARGETS)).to.equal(true);
       expect(SEMANTIC_INDEX_TABLES).to.deep.equal([OPP_TABLE, SUG_TABLE]);
       expect(SEMANTIC_SEARCH_RPCS).to.deep.equal({ opportunity: OPP_RPC, suggestion: SUG_RPC });
@@ -248,14 +245,12 @@ describe('semantic-index.utils', () => {
     });
   });
 
-  describe('indexSemanticTexts', () => {
-    const entity = (entries, over = {}) => ({
-      entityId: ENTITY_ID, entityType: ENTITY_TYPE, entries, ...over,
+  describe('indexSemanticTopics', () => {
+    const entity = (fields, over = {}) => ({
+      entityId: ENTITY_ID, entityType: ENTITY_TYPE, fields, ...over,
     });
-    const topicEntry = (texts, matchFieldType = FIELD) => ({
-      matchType: TOPIC, matchFieldType, texts,
-    });
-    const run = (client, over = {}, embedder = makeEmbedder()) => indexSemanticTexts(
+    const topicEntry = (texts, matchFieldType = FIELD) => ({ matchFieldType, texts });
+    const run = (client, over = {}, embedder = makeEmbedder()) => indexSemanticTopics(
       client,
       embedder,
       {
@@ -279,11 +274,11 @@ describe('semantic-index.utils', () => {
 
     it('validates its arguments', async () => {
       const embedder = makeEmbedder();
-      await expect(indexSemanticTexts(null, embedder, {}))
+      await expect(indexSemanticTopics(null, embedder, {}))
         .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
-      await expect(indexSemanticTexts(makeClient(), {}, {}))
+      await expect(indexSemanticTopics(makeClient(), {}, {}))
         .to.be.rejectedWith(ValidationError, 'embeddingClient with createEmbeddings() is required');
-      await expect(indexSemanticTexts(makeClient(), embedder))
+      await expect(indexSemanticTopics(makeClient(), embedder))
         .to.be.rejectedWith(ValidationError, 'target must be one of: opportunity, suggestion (got undefined)');
       await expect(run(makeClient(), { target: 'toString' }))
         .to.be.rejectedWith(ValidationError, 'target must be one of');
@@ -292,26 +287,24 @@ describe('semantic-index.utils', () => {
       await expect(run(makeClient(), { entities: 'x' }))
         .to.be.rejectedWith(ValidationError, 'entities must be an array');
       await expect(run(makeClient(), { entities: [null] }))
-        .to.be.rejectedWith(ValidationError, 'entries must be an array (entity undefined)');
+        .to.be.rejectedWith(ValidationError, 'fields must be an array (entity undefined)');
       await expect(run(makeClient(), { entities: [{ entityId: ENTITY_ID }] }))
-        .to.be.rejectedWith(ValidationError, `entries must be an array (entity "${ENTITY_ID}")`);
+        .to.be.rejectedWith(ValidationError, `fields must be an array (entity "${ENTITY_ID}")`);
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityId: '' })] }))
         .to.be.rejectedWith(ValidationError, 'entityId is required');
-      await expect(run(makeClient(), { entities: [entity([{ matchType: 'x', matchFieldType: FIELD, texts: [] }])] }))
-        .to.be.rejectedWith(ValidationError, 'matchType must be one of: topic, claim (got "x")');
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], '')])] }))
         .to.be.rejectedWith(ValidationError, 'matchFieldType must be a non-empty string of at most 64 characters');
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], 'x'.repeat(65))])] }))
         .to.be.rejectedWith(ValidationError, 'matchFieldType must be');
       await expect(run(makeClient(), { entities: [entity([topicEntry('a')])] }))
-        .to.be.rejectedWith(ValidationError, `texts must be an array (entity ${ENTITY_ID}, topic/${FIELD})`);
+        .to.be.rejectedWith(ValidationError, `texts must be an array (entity ${ENTITY_ID}, field ${FIELD})`);
       await expect(run(makeClient(), { entities: [entity([topicEntry(['  ', 42])])] }))
-        .to.be.rejectedWith(ValidationError, `texts contained no valid entries; pass [] to clear topic/${FIELD}`);
+        .to.be.rejectedWith(ValidationError, `texts contained no valid entries; pass [] to clear field ${FIELD}`);
       await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityType: undefined })] }))
         .to.be.rejectedWith(ValidationError, 'entityType must be a non-empty string of at most 255 characters');
       await expect(run(makeClient(), {
         entities: [entity([topicEntry(['a']), topicEntry(['b'])])],
-      })).to.be.rejectedWith(ValidationError, `duplicate entry topic/${FIELD} for entity ${ENTITY_ID}`);
+      })).to.be.rejectedWith(ValidationError, `duplicate matchFieldType ${FIELD} for entity ${ENTITY_ID}`);
     });
 
     it('renders unprintable, circular and long values safely in messages', async () => {
@@ -344,8 +337,7 @@ describe('semantic-index.utils', () => {
       expect(out).to.deep.equal({
         entities: [{
           entityId: ENTITY_ID,
-          entries: [{
-            matchType: TOPIC,
+          fields: [{
             matchFieldType: FIELD,
             submitted: 4,
             inserted: 2,
@@ -392,7 +384,7 @@ describe('semantic-index.utils', () => {
       const embedder = makeEmbedder();
       const out = await run(client, { entities: [entity([topicEntry(['Running Shoes', 'boots'])])] }, embedder);
 
-      expect(out.entities[0].entries[0]).to.include({ inserted: 1, deleted: 1, unchanged: 1 });
+      expect(out.entities[0].fields[0]).to.include({ inserted: 1, deleted: 1, unchanged: 1 });
       expect(embedder.calls).to.deep.equal([['boots']]);
       expect(client.calls.upsert[0].rows.map((r) => r.text)).to.deep.equal(['boots']);
       expect(client.calls.delete).to.deep.equal([{
@@ -404,8 +396,8 @@ describe('semantic-index.utils', () => {
       const client = makeClient(byTable({ stored: [storedRow('a'), storedRow('b')] }));
       const embedder = makeEmbedder();
       const out = await run(client, { entities: [entity([topicEntry([])]), entity([topicEntry(null)], { entityId: 'oppty-2' })] }, embedder);
-      expect(out.entities.map((e) => e.entries[0].deleted)).to.deep.equal([2, 0]);
-      expect(out.entities[1].entries[0].submitted).to.equal(0);
+      expect(out.entities.map((e) => e.fields[0].deleted)).to.deep.equal([2, 0]);
+      expect(out.entities[1].fields[0].submitted).to.equal(0);
       expect(embedder.calls).to.have.length(0);
       expect(client.calls.upsert).to.have.length(0);
       const cacheReads = client.calls.select.filter((c) => c.table === QUERY_EMBEDDING_TABLE);
@@ -416,7 +408,7 @@ describe('semantic-index.utils', () => {
     it('is a no-op write when everything is unchanged', async () => {
       const client = makeClient(byTable({ stored: [storedRow('a')] }));
       const out = await run(client, { entities: [entity([topicEntry(['A'])])] });
-      expect(out.entities[0].entries[0]).to.include({ inserted: 0, deleted: 0, unchanged: 1 });
+      expect(out.entities[0].fields[0]).to.include({ inserted: 0, deleted: 0, unchanged: 1 });
       expect(client.calls.upsert).to.have.length(0);
       expect(client.calls.delete).to.have.length(0);
     });
@@ -433,7 +425,7 @@ describe('semantic-index.utils', () => {
       const out = await run(client, {
         entities: [
           entity([topicEntry(['Shared', 'short'])]),
-          entity([topicEntry(['shared']), { matchType: 'claim', matchFieldType: 'quote', texts: ['fresh'] }], { entityId: 'oppty-2' }),
+          entity([topicEntry(['shared']), { matchFieldType: 'quote', texts: ['fresh'] }], { entityId: 'oppty-2' }),
         ],
       }, embedder);
 
@@ -446,7 +438,7 @@ describe('semantic-index.utils', () => {
       expect(rows).to.have.length(4);
       expect(rows.filter((r) => r.text === 'shared').map((r) => r.embedding))
         .to.deep.equal([serializeVector(cachedVector), serializeVector(cachedVector)]);
-      expect(out.entities.map((e) => e.entries.length)).to.deep.equal([1, 2]);
+      expect(out.entities.map((e) => e.fields.length)).to.deep.equal([1, 2]);
       // The writer never writes the query cache.
       expect(client.calls.upsert.every((c) => c.table === OPP_TABLE)).to.equal(true);
     });
@@ -484,7 +476,7 @@ describe('semantic-index.utils', () => {
       const out = await run(client, { entities });
       expect(client.calls.select.map((c) => [c.inFilter.values.length, c.range[0]]))
         .to.deep.equal([[50, 0], [50, 1000], [1, 0]]);
-      expect(out.entities[0].entries[0].deleted).to.equal(1000);
+      expect(out.entities[0].fields[0].deleted).to.equal(1000);
       const deleteSizes = client.calls.delete.map((c) => c.inFilter.values.length);
       expect(deleteSizes).to.deep.equal(Array(20).fill(50));
     });
@@ -611,10 +603,10 @@ describe('semantic-index.utils', () => {
 
   const lookups = [
     {
-      name: 'lookupOpportunitiesByVectors', fn: lookupOpportunitiesByVectors, target: 'opportunity', rpc: OPP_RPC,
+      name: 'lookupOpportunitiesByTopic', fn: lookupOpportunitiesByTopic, target: 'opportunity', rpc: OPP_RPC,
     },
     {
-      name: 'lookupSuggestionsByVectors', fn: lookupSuggestionsByVectors, target: 'suggestion', rpc: SUG_RPC,
+      name: 'lookupSuggestionsByTopic', fn: lookupSuggestionsByTopic, target: 'suggestion', rpc: SUG_RPC,
     },
   ];
 
@@ -623,7 +615,7 @@ describe('semantic-index.utils', () => {
   }) => {
     describe(name, () => {
       const base = {
-        siteId: SITE_ID, matchType: TOPIC, model: MODEL, dims: 2,
+        siteId: SITE_ID, model: MODEL, dims: 2,
       };
       const vecs = (n) => Array.from({ length: n }, () => [0.1, 0.2]);
       const call = (over) => fn(makeClient(), { ...base, vectors: [[0.1, 0.2]], ...over });
@@ -633,8 +625,6 @@ describe('semantic-index.utils', () => {
       it('validates args, filters, vectors, k and minScore', async () => {
         await expect(fn(null, base)).to.be.rejectedWith(ValidationError, 'postgrestClient is required');
         await expect(fn(makeClient())).to.be.rejectedWith(ValidationError, 'siteId is required');
-        await expect(call({ matchType: undefined })).to.be.rejectedWith(ValidationError, 'matchType must be one of');
-        await expect(call({ matchType: 'TOPIC' })).to.be.rejectedWith(ValidationError, '(got "TOPIC")');
         await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
         await expect(call({ model: 'm'.repeat(MAX_MODEL_LENGTH + 1) })).to.be.rejectedWith(ValidationError, 'model must be at most');
         await expect(call({ dims: 0 })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
@@ -775,36 +765,36 @@ describe('semantic-index.utils', () => {
     });
   });
 
-  describe('lookupSuggestionsByVectors status filters', () => {
+  describe('lookupSuggestionsByTopic status filters', () => {
     const base = {
-      siteId: SITE_ID, matchType: CLAIM, model: MODEL, dims: 2, vectors: [[0.1, 0.2]],
+      siteId: SITE_ID, model: MODEL, dims: 2, vectors: [[0.1, 0.2]],
     };
 
     it('validates statuses against Suggestion and opportunityStatuses against Opportunity', async () => {
       const client = makeClient();
-      await lookupSuggestionsByVectors(client, {
+      await lookupSuggestionsByTopic(client, {
         ...base, statuses: ['APPROVED', 'NEW'], opportunityStatuses: ['NEW', 'NEW'],
       });
       expect(client.calls.rpc[0].params).to.deep.include({
         p_statuses: ['APPROVED', 'NEW'], p_opportunity_statuses: ['NEW'],
       });
-      await expect(lookupOpportunitiesByVectors(makeClient(), { ...base, statuses: ['APPROVED'] }))
+      await expect(lookupOpportunitiesByTopic(makeClient(), { ...base, statuses: ['APPROVED'] }))
         .to.be.rejectedWith(ValidationError, 'statuses must only contain');
-      await expect(lookupSuggestionsByVectors(makeClient(), { ...base, opportunityStatuses: ['APPROVED'] }))
+      await expect(lookupSuggestionsByTopic(makeClient(), { ...base, opportunityStatuses: ['APPROVED'] }))
         .to.be.rejectedWith(ValidationError, 'opportunityStatuses must only contain');
     });
 
     it('omits both status filters when not given', async () => {
       const client = makeClient();
-      await lookupSuggestionsByVectors(client, base);
+      await lookupSuggestionsByTopic(client, base);
       expect(client.calls.rpc[0].params)
         .to.include({ p_statuses: null, p_opportunity_statuses: null });
-      expect(client.calls.rpc[0].params.p_match_type).to.equal(CLAIM);
+      expect(client.calls.rpc[0].params.p_match_type).to.equal(TOPIC);
     });
 
     it('does not send p_opportunity_statuses for opportunities', async () => {
       const client = makeClient();
-      await lookupOpportunitiesByVectors(client, base);
+      await lookupOpportunitiesByTopic(client, base);
       expect(client.calls.rpc[0].params).to.not.have.property('p_opportunity_statuses');
     });
   });

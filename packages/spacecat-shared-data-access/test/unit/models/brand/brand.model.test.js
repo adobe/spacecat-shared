@@ -112,4 +112,28 @@ describe('BrandModel', () => {
       expect(Brand.STATUSES).to.include('pending');
     });
   });
+
+  describe('PROVISIONING_STATUSES', () => {
+    // Structural contract only — deep-equality against a re-declared literal
+    // would just mirror the source and could never fail independently.
+    it('is a frozen, non-empty list of unique non-empty strings', () => {
+      expect(Brand.PROVISIONING_STATUSES).to.be.an('array').that.is.not.empty;
+      expect(Object.isFrozen(Brand.PROVISIONING_STATUSES)).to.be.true;
+      expect(Brand.PROVISIONING_STATUSES.every((s) => typeof s === 'string' && s.length > 0))
+        .to.be.true;
+      expect(new Set(Brand.PROVISIONING_STATUSES).size)
+        .to.equal(Brand.PROVISIONING_STATUSES.length);
+    });
+
+    it('is a distinct axis from STATUSES (the shared "pending" label is coincidental)', () => {
+      expect(Brand.PROVISIONING_STATUSES).to.not.equal(Brand.STATUSES);
+      expect(Brand.PROVISIONING_STATUSES).to.include('pending');
+      expect(Brand.PROVISIONING_STATUSES).to.include('ready');
+      expect(Brand.PROVISIONING_STATUSES).to.include('failed');
+      // 'ready'/'failed' are meaningless on the brand-lifecycle axis, and
+      // STATUSES' 'active'/'deleted'/'ignored' are meaningless on this one —
+      // pins that the two enums are not accidentally kept in sync.
+      expect(Brand.STATUSES).to.not.include('ready');
+    });
+  });
 });

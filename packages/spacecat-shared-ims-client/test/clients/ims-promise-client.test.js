@@ -270,6 +270,58 @@ describe('ImsPromiseClient', () => {
     });
   });
 
+  describe('getPromiseToken ttl', () => {
+    const testAccessToken = '******';
+    let emitterClient;
+    let capturedBody;
+
+    beforeEach(() => {
+      capturedBody = undefined;
+      emitterClient = ImsPromiseClient.createFrom(
+        mockContext,
+        ImsPromiseClient.CLIENT_TYPE.EMITTER,
+      );
+      nock(`https://${DUMMY_HOST}`)
+        .post(IMS_TOKEN_ENDPOINT, (body) => {
+          capturedBody = body;
+          return true;
+        })
+        .reply(200, {
+          promise_token: 'promiseTokenExample',
+          token_type: 'promise_token',
+          expires_in: 3600,
+        });
+    });
+
+    it('sends ttl when it is a positive number', async () => {
+      const result = await emitterClient.getPromiseToken(testAccessToken, false, 3600);
+      expect(capturedBody).to.include('name="ttl"\r\n\r\n3600\r\n');
+      expect(capturedBody).to.include('name="grant_type"\r\n\r\npromise');
+      expect(result.expires_in).to.equal(3600);
+    });
+
+    it('does not send ttl when omitted', async () => {
+      await emitterClient.getPromiseToken(testAccessToken);
+      expect(capturedBody).to.include('name="grant_type"\r\n\r\npromise');
+      expect(capturedBody).to.not.include('name="ttl"');
+    });
+
+    [
+      ['zero', 0],
+      ['negative', -60],
+      ['NaN', NaN],
+      ['Infinity', Infinity],
+      ['a numeric string', '3600'],
+      ['null', null],
+    ].forEach(([label, ttl]) => {
+      it(`does not send ttl when it is ${label}`, async () => {
+        await emitterClient.getPromiseToken(testAccessToken, false, ttl);
+        expect(capturedBody).to.include('name="grant_type"\r\n\r\npromise');
+        expect(capturedBody).to.not.include('name="ttl"');
+      });
+    });
+  });
+
   describe('exchangeToken', () => {
     const testToken = 'eyJhbGciOiJIUzI1NiJ9.eyJpZCI6IjEyMzQ1IiwidHlwZSI6ImFjY2Vzc190b2tlbiIsImNsaWVudF9pZCI6ImV4YW1wbGVfYXBwIiwidXNlcl9pZCI6Ijk4NzY1NDc4OTBBQkNERUYxMjM0NTY3OEBhYmNkZWYxMjM0NTY3ODkuZSIsImFzIjoiaW1zLW5hMSIsImFhX2lkIjoiMTIzNDU2Nzg5MEFCQ0RFRjEyMzQ1Njc4QGFkb2JlLmNvbSIsImNyZWF0ZWRfYXQiOiIxNzEwMjQ3MDAwMDAwIn0.MRDpxgxSHDj4DmA182hPnjMAnKkly-VUJ_bXpQ-J8EQ';
     let consumerClient;

@@ -58,6 +58,18 @@ async function fetchServiceAccessToken() {
 fetchServiceAccessToken();
 ```
 
+### Creating a Promise Token
+
+An emitter `ImsPromiseClient` creates a promise token from an access token. Pass `true`
+as the second argument to encrypt the returned token. An optional third argument, `ttl`,
+is sent to IMS only when it is a finite number greater than zero; otherwise it is omitted
+and the IMS default applies.
+
+```javascript
+const emitter = ImsPromiseClient.createFrom(context, ImsPromiseClient.CLIENT_TYPE.EMITTER);
+const { promise_token, expires_in } = await emitter.getPromiseToken(accessToken, false, 3600);
+```
+
 ### Getting IMS Organization Details
 
 Retrieve details about an IMS organization by its ID using the `getImsOrganizationDetails` method.

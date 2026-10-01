@@ -97,6 +97,7 @@ export type FacsSecondaryResolver = (
     capability: string;
     product: string;
     subjectId?: string;
+    subjectGroupIds?: string[];
     orgId?: string;
   },
 ) => Promise<boolean>;
@@ -117,6 +118,7 @@ export type FacsCompositeResolver = (
     capability: string;
     product: string;
     subjectId?: string;
+    subjectGroupIds?: string[];
     orgId?: string;
     routePattern?: string;
     routeParams?: Record<string, string>;
@@ -173,3 +175,46 @@ export declare function compressResponse(
  * Utility functions
  */
 export function hashWithSHA256(input: string): string;
+
+export declare const FACS_GROUPS_CLAIM: 'facs_grps';
+
+export declare const FACS_SUBJECT_TYPES: Readonly<{
+  USER: 'user';
+  ORG: 'org';
+  GROUP: 'group';
+}>;
+
+export declare const FT_MAC_FACS_PERMISSIONS: Readonly<Record<string, string>>;
+
+export declare const X_PRODUCT_HEADER: 'x-product';
+
+export interface FacsResourceBinding {
+  id: string;
+  granted_capabilities: string[];
+  subject_id?: string;
+}
+
+export declare function normalizeImsOrgId(orgIdent: string, authSrc?: string): string;
+
+export declare function findFacsResourceBinding(
+  postgrestClient: object,
+  keys: {
+    imsOrgId: string;
+    product: string;
+    subjectType: 'user' | 'org' | 'group';
+    subjectId: string;
+    resourceType: string;
+    resourceId: string;
+  },
+): Promise<FacsResourceBinding | null>;
+
+export declare function findFacsResourceBindingsForGroups(
+  postgrestClient: object,
+  keys: {
+    imsOrgId: string;
+    product: string;
+    groupIds?: string[];
+    resourceType: string;
+    resourceId: string;
+  },
+): Promise<FacsResourceBinding[]>;

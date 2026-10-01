@@ -53,6 +53,7 @@ function makeAuthInfo(overrides = {}) {
     getType: () => 'jwt',
     getTenantIds: () => ['CUST-ORG-123'],
     getProfile: () => ({ sub: 'user@example.com' }),
+    getFacsGroups: () => [],
     hasFacsPermission: () => true,
     ...overrides,
   };
@@ -686,7 +687,10 @@ describe('facsWrapper', () => {
       // JWT must not grant the capability, otherwise the wrapper short-circuits
       // at step 5 (grant: 'jwt') before the resolver runs. The defer-to-
       // controller path is only reachable when the JWT is insufficient.
-      context.attributes.authInfo = makeAuthInfo({ hasFacsPermission: () => false });
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: () => false,
+        getFacsGroups: () => ['945801205'],
+      });
       context.dataAccess = { services: { postgrestClient: { from: () => {} } } };
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       const result = await wrapped({}, context);
@@ -701,6 +705,7 @@ describe('facsWrapper', () => {
         enabled: true,
         product: 'LLMO',
         subjectId: 'user@example.com',
+        subjectGroupIds: ['945801205'],
       });
     });
 
@@ -722,18 +727,21 @@ describe('facsWrapper', () => {
   describe('state-layer evaluation (hybrid additive model)', () => {
     let ldClient;
     let findFacsResourceBindingStub;
+    let findFacsResourceBindingsForGroupsStub;
     let mockedWrapper;
     const dummyPostgrest = { from: () => {} };
 
     beforeEach(async () => {
       ldClient = { isFlagEnabledForIMSOrg: sandbox.stub().resolves(true) };
       findFacsResourceBindingStub = sandbox.stub();
+      findFacsResourceBindingsForGroupsStub = sandbox.stub().resolves([]);
       const mod = await esmock('../../src/auth/facs-wrapper.js', {
         '@adobe/spacecat-shared-launchdarkly-client': {
           LaunchDarklyClient: { createFrom: sandbox.stub().returns(ldClient) },
         },
         '../../src/auth/facs-state-layer.js': {
           findFacsResourceBinding: findFacsResourceBindingStub,
+          findFacsResourceBindingsForGroups: findFacsResourceBindingsForGroupsStub,
           normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
         },
       });
@@ -792,6 +800,100 @@ describe('facsWrapper', () => {
       const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
       await wrapped({}, context);
       expect(handler.calledOnce).to.be.true;
+    });
+
+    it('admits when only a group-scoped mapping carries the capability', async () => {
+      findFacsResourceBindingStub.resolves(null);
+      findFacsResourceBindingsForGroupsStub.resolves([
+        { id: 'g1', subject_id: '945801205', granted_capabilities: ['llmo/can_read'] },
+      ]);
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: () => false,
+        getFacsGroups: () => ['945801205'],
+      });
+      brandReq();
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(findFacsResourceBindingStub.calledTwice).to.be.true;
+      expect(findFacsResourceBindingsForGroupsStub.calledOnce).to.be.true;
+      const [pg, keys] = findFacsResourceBindingsForGroupsStub.firstCall.args;
+      expect(pg).to.equal(dummyPostgrest);
+      expect(keys).to.deep.include({
+        product: 'LLMO',
+        resourceType: 'brand',
+        resourceId: 'abc-123',
+        imsOrgId: 'CUST-ORG-123@AdobeOrg',
+      });
+      expect(keys.groupIds).to.deep.equal(['945801205']);
+      expect(logStub.info.calledWithMatch({
+        tag: 'facs',
+        grant: 'state-layer',
+        via: ['group'],
+        groupCount: 1,
+      })).to.be.true;
+    });
+
+    it('unions user and group state-layer capabilities', async () => {
+      findFacsResourceBindingStub
+        .onCall(0).resolves({ id: 'u1', granted_capabilities: ['llmo/can_read'] })
+        .onCall(1).resolves(null);
+      findFacsResourceBindingsForGroupsStub.resolves([
+        { id: 'g1', subject_id: '945801205', granted_capabilities: ['llmo/can_manage'] },
+      ]);
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: () => false,
+        getFacsGroups: () => ['945801205'],
+      });
+      context.pathInfo = {
+        method: 'POST',
+        suffix: '/brands',
+        headers: { 'x-product': 'llmo' },
+      };
+      context.data = { brandId: 'abc-123' };
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result).to.deep.equal({ status: 200 });
+      expect(handler.calledOnce).to.be.true;
+      expect(logStub.info.calledWithMatch({
+        tag: 'facs',
+        grant: 'state-layer',
+        via: ['group'],
+      })).to.be.true;
+    });
+
+    it('returns 403 when group state-layer read throws', async () => {
+      findFacsResourceBindingStub.resolves(null);
+      findFacsResourceBindingsForGroupsStub.rejects(new Error('groups down'));
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: () => false,
+        getFacsGroups: () => ['945801205'],
+      });
+      brandReq();
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      const result = await wrapped({}, context);
+      expect(result.status).to.equal(403);
+      expect(handler.called).to.be.false;
+      expect(logStub.error.calledWithMatch({
+        tag: 'facs',
+        groupCount: 1,
+      }, 'FACS state-layer read failed — denying')).to.be.true;
+    });
+
+    it('does not query group bindings when the JWT has no FACS groups', async () => {
+      findFacsResourceBindingStub
+        .onCall(0).resolves({ id: 'm1', granted_capabilities: ['llmo/can_read'] })
+        .onCall(1).resolves(null);
+      context.attributes.authInfo = makeAuthInfo({
+        hasFacsPermission: () => false,
+        getFacsGroups: () => [],
+      });
+      brandReq();
+      const wrapped = mockedWrapper(handler, { routeFacsCapabilities });
+      await wrapped({}, context);
+      expect(handler.calledOnce).to.be.true;
+      expect(findFacsResourceBindingsForGroupsStub.called).to.be.false;
     });
 
     it('denies when neither mapping carries the capability and JWT lacks it', async () => {
@@ -1129,6 +1231,7 @@ describe('facsWrapper', () => {
           },
           '../../src/auth/facs-state-layer.js': {
             findFacsResourceBinding: sandbox.stub(),
+            findFacsResourceBindingsForGroups: sandbox.stub().resolves([]),
             normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
           },
         });
@@ -1149,6 +1252,10 @@ describe('facsWrapper', () => {
 
       it('grants when the secondary resolver returns true', async () => {
         resolverStub.resolves(true);
+        context.attributes.authInfo = makeAuthInfo({
+          hasFacsPermission: () => false,
+          getFacsGroups: () => ['945801205'],
+        });
         siteReq();
         const wrapped = mockedWrapper(handler, {
           routeFacsCapabilities: secRouteCaps,
@@ -1166,6 +1273,7 @@ describe('facsWrapper', () => {
           capability: 'llmo/can_read',
           product: 'LLMO',
           subjectId: 'user@example.com',
+          subjectGroupIds: ['945801205'],
           orgId: 'CUST-ORG-123@AdobeOrg',
         });
         expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'secondary-resolver' })).to.be.true;
@@ -1233,6 +1341,7 @@ describe('facsWrapper', () => {
           enabled: true,
           product: 'LLMO',
           subjectId: 'user@example.com',
+          subjectGroupIds: [],
         });
       });
     });
@@ -1297,6 +1406,7 @@ describe('facsWrapper', () => {
           },
           '../../src/auth/facs-state-layer.js': {
             findFacsResourceBinding: findBindingStub,
+            findFacsResourceBindingsForGroups: sandbox.stub().resolves([]),
             normalizeImsOrgId: (s) => (s && typeof s === 'string' && !s.includes('@') ? `${s}@AdobeOrg` : s),
           },
         });
@@ -1325,6 +1435,10 @@ describe('facsWrapper', () => {
 
       it('grants when the composite resolver returns true (single-opportunity route)', async () => {
         resolverStub.resolves(true);
+        context.attributes.authInfo = makeAuthInfo({
+          hasFacsPermission: () => false,
+          getFacsGroups: () => ['945801205'],
+        });
         oppReq();
         const wrapped = mockedWrapper(handler, {
           routeFacsCapabilities: compRouteCaps,
@@ -1344,6 +1458,7 @@ describe('facsWrapper', () => {
           subjectId: 'user@example.com',
           orgId: 'CUST-ORG-123@AdobeOrg',
         });
+        expect(args.subjectGroupIds).to.deep.equal(['945801205']);
         expect(args.routeParams).to.include({ siteId: 'site-abc', opportunityId: 'opp-1' });
         expect(logStub.info.calledWithMatch({ tag: 'facs', grant: 'composite-resolver' })).to.be.true;
         // Composite resolver decided authorization; no defer flag and no state-layer read.
@@ -1366,6 +1481,7 @@ describe('facsWrapper', () => {
           enabled: true,
           product: 'ASO',
           subjectId: 'user@example.com',
+          subjectGroupIds: [],
         });
         expect(logStub.info.calledWithMatch({ tag: 'facs', defer: 'composite-resolver' })).to.be.true;
       });

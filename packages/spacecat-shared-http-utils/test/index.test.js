@@ -26,8 +26,11 @@ import {
   notFound,
   ok,
   unauthorized,
+  FACS_GROUPS_CLAIM,
+  FACS_SUBJECT_TYPES,
   FT_MAC_FACS_PERMISSIONS,
   X_PRODUCT_HEADER,
+  findFacsResourceBindingsForGroups,
 } from '../src/index.js';
 
 const gunzipAsync = promisify(gunzip);
@@ -266,6 +269,12 @@ describe('HTTP Response Functions', () => {
 
     it('re-exports X_PRODUCT_HEADER from the package root', () => {
       expect(X_PRODUCT_HEADER).to.equal('x-product');
+    });
+
+    it('re-exports FACS group constants and helper from the package root', () => {
+      expect(FACS_GROUPS_CLAIM).to.equal('facs_grps');
+      expect(FACS_SUBJECT_TYPES).to.include({ USER: 'user', ORG: 'org', GROUP: 'group' });
+      expect(findFacsResourceBindingsForGroups).to.be.a('function');
     });
   });
 });

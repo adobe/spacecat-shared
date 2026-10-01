@@ -142,45 +142,59 @@ See the package `CLAUDE.md` ("URL Index") for the canonicalization, single-write
 
 ## Semantic Index
 
-For the topic vector index (`opportunity_semantic_embedding`) and the global query-embedding cache (`semantic_query_embedding`), use the shared helpers so the writer and reader share one text normalization and one storage path. They store and read pre-embedded vectors; embedding is the caller's job (e.g. `AzureEmbeddingClient` from `@adobe/spacecat-shared-gpt-client`).
+For the vector indexes (`opportunity_semantic_embedding`, `suggestion_semantic_embedding`) and the global query-embedding cache (`semantic_query_embedding`), use the shared helpers so the writer and reader share one text normalization, one embedding generation and one storage path. The helpers take an embedding client with `createEmbeddings(texts)` (e.g. `AzureEmbeddingClient` from `@adobe/spacecat-shared-gpt-client`) and do the embedding themselves.
 
 ```js
 import {
-  syncOpportunitySemantic, lookupOpportunitiesByVectors,
-  getQueryEmbeddings, upsertQueryEmbeddings, touchQueryEmbeddings,
-  OPPORTUNITY_SEMANTIC_SOURCE_TYPES, OPPORTUNITY_SEMANTIC_ENTITY_TYPES, SEMANTIC_MATCHING_CONFIG,
+  indexSemanticTexts, embedQueries,
+  lookupOpportunitiesByVectors, lookupSuggestionsByVectors,
+  SEMANTIC_TARGETS, SEMANTIC_MATCH_TYPES, SEMANTIC_MATCHING_CONFIG,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
-const scope = { ...SEMANTIC_MATCHING_CONFIG.embedding }; // { model, dims }
-const { TOPIC } = OPPORTUNITY_SEMANTIC_SOURCE_TYPES;
-const { CITED_ANALYSIS } = OPPORTUNITY_SEMANTIC_ENTITY_TYPES;
+const { TOPIC } = SEMANTIC_MATCH_TYPES;
 
-// writer (needs the postgrest_writer role): full-replace an opportunity's topic vectors
-await syncOpportunitySemantic(postgrestClient, {
-  siteId, entityId, entityType: CITED_ANALYSIS, sourceType: TOPIC, sources: [{ text, vector, ...scope }],
+// writer (needs the postgrest_writer role): full-replace each (entity, matchType, matchFieldType)
+// group in one call. Unchanged texts are kept, new ones embedded in batches (cache-first),
+// stale ones deleted; groups not listed are left alone. texts: [] clears a group.
+const result = await indexSemanticTexts(postgrestClient, embeddingClient, {
+  target: SEMANTIC_TARGETS.OPPORTUNITY, // or SEMANTIC_TARGETS.SUGGESTION
+  siteId,
+  entities: [{
+    entityId, entityType: 'cited-analysis',
+    entries: [{ matchType: TOPIC, matchFieldType: 'title', texts: ['running shoes'] }],
+  }],
 });
+// result: { entities: [{ entityId, entries: [{ ..., inserted, deleted, unchanged }] }],
+//           embedded, cacheHits, cacheError? }
 
-// query cache, batched: one entry per text, in input order (null on a miss)
-const cached = await getQueryEmbeddings(postgrestClient, { texts, ...scope });
-await upsertQueryEmbeddings(postgrestClient, { entries: [{ text, vector }], ...scope });
-await touchQueryEmbeddings(postgrestClient, { textHashes, ...scope });
+// query side: normalize, read the cache, embed the misses within a time budget.
+// cacheWrites (touch hits + store misses) is best-effort; await it or hand it to waitUntil.
+const { vectors, cacheWrites } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
-// entityTypes is optional (omitted or [] searches all entity types). statuses is optional too
-// (omitted or [] searches all; values from Opportunity.STATUSES); it is applied before k, so
-// filtered-out opportunities never take result slots. Needs a data-service with p_statuses.
-const matches = await lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes: [TOPIC], entityTypes: [CITED_ANALYSIS], statuses: ['NEW', 'IN_PROGRESS'],
-  vectors, k: 10, minScore: 0.5, ...scope,
+// matchType is required; matchFieldTypes / entityTypes / statuses are optional filters
+// (omitted or [] means no filter). statuses is applied before k, so filtered-out rows never
+// take result slots.
+const scope = { ...SEMANTIC_MATCHING_CONFIG.embedding }; // { model, dims }
+const opportunities = await lookupOpportunitiesByVectors(postgrestClient, {
+  siteId, matchType: TOPIC, matchFieldTypes: ['title'], entityTypes: ['cited-analysis'],
+  statuses: ['NEW', 'IN_PROGRESS'], vectors, k: 10, minScore: 0.5, ...scope,
+});
+// suggestions: entityTypes are parent opportunity types, statuses are Suggestion.STATUSES,
+// opportunityStatuses filter on the parent opportunity.
+const suggestions = await lookupSuggestionsByVectors(postgrestClient, {
+  siteId, matchType: TOPIC, opportunityStatuses: ['NEW'], vectors, ...scope,
 });
 ```
 
-`OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (kinds of embedded text) and `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` (opportunity types) are the registries for `source_type` and `entity_type`: the writer and reader reject any value outside them. They are defined in `@adobe/spacecat-shared-utils` and re-exported here. To index a new kind or opportunity type, add it to the utils registry first.
+`matchType` is one of `SEMANTIC_MATCH_TYPES` (`topic`, `claim`). `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
-`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; spread it into the helpers rather than hardcoding the values. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
+`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
 
-The batched helpers group their calls internally (search in groups of up to 20 vectors, cache reads/touches in groups of 50 hashes), so callers pass whole lists rather than looping per item.
+The writer reads the query cache but never writes it. The low-level cache helpers (`getQueryEmbeddings`, `upsertQueryEmbeddings`, `touchQueryEmbeddings`) are still exported.
+
+Calls are grouped internally (embeddings in batches of 256, writes and searches in groups of 20, id/hash reads and deletes in groups of 50), so callers pass whole lists rather than looping per item.
 
 ## Field Mapping Behavior
 

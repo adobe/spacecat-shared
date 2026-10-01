@@ -1,6 +1,6 @@
 # ADR-0002: Embedding client placement and semantic-index utils ownership
 
-- **Status:** Accepted
+- **Status:** Accepted; Decision 4 amended 2026-10-01 (see Amendment)
 - **Ticket:** LLMO-7445
 - **Deciders:** Lookup Service working group (LLMO-7445)
 - **Date:** 2026-09-17
@@ -52,6 +52,16 @@ Following ADR-0001's test (*true for every consumer → shared; specific to one 
 **Status filter.** The reader also takes optional `statuses`, checked against `Opportunity.STATUSES` and deduped like the type lists. The RPC applies it before the per-query limit, so filtered-out opportunities never take result slots. Which statuses count as visible is the caller's choice. The data-service casts the list to its status enum, so a value it doesn't know is an error, not an empty result. Sending `statuses` needs a data-service with `p_statuses` (mysticat-data-service PR 1132).
 
 Adding an entity type: (1) add it to `OPPORTUNITY_TYPES` if it is new, and to `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` (plus its literal type in `constants.d.ts`), and release `spacecat-shared-utils`; (2) bump data-access's utils pin and release data-access; (3) bump data-access in the writer (audit-worker) and the reader (api-service). The writer rejects the type until step 3, so index only after it. A new source kind is the same, in `OPPORTUNITY_SEMANTIC_SOURCE_TYPES`.
+
+### Amendment (2026-10-01): semantic-index redesign
+
+The index was redesigned before it had external consumers (mysticat-data-service `semantic_index_redesign` migration). This supersedes the parts of Decision 4 above that conflict with it, and the alternatives that rejected embedding in data-access and argued for registries.
+
+- **Two match columns instead of `source_type`.** Rows carry `match_type` (what the text means: `SEMANTIC_MATCH_TYPES`, `topic` / `claim`) and `match_field_type` (which field it came from, e.g. `title`). The reader requires one `matchType` and takes an optional `matchFieldTypes` filter.
+- **No type registries.** `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` / `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` are removed from utils. `entityType` and `matchFieldType` are free-form, length-bounded strings, and filter lists are shape-checked and capped at 100 values. Callers that want a narrow search pass `entityTypes` explicitly. A producer can index a new field or entity type without a shared release.
+- **Opportunities and suggestions share one shape.** `opportunity_semantic_embedding` and `suggestion_semantic_embedding` have the same columns. One writer, `indexSemanticTexts`, takes a `target` (`SEMANTIC_TARGETS`). There are two readers: `lookupOpportunitiesByVectors`, and `lookupSuggestionsByVectors`, which adds `opportunityStatuses`.
+- **The shared layer now embeds.** `indexSemanticTexts` and `embedQueries` take an `EmbeddingProvider` (Decision 2) and call it. Transport, auth and retry stay in the client (Decision 3); data-access only decides which texts need a vector. That keeps the batching, dedupe and cache-first logic in one place instead of in every producer.
+- **The writer reads the query cache but never writes it.** Stored texts are normalized the same way as queries, so a topic already embedded for a query is reused. Only the read path (`embedQueries`) writes `semantic_query_embedding`, so the cache keeps meaning "texts users searched".
 
 ## Consequences
 

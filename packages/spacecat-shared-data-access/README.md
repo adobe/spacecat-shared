@@ -188,7 +188,7 @@ const suggestions = await lookupSuggestionsByTopic(postgrestClient, {
 
 The match type (`topic`, later `claim`) is never a parameter: each dimension has its own writer and readers (`...Topics` / `...ByTopic`), which set `match_type` internally. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
-`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
+`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
 
 The writer reads the query cache but never writes it. The low-level cache helpers (`getQueryEmbeddings`, `upsertQueryEmbeddings`, `touchQueryEmbeddings`) are still exported.
 

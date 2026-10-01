@@ -263,6 +263,8 @@ describe('semantic-index.utils', () => {
       match_type: TOPIC,
       match_field_type: FIELD,
       text_hash: hashText(normalizeText(text)),
+      model: MODEL,
+      dims: DIMS,
       ...over,
     });
     // fetchStoredRows reads the index table; getQueryEmbeddings reads the cache table.
@@ -350,7 +352,7 @@ describe('semantic-index.utils', () => {
       });
       expect(embedder.calls).to.deep.equal([['running shoes', 'boots']]);
       const [read] = client.calls.select;
-      expect(read).to.include({ table: SUG_TABLE, cols: 'id, entity_id, match_type, match_field_type, text_hash' });
+      expect(read).to.include({ table: SUG_TABLE, cols: 'id, entity_id, match_type, match_field_type, text_hash, model, dims' });
       expect(read.eqs).to.deep.equal({ site_id: SITE_ID });
       expect(read.inFilter).to.deep.equal({ column: 'entity_id', values: [ENTITY_ID] });
       expect(read.range).to.deep.equal([0, 999]);
@@ -410,6 +412,19 @@ describe('semantic-index.utils', () => {
       const out = await run(client, { entities: [entity([topicEntry(['A'])])] });
       expect(out.entities[0].fields[0]).to.include({ inserted: 0, deleted: 0, unchanged: 1 });
       expect(client.calls.upsert).to.have.length(0);
+      expect(client.calls.delete).to.have.length(0);
+    });
+
+    it('re-embeds rows from another model or dims in place instead of keeping them', async () => {
+      const client = makeClient(byTable({
+        stored: [storedRow('a', { model: 'azure/old-model' }), storedRow('b', { dims: 3072 })],
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['a', 'b'])])] }, embedder);
+      expect(out.entities[0].fields[0]).to.include({ inserted: 2, deleted: 0, unchanged: 0 });
+      expect(embedder.calls).to.deep.equal([['a', 'b']]);
+      expect(client.calls.upsert[0].rows.map((r) => [r.text, r.model, r.dims]))
+        .to.deep.equal([['a', MODEL, DIMS], ['b', MODEL, DIMS]]);
       expect(client.calls.delete).to.have.length(0);
     });
 

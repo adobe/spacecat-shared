@@ -315,7 +315,7 @@ async function deleteRowsById(postgrestClient, table, siteId, ids, details) {
 /**
  * Stored rows for many entities, paginated per id chunk so `max-rows` can't truncate.
  * @returns {Promise<Array<{id: string, entity_id: string, match_type: string,
- *   match_field_type: string, text_hash: string}>>}
+ *   match_field_type: string, text_hash: string, model: string, dims: number}>>}
  */
 async function fetchStoredRows(postgrestClient, table, siteId, entityIds, details) {
   const rows = [];
@@ -326,7 +326,7 @@ async function fetchStoredRows(postgrestClient, table, siteId, entityIds, detail
       // eslint-disable-next-line no-await-in-loop
       const { data, error } = await postgrestClient
         .from(table)
-        .select('id, entity_id, match_type, match_field_type, text_hash')
+        .select('id, entity_id, match_type, match_field_type, text_hash, model, dims')
         .eq('site_id', siteId)
         .in('entity_id', group)
         .order('id', { ascending: true })
@@ -570,7 +570,9 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
       if (!storedByGroup.has(key)) {
         storedByGroup.set(key, new Map());
       }
-      storedByGroup.get(key).set(row.text_hash, row.id);
+      // A row from another model is re-embedded; the upsert overwrites it in place.
+      const current = row.model === model && row.dims === dims;
+      storedByGroup.get(key).set(row.text_hash, { id: row.id, current });
     }
   }
 
@@ -579,11 +581,12 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
     const stored = storedByGroup.get(key) ?? new Map();
     const hashes = group.keys.map(hashText);
     const keep = new Set(hashes);
+    const isCurrent = (hash) => stored.get(hash)?.current === true;
     return {
       group,
-      toInsert: group.keys.filter((_, i) => !stored.has(hashes[i])),
-      staleIds: [...stored.entries()].filter(([hash]) => !keep.has(hash)).map(([, id]) => id),
-      unchanged: hashes.filter((hash) => stored.has(hash)).length,
+      toInsert: group.keys.filter((_, i) => !isCurrent(hashes[i])),
+      staleIds: [...stored.entries()].filter(([hash]) => !keep.has(hash)).map(([, row]) => row.id),
+      unchanged: hashes.filter(isCurrent).length,
     };
   });
 

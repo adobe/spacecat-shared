@@ -80,6 +80,59 @@ fetchImsOrganizationDetails(imsOrgId);
 
 All methods return promises. It's important to handle errors using `try/catch` blocks in async functions to manage API request failures or invalid responses gracefully.
 
+## Promise Tokens Across Long-Running Jobs
+
+`ImsPromiseClient` mints and exchanges IMS promise tokens for on-behalf-of (OBO) auth
+carried through a queue (SQS message, etc.) to a downstream worker. The exchanged
+access token is short-lived (~5 min), and each exchange rolls the promise token
+forward to a new one with its own expiry — but `ImsPromiseClient.exchangeToken` does
+not persist that rolled token for you. A worker whose job outlives one access token's
+TTL needs it to exchange again later in the same job.
+
+`PromiseTokenSession` wraps a CONSUMER-type `ImsPromiseClient` to do exactly that:
+
+```javascript
+import { ImsPromiseClient, createPromiseTokenSession } from '@adobe/spacecat-shared-ims-client';
+
+const consumerClient = ImsPromiseClient.createFrom(context, ImsPromiseClient.CLIENT_TYPE.CONSUMER);
+
+// `initialPromiseToken` is whatever was carried through the queue message.
+const session = createPromiseTokenSession(consumerClient, initialPromiseToken, {
+  enableEncryption: Boolean(context.env.AUTOFIX_CRYPT_SECRET && context.env.AUTOFIX_CRYPT_SALT),
+});
+
+try {
+  const accessToken = await session.exchange();
+  // ... do work with accessToken ...
+
+  if (session.isExpired()) {
+    // re-exchange before the next use, if the job is still running
+    await session.exchange();
+  }
+} catch (error) {
+  if (error.code === 'NEEDS_REAUTH') {
+    // terminal — the user must re-authenticate; there is no retry that helps here.
+  }
+  throw error;
+} finally {
+  await session.invalidate();
+}
+```
+
+- `exchange()` returns the current access token and transparently persists the
+  rolled promise token for the next call.
+- `isExpired()` / `getRemainingMs()` report on the *promise* token's rolled expiry,
+  not the access token's — check this before a retry loop's next attempt if the job
+  can run long enough to matter.
+- On a 401/403 from IMS (the promise token can no longer be exchanged), `exchange()`
+  throws `NeedsReauthError` (`error.code === 'NEEDS_REAUTH'`) instead of a generic
+  error, so callers can distinguish "needs the user to re-authenticate" from a
+  transient failure worth retrying.
+- `invalidate()` is idempotent and safe to call in a `finally` block regardless of
+  how the job ended.
+- The session is in-memory and scoped to one process/invocation — it is not meant to
+  be persisted across separate Lambda invocations.
+
 ## Development
 
 ### Testing

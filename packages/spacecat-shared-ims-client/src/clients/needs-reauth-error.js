@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Adobe. All rights reserved.
+ * Copyright 2026 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,22 +10,19 @@
  * governing permissions and limitations under the License.
  */
 
-import ImsClient from './clients/ims-client.js';
-import ImsPromiseClient from './clients/ims-promise-client.js';
-import { imsClientWrapper } from './clients/ims-client-wrapper.js';
-import {
-  PromiseTokenSession,
-  NeedsReauthError,
-  createPromiseTokenSession,
-} from './clients/promise-token-session.js';
+/**
+ * Thrown when a promise token can no longer be exchanged and the only remedy is
+ * for the original user to re-authenticate (mint a fresh promise token).
+ */
+export default class NeedsReauthError extends Error {
+  static CODE = 'NEEDS_REAUTH';
 
-export {
-  ImsClient,
-  ImsPromiseClient,
-  imsClientWrapper,
-  PromiseTokenSession,
-  NeedsReauthError,
-  createPromiseTokenSession,
-};
-
-export { getAccessToken, retrievePageAuthentication } from './auth.js';
+  constructor(message, cause) {
+    super(message);
+    this.name = 'NeedsReauthError';
+    this.code = NeedsReauthError.CODE;
+    if (cause) {
+      this.cause = cause;
+    }
+  }
+}

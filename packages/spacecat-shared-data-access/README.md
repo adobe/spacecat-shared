@@ -146,16 +146,17 @@ For the vector indexes (`opportunity_semantic_embedding`, `suggestion_semantic_e
 
 ```js
 import {
-  indexSemanticTopics, embedQueries,
-  lookupOpportunitiesByTopic, lookupSuggestionsByTopic,
+  indexSemanticTopics, indexSemanticClaims, embedQueries,
+  lookupOpportunitiesByTopic, lookupSuggestionsByTopic, lookupSuggestionsByClaim,
   SEMANTIC_TARGETS,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
 
 // writer (needs the postgrest_writer role): full-replace each (entity, matchFieldType) topic group
-// in one call. Unchanged texts are kept, new ones embedded in batches (cache-first), stale ones
-// deleted; fields not listed are left alone. texts: [] clears a field.
+// in one call. Unchanged texts are kept; a new text reuses a vector already stored in the same
+// table for the site, then the query cache, and is embedded otherwise (in batches); stale texts
+// are deleted; fields not listed are left alone. texts: [] clears a field.
 const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
   target: SEMANTIC_TARGETS.OPPORTUNITY, // or SEMANTIC_TARGETS.SUGGESTION
   siteId,
@@ -165,7 +166,20 @@ const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
   }],
 });
 // result: { entities: [{ entityId, fields: [{ matchFieldType, rejected, inserted, deleted, unchanged, ... }] }],
-//           embedded, cacheHits, cacheError? }
+//           embedded, indexHits, cacheHits, indexError?, cacheError? }
+
+// claim writer: same parameters and result, stored under the claim match type.
+await indexSemanticClaims(postgrestClient, embeddingClient, {
+  target: SEMANTIC_TARGETS.SUGGESTION,
+  siteId,
+  entities: [{
+    entityId: suggestionId, entityType: 'cited-analysis',
+    fields: [
+      { matchFieldType: 'title', texts: ['Publish a pricing comparison page'] },
+      { matchFieldType: 'topic', texts: ['running shoes'] },
+    ],
+  }],
+});
 
 // query side: validate (at most MAX_QUERY_TEXTS texts, each up to 2048 chars once normalized), read the
 // cache (best-effort), embed the distinct misses in one call within a time budget.
@@ -185,13 +199,17 @@ const opportunities = await lookupOpportunitiesByTopic(postgrestClient, {
 const suggestions = await lookupSuggestionsByTopic(postgrestClient, {
   siteId, opportunityStatuses: ['NEW'], vectors,
 });
+// claim reader: same parameters, over the claim rows.
+const claimMatches = await lookupSuggestionsByClaim(postgrestClient, {
+  siteId, matchFieldTypes: ['title'], vectors,
+});
 ```
 
-The match type (`topic`, later `claim`) is never a parameter: each dimension has its own writer and readers (`...Topics` / `...ByTopic`), which set `match_type` internally. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
+The match type (`topic`, `claim`) is never a parameter: each dimension has its own writer and readers (`indexSemanticTopics` / `...ByTopic`, `indexSemanticClaims` / `...ByClaim`), which set `match_type` internally, so a topic search never sees claim rows and vice versa. Claim writes accept either target, though only suggestions have a claim reader today. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
 `SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; the writer, `embedQueries` and the lookups read it from there rather than taking it as a parameter. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
 
-The writer reads the query cache but never writes it; only `embedQueries` does. The low-level cache helpers are internal, so nothing outside data-access can write vectors that the writer and readers trust.
+The writer reuses vectors it already stored in the same table for the site (any entity, match type or field, current generation only), so indexing a suggestion's claims after its topics embeds nothing twice; it does not read the other target's table. It reads the query cache but never writes it; only `embedQueries` does. The low-level cache helpers are internal, so nothing outside data-access can write vectors that the writer and readers trust.
 
 Calls are grouped internally (embeddings in batches of 256, writes and searches in groups of 20, id/hash reads and deletes in groups of 50), so callers pass whole lists rather than looping per item.
 

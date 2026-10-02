@@ -73,9 +73,11 @@ export {
   serializeVector,
   parseVector,
   indexSemanticTopics,
+  indexSemanticClaims,
   embedQueries,
   lookupOpportunitiesByTopic,
   lookupSuggestionsByTopic,
+  lookupSuggestionsByClaim,
 } from '../util/semantic-index.utils.js';
 
 const createPostgrestService = (config, client = undefined) => {

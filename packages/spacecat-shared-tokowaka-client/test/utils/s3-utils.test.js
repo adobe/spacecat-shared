@@ -17,6 +17,7 @@ import {
   base64UrlEncode,
   getTokowakaConfigS3Path,
   getTokowakaMetaconfigS3Path,
+  isConditionalWriteConflict,
 } from '../../src/utils/s3-utils.js';
 
 describe('S3 Utils', () => {
@@ -133,6 +134,24 @@ describe('S3 Utils', () => {
       // Should replace + with - and / with _
       expect(result).to.not.include('+');
       expect(result).to.not.include('=');
+    });
+  });
+
+  describe('isConditionalWriteConflict', () => {
+    it('should detect S3 conditional-write conflicts by error name', () => {
+      expect(isConditionalWriteConflict(Object.assign(new Error('x'), { name: 'PreconditionFailed' }))).to.be.true;
+      expect(isConditionalWriteConflict(Object.assign(new Error('x'), { name: 'ConditionalRequestConflict' }))).to.be.true;
+    });
+
+    it('should detect S3 conditional-write conflicts by HTTP status', () => {
+      expect(isConditionalWriteConflict({ $metadata: { httpStatusCode: 412 } })).to.be.true;
+      expect(isConditionalWriteConflict({ $metadata: { httpStatusCode: 409 } })).to.be.true;
+    });
+
+    it('should not treat other errors as conflicts', () => {
+      expect(isConditionalWriteConflict(new Error('Access Denied'))).to.be.false;
+      expect(isConditionalWriteConflict({ name: 'AccessDenied', $metadata: { httpStatusCode: 403 } })).to.be.false;
+      expect(isConditionalWriteConflict(undefined)).to.be.false;
     });
   });
 });

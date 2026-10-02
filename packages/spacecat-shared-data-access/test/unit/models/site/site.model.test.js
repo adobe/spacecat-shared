@@ -17,6 +17,7 @@ import sinonChai from 'sinon-chai';
 import nock from 'nock';
 
 import Site, { computeExternalIds } from '../../../../src/models/site/site.model.js';
+import { Config } from '../../../../src/models/site/config.js';
 import siteFixtures from '../../../fixtures/sites.fixture.js';
 import { createElectroMocks } from '../../util.js';
 
@@ -667,6 +668,130 @@ describe('SiteModel', () => {
         expect(() => instance.setConfig(invalidConfig)).to.not.throw();
         expect(instance.getConfig().state).to.deep.equal(invalidConfig);
         expect(mockLogger.warn).to.not.have.been.called;
+      });
+    });
+
+    describe('updateConfig (lost-update race, LLMO-7588)', () => {
+      const freshFolder = 'sunlife/prod';
+
+      // A stand-in for the freshest persisted Site returned by findById. In
+      // real usage findById hydrates `config` into a Config wrapper.
+      const makeFreshSite = (plainConfig) => ({
+        getConfig: () => Config(plainConfig),
+      });
+
+      beforeEach(() => {
+        // Each test controls the fresh re-read explicitly.
+        instance.collection.findById = stub();
+      });
+
+      it('demonstrates the clobber the naive read-mutate-save path suffers', () => {
+        // Writer W1 loaded the site earlier, before W2 wrote llmo.dataFolder,
+        // so W1's snapshot has no llmo at all.
+        instance.setConfig({ handlers: {} });
+        const w1Config = instance.getConfig();
+
+        // W1 naively flips only an unrelated field and persists the WHOLE
+        // stale blob.
+        w1Config.updateRumConfig(true);
+        instance.setConfig(Config.toDynamoItem(w1Config));
+
+        // The persisted blob carries no llmo.dataFolder: whatever W2 committed
+        // in the meantime is silently gone. This is the bug shape updateConfig
+        // fixes.
+        expect(instance.getConfig().getLlmoDataFolder()).to.be.undefined;
+      });
+
+      it('rebases the mutation onto the freshest config, preserving a concurrently-written sibling field', async () => {
+        // W1's stale in-memory snapshot: no llmo yet.
+        instance.setConfig({ handlers: {} });
+
+        // W2 concurrently persisted llmo.dataFolder to the DB.
+        instance.collection.findById.resolves(makeFreshSite({
+          handlers: {},
+          llmo: { dataFolder: freshFolder, brand: 'SunLife' },
+        }));
+
+        const saveStub = stub(instance, 'save').resolves();
+
+        // W1 only wants to flip an unrelated field.
+        const result = await instance.updateConfig((config) => config.updateRumConfig(true));
+
+        expect(result).to.equal(instance);
+        expect(instance.collection.findById).to.have.been.calledOnceWith(instance.getId());
+        expect(saveStub).to.have.been.calledOnce;
+
+        const persisted = instance.getConfig();
+        // W2's sibling field survived (not clobbered).
+        expect(persisted.getLlmoDataFolder()).to.equal(freshFolder);
+        // W1's own change was applied.
+        expect(persisted.hasRumDomainKey()).to.equal(true);
+      });
+
+      it('awaits an async mutator', async () => {
+        instance.setConfig({ handlers: {} });
+        instance.collection.findById.resolves(makeFreshSite({
+          handlers: {},
+          llmo: { dataFolder: freshFolder, brand: 'SunLife' },
+        }));
+        stub(instance, 'save').resolves();
+
+        await instance.updateConfig(async (config) => {
+          config.updateLlmoBrand('Renamed');
+        });
+
+        const persisted = instance.getConfig();
+        expect(persisted.getLlmoBrand()).to.equal('Renamed');
+        // dataFolder from the fresh read is still preserved.
+        expect(persisted.getLlmoDataFolder()).to.equal(freshFolder);
+      });
+
+      it('fails open when the fresh re-read throws: applies the mutation in-memory and logs', async () => {
+        instance.setConfig({ handlers: {}, llmo: { dataFolder: 'local', brand: 'B' } });
+        instance.collection.findById.rejects(new Error('db unavailable'));
+        const saveStub = stub(instance, 'save').resolves();
+        mockLogger.warn.resetHistory();
+
+        await instance.updateConfig((config) => config.updateRumConfig(true));
+
+        expect(saveStub).to.have.been.calledOnce;
+        expect(mockLogger.warn).to.have.been.called;
+
+        const persisted = instance.getConfig();
+        // In-memory sibling preserved and the mutation applied.
+        expect(persisted.getLlmoDataFolder()).to.equal('local');
+        expect(persisted.hasRumDomainKey()).to.equal(true);
+      });
+
+      it('falls back to in-memory config when findById returns null', async () => {
+        instance.setConfig({ handlers: {}, llmo: { dataFolder: 'local', brand: 'B' } });
+        instance.collection.findById.resolves(null);
+        stub(instance, 'save').resolves();
+
+        await instance.updateConfig((config) => config.updateRumConfig(true));
+
+        const persisted = instance.getConfig();
+        expect(persisted.getLlmoDataFolder()).to.equal('local');
+        expect(persisted.hasRumDomainKey()).to.equal(true);
+      });
+
+      it('normalizes a non-hydrated (plain object) config into a Config wrapper', async () => {
+        // Defensive path: a fresh site whose getConfig() yields a plain object
+        // rather than a hydrated Config wrapper.
+        instance.collection.findById.resolves({
+          getConfig: () => ({ handlers: {}, llmo: { dataFolder: freshFolder, brand: 'SunLife' } }),
+        });
+        stub(instance, 'save').resolves();
+
+        await instance.updateConfig((config) => config.updateRumConfig(true));
+
+        const persisted = instance.getConfig();
+        expect(persisted.getLlmoDataFolder()).to.equal(freshFolder);
+        expect(persisted.hasRumDomainKey()).to.equal(true);
+      });
+
+      it('throws if the mutator is not a function', async () => {
+        await expect(instance.updateConfig('not-a-function')).to.be.rejectedWith(TypeError);
       });
     });
   });

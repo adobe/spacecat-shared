@@ -26,7 +26,7 @@ import {
   lookupOpportunitiesByTopic,
   lookupSuggestionsByTopic,
   MAX_MODEL_LENGTH,
-  MAX_SOURCE_TEXT_LENGTH,
+  MAX_TEXT_LENGTH,
   MAX_TYPE_FILTER_ITEMS,
   normalizeText,
   parseVector,
@@ -224,8 +224,8 @@ describe('semantic-index.utils', () => {
       expect(cleanTopicText(42)).to.equal(null);
       expect(cleanTopicText('')).to.equal(null);
       expect(cleanTopicText('   ')).to.equal(null);
-      expect(cleanTopicText('a'.repeat(MAX_SOURCE_TEXT_LENGTH))).to.not.equal(null);
-      expect(cleanTopicText('a'.repeat(MAX_SOURCE_TEXT_LENGTH + 1))).to.equal(null);
+      expect(cleanTopicText('a'.repeat(MAX_TEXT_LENGTH))).to.not.equal(null);
+      expect(cleanTopicText('a'.repeat(MAX_TEXT_LENGTH + 1))).to.equal(null);
       expect(cleanTopicText('abcd', { maxLength: 3 })).to.equal(null);
       expect(cleanTopicText('abc', { maxLength: 3 })).to.deep.equal({ text: 'abc', key: 'abc' });
       // The limit applies to the normalized key: lowercasing U+0130 yields two code units.
@@ -561,7 +561,7 @@ describe('semantic-index.utils', () => {
         .to.be.rejectedWith(ValidationError, 'texts must be an array');
       await expect(embedQueries(makeClient(), makeEmbedder(), ['ok', ' ']))
         .to.be.rejectedWith(ValidationError, 'texts[1] must be a non-empty string of at most 2048 characters');
-      await expect(embedQueries(makeClient(), makeEmbedder(), ['x'.repeat(MAX_SOURCE_TEXT_LENGTH + 1)]))
+      await expect(embedQueries(makeClient(), makeEmbedder(), ['x'.repeat(MAX_TEXT_LENGTH + 1)]))
         .to.be.rejectedWith(ValidationError, 'texts[0] must be a non-empty string');
       const tooMany = Array.from({ length: MAX_QUERY_TEXTS + 1 }, (_, i) => `t${i}`);
       await expect(embedQueries(makeClient(), makeEmbedder(), tooMany))

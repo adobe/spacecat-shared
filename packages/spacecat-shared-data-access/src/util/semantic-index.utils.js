@@ -74,7 +74,7 @@ export const EMBEDDING_BATCH_SIZE = 256;
 export const MAX_QUERY_TEXTS = 256;
 
 /** Max text length; matches the `text` DB CHECKs. */
-export const MAX_SOURCE_TEXT_LENGTH = 2048;
+export const MAX_TEXT_LENGTH = 2048;
 export const MAX_MATCH_FIELD_TYPE_LENGTH = 64;
 export const MAX_ENTITY_TYPE_LENGTH = 255;
 /** Max values per type filter; matches the search RPCs' guard. */
@@ -234,10 +234,10 @@ export function hashText(normalized) {
  * or `null` if unusable.
  *
  * @param {unknown} title - a raw indexed text or query string
- * @param {{ maxLength?: number }} [opts] - max normalized length (default `MAX_SOURCE_TEXT_LENGTH`)
+ * @param {{ maxLength?: number }} [opts] - max normalized length (default `MAX_TEXT_LENGTH`)
  * @returns {{ text: string, key: string } | null}
  */
-export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {}) {
+export function cleanTopicText(title, { maxLength = MAX_TEXT_LENGTH } = {}) {
   if (typeof title !== 'string') {
     return null;
   }
@@ -693,7 +693,7 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
  *   unchanged: number}>}>,
  *   embedded: number, cacheHits: number, cacheError?: Error}>} `cacheError` is set when the
  *   query-cache read failed and every new text was embedded instead; `rejected` counts texts
- *   dropped as empty or over `MAX_SOURCE_TEXT_LENGTH`
+ *   dropped as empty or over `MAX_TEXT_LENGTH`
  */
 export function indexSemanticTopics(postgrestClient, embeddingClient, params) {
   return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
@@ -721,7 +721,7 @@ async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
  * @param {object} postgrestClient - `@supabase/postgrest-js` client
  * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
  * @param {string[]} texts - query texts; each must be non-empty and at most
- *   `MAX_SOURCE_TEXT_LENGTH` once normalized; at most `MAX_QUERY_TEXTS` texts
+ *   `MAX_TEXT_LENGTH` once normalized; at most `MAX_QUERY_TEXTS` texts
  * @param {object} [opts]
  * @param {number} [opts.timeoutMs=EMBEDDING_TIMEOUT_MS] - budget for the embed call
  * @param {object} [opts.log] - logger for non-fatal cache failures
@@ -749,7 +749,7 @@ export async function embedQueries(postgrestClient, embeddingClient, texts, {
     const cleaned = cleanTopicText(text);
     if (!cleaned) {
       throw new ValidationError(
-        `texts[${i}] must be a non-empty string of at most ${MAX_SOURCE_TEXT_LENGTH} characters once normalized`,
+        `texts[${i}] must be a non-empty string of at most ${MAX_TEXT_LENGTH} characters once normalized`,
       );
     }
     return cleaned.key;

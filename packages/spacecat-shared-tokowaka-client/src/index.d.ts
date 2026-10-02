@@ -343,7 +343,14 @@ export function removeEdgeOptimizeRouting(
   credentials: AWSCredentials,
   distributionId: string,
   region?: string,
-): Promise<{ reverted: boolean; behaviors: string[] }>;
+  options?: { dryRun?: boolean },
+): Promise<{
+  reverted: boolean;
+  behaviors: Array<{
+    pathPattern: string;
+    removed: Array<{ type: 'function' | 'lambda'; eventType: string; arn: string }>;
+  }>;
+}>;
 
 /**
  * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.
@@ -437,7 +444,10 @@ export class CloudFrontEdgeClient {
     lambdaVersionArn: string,
   ): ReturnType<typeof applyAssociations>;
 
-  removeEdgeOptimizeRouting(distributionId: string): ReturnType<typeof removeEdgeOptimizeRouting>;
+  removeEdgeOptimizeRouting(
+    distributionId: string,
+    options?: { dryRun?: boolean },
+  ): ReturnType<typeof removeEdgeOptimizeRouting>;
 
   runDeployStep(params: Parameters<typeof runDeployStep>[1]): ReturnType<typeof runDeployStep>;
 

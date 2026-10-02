@@ -142,45 +142,58 @@ See the package `CLAUDE.md` ("URL Index") for the canonicalization, single-write
 
 ## Semantic Index
 
-For the topic vector index (`opportunity_semantic_embedding`) and the global query-embedding cache (`semantic_query_embedding`), use the shared helpers so the writer and reader share one text normalization and one storage path. They store and read pre-embedded vectors; embedding is the caller's job (e.g. `AzureEmbeddingClient` from `@adobe/spacecat-shared-gpt-client`).
+For the vector indexes (`opportunity_semantic_embedding`, `suggestion_semantic_embedding`) and the global query-embedding cache (`semantic_query_embedding`), use the shared helpers so the writer and reader share one text normalization, one embedding generation and one storage path. The helpers take an embedding client with `createEmbeddings(texts)` (e.g. `AzureEmbeddingClient` from `@adobe/spacecat-shared-gpt-client`) and do the embedding themselves.
 
 ```js
 import {
-  syncOpportunitySemantic, lookupOpportunitiesByVectors,
-  getQueryEmbeddings, upsertQueryEmbeddings, touchQueryEmbeddings,
-  OPPORTUNITY_SEMANTIC_SOURCE_TYPES, OPPORTUNITY_SEMANTIC_ENTITY_TYPES, SEMANTIC_MATCHING_CONFIG,
+  indexSemanticTopics, embedQueries,
+  lookupOpportunitiesByTopic, lookupSuggestionsByTopic,
+  SEMANTIC_TARGETS,
 } from '@adobe/spacecat-shared-data-access';
 
 const { postgrestClient } = dataAccess.services;
-const scope = { ...SEMANTIC_MATCHING_CONFIG.embedding }; // { model, dims }
-const { TOPIC } = OPPORTUNITY_SEMANTIC_SOURCE_TYPES;
-const { CITED_ANALYSIS } = OPPORTUNITY_SEMANTIC_ENTITY_TYPES;
 
-// writer (needs the postgrest_writer role): full-replace an opportunity's topic vectors
-await syncOpportunitySemantic(postgrestClient, {
-  siteId, entityId, entityType: CITED_ANALYSIS, sourceType: TOPIC, sources: [{ text, vector, ...scope }],
+// writer (needs the postgrest_writer role): full-replace each (entity, matchFieldType) topic group
+// in one call. Unchanged texts are kept, new ones embedded in batches (cache-first), stale ones
+// deleted; fields not listed are left alone. texts: [] clears a field.
+const result = await indexSemanticTopics(postgrestClient, embeddingClient, {
+  target: SEMANTIC_TARGETS.OPPORTUNITY, // or SEMANTIC_TARGETS.SUGGESTION
+  siteId,
+  entities: [{
+    entityId, entityType: 'cited-analysis',
+    fields: [{ matchFieldType: 'topic', texts: ['running shoes'] }],
+  }],
 });
+// result: { entities: [{ entityId, fields: [{ matchFieldType, rejected, inserted, deleted, unchanged, ... }] }],
+//           embedded, cacheHits, cacheError? }
 
-// query cache, batched: one entry per text, in input order (null on a miss)
-const cached = await getQueryEmbeddings(postgrestClient, { texts, ...scope });
-await upsertQueryEmbeddings(postgrestClient, { entries: [{ text, vector }], ...scope });
-await touchQueryEmbeddings(postgrestClient, { textHashes, ...scope });
+// query side: validate (at most MAX_QUERY_TEXTS texts, each up to 2048 chars once normalized), read the
+// cache (best-effort), embed the distinct misses in one call within a time budget.
+// cacheWrites (touch hits + store misses) is best-effort; await it or hand it to waitUntil.
+const { vectors, cacheWrites, cacheError } = await embedQueries(postgrestClient, embeddingClient, texts, { log });
 
 // reader, batched: one best-first list of { entityId, entityType, score } per query vector.
-// entityTypes is optional (omitted or [] searches all entity types). statuses is optional too
-// (omitted or [] searches all; values from Opportunity.STATUSES); it is applied before k, so
-// filtered-out opportunities never take result slots. Needs a data-service with p_statuses.
-const matches = await lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes: [TOPIC], entityTypes: [CITED_ANALYSIS], statuses: ['NEW', 'IN_PROGRESS'],
-  vectors, k: 10, minScore: 0.5, ...scope,
+// matchFieldTypes / entityTypes / statuses are optional filters (omitted or [] means no filter).
+// statuses is applied before k, so filtered-out rows never take result slots.
+// Searches run in the SEMANTIC_MATCHING_CONFIG.embedding generation, like the writer.
+const opportunities = await lookupOpportunitiesByTopic(postgrestClient, {
+  siteId, matchFieldTypes: ['topic'], entityTypes: ['cited-analysis'],
+  statuses: ['NEW', 'IN_PROGRESS'], vectors, k: 10, minScore: 0.5,
+});
+// suggestions: entityTypes are parent opportunity types, statuses are Suggestion.STATUSES,
+// opportunityStatuses filter on the parent opportunity.
+const suggestions = await lookupSuggestionsByTopic(postgrestClient, {
+  siteId, opportunityStatuses: ['NEW'], vectors,
 });
 ```
 
-`OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (kinds of embedded text) and `OPPORTUNITY_SEMANTIC_ENTITY_TYPES` (opportunity types) are the registries for `source_type` and `entity_type`: the writer and reader reject any value outside them. They are defined in `@adobe/spacecat-shared-utils` and re-exported here. To index a new kind or opportunity type, add it to the utils registry first.
+The match type (`topic`, later `claim`) is never a parameter: each dimension has its own writer and readers (`...Topics` / `...ByTopic`), which set `match_type` internally. `matchFieldType` (which field the text came from) and `entityType` are free-form, length-bounded strings: there is no registry, so a producer can index a new field or entity type without a shared release.
 
-`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; spread it into the helpers rather than hardcoding the values. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers.
+`SEMANTIC_MATCHING_CONFIG.embedding` (`model`, `dims`) is the embedding generation the writer and reader both use; the writer, `embedQueries` and the lookups read it from there rather than taking it as a parameter. It is a code constant, not env config, so writer and reader agree as long as both run the same data-access version; changing it means a re-embed plus upgrading both consumers. The re-embed is automatic: the writer treats rows from another generation as stale and overwrites them on the entity's next refresh.
 
-The batched helpers group their calls internally (search in groups of up to 20 vectors, cache reads/touches in groups of 50 hashes), so callers pass whole lists rather than looping per item.
+The writer reads the query cache but never writes it; only `embedQueries` does. The low-level cache helpers are internal, so nothing outside data-access can write vectors that the writer and readers trust.
+
+Calls are grouped internally (embeddings in batches of 256, writes and searches in groups of 20, id/hash reads and deletes in groups of 50), so callers pass whole lists rather than looping per item.
 
 ## Field Mapping Behavior
 

@@ -355,6 +355,36 @@ async function fetchStoredRows(postgrestClient, table, siteId, entityIds, detail
   return rows;
 }
 
+/**
+ * Vectors already stored in `table` for this site's texts, under the current generation, whatever
+ * the entity, match type or field. One per hash; a hash missing from a `max-rows`-capped page just
+ * falls through to the cache or an embed.
+ * @returns {Promise<Map<string, number[]>>} text hash -> vector
+ */
+async function fetchIndexVectors(postgrestClient, table, siteId, hashes, { model, dims }) {
+  const vectorByHash = new Map();
+  for (const group of chunk(hashes, QUERY_HASH_CHUNK_SIZE)) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data, error } = await postgrestClient
+      .from(table)
+      .select('text_hash, embedding')
+      .eq('site_id', siteId)
+      .eq('model', model)
+      .eq('dims', dims)
+      .in('text_hash', group);
+    if (error) {
+      throw new DataAccessError(`Failed to read ${table} vectors`, { table, siteId }, error);
+    }
+    for (const row of data ?? []) {
+      const vector = parseVector(row.embedding);
+      if (!vectorByHash.has(row.text_hash) && vector?.length === dims) {
+        vectorByHash.set(row.text_hash, vector);
+      }
+    }
+  }
+  return vectorByHash;
+}
+
 const groupKey = (entityId, matchType, matchFieldType) => `${entityId}\u0000${matchType}\u0000${matchFieldType}`;
 
 /** Validates one indexing group and returns its distinct normalized texts. */
@@ -573,7 +603,9 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
       groups.push(group);
     }
   }
-  const result = { entities: [], embedded: 0, cacheHits: 0 };
+  const result = {
+    entities: [], embedded: 0, indexHits: 0, cacheHits: 0,
+  };
   if (groups.length === 0) {
     return result;
   }
@@ -608,21 +640,44 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
     };
   });
 
-  // New texts: reuse cached vectors (read-only), embed the rest in shared batches.
+  // New texts: reuse vectors already in this table for the site, then cached query vectors (both
+  // read-only), and embed the rest in shared batches. Either read failing only costs embeddings.
   const needed = [...new Set(plans.flatMap((plan) => plan.toInsert))];
   const vectorByText = new Map();
   if (needed.length > 0) {
     try {
-      const cached = await getQueryEmbeddings(postgrestClient, { texts: needed, model, dims });
-      cached.forEach((hit, i) => {
-        if (hit?.vector?.length === dims) {
-          vectorByText.set(needed[i], hit.vector);
+      const indexed = await fetchIndexVectors(
+        postgrestClient,
+        table,
+        siteId,
+        needed.map(hashText),
+        { model, dims },
+      );
+      needed.forEach((text) => {
+        const vector = indexed.get(hashText(text));
+        if (vector) {
+          vectorByText.set(text, vector);
         }
       });
-      result.cacheHits = vectorByText.size;
+      result.indexHits = vectorByText.size;
     } catch (e) {
-      // A cache read failure only costs extra embeddings.
-      result.cacheError = e;
+      result.indexError = e;
+    }
+    const notIndexed = needed.filter((text) => !vectorByText.has(text));
+    if (notIndexed.length > 0) {
+      try {
+        const cached = await getQueryEmbeddings(postgrestClient, {
+          texts: notIndexed, model, dims,
+        });
+        cached.forEach((hit, i) => {
+          if (hit?.vector?.length === dims) {
+            vectorByText.set(notIndexed[i], hit.vector);
+            result.cacheHits += 1;
+          }
+        });
+      } catch (e) {
+        result.cacheError = e;
+      }
     }
     const misses = needed.filter((text) => !vectorByText.has(text));
     if (misses.length > 0) {
@@ -670,9 +725,10 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
 
 /**
  * Batched topic writer: full-replaces many entities' topic texts in one pass, embedding only what
- * is new. Per (entity, matchFieldType): texts already stored keep their row and vector, new texts
- * are reused from `semantic_query_embedding` when cached (read-only) and otherwise embedded in
- * batched calls shared by all entities, and rows no longer submitted are deleted. An empty `texts`
+ * is new. Per (entity, matchFieldType): texts already stored keep their row and vector; new texts
+ * reuse a vector already stored in the same table for the site (any entity, match type or field)
+ * or cached in `semantic_query_embedding` (both read-only), and otherwise are embedded in batched
+ * calls shared by all entities; rows no longer submitted are deleted. An empty `texts`
  * clears that field; fields not submitted, and other match types, are left untouched.
  *
  * Every input is validated and every vector resolved before the first write, so a validation or
@@ -691,12 +747,23 @@ async function indexSemanticMatches(postgrestClient, embeddingClient, matchType,
  * @returns {Promise<{entities: Array<{entityId: string, fields: Array<{matchFieldType: string,
  *   submitted: number, rejected: number, inserted: number, deleted: number,
  *   unchanged: number}>}>,
- *   embedded: number, cacheHits: number, cacheError?: Error}>} `cacheError` is set when the
- *   query-cache read failed and every new text was embedded instead; `rejected` counts texts
- *   dropped as empty or over `MAX_TEXT_LENGTH`
+ *   embedded: number, indexHits: number, cacheHits: number, indexError?: Error,
+ *   cacheError?: Error}>} `indexHits` / `cacheHits` count new texts whose vector was reused from
+ *   the table / the query cache; `indexError` / `cacheError` is set when that read failed and the
+ *   texts fell through to the next source; `rejected` counts texts dropped as empty or over
+ *   `MAX_TEXT_LENGTH`
  */
 export function indexSemanticTopics(postgrestClient, embeddingClient, params) {
   return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
+}
+
+/**
+ * Batched claim writer: the claim-dimension counterpart of `indexSemanticTopics`, with the same
+ * parameters, behaviour and result. Rows are stored with the claim match type, so they are only
+ * found by the claim readers (e.g. `lookupSuggestionsByClaim`) and never by the topic ones.
+ */
+export function indexSemanticClaims(postgrestClient, embeddingClient, params) {
+  return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.CLAIM, params);
 }
 
 async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
@@ -910,22 +977,14 @@ export async function lookupOpportunitiesByTopic(postgrestClient, {
   });
 }
 
-/**
- * Nearest-neighbour topic search of the suggestion index for many query vectors. Same contract as
- * `lookupOpportunitiesByTopic`; `entityTypes` are parent opportunity types, `statuses` are
- * `Suggestion.STATUSES` values and `opportunityStatuses` are the parent opportunity's
- * (`Opportunity.STATUSES`), both applied before `k`.
- *
- * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
- */
-export async function lookupSuggestionsByTopic(postgrestClient, {
+function searchSuggestions(postgrestClient, matchType, {
   siteId, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors,
   k = 10, minScore = 0,
 } = {}) {
   const common = searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes });
   return searchByVectors(postgrestClient, SEMANTIC_TARGETS.SUGGESTION, {
     siteId,
-    matchType: SEMANTIC_MATCH_TYPES.TOPIC,
+    matchType,
     ...common,
     vectors,
     k,
@@ -939,4 +998,26 @@ export async function lookupSuggestionsByTopic(postgrestClient, {
       ),
     },
   });
+}
+
+/**
+ * Nearest-neighbour topic search of the suggestion index for many query vectors. Same contract as
+ * `lookupOpportunitiesByTopic`; `entityTypes` are parent opportunity types, `statuses` are
+ * `Suggestion.STATUSES` values and `opportunityStatuses` are the parent opportunity's
+ * (`Opportunity.STATUSES`), both applied before `k`.
+ *
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
+ */
+export async function lookupSuggestionsByTopic(postgrestClient, params) {
+  return searchSuggestions(postgrestClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
+}
+
+/**
+ * Nearest-neighbour claim search of the suggestion index: same contract as
+ * `lookupSuggestionsByTopic`, over the rows written by `indexSemanticClaims`.
+ *
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
+ */
+export async function lookupSuggestionsByClaim(postgrestClient, params) {
+  return searchSuggestions(postgrestClient, SEMANTIC_MATCH_TYPES.CLAIM, params);
 }

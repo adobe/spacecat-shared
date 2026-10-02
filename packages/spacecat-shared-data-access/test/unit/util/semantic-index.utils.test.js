@@ -22,8 +22,10 @@ import {
   EmbeddingUnavailableError,
   getQueryEmbeddings,
   hashText,
+  indexSemanticClaims,
   indexSemanticTopics,
   lookupOpportunitiesByTopic,
+  lookupSuggestionsByClaim,
   lookupSuggestionsByTopic,
   MAX_MODEL_LENGTH,
   MAX_TEXT_LENGTH,
@@ -31,6 +33,7 @@ import {
   normalizeText,
   parseVector,
   QUERY_EMBEDDING_TABLE,
+  QUERY_HASH_CHUNK_SIZE,
   SEMANTIC_CHUNK_SIZE,
   SEMANTIC_INDEX_TABLES,
   SEMANTIC_MATCHING_CONFIG,
@@ -49,6 +52,7 @@ const ENTITY_ID_2 = '2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f';
 const ENTITY_TYPE = 'cited-analysis';
 const FIELD = 'title';
 const TOPIC = 'topic';
+const CLAIM = 'claim';
 const OPP_TABLE = 'opportunity_semantic_embedding';
 const SUG_TABLE = 'suggestion_semantic_embedding';
 const OPP_RPC = 'rpc_opportunity_semantic_search';
@@ -272,11 +276,14 @@ describe('semantic-index.utils', () => {
       dims: DIMS,
       ...over,
     });
-    // fetchStoredRows reads the index table; getQueryEmbeddings reads the cache table.
-    const byTable = ({ stored = [], cached = [] } = {}) => ({
-      selectFn: (state) => (state.table === QUERY_EMBEDDING_TABLE
-        ? { data: cached, error: null }
-        : { data: stored, error: null }),
+    // fetchStoredRows and fetchIndexVectors read the index table; getQueryEmbeddings the cache.
+    const byTable = ({ stored = [], indexed = [], cached = [] } = {}) => ({
+      selectFn: (state) => {
+        if (state.table === QUERY_EMBEDDING_TABLE) {
+          return { data: cached, error: null };
+        }
+        return { data: state.cols === 'text_hash, embedding' ? indexed : stored, error: null };
+      },
     });
 
     it('validates its arguments', async () => {
@@ -330,7 +337,9 @@ describe('semantic-index.utils', () => {
       const client = makeClient();
       const embedder = makeEmbedder();
       expect(await run(client, { entities: [entity([])] }, embedder))
-        .to.deep.equal({ entities: [], embedded: 0, cacheHits: 0 });
+        .to.deep.equal({
+          entities: [], embedded: 0, indexHits: 0, cacheHits: 0,
+        });
       expect(client.calls.select).to.have.length(0);
       expect(embedder.calls).to.have.length(0);
     });
@@ -356,6 +365,7 @@ describe('semantic-index.utils', () => {
           }],
         }],
         embedded: 2,
+        indexHits: 0,
         cacheHits: 0,
       });
       expect(embedder.calls).to.deep.equal([['running shoes', 'boots']]);
@@ -480,6 +490,71 @@ describe('semantic-index.utils', () => {
       expect(out.entities.map((e) => e.fields.length)).to.deep.equal([1, 2]);
       // The writer never writes the query cache.
       expect(client.calls.upsert.every((c) => c.table === OPP_TABLE)).to.equal(true);
+    });
+
+    it('reuses vectors already stored in the table for the site before the cache and an embed', async () => {
+      const indexedVector = vec(0.3);
+      const cachedVector = vec(0.5);
+      const client = makeClient(byTable({
+        indexed: [
+          { text_hash: hashText('shared'), embedding: serializeVector(indexedVector) },
+          // A later duplicate and a wrong-dims row are ignored.
+          { text_hash: hashText('shared'), embedding: serializeVector(vec(0.9)) },
+          { text_hash: hashText('short'), embedding: '[0.1,0.2]' },
+        ],
+        cached: [{ text_hash: hashText('cached'), embedding: serializeVector(cachedVector) }],
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, {
+        entities: [entity([topicEntry(['Shared', 'short', 'cached', 'fresh'])])],
+      }, embedder);
+
+      expect(out).to.include({ indexHits: 1, cacheHits: 1, embedded: 2 });
+      expect(embedder.calls).to.deep.equal([['short', 'fresh']]);
+      const indexRead = client.calls.select.find((c) => c.cols === 'text_hash, embedding');
+      expect(indexRead).to.deep.include({
+        table: OPP_TABLE, eqs: { site_id: SITE_ID, model: MODEL, dims: DIMS },
+      });
+      expect(indexRead.inFilter.values).to.have.members(
+        ['shared', 'short', 'cached', 'fresh'].map(hashText),
+      );
+      const cacheRead = client.calls.select.find((c) => c.table === QUERY_EMBEDDING_TABLE);
+      expect(cacheRead.inFilter.values).to.have.members(['short', 'cached', 'fresh'].map(hashText));
+      const embeddingOf = (text) => client.calls.upsert[0].rows
+        .find((r) => r.text === text).embedding;
+      expect(embeddingOf('shared')).to.equal(serializeVector(indexedVector));
+      expect(embeddingOf('cached')).to.equal(serializeVector(cachedVector));
+    });
+
+    it('chunks the index-vector read and skips the cache when the table covers every text', async () => {
+      const texts = Array.from({ length: QUERY_HASH_CHUNK_SIZE + 1 }, (_, i) => `t${i}`);
+      const client = makeClient(byTable({
+        indexed: texts.map((text) => ({
+          text_hash: hashText(text), embedding: serializeVector(vec(0.2)),
+        })),
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(texts)])] }, embedder);
+      const indexReads = client.calls.select.filter((c) => c.cols === 'text_hash, embedding');
+      expect(indexReads.map((c) => c.inFilter.values.length))
+        .to.deep.equal([QUERY_HASH_CHUNK_SIZE, 1]);
+      expect(out).to.include({ indexHits: texts.length, cacheHits: 0, embedded: 0 });
+      expect(client.calls.select.some((c) => c.table === QUERY_EMBEDDING_TABLE)).to.equal(false);
+      expect(embedder.calls).to.have.length(0);
+    });
+
+    it('falls through to the cache and an embed when the index-vector read fails', async () => {
+      const client = makeClient({
+        selectFn: (state) => (state.cols === 'text_hash, embedding'
+          ? { data: null, error: { message: 'index down' } }
+          : { data: [], error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['a'])])] }, embedder);
+      expect(out.indexError).to.be.instanceOf(DataAccessError);
+      expect(out.indexError.message).to.equal(`Failed to read ${OPP_TABLE} vectors`);
+      expect(out).to.include({ indexHits: 0, embedded: 1 });
+      expect(client.calls.select.some((c) => c.table === QUERY_EMBEDDING_TABLE)).to.equal(true);
     });
 
     it('falls back to embedding everything when the cache read fails', async () => {
@@ -705,15 +780,30 @@ describe('semantic-index.utils', () => {
 
   const lookups = [
     {
-      name: 'lookupOpportunitiesByTopic', fn: lookupOpportunitiesByTopic, target: 'opportunity', rpc: OPP_RPC,
+      name: 'lookupOpportunitiesByTopic',
+      fn: lookupOpportunitiesByTopic,
+      target: 'opportunity',
+      rpc: OPP_RPC,
+      matchType: TOPIC,
     },
     {
-      name: 'lookupSuggestionsByTopic', fn: lookupSuggestionsByTopic, target: 'suggestion', rpc: SUG_RPC,
+      name: 'lookupSuggestionsByTopic',
+      fn: lookupSuggestionsByTopic,
+      target: 'suggestion',
+      rpc: SUG_RPC,
+      matchType: TOPIC,
+    },
+    {
+      name: 'lookupSuggestionsByClaim',
+      fn: lookupSuggestionsByClaim,
+      target: 'suggestion',
+      rpc: SUG_RPC,
+      matchType: CLAIM,
     },
   ];
 
   lookups.forEach(({
-    name, fn, target, rpc,
+    name, fn, target, rpc, matchType,
   }) => {
     describe(name, () => {
       const base = { siteId: SITE_ID };
@@ -780,7 +870,7 @@ describe('semantic-index.utils', () => {
         expect(rpcName).to.equal(rpc);
         expect(params).to.include({
           p_site_id: SITE_ID,
-          p_match_type: TOPIC,
+          p_match_type: matchType,
           p_match_field_types: null,
           p_entity_types: null,
           p_model: MODEL,
@@ -846,7 +936,7 @@ describe('semantic-index.utils', () => {
         expect(err).to.be.instanceOf(DataAccessError);
         expect(err.message).to.equal(`Failed ${target} semantic search for site ${SITE_ID}`);
         expect(err.details).to.deep.equal({
-          siteId: SITE_ID, matchType: TOPIC, matchFieldTypes: ['question'], entityTypes: null,
+          siteId: SITE_ID, matchType, matchFieldTypes: ['question'], entityTypes: null,
         });
 
         const cause = { code: 'PGRST202', message: 'Could not find the function' };
@@ -871,12 +961,15 @@ describe('semantic-index.utils', () => {
     });
   });
 
-  describe('lookupSuggestionsByTopic status filters', () => {
+  [
+    ['lookupSuggestionsByTopic', lookupSuggestionsByTopic, TOPIC],
+    ['lookupSuggestionsByClaim', lookupSuggestionsByClaim, CLAIM],
+  ].forEach(([name, lookupSuggestions, matchType]) => describe(`${name} status filters`, () => {
     const base = { siteId: SITE_ID, vectors: [vec(0.1)] };
 
     it('validates statuses against Suggestion and opportunityStatuses against Opportunity', async () => {
       const client = makeClient();
-      await lookupSuggestionsByTopic(client, {
+      await lookupSuggestions(client, {
         ...base, statuses: ['APPROVED', 'NEW'], opportunityStatuses: ['NEW', 'NEW'],
       });
       expect(client.calls.rpc[0].params).to.deep.include({
@@ -884,22 +977,82 @@ describe('semantic-index.utils', () => {
       });
       await expect(lookupOpportunitiesByTopic(makeClient(), { ...base, statuses: ['APPROVED'] }))
         .to.be.rejectedWith(ValidationError, 'statuses must only contain');
-      await expect(lookupSuggestionsByTopic(makeClient(), { ...base, opportunityStatuses: ['APPROVED'] }))
+      await expect(lookupSuggestions(makeClient(), { ...base, opportunityStatuses: ['APPROVED'] }))
         .to.be.rejectedWith(ValidationError, 'opportunityStatuses must only contain');
     });
 
     it('omits both status filters when not given', async () => {
       const client = makeClient();
-      await lookupSuggestionsByTopic(client, base);
+      await lookupSuggestions(client, base);
       expect(client.calls.rpc[0].params)
         .to.include({ p_statuses: null, p_opportunity_statuses: null });
-      expect(client.calls.rpc[0].params.p_match_type).to.equal(TOPIC);
+      expect(client.calls.rpc[0].params.p_match_type).to.equal(matchType);
     });
 
-    it('does not send p_opportunity_statuses for opportunities', async () => {
-      const client = makeClient();
-      await lookupOpportunitiesByTopic(client, base);
-      expect(client.calls.rpc[0].params).to.not.have.property('p_opportunity_statuses');
+    it('treats omitted params as an empty request', async () => {
+      await expect(lookupSuggestions(makeClient()))
+        .to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got undefined)');
+    });
+  }));
+
+  it('does not send p_opportunity_statuses for opportunities', async () => {
+    const client = makeClient();
+    await lookupOpportunitiesByTopic(client, { siteId: SITE_ID, vectors: [vec(0.1)] });
+    expect(client.calls.rpc[0].params).to.not.have.property('p_opportunity_statuses');
+  });
+
+  describe('indexSemanticClaims', () => {
+    it('writes claim rows that the topic writer leaves alone, reusing the topic vectors', async () => {
+      const topicVector = vec(0.4);
+      const client = makeClient({
+        selectFn: (state) => {
+          if (state.cols === 'text_hash, embedding') {
+            return {
+              data: [{ text_hash: hashText('pricing'), embedding: serializeVector(topicVector) }],
+              error: null,
+            };
+          }
+          // A stored topic row for the same entity and field must not count as a claim row.
+          return {
+            data: state.table === QUERY_EMBEDDING_TABLE ? [] : [{
+              id: 'id-topic',
+              entity_id: ENTITY_ID,
+              match_type: TOPIC,
+              match_field_type: 'topic',
+              text_hash: hashText('pricing'),
+              model: MODEL,
+              dims: DIMS,
+            }],
+            error: null,
+          };
+        },
+      });
+      const embedder = makeEmbedder();
+      const out = await indexSemanticClaims(client, embedder, {
+        target: SEMANTIC_TARGETS.SUGGESTION,
+        siteId: SITE_ID,
+        entities: [{
+          entityId: ENTITY_ID,
+          entityType: ENTITY_TYPE,
+          fields: [
+            { matchFieldType: 'title', texts: ['Lower your prices'] },
+            { matchFieldType: 'topic', texts: ['pricing'] },
+          ],
+        }],
+      });
+
+      expect(out).to.include({ indexHits: 1, embedded: 1 });
+      expect(out.entities[0].fields.map((f) => [f.matchFieldType, f.inserted, f.deleted]))
+        .to.deep.equal([['title', 1, 0], ['topic', 1, 0]]);
+      expect(embedder.calls).to.deep.equal([['lower your prices']]);
+      const [{ table, rows }] = client.calls.upsert;
+      expect(table).to.equal(SUG_TABLE);
+      expect(rows.map((r) => [r.match_type, r.match_field_type, r.text])).to.deep.equal([
+        [CLAIM, 'title', 'lower your prices'],
+        [CLAIM, 'topic', 'pricing'],
+      ]);
+      expect(rows[1].embedding).to.equal(serializeVector(topicVector));
+      expect(client.calls.delete).to.have.length(0);
     });
   });
 

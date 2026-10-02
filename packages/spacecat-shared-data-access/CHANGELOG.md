@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.39.1...@adobe/spacecat-shared-data-access-v4.40.0) (2026-10-02)
+
+### Features
+
+* **data-access:** semantic claim functions and in-table vector reuse (LLMO-7445) ([#1968](https://github.com/adobe/spacecat-shared/issues/1968)) ([72b7ac0](https://github.com/adobe/spacecat-shared/commit/72b7ac0f4d377c76cf982295dc4530f2ad624abb))
+
 ## [@adobe/spacecat-shared-data-access-v4.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.39.0...@adobe/spacecat-shared-data-access-v4.39.1) (2026-10-02)
 
 ### Bug Fixes

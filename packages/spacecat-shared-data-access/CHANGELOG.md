@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.38.0...@adobe/spacecat-shared-data-access-v4.39.0) (2026-10-02)
+
+### Features
+
+* **data-access:** batched semantic index writer and suggestion lookup (LLMO-7445) ([#1966](https://github.com/adobe/spacecat-shared/issues/1966)) ([3479136](https://github.com/adobe/spacecat-shared/commit/3479136b0e67923291376b036f9399d8c52f4c0b)), closes [mysticat-data-service#1153](https://github.com/adobe/mysticat-data-service/issues/1153) [mysticat-data-service#1153](https://github.com/adobe/mysticat-data-service/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153)
+
 ## [@adobe/spacecat-shared-data-access-v4.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.37.0...@adobe/spacecat-shared-data-access-v4.38.0) (2026-09-30)
 
 ### Features

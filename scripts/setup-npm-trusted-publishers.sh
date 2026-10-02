@@ -6,7 +6,7 @@
 #   - Logged in as the adobe-bot npm account (run: npm login, then verify: npm whoami)
 #   - Publish rights on all @adobe/* packages listed below
 #   - gh CLI installed and authenticated (for GitHub Environment + branch-protection preflight)
-#   - The 'npm-publish' GitHub Environment exists on adobe/spacecat-shared with a
+#   - The 'npm-publish' GitHub Environment exists on Adobe-AEM-Sites/spacecat-shared with a
 #     main-only deployment_branch_policy AND branch protection is enabled on main
 #     (otherwise the trust binding's '--environment' filter has no enforceable boundary).
 #
@@ -33,7 +33,7 @@ set -uo pipefail
 MIN_NPM_MAJOR=11
 MIN_NPM_MINOR=10
 EXPECTED_NPM_USER="adobe-bot"
-REPO="adobe/spacecat-shared"
+REPO="Adobe-AEM-Sites/spacecat-shared"
 WORKFLOW="main.yaml"
 ENVIRONMENT="npm-publish"
 

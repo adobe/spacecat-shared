@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.39.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.39.0...@adobe/spacecat-shared-data-access-v4.39.1) (2026-10-02)
+
+### Bug Fixes
+
+* **data-access:** rename MAX_SOURCE_TEXT_LENGTH to MAX_TEXT_LENGTH (LLMO-7445) ([#1967](https://github.com/adobe/spacecat-shared/issues/1967)) ([d20b120](https://github.com/adobe/spacecat-shared/commit/d20b1207c5633598788e96ff8ec9bbea1668ddb2)), closes [#1966](https://github.com/adobe/spacecat-shared/issues/1966) [spacecat-api-service#79](https://github.com/adobe/spacecat-api-service/issues/79) [#79](https://github.com/adobe/spacecat-shared/issues/79) [#79](https://github.com/adobe/spacecat-shared/issues/79)
+
 ## [@adobe/spacecat-shared-data-access-v4.39.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.38.0...@adobe/spacecat-shared-data-access-v4.39.0) (2026-10-02)
 
 ### Features

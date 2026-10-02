@@ -64,7 +64,7 @@ The index was redesigned before it had external consumers (mysticat-data-service
 - **The writer reads the query cache but never writes it.** Stored texts are normalized the same way as queries, so a topic already embedded for a query is reused. Only the read path (`embedQueries`) writes `semantic_query_embedding`, so the cache keeps meaning "texts users searched".
 - **Callers never pass the embedding generation.** The writer, `embedQueries` and both lookups read `SEMANTIC_MATCHING_CONFIG.embedding` themselves. After a model change the writer treats rows from the old generation as stale and overwrites them on the entity's next refresh.
 - **The writer copies vectors from the query cache into index rows**, so a bad cache row would persist past cache eviction. This relies on PostgREST being reachable only internally, and on the cache helpers being internal to data-access (only `embedQueries` writes the cache).
-- **The read side is bounded.** `embedQueries` rejects texts that are empty or over `MAX_SOURCE_TEXT_LENGTH` once normalized and more than `MAX_QUERY_TEXTS` texts, embeds the distinct misses in one call, and treats a cache read failure as all misses (logged and returned as `cacheError`), like the writer.
+- **The read side is bounded.** `embedQueries` rejects texts that are empty or over `MAX_TEXT_LENGTH` once normalized and more than `MAX_QUERY_TEXTS` texts, embeds the distinct misses in one call, and treats a cache read failure as all misses (logged and returned as `cacheError`), like the writer.
 
 ## Consequences
 

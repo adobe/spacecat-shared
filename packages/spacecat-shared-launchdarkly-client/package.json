@@ -38,7 +38,7 @@
     "@launchdarkly/node-server-sdk": "^9.11.2"
   },
   "devDependencies": {
-    "chai": "6.2.2",
+    "chai": "6.3.0",
     "chai-as-promised": "8.0.2",
     "esmock": "2.7.6",
     "nock": "14.0.17",

@@ -338,6 +338,23 @@ export function applyAssociations(
 ): Promise<{ cloudFrontFunctionArn: string; lambdaArn: string }>;
 
 /**
+ * Reverse of {@link applyAssociations}; strips only this distribution's EO-owned associations.
+ * Not a full offboarding: the EO origin, cache policy, function and Lambda stay in place.
+ */
+export function removeEdgeOptimizeRouting(
+  credentials: AWSCredentials,
+  distributionId: string,
+  region?: string,
+  options?: { dryRun?: boolean },
+): Promise<{
+  reverted: boolean;
+  behaviors: Array<{
+    pathPattern: string;
+    removed: Array<{ type: 'function' | 'lambda'; eventType: string; arn: string }>;
+  }>;
+}>;
+
+/**
  * Verify Edge Optimize routing end-to-end by probing as a bot and as a human.
  */
 export function verifyRouting(url: string): Promise<{
@@ -428,6 +445,11 @@ export class CloudFrontEdgeClient {
     pathPattern: string,
     lambdaVersionArn: string,
   ): ReturnType<typeof applyAssociations>;
+
+  removeEdgeOptimizeRouting(
+    distributionId: string,
+    options?: { dryRun?: boolean },
+  ): ReturnType<typeof removeEdgeOptimizeRouting>;
 
   runDeployStep(params: Parameters<typeof runDeployStep>[1]): ReturnType<typeof runDeployStep>;
 

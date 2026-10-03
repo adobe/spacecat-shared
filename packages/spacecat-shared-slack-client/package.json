@@ -38,7 +38,7 @@
     "@slack/web-api": "7.19.0"
   },
   "devDependencies": {
-    "chai": "6.2.2",
+    "chai": "6.3.0",
     "chai-as-promised": "8.0.2",
     "nock": "14.0.17",
     "sinon": "22.1.0",

@@ -122,3 +122,18 @@ export function getTokowakaMetaconfigS3Path(url, logger, isPreview = false) {
     throw new Error(`Failed to generate metaconfig S3 path: ${error.message}`);
   }
 }
+
+const CONDITIONAL_WRITE_CONFLICT_ERRORS = new Set(['PreconditionFailed', 'ConditionalRequestConflict']);
+
+/**
+ * Whether an S3 PutObject error means a conditional write (If-Match / If-None-Match)
+ * lost against a concurrent writer: 412 when the object changed since it was read,
+ * 409 when another conditional write to the same key was in flight. Both are retryable
+ * after re-reading the object.
+ * @param {Error} error - Error thrown by the S3 client
+ * @returns {boolean}
+ */
+export function isConditionalWriteConflict(error) {
+  const status = error?.$metadata?.httpStatusCode;
+  return CONDITIONAL_WRITE_CONFLICT_ERRORS.has(error?.name) || status === 409 || status === 412;
+}

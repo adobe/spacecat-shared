@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-tokowaka-client-v1.25.3](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.25.2...@adobe/spacecat-shared-tokowaka-client-v1.25.3) (2026-10-06)
+
+### Bug Fixes
+
+* **tokowaka-client:** write metaconfig conditionally to prevent lost updates from concurrent deploys (LLMO-8023) ([#1962](https://github.com/adobe/spacecat-shared/issues/1962)) ([14674f9](https://github.com/adobe/spacecat-shared/commit/14674f911d24a5b7770196b8127b5ea44b74ac6a))
+
 ## [@adobe/spacecat-shared-tokowaka-client-v1.25.2](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-tokowaka-client-v1.25.1...@adobe/spacecat-shared-tokowaka-client-v1.25.2) (2026-09-26)
 
 ### Bug Fixes

@@ -42,15 +42,16 @@ export const SUGGESTION_CREATE = Symbol('SUGGESTION_CREATE');
  * drowning real flows in false warnings. The warn logs from the rollout period
  * inform which entries to tighten before flipping to enforce.
  *
- * The one hard rule already enforced by api-service is preserved exactly:
- * REJECTED is only reachable from PENDING_VALIDATION (suggestions.js).
+ * The hard rule enforced by api-service (SITES-53247): REJECTED is only
+ * reachable from NEW or PENDING_VALIDATION (suggestions.js).
  */
 export const SUGGESTION_TRANSITIONS = {
-  // audit-worker creates as NEW (non-paid) or PENDING_VALIDATION (paid); OUTDATED at audit time.
+  // SITES-53247: audit-worker now always creates as NEW; OUTDATED at audit time.
+  // PENDING_VALIDATION retained for historical rows and V2.
   [SUGGESTION_CREATE]: [S.NEW, S.PENDING_VALIDATION, S.OUTDATED],
-  // ESE/TBYB review (-> NEW), mystique (-> IN_PROGRESS), bubble-up, UI skip, re-audit.
-  [S.NEW]: [S.APPROVED, S.IN_PROGRESS, S.FIXED, S.ERROR, S.SKIPPED, S.OUTDATED],
-  // paid-review gate: approve -> NEW, decline -> REJECTED (the one hard rule), or skip/outdate.
+  // ESE review (-> REJECTED, SITES-53247), mystique (-> IN_PROGRESS), bubble-up, UI skip, re-audit.
+  [S.NEW]: [S.APPROVED, S.IN_PROGRESS, S.FIXED, S.ERROR, S.SKIPPED, S.OUTDATED, S.REJECTED],
+  // paid-review gate: approve -> NEW, decline -> REJECTED (the hard rule), or skip/outdate.
   // IN_PROGRESS: api-service autofixSuggestions accepts PENDING_VALIDATION and sets IN_PROGRESS.
   [S.PENDING_VALIDATION]: [S.NEW, S.IN_PROGRESS, S.REJECTED, S.SKIPPED, S.OUTDATED],
   [S.APPROVED]: [S.IN_PROGRESS, S.FIXED, S.ERROR, S.SKIPPED, S.NEW, S.OUTDATED],

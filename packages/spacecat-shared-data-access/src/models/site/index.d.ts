@@ -222,6 +222,33 @@ export interface AuditTargetURLs {
   moneyPages?: AuditTargetEntry[];
 }
 
+export interface CommerceCatalogFieldConfig {
+  name?: { enabled: boolean; maxLength?: number };
+  description?: { enabled: boolean; maxLength?: number };
+}
+
+export interface CommerceLlmoViewConfig {
+  environmentId: string;
+  viewId: string;
+  websiteCode?: never;
+  storeCode?: never;
+  storeViewCode?: never;
+  hostName?: never;
+  catalogFieldConfig?: CommerceCatalogFieldConfig;
+}
+
+export interface CommerceLlmoStoreConfig {
+  environmentId: string;
+  viewId?: never;
+  websiteCode: string;
+  storeCode: string;
+  storeViewCode: string;
+  hostName: string;
+  catalogFieldConfig?: CommerceCatalogFieldConfig;
+}
+
+export type CommerceLlmoConfig = Record<string, CommerceLlmoViewConfig | CommerceLlmoStoreConfig>;
+
 export interface SiteConfig {
   state: {
     slack?: {
@@ -276,6 +303,7 @@ export interface SiteConfig {
       forcedOverride?: boolean;
       history?: Array<{ profile?: string; startTime?: number }>;
     };
+    commerceLlmoConfig?: CommerceLlmoConfig;
     contentAiConfig?: {
       name?: string;
       index?: string;
@@ -333,6 +361,8 @@ export interface SiteConfig {
   removeLlmoTag(tag: string): void;
   getOnboardConfig(): { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean; history?: Array<{ profile?: string; startTime?: number }> } | undefined;
   updateOnboardConfig(onboardConfig: { lastProfile?: string; lastStartTime?: number; forcedOverride?: boolean }, options?: { maxHistory?: number }): void;
+  getCommerceLlmoConfig(): CommerceLlmoConfig | undefined;
+  updateCommerceLlmoConfig(config?: CommerceLlmoConfig): void;
   getContentAiConfig(): { name?: string; index?: string } | undefined;
   updateContentAiConfig(config?: { name?: string; index?: string }): void;
   getAuditTargetURLs(): AuditTargetEntryWithSource[];

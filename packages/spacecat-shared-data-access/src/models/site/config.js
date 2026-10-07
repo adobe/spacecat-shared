@@ -508,10 +508,19 @@ export const configSchema = Joi.object({
     Joi.string(),
     Joi.object({
       environmentId: Joi.string().required(),
-      websiteCode: Joi.string().required(),
-      storeCode: Joi.string().required(),
-      storeViewCode: Joi.string().required(),
-      hostName: Joi.string().optional(),
+      websiteCode: Joi.string().when('viewId', {
+        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
+      }),
+      storeCode: Joi.string().when('viewId', {
+        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
+      }),
+      storeViewCode: Joi.string().when('viewId', {
+        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
+      }),
+      hostName: Joi.string().when('viewId', {
+        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
+      }),
+      viewId: Joi.string().optional(),
       catalogFieldConfig: Joi.object({
         name: Joi.object({
           enabled: Joi.boolean().required(),
@@ -648,6 +657,10 @@ export const Config = (data = {}) => {
   self.getTokowakaConfig = () => state?.tokowakaConfig;
   self.getEdgeOptimizeConfig = () => state?.edgeOptimizeConfig;
   self.getOnboardConfig = () => state?.onboardConfig;
+  /**
+   * Returns Commerce LLMO view or store configurations.
+   * @returns {import('./index.js').CommerceLlmoConfig | undefined}
+   */
   self.getCommerceLlmoConfig = () => state?.commerceLlmoConfig;
   /**
    * Returns the RUM configuration for the site, or undefined if not set.
@@ -1115,8 +1128,17 @@ export const Config = (data = {}) => {
     state.onboardConfig = { ...onboardConfig, history };
   };
 
+  /**
+   * Validates and replaces Commerce LLMO configurations, stripping legacy fields.
+   * @param {import('./index.js').CommerceLlmoConfig} [commerceLlmoConfig]
+   * @throws {Error} If a view or store configuration is invalid.
+   */
   self.updateCommerceLlmoConfig = (commerceLlmoConfig) => {
-    state.commerceLlmoConfig = commerceLlmoConfig;
+    const { error, value } = configSchema.extract('commerceLlmoConfig').validate(commerceLlmoConfig);
+    if (error) {
+      throw new Error(`Configuration validation error: ${error.message}`, { cause: error });
+    }
+    state.commerceLlmoConfig = value;
   };
 
   /**

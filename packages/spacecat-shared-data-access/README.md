@@ -60,6 +60,40 @@ const client = new PostgrestClient(process.env.POSTGREST_URL, { schema: 'public'
 const dataAccess = createDataAccess({ postgrestUrl: process.env.POSTGREST_URL }, console, client);
 ```
 
+### Commerce LLMO site configuration
+
+`site.getConfig().getCommerceLlmoConfig()` returns a map of Commerce configurations.
+Each entry must use exactly one of these formats:
+
+- **View**: `environmentId` and `viewId`. The store fields `websiteCode`, `storeCode`,
+  `storeViewCode`, and `hostName` are forbidden.
+- **Store**: `environmentId`, `websiteCode`, `storeCode`, `storeViewCode`, and
+  `hostName`. `viewId` must be absent.
+
+Both formats optionally accept `catalogFieldConfig.name` and
+`catalogFieldConfig.description`. Each supplied field requires a boolean `enabled`
+and optionally a non-negative integer `maxLength`.
+
+```js
+const config = site.getConfig();
+config.updateCommerceLlmoConfig({
+  storefront: { environmentId: 'env-123', viewId: 'view-123' },
+});
+site.setConfig(config.state);
+await site.save();
+```
+
+`updateCommerceLlmoConfig()` validates and replaces the entire map. Invalid input
+throws without changing the existing Commerce configuration. Passing `undefined`
+clears the map. Legacy `magentoEndpoint` and `magentoAPIKey` fields are stripped
+from valid configurations.
+
+**Breaking validation changes:** Store entries now require `hostName`. Updates
+that previously accepted incomplete entries or mixed view/store fields now throw.
+Before upgrading, populate missing store fields or migrate each entry to the view
+format by providing `viewId` and removing all four store fields. No database schema
+migration is required; this configuration remains in the existing site config.
+
 ## Wrapper Usage
 
 Default export is a wrapper that attaches `context.dataAccess`.

@@ -1,3 +1,15 @@
+## [@adobe/spacecat-shared-utils-v1.128.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.127.0...@adobe/spacecat-shared-utils-v1.128.0) (2026-10-02)
+
+### Features
+
+* **data-access:** batched semantic index writer and suggestion lookup (LLMO-7445) ([#1966](https://github.com/adobe/spacecat-shared/issues/1966)) ([3479136](https://github.com/adobe/spacecat-shared/commit/3479136b0e67923291376b036f9399d8c52f4c0b)), closes [mysticat-data-service#1153](https://github.com/adobe/mysticat-data-service/issues/1153) [mysticat-data-service#1153](https://github.com/adobe/mysticat-data-service/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153) [#1153](https://github.com/adobe/spacecat-shared/issues/1153)
+
+## [@adobe/spacecat-shared-utils-v1.127.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.126.0...@adobe/spacecat-shared-utils-v1.127.0) (2026-09-30)
+
+### Features
+
+* **utils:** add semantic lookup source/entity type registries (LLMO-7445) ([#1959](https://github.com/adobe/spacecat-shared/issues/1959)) ([0acce60](https://github.com/adobe/spacecat-shared/commit/0acce60aa0620287a5a8f26f72009cbb0916c307))
+
 ## [@adobe/spacecat-shared-utils-v1.126.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-utils-v1.125.2...@adobe/spacecat-shared-utils-v1.126.0) (2026-08-17)
 
 ### Features

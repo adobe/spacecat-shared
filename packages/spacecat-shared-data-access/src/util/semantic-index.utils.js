@@ -12,59 +12,82 @@
 
 import { createHash } from 'crypto';
 
-import { OPPORTUNITY_TYPES } from '@adobe/spacecat-shared-utils';
+import { isValidUUID } from '@adobe/spacecat-shared-utils';
 
 import { DataAccessError, ValidationError } from '../errors/index.js';
+import Opportunity from '../models/opportunity/opportunity.model.js';
+import Suggestion from '../models/suggestion/suggestion.model.js';
 import { DEFAULT_PAGE_SIZE, rpcError } from './postgrest.utils.js';
 
 /**
- * Shared writer + reader for the "semantic index" tables: `opportunity_semantic_embedding` (one
- * embedding per opportunity source text, keyed by `source_type`) and `semantic_query_embedding`
- * (a global query-text -> vector cache).
+ * Shared writer + reader for the semantic index: `opportunity_semantic_embedding` /
+ * `suggestion_semantic_embedding` (one embedding per indexed text of an entity, keyed by
+ * `match_type` + `match_field_type`) and `semantic_query_embedding` (a global text -> vector
+ * cache).
  *
- * Writer and reader share `normalizeText`/`hashText`, so the normalized form is a PERSISTED
- * format: changing it desyncs stored rows from new lookups.
+ * Both sides embed the NORMALIZED text (`normalizeText`), so a `text_hash` always maps to one
+ * vector. The normalized form is a persisted format: changing it desyncs stored rows from new
+ * lookups.
  */
 
-/** Tables the sync/copy helpers are allowed to touch. */
-export const SEMANTIC_INDEX_TABLES = Object.freeze(['opportunity_semantic_embedding']);
+// Which lookup an indexed row serves. Set by the dimension functions below, never by callers.
+const SEMANTIC_MATCH_TYPES = Object.freeze({
+  TOPIC: 'topic',
+  CLAIM: 'claim',
+});
+
+/** Entity kinds with a semantic index. Each maps to its table and search RPC. */
+export const SEMANTIC_TARGETS = Object.freeze({
+  OPPORTUNITY: 'opportunity',
+  SUGGESTION: 'suggestion',
+});
+
+const TARGET_CONFIG = Object.freeze({
+  [SEMANTIC_TARGETS.OPPORTUNITY]: Object.freeze({
+    table: 'opportunity_semantic_embedding',
+    searchRpc: 'rpc_opportunity_semantic_search',
+  }),
+  [SEMANTIC_TARGETS.SUGGESTION]: Object.freeze({
+    table: 'suggestion_semantic_embedding',
+    searchRpc: 'rpc_suggestion_semantic_search',
+  }),
+});
+
+export const SEMANTIC_INDEX_TABLES = Object.freeze(
+  Object.values(TARGET_CONFIG).map((config) => config.table),
+);
+export const SEMANTIC_SEARCH_RPCS = Object.freeze(
+  Object.fromEntries(Object.entries(TARGET_CONFIG).map(([t, config]) => [t, config.searchRpc])),
+);
 export const QUERY_EMBEDDING_TABLE = 'semantic_query_embedding';
-export const SEMANTIC_SEARCH_RPC = 'rpc_opportunity_semantic_search';
-export const COPY_VECTORS_RPC = 'wrpc_copy_opportunity_semantic_vectors';
 
 /** Multi-row op chunk size; smaller than the URL index's because vectors inflate the payload. */
 export const SEMANTIC_CHUNK_SIZE = 20;
 
-/** Hashes per `.in()` filter (64 hex chars each), kept well under the request URI limit. */
+/** Hashes / ids per `.in()` filter, kept well under the request URI limit. */
 export const QUERY_HASH_CHUNK_SIZE = 50;
 
-/** Max topic/query text length; matches the `source_text` DB CHECK. */
-export const MAX_SOURCE_TEXT_LENGTH = 2048;
+/** Texts per `createEmbeddings` call (Azure accepts up to 2048 inputs per request). */
+export const EMBEDDING_BATCH_SIZE = 256;
 
-/**
- * Kinds of source text in `opportunity_semantic_embedding.source_type`. The writer and reader
- * reject any other value; add a kind here before indexing or searching it.
- */
-export const OPPORTUNITY_SEMANTIC_SOURCE_TYPES = Object.freeze({
-  TOPIC: 'topic',
-});
+/** Max query texts per `embedQueries` call; keep <= `EMBEDDING_BATCH_SIZE` (one embed call). */
+export const MAX_QUERY_TEXTS = 256;
 
-/**
- * Opportunity types allowed in `opportunity_semantic_embedding.entity_type`. The writer and
- * reader reject any other value; add a type here before indexing or filtering by it.
- */
-export const OPPORTUNITY_SEMANTIC_ENTITY_TYPES = Object.freeze({
-  CITED_ANALYSIS: OPPORTUNITY_TYPES.CITED_ANALYSIS,
-  REDDIT_ANALYSIS: OPPORTUNITY_TYPES.REDDIT_ANALYSIS,
-  YOUTUBE_ANALYSIS: OPPORTUNITY_TYPES.YOUTUBE_ANALYSIS,
-});
+/** Max text length; matches the `text` DB CHECKs. */
+export const MAX_TEXT_LENGTH = 2048;
+export const MAX_MATCH_FIELD_TYPE_LENGTH = 64;
+export const MAX_ENTITY_TYPE_LENGTH = 255;
+/** Max values per type filter; matches the search RPCs' guard. */
+export const MAX_TYPE_FILTER_ITEMS = 100;
+
+/** Default budget for the read-side embed call (a synchronous API route). */
+export const EMBEDDING_TIMEOUT_MS = 10_000;
 
 /**
  * Shared semantic-matching settings. `embedding` is the generation every semantic writer and
- * reader uses: stored on each row and part of the query-cache key; spread it into the helpers'
- * `model` / `dims`. `embedding.dims` must match the data-service `vector(1536)` columns and CHECKs.
- * A code constant, not env config: writer and reader agree as long as both run the same
- * data-access version.
+ * reader uses: stored on each row and part of the query-cache key. `embedding.dims` must match
+ * the data-service `vector(1536)` columns and CHECKs. A code constant, not env config: writer and
+ * reader agree as long as both run the same data-access version.
  */
 export const SEMANTIC_MATCHING_CONFIG = Object.freeze({
   embedding: Object.freeze({
@@ -73,9 +96,26 @@ export const SEMANTIC_MATCHING_CONFIG = Object.freeze({
   }),
 });
 
+/** The embedding call failed, timed out, or returned malformed vectors. */
+export class EmbeddingUnavailableError extends DataAccessError {
+  constructor(message, { misses } = {}, cause = null) {
+    super(message, { misses }, cause);
+    this.misses = misses;
+  }
+}
+
+export const MAX_MODEL_LENGTH = 128;
+const MAX_ECHOED_VALUE_LENGTH = 200;
+
 function assertClient(postgrestClient) {
   if (!postgrestClient || typeof postgrestClient.from !== 'function') {
     throw new ValidationError('postgrestClient is required');
+  }
+}
+
+function assertEmbeddingClient(embeddingClient) {
+  if (!embeddingClient || typeof embeddingClient.createEmbeddings !== 'function') {
+    throw new ValidationError('embeddingClient with createEmbeddings() is required');
   }
 }
 
@@ -91,16 +131,12 @@ function assertDims(value) {
   }
 }
 
-export const MAX_MODEL_LENGTH = 128;
-
 function assertModel(value) {
   assertId(value, 'model');
   if (value.length > MAX_MODEL_LENGTH) {
     throw new ValidationError(`model must be at most ${MAX_MODEL_LENGTH} characters`);
   }
 }
-
-const MAX_ECHOED_VALUE_LENGTH = 200;
 
 function stringifyValue(value) {
   try {
@@ -128,51 +164,62 @@ function describeValue(value) {
   return safe.length > MAX_ECHOED_VALUE_LENGTH ? `${safe.slice(0, MAX_ECHOED_VALUE_LENGTH)}...` : safe;
 }
 
-function assertAllowed(value, name, registry) {
-  const allowed = Object.values(registry);
-  if (!allowed.includes(value)) {
-    throw new ValidationError(`${name} must be one of: ${allowed.join(', ')} (got ${describeValue(value)})`);
+function assertUuid(value, name) {
+  if (!isValidUUID(value)) {
+    throw new ValidationError(`${name} must be a valid UUID (got ${describeValue(value)})`);
   }
 }
 
-/**
- * Validates a type list against its registry and dedups it, so its length never exceeds the
- * registry's. Omitted/empty returns null (no filter) unless `required`.
- */
-function toAllowedList(values, name, registry, { required }) {
+function assertBoundedString(value, name, maxLength) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > maxLength) {
+    throw new ValidationError(
+      `${name} must be a non-empty string of at most ${maxLength} characters (got ${describeValue(value)})`,
+    );
+  }
+}
+
+function resolveTarget(target) {
+  if (typeof target !== 'string' || !Object.hasOwn(TARGET_CONFIG, target)) {
+    throw new ValidationError(
+      `target must be one of: ${Object.values(SEMANTIC_TARGETS).join(', ')} (got ${describeValue(target)})`,
+    );
+  }
+  return TARGET_CONFIG[target];
+}
+
+/** Free-form filter list: shape-checked and deduped; omitted or empty means no filter (null). */
+function toFilterList(values, name, maxLength) {
   if (values === undefined || values === null || (Array.isArray(values) && values.length === 0)) {
-    if (required) {
-      throw new ValidationError(`${name} must be a non-empty array`);
-    }
     return null;
   }
   if (!Array.isArray(values)) {
     throw new ValidationError(`${name} must be an array`);
   }
-  const allowed = Object.values(registry);
-
-  const rejected = [];
-  for (const value of values) {
-    if (!allowed.includes(value)) {
-      rejected.push(value);
-    }
+  values.forEach((value) => assertBoundedString(value, `each ${name} value`, maxLength));
+  const distinct = [...new Set(values)];
+  if (distinct.length > MAX_TYPE_FILTER_ITEMS) {
+    throw new ValidationError(`${name} must have at most ${MAX_TYPE_FILTER_ITEMS} values (got ${distinct.length})`);
   }
+  return distinct;
+}
+
+/** Status filter list: values must belong to the model's status enum. */
+function toStatusList(values, name, statuses) {
+  if (values === undefined || values === null || (Array.isArray(values) && values.length === 0)) {
+    return null;
+  }
+  if (!Array.isArray(values)) {
+    throw new ValidationError(`${name} must be an array`);
+  }
+  const allowed = Object.values(statuses);
+  const rejected = values.filter((value) => !allowed.includes(value));
   if (rejected.length > 0) {
     throw new ValidationError(`${name} must only contain: ${allowed.join(', ')} (got ${describeValue(rejected)})`);
   }
   return [...new Set(values)];
 }
 
-/** Only an empty/omitted `sources` clears; a non-empty input reduced to nothing throws. */
-function assertClearable(sources, entityId, sourceType) {
-  const explicitClear = sources === undefined || sources === null
-    || (Array.isArray(sources) && sources.length === 0);
-  if (!explicitClear) {
-    throw new ValidationError(`sources contained no valid entries; pass [] to clear ${sourceType} vectors for entity ${entityId}`);
-  }
-}
-
-/** Lowercase, collapse whitespace, and trim, so trivial variants share a hash. */
+/** Lowercase, collapse whitespace, and trim, so trivial variants share a hash and a vector. */
 export function normalizeText(text) {
   return typeof text === 'string' ? text.replace(/\s+/g, ' ').trim().toLowerCase() : '';
 }
@@ -182,22 +229,25 @@ export function hashText(normalized) {
 }
 
 /**
- * Per-topic hygiene shared by writer and reader, so both reject the same input and dedup on the
- * same key. Returns the trimmed `text` to embed and its normalized `key`, or `null` if unusable.
+ * Per-text hygiene shared by writer and reader, so both reject the same input and dedup on the
+ * same key. Returns the trimmed `text` and its normalized `key` (what gets embedded and stored),
+ * or `null` if unusable.
  *
- * @param {unknown} title - a raw topic title or query string
- * @param {{ maxLength?: number }} [opts] - max trimmed length (default `MAX_SOURCE_TEXT_LENGTH`)
+ * @param {unknown} title - a raw indexed text or query string
+ * @param {{ maxLength?: number }} [opts] - max normalized length (default `MAX_TEXT_LENGTH`)
  * @returns {{ text: string, key: string } | null}
  */
-export function cleanTopicText(title, { maxLength = MAX_SOURCE_TEXT_LENGTH } = {}) {
+export function cleanTopicText(title, { maxLength = MAX_TEXT_LENGTH } = {}) {
   if (typeof title !== 'string') {
     return null;
   }
   const text = title.trim();
-  if (text.length === 0 || text.length > maxLength) {
+  const key = normalizeText(text);
+  // The normalized key is what gets stored; lowercasing can lengthen a string.
+  if (key.length === 0 || key.length > maxLength) {
     return null;
   }
-  return { text, key: normalizeText(text) };
+  return { text, key };
 }
 
 /** Serialize to the pgvector `[v1,v2,...]` wire format. */
@@ -241,291 +291,169 @@ function hashQueryText(text) {
   return { normalized, textHash: hashText(normalized) };
 }
 
-/** Clean + hash the text, validate the vector, drop invalid text, dedup on hash (first-seen). */
-function toRows({
-  siteId, entityId, entityType, sourceType, sources,
-}) {
-  const list = Array.isArray(sources) ? sources : [];
-  const seen = new Set();
-  const rows = [];
-  for (const src of list) {
-    const cleaned = cleanTopicText(src?.text);
-    if (cleaned === null) {
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-    const { text, key } = cleaned;
-    const sourceHash = hashText(key);
-    if (seen.has(sourceHash)) {
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-    seen.add(sourceHash);
-    // Bad text is dropped, but a bad vector contract throws: it would persist as wrong neighbours.
-    assertModel(src.model);
-    assertDims(src.dims);
-    const embedding = serializeVector(src.vector);
-    if (src.vector.length !== src.dims) {
-      throw new ValidationError(`vector length ${src.vector.length} does not match dims ${src.dims}`);
-    }
-    rows.push({
-      site_id: siteId,
-      entity_id: entityId,
-      entity_type: entityType,
-      source_type: sourceType,
-      source_id: src.sourceId ?? null,
-      source_hash: sourceHash,
-      source_text: text,
-      embedding,
-      model: src.model,
-      dims: src.dims,
-    });
+function chunk(list, size) {
+  const chunks = [];
+  for (let i = 0; i < list.length; i += size) {
+    chunks.push(list.slice(i, i + size));
   }
-  return rows;
+  return chunks;
 }
 
-async function upsertRows(postgrestClient, table, rows, onConflict, entityId) {
-  for (let i = 0; i < rows.length; i += SEMANTIC_CHUNK_SIZE) {
-    const chunk = rows.slice(i, i + SEMANTIC_CHUNK_SIZE);
+async function upsertRows(postgrestClient, table, rows, details) {
+  for (const group of chunk(rows, SEMANTIC_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
-    const { error } = await postgrestClient.from(table).upsert(chunk, { onConflict });
-    if (error) {
-      throw new DataAccessError(`Failed to sync ${table} for entity ${entityId}`, { table, entityId }, error);
-    }
-  }
-}
-
-/** Read the stored hashes for one (entity, source_type), paginated so `max-rows` can't truncate. */
-async function fetchHashes(postgrestClient, table, siteId, entityId, sourceType) {
-  const hashes = [];
-  let offset = 0;
-  let keepGoing = true;
-  while (keepGoing) {
-    // eslint-disable-next-line no-await-in-loop
-    const { data, error } = await postgrestClient
+    const { error } = await postgrestClient
       .from(table)
-      .select('source_hash')
-      .eq('site_id', siteId)
-      .eq('entity_id', entityId)
-      .eq('source_type', sourceType)
-      .order('source_hash', { ascending: true })
-      .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      .upsert(group, { onConflict: 'entity_id,match_type,match_field_type,text_hash' });
     if (error) {
-      throw new DataAccessError(`Failed to read ${table} for entity ${entityId}`, { table, entityId }, error);
-    }
-    if (!data || data.length === 0) {
-      keepGoing = false;
-    } else {
-      hashes.push(...data.map((row) => row.source_hash));
-      offset += DEFAULT_PAGE_SIZE;
-      keepGoing = data.length >= DEFAULT_PAGE_SIZE;
+      throw new DataAccessError(`Failed to write ${table}`, details, error);
     }
   }
-  return hashes;
 }
 
-/** Delete the given hashes for one (entity, source_type), chunked (URI limit). */
-async function deleteHashes(postgrestClient, table, siteId, entityId, sourceType, hashes) {
-  for (let i = 0; i < hashes.length; i += SEMANTIC_CHUNK_SIZE) {
-    const chunk = hashes.slice(i, i + SEMANTIC_CHUNK_SIZE);
+async function deleteRowsById(postgrestClient, table, siteId, ids, details) {
+  for (const group of chunk(ids, QUERY_HASH_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
     const { error } = await postgrestClient
       .from(table)
       .delete()
       .eq('site_id', siteId)
-      .eq('entity_id', entityId)
-      .eq('source_type', sourceType)
-      .in('source_hash', chunk);
+      .in('id', group);
     if (error) {
-      throw new DataAccessError(`Failed to prune ${table} for entity ${entityId}`, { table, entityId }, error);
+      throw new DataAccessError(`Failed to prune ${table}`, details, error);
     }
   }
 }
 
-async function clearEntitySource(postgrestClient, table, siteId, entityId, sourceType) {
-  const { error } = await postgrestClient
-    .from(table)
-    .delete()
-    .eq('site_id', siteId)
-    .eq('entity_id', entityId)
-    .eq('source_type', sourceType);
-  if (error) {
-    throw new DataAccessError(`Failed to clear ${table} for entity ${entityId}`, { table, entityId }, error);
+/**
+ * Stored rows for many entities, paginated per id chunk so `max-rows` can't truncate.
+ * @returns {Promise<Array<{id: string, entity_id: string, match_type: string,
+ *   match_field_type: string, text_hash: string, model: string, dims: number}>>}
+ */
+async function fetchStoredRows(postgrestClient, table, siteId, entityIds, details) {
+  const rows = [];
+  for (const group of chunk(entityIds, QUERY_HASH_CHUNK_SIZE)) {
+    let offset = 0;
+    let keepGoing = true;
+    while (keepGoing) {
+      // eslint-disable-next-line no-await-in-loop
+      const { data, error } = await postgrestClient
+        .from(table)
+        .select('id, entity_id, match_type, match_field_type, text_hash, model, dims')
+        .eq('site_id', siteId)
+        .in('entity_id', group)
+        .order('id', { ascending: true })
+        .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
+      if (error) {
+        throw new DataAccessError(`Failed to read ${table}`, details, error);
+      }
+      rows.push(...(data ?? []));
+      offset += DEFAULT_PAGE_SIZE;
+      keepGoing = (data?.length ?? 0) >= DEFAULT_PAGE_SIZE;
+    }
   }
+  return rows;
 }
 
 /**
- * Full-replace one opportunity's vectors for a single `sourceType`; an empty `sources` clears it
- * (a non-empty input that yields no valid rows throws instead of clearing).
- *
- * Same upsert -> prune ordering and single-writer caveat as `syncUrlIndex`. Requires the
- * `postgrest_writer` role.
- *
- * @param {object} postgrestClient - `@supabase/postgrest-js` client
- * @param {object} params
- * @param {string} params.siteId - the site the opportunity belongs to
- * @param {string} params.entityId - the opportunity id
- * @param {string} [params.entityType] - the opportunity type stored on each row, one of
- *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; required when `sources` yields rows
- * @param {string} params.sourceType - the source kind, one of `OPPORTUNITY_SEMANTIC_SOURCE_TYPES`
- * @param {Array<{text: string, vector: number[], model: string, dims: number, sourceId?: string}>}
- *   params.sources - one entry per source text (normalized + hashed here)
- * @returns {Promise<number>} size of the stored set for this (entity, sourceType) after sync
+ * Vectors already stored in `table` for this site's texts, under the current generation, whatever
+ * the entity, match type or field. One per hash; a hash missing from a `max-rows`-capped page just
+ * falls through to the cache or an embed.
+ * @returns {Promise<Map<string, number[]>>} text hash -> vector
  */
-export async function syncOpportunitySemantic(postgrestClient, {
-  siteId, entityId, entityType, sourceType, sources,
-} = {}) {
-  assertClient(postgrestClient);
-  assertId(siteId, 'siteId');
-  assertId(entityId, 'entityId');
-  // Strict even when clearing: it scopes the delete, so retire a kind only after its rows are gone.
-  assertAllowed(sourceType, 'sourceType', OPPORTUNITY_SEMANTIC_SOURCE_TYPES);
-
-  const table = 'opportunity_semantic_embedding';
-  const rows = toRows({
-    siteId, entityId, entityType, sourceType, sources,
-  });
-
-  if (rows.length === 0) {
-    assertClearable(sources, entityId, sourceType);
-    await clearEntitySource(postgrestClient, table, siteId, entityId, sourceType);
-    return 0;
-  }
-
-  // Only stored rows carry entityType; clearing must still work for a type since removed.
-  assertAllowed(entityType, 'entityType', OPPORTUNITY_SEMANTIC_ENTITY_TYPES);
-  await upsertRows(postgrestClient, table, rows, 'entity_id,source_type,source_hash', entityId);
-
-  const keep = new Set(rows.map((r) => r.source_hash));
-  const existing = await fetchHashes(postgrestClient, table, siteId, entityId, sourceType);
-  const stale = existing.filter((h) => !keep.has(h));
-  if (stale.length > 0) {
-    await deleteHashes(postgrestClient, table, siteId, entityId, sourceType, stale);
-  }
-
-  return rows.length;
-}
-
-/**
- * Copy all vector rows from one opportunity to another within a site, server-side via the copy
- * RPC, so identical content is re-pointed rather than re-embedded. Idempotent. Requires the
- * `postgrest_writer` role.
- *
- * @param {object} postgrestClient - `@supabase/postgrest-js` client
- * @param {object} params
- * @param {string} params.siteId - the site both opportunities belong to
- * @param {string} params.fromEntityId - source opportunity id
- * @param {string} params.toEntityId - destination opportunity id
- * @returns {Promise<number>} rows inserted (0 when already copied)
- */
-export async function copyEntityVectors(postgrestClient, {
-  siteId, fromEntityId, toEntityId,
-} = {}) {
-  assertClient(postgrestClient);
-  assertId(siteId, 'siteId');
-  assertId(fromEntityId, 'fromEntityId');
-  assertId(toEntityId, 'toEntityId');
-
-  const { data, error } = await postgrestClient.rpc(COPY_VECTORS_RPC, {
-    p_site_id: siteId,
-    p_from_entity_id: fromEntityId,
-    p_to_entity_id: toEntityId,
-  });
-  if (error) {
-    throw rpcError(`Failed to copy semantic vectors for entity ${fromEntityId}`, COPY_VECTORS_RPC, { siteId, fromEntityId, toEntityId }, error);
-  }
-  return data ?? 0;
-}
-
-/**
- * Site-scoped nearest-neighbour search for many query vectors: for each one, the opportunities
- * whose vectors best match it, one row per opportunity (best score). Via RPC because PostgREST
- * can't express `<=>` ordering. `model` + `dims` restrict the search to vectors embedded by the
- * same model as the queries.
- *
- * Vectors go in groups of up to `SEMANTIC_CHUNK_SIZE`, fewer when `k` is large, so a call's
- * `group × k` rows stay within PostgREST's max-rows cap.
- *
- * @param {object} postgrestClient - `@supabase/postgrest-js` client
- * @param {object} params
- * @param {string} params.siteId - the site to scope the search to
- * @param {string[]} params.sourceTypes - source kinds to search, from
- *   `OPPORTUNITY_SEMANTIC_SOURCE_TYPES` (required, non-empty)
- * @param {string[]} [params.entityTypes] - opportunity types to narrow to, from
- *   `OPPORTUNITY_SEMANTIC_ENTITY_TYPES`; omitted or empty searches all
- * @param {number[][]} params.vectors - the query embeddings
- * @param {string} params.model - the model the queries were embedded with
- * @param {number} params.dims - the query embedding dimension
- * @param {number} [params.k=10] - max opportunities per query
- * @param {number} [params.minScore=0] - cosine-similarity floor
- * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>} one
- *   best-first list per input vector, in input order
- */
-export async function lookupOpportunitiesByVectors(postgrestClient, {
-  siteId, sourceTypes, entityTypes, vectors, model, dims, k = 10, minScore = 0,
-} = {}) {
-  assertClient(postgrestClient);
-  assertId(siteId, 'siteId');
-  const sourceTypeList = toAllowedList(sourceTypes, 'sourceTypes', OPPORTUNITY_SEMANTIC_SOURCE_TYPES, { required: true });
-  const entityTypeList = toAllowedList(entityTypes, 'entityTypes', OPPORTUNITY_SEMANTIC_ENTITY_TYPES, { required: false });
-  assertModel(model);
-  assertDims(dims);
-  if (!Array.isArray(vectors)) {
-    throw new ValidationError('vectors must be an array');
-  }
-  if (!Number.isInteger(k) || k < 1 || k > DEFAULT_PAGE_SIZE) {
-    throw new ValidationError(`k must be an integer between 1 and ${DEFAULT_PAGE_SIZE}`);
-  }
-  if (typeof minScore !== 'number' || !Number.isFinite(minScore)) {
-    throw new ValidationError('minScore must be a finite number');
-  }
-  const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
-
-  const results = vectors.map(() => []);
-  const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
-  for (let offset = 0; offset < serialized.length; offset += groupSize) {
-    const group = serialized.slice(offset, offset + groupSize);
+async function fetchIndexVectors(postgrestClient, table, siteId, hashes, { model, dims }) {
+  const vectorByHash = new Map();
+  for (const group of chunk(hashes, QUERY_HASH_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
-    const { data, error } = await postgrestClient.rpc(SEMANTIC_SEARCH_RPC, {
-      p_site_id: siteId,
-      p_source_types: sourceTypeList,
-      p_entity_types: entityTypeList,
-      p_query_embeddings: group,
-      p_model: model,
-      p_dims: dims,
-      p_limit: k,
-      p_min_score: minScore,
-    });
+    const { data, error } = await postgrestClient
+      .from(table)
+      .select('text_hash, embedding')
+      .eq('site_id', siteId)
+      .eq('model', model)
+      .eq('dims', dims)
+      .in('text_hash', group);
     if (error) {
-      throw rpcError(
-        `Failed semantic search for site ${siteId}`,
-        SEMANTIC_SEARCH_RPC,
-        { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
-        error,
-      );
+      throw new DataAccessError(`Failed to read ${table} vectors`, { table, siteId }, error);
     }
     for (const row of data ?? []) {
-      // Checked against this group, not all results, so a bad index can't land in another group.
-      const { query_index: queryIndex } = row;
-      if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
-        throw new DataAccessError(
-          `Unexpected query_index ${queryIndex} from ${SEMANTIC_SEARCH_RPC}`,
-          { siteId, sourceTypes: sourceTypeList, entityTypes: entityTypeList },
-        );
+      const vector = parseVector(row.embedding);
+      if (!vectorByHash.has(row.text_hash) && vector?.length === dims) {
+        vectorByHash.set(row.text_hash, vector);
       }
-      results[offset + queryIndex].push({
-        entityId: row.entity_id,
-        entityType: row.entity_type,
-        score: row.score,
-      });
     }
   }
-  return results;
+  return vectorByHash;
+}
+
+const groupKey = (entityId, matchType, matchFieldType) => `${entityId}\u0000${matchType}\u0000${matchFieldType}`;
+
+/** Validates one indexing group and returns its distinct normalized texts. */
+function toGroup({
+  entityId, entityType, matchType, matchFieldType, texts,
+}) {
+  assertUuid(entityId, 'entityId');
+  assertBoundedString(matchFieldType, 'matchFieldType', MAX_MATCH_FIELD_TYPE_LENGTH);
+  if (texts !== undefined && texts !== null && !Array.isArray(texts)) {
+    throw new ValidationError(`texts must be an array (entity ${entityId}, field ${matchFieldType})`);
+  }
+  const input = texts ?? [];
+  const cleaned = input.map((text) => cleanTopicText(text)?.key);
+  const keys = [...new Set(cleaned.filter((key) => typeof key === 'string'))];
+  // A non-empty input reduced to nothing is a caller bug, not a request to clear.
+  if (input.length > 0 && keys.length === 0) {
+    throw new ValidationError(
+      `texts contained no valid entries; pass [] to clear field ${matchFieldType} for entity ${entityId}`,
+    );
+  }
+  if (keys.length > 0) {
+    assertBoundedString(entityType, 'entityType', MAX_ENTITY_TYPE_LENGTH);
+  }
+  return {
+    entityId,
+    entityType,
+    matchType,
+    matchFieldType,
+    submitted: input.length,
+    rejected: cleaned.filter((key) => key === undefined).length,
+    keys,
+  };
+}
+
+function assertVectors(vectors, count, dims, misses) {
+  if (!Array.isArray(vectors) || vectors.length !== count) {
+    throw new EmbeddingUnavailableError(
+      `Embedding response length mismatch: expected ${count}, got ${vectors?.length}`,
+      { misses },
+    );
+  }
+  const bad = vectors.findIndex((v) => !Array.isArray(v) || v.length !== dims);
+  if (bad !== -1) {
+    throw new EmbeddingUnavailableError(
+      `Embedding dimension mismatch: expected ${dims}, got ${vectors[bad]?.length} (check AZURE_EMBEDDING_DEPLOYMENT)`,
+      { misses },
+    );
+  }
+}
+
+async function embedInBatches(embeddingClient, texts, dims) {
+  const vectors = [];
+  for (const group of chunk(texts, EMBEDDING_BATCH_SIZE)) {
+    let embedded;
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      embedded = await embeddingClient.createEmbeddings(group);
+    } catch (e) {
+      throw new EmbeddingUnavailableError(`Embedding call failed: ${e.message}`, { misses: texts.length }, e);
+    }
+    assertVectors(embedded, group.length, dims, texts.length);
+    vectors.push(...embedded);
+  }
+  return vectors;
 }
 
 /**
- * Read the cached embeddings for many query strings (keyed by normalized text + model + dims),
- * in groups of `QUERY_HASH_CHUNK_SIZE` hashes.
+ * Read the cached embeddings for many texts (keyed by normalized text + model + dims), in groups
+ * of `QUERY_HASH_CHUNK_SIZE` hashes.
  * @returns {Promise<Array<{vector: number[], textHash: string}|null>>} one entry per input text,
  *   in input order; null on a miss
  */
@@ -540,16 +468,16 @@ export async function getQueryEmbeddings(postgrestClient, { texts, model, dims }
   const distinct = [...new Set(hashes)];
 
   const vectorByHash = new Map();
-  for (let i = 0; i < distinct.length; i += QUERY_HASH_CHUNK_SIZE) {
+  for (const group of chunk(distinct, QUERY_HASH_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
     const { data, error } = await postgrestClient
       .from(QUERY_EMBEDDING_TABLE)
       .select('text_hash, embedding')
       .eq('model', model)
       .eq('dims', dims)
-      .in('text_hash', distinct.slice(i, i + QUERY_HASH_CHUNK_SIZE));
+      .in('text_hash', group);
     if (error) {
-      throw new DataAccessError('Failed to read semantic_query_embedding', { model, dims }, error);
+      throw new DataAccessError(`Failed to read ${QUERY_EMBEDDING_TABLE}`, { model, dims }, error);
     }
     for (const row of data ?? []) {
       const vector = parseVector(row.embedding);
@@ -565,10 +493,11 @@ export async function getQueryEmbeddings(postgrestClient, { texts, model, dims }
 }
 
 /**
- * Upsert many query embeddings into the cache and stamp `last_access_at`, in groups of
+ * Upsert many embeddings into the cache and stamp `last_access_at`, in groups of
  * `SEMANTIC_CHUNK_SIZE`. Entries whose text normalizes to the same hash are written once (first
- * wins). Groups are not atomic: a failure can leave earlier groups written, and retrying is safe
- * (idempotent upsert). Requires the `postgrest_writer` role.
+ * wins); the stored `text` is the normalized form. Groups are not atomic: a failure can leave
+ * earlier groups written, and retrying is safe (idempotent upsert). Requires the
+ * `postgrest_writer` role.
  * @param {object} params
  * @param {Array<{text: string, vector: number[]}>} params.entries
  * @returns {Promise<string[]>} each entry's text hash, in input order
@@ -589,25 +518,24 @@ export async function upsertQueryEmbeddings(postgrestClient, { entries, model, d
     if (!seen.has(textHash)) {
       seen.add(textHash);
       rows.push({
+        text: normalized,
         text_hash: textHash,
+        embedding,
         model,
         dims,
-        normalized_text: normalized,
-        embedding,
         last_access_at: lastAccessAt,
       });
     }
     return textHash;
   });
 
-  // Rows carry full vectors, hence SEMANTIC_CHUNK_SIZE rather than QUERY_HASH_CHUNK_SIZE.
-  for (let i = 0; i < rows.length; i += SEMANTIC_CHUNK_SIZE) {
+  for (const group of chunk(rows, SEMANTIC_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
     const { error } = await postgrestClient
       .from(QUERY_EMBEDDING_TABLE)
-      .upsert(rows.slice(i, i + SEMANTIC_CHUNK_SIZE), { onConflict: 'text_hash,model,dims' });
+      .upsert(group, { onConflict: 'text_hash,model,dims' });
     if (error) {
-      throw new DataAccessError('Failed to upsert semantic_query_embedding', { model, dims }, error);
+      throw new DataAccessError(`Failed to upsert ${QUERY_EMBEDDING_TABLE}`, { model, dims }, error);
     }
   }
   return hashes;
@@ -629,16 +557,467 @@ export async function touchQueryEmbeddings(postgrestClient, { textHashes, model,
   const distinct = [...new Set(textHashes)];
   const lastAccessAt = new Date().toISOString();
 
-  for (let i = 0; i < distinct.length; i += QUERY_HASH_CHUNK_SIZE) {
+  for (const group of chunk(distinct, QUERY_HASH_CHUNK_SIZE)) {
     // eslint-disable-next-line no-await-in-loop
     const { error } = await postgrestClient
       .from(QUERY_EMBEDDING_TABLE)
       .update({ last_access_at: lastAccessAt })
       .eq('model', model)
       .eq('dims', dims)
-      .in('text_hash', distinct.slice(i, i + QUERY_HASH_CHUNK_SIZE));
+      .in('text_hash', group);
     if (error) {
-      throw new DataAccessError('Failed to touch semantic_query_embedding', { model, dims }, error);
+      throw new DataAccessError(`Failed to touch ${QUERY_EMBEDDING_TABLE}`, { model, dims }, error);
     }
   }
+}
+
+async function indexSemanticMatches(postgrestClient, embeddingClient, matchType, {
+  target, siteId, entities,
+} = {}) {
+  assertClient(postgrestClient);
+  assertEmbeddingClient(embeddingClient);
+  const { table } = resolveTarget(target);
+  assertUuid(siteId, 'siteId');
+  if (!Array.isArray(entities)) {
+    throw new ValidationError('entities must be an array');
+  }
+  const { model, dims } = SEMANTIC_MATCHING_CONFIG.embedding;
+
+  const groups = [];
+  const seenGroups = new Set();
+  for (const entity of entities) {
+    if (!Array.isArray(entity?.fields)) {
+      throw new ValidationError(`fields must be an array (entity ${describeValue(entity?.entityId)})`);
+    }
+    for (const field of entity.fields) {
+      const group = toGroup({
+        ...field, matchType, entityId: entity.entityId, entityType: entity.entityType,
+      });
+      const key = groupKey(group.entityId, matchType, group.matchFieldType);
+      if (seenGroups.has(key)) {
+        throw new ValidationError(
+          `duplicate matchFieldType ${group.matchFieldType} for entity ${group.entityId}`,
+        );
+      }
+      seenGroups.add(key);
+      groups.push(group);
+    }
+  }
+  const result = {
+    entities: [], embedded: 0, indexHits: 0, cacheHits: 0,
+  };
+  if (groups.length === 0) {
+    return result;
+  }
+  const details = { table, siteId };
+
+  // Stored rows of the submitted groups only: other match and field types stay as they are.
+  const entityIds = [...new Set(groups.map((g) => g.entityId))];
+  const storedByGroup = new Map();
+  for (const row of await fetchStoredRows(postgrestClient, table, siteId, entityIds, details)) {
+    const key = groupKey(row.entity_id, row.match_type, row.match_field_type);
+    if (seenGroups.has(key)) {
+      if (!storedByGroup.has(key)) {
+        storedByGroup.set(key, new Map());
+      }
+      // A row from another model is re-embedded; the upsert overwrites it in place.
+      const current = row.model === model && row.dims === dims;
+      storedByGroup.get(key).set(row.text_hash, { id: row.id, current });
+    }
+  }
+
+  const plans = groups.map((group) => {
+    const key = groupKey(group.entityId, group.matchType, group.matchFieldType);
+    const stored = storedByGroup.get(key) ?? new Map();
+    const hashes = group.keys.map(hashText);
+    const keep = new Set(hashes);
+    const isCurrent = (hash) => stored.get(hash)?.current === true;
+    return {
+      group,
+      toInsert: group.keys.filter((_, i) => !isCurrent(hashes[i])),
+      staleIds: [...stored.entries()].filter(([hash]) => !keep.has(hash)).map(([, row]) => row.id),
+      unchanged: hashes.filter(isCurrent).length,
+    };
+  });
+
+  // New texts: reuse vectors already in this table for the site, then cached query vectors (both
+  // read-only), and embed the rest in shared batches. Either read failing only costs embeddings.
+  const needed = [...new Set(plans.flatMap((plan) => plan.toInsert))];
+  const vectorByText = new Map();
+  if (needed.length > 0) {
+    try {
+      const indexed = await fetchIndexVectors(
+        postgrestClient,
+        table,
+        siteId,
+        needed.map(hashText),
+        { model, dims },
+      );
+      needed.forEach((text) => {
+        const vector = indexed.get(hashText(text));
+        if (vector) {
+          vectorByText.set(text, vector);
+        }
+      });
+      result.indexHits = vectorByText.size;
+    } catch (e) {
+      result.indexError = e;
+    }
+    const notIndexed = needed.filter((text) => !vectorByText.has(text));
+    if (notIndexed.length > 0) {
+      try {
+        const cached = await getQueryEmbeddings(postgrestClient, {
+          texts: notIndexed, model, dims,
+        });
+        cached.forEach((hit, i) => {
+          if (hit?.vector?.length === dims) {
+            vectorByText.set(notIndexed[i], hit.vector);
+            result.cacheHits += 1;
+          }
+        });
+      } catch (e) {
+        result.cacheError = e;
+      }
+    }
+    const misses = needed.filter((text) => !vectorByText.has(text));
+    if (misses.length > 0) {
+      const vectors = await embedInBatches(embeddingClient, misses, dims);
+      misses.forEach((text, i) => vectorByText.set(text, vectors[i]));
+      result.embedded = misses.length;
+    }
+  }
+
+  const rows = plans.flatMap(({ group, toInsert }) => toInsert.map((text) => ({
+    site_id: siteId,
+    entity_id: group.entityId,
+    entity_type: group.entityType,
+    match_type: group.matchType,
+    match_field_type: group.matchFieldType,
+    text,
+    text_hash: hashText(text),
+    embedding: serializeDimsVector(vectorByText.get(text), dims),
+    model,
+    dims,
+  })));
+  await upsertRows(postgrestClient, table, rows, details);
+  const allStaleIds = plans.flatMap((plan) => plan.staleIds);
+  await deleteRowsById(postgrestClient, table, siteId, allStaleIds, details);
+
+  const byEntity = new Map();
+  for (const {
+    group, toInsert, staleIds, unchanged,
+  } of plans) {
+    if (!byEntity.has(group.entityId)) {
+      byEntity.set(group.entityId, []);
+    }
+    byEntity.get(group.entityId).push({
+      matchFieldType: group.matchFieldType,
+      submitted: group.submitted,
+      rejected: group.rejected,
+      inserted: toInsert.length,
+      deleted: staleIds.length,
+      unchanged,
+    });
+  }
+  result.entities = [...byEntity.entries()].map(([entityId, fields]) => ({ entityId, fields }));
+  return result;
+}
+
+/**
+ * Batched topic writer: full-replaces many entities' topic texts in one pass, embedding only what
+ * is new. Per (entity, matchFieldType): texts already stored keep their row and vector; new texts
+ * reuse a vector already stored in the same table for the site (any entity, match type or field)
+ * or cached in `semantic_query_embedding` (both read-only), and otherwise are embedded in batched
+ * calls shared by all entities; rows no longer submitted are deleted. An empty `texts`
+ * clears that field; fields not submitted, and other match types, are left untouched.
+ *
+ * Every input is validated and every vector resolved before the first write, so a validation or
+ * embedding failure writes nothing. Writes are not atomic across chunks; a retry is safe. Same
+ * single-writer caveat as the URL index. Requires the `postgrest_writer` role.
+ *
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
+ * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
+ * @param {object} params
+ * @param {string} params.target - `SEMANTIC_TARGETS` value (`opportunity` | `suggestion`)
+ * @param {string} params.siteId - the site every entity belongs to
+ * @param {Array<{entityId: string, entityType: string, fields: Array<{matchFieldType: string,
+ *   texts: string[]}>}>} params.entities - `entityType` is free-form (e.g. the opportunity type)
+ *   and fixed per entity: unchanged rows keep the one they were written with. `matchFieldType`
+ *   is a free-form identifier of the field the texts came from (e.g. `topic`)
+ * @returns {Promise<{entities: Array<{entityId: string, fields: Array<{matchFieldType: string,
+ *   submitted: number, rejected: number, inserted: number, deleted: number,
+ *   unchanged: number}>}>,
+ *   embedded: number, indexHits: number, cacheHits: number, indexError?: Error,
+ *   cacheError?: Error}>} `indexHits` / `cacheHits` count new texts whose vector was reused from
+ *   the table / the query cache; `indexError` / `cacheError` is set when that read failed and the
+ *   texts fell through to the next source; `rejected` counts texts dropped as empty or over
+ *   `MAX_TEXT_LENGTH`
+ */
+export function indexSemanticTopics(postgrestClient, embeddingClient, params) {
+  return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
+}
+
+/**
+ * Batched claim writer: the claim-dimension counterpart of `indexSemanticTopics`, with the same
+ * parameters, behaviour and result. Rows are stored with the claim match type, so they are only
+ * found by the claim readers (e.g. `lookupSuggestionsByClaim`) and never by the topic ones.
+ */
+export function indexSemanticClaims(postgrestClient, embeddingClient, params) {
+  return indexSemanticMatches(postgrestClient, embeddingClient, SEMANTIC_MATCH_TYPES.CLAIM, params);
+}
+
+async function embedWithinBudget(embeddingClient, texts, timeoutMs) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`timed out after ${timeoutMs} ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([embeddingClient.createEmbeddings(texts), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Read side: one vector per query text (embedded in normalized form). One batched cache read, then
+ * one embed call for the distinct misses within `timeoutMs`. A cache read failure only costs extra
+ * embeddings (logged and returned as `cacheError`). The cache writes (access bump for hits,
+ * populate for misses) are best-effort and come back as a promise the caller awaits alongside the
+ * search; they never fail the lookup.
+ *
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
+ * @param {{createEmbeddings: (texts: string[]) => Promise<number[][]>}} embeddingClient
+ * @param {string[]} texts - query texts; each must be non-empty and at most
+ *   `MAX_TEXT_LENGTH` once normalized; at most `MAX_QUERY_TEXTS` texts
+ * @param {object} [opts]
+ * @param {number} [opts.timeoutMs=EMBEDDING_TIMEOUT_MS] - budget for the embed call
+ * @param {object} [opts.log] - logger for non-fatal cache failures
+ * @returns {Promise<{vectors: number[][], cacheWrites: Promise<unknown>, hits: number,
+ *   misses: number, cacheError?: Error}>} vectors in `texts` order; `hits` / `misses` count
+ *   distinct texts
+ * @throws {EmbeddingUnavailableError} when the embed call fails, times out, or is malformed
+ */
+export async function embedQueries(postgrestClient, embeddingClient, texts, {
+  timeoutMs = EMBEDDING_TIMEOUT_MS, log,
+} = {}) {
+  assertClient(postgrestClient);
+  assertEmbeddingClient(embeddingClient);
+  if (!Array.isArray(texts)) {
+    throw new ValidationError('texts must be an array');
+  }
+  if (typeof timeoutMs !== 'number' || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new ValidationError('timeoutMs must be a positive finite number');
+  }
+  // Total, not distinct: every entry gets a vector and a search, even a repeat.
+  if (texts.length > MAX_QUERY_TEXTS) {
+    throw new ValidationError(`texts must have at most ${MAX_QUERY_TEXTS} entries (got ${texts.length})`);
+  }
+  const keys = texts.map((text, i) => {
+    const cleaned = cleanTopicText(text);
+    if (!cleaned) {
+      throw new ValidationError(
+        `texts[${i}] must be a non-empty string of at most ${MAX_TEXT_LENGTH} characters once normalized`,
+      );
+    }
+    return cleaned.key;
+  });
+  const distinct = [...new Set(keys)];
+  const { model, dims } = SEMANTIC_MATCHING_CONFIG.embedding;
+  const cacheKey = { model, dims };
+  // warn, not debug: a persistently failing cache turns every repeat query into an embed call.
+  const swallow = (label) => (e) => {
+    log?.warn?.(`[semantic-index] ${label} failed (non-fatal): ${e.message}`);
+  };
+
+  const vectorByKey = new Map();
+  const hitHashes = [];
+  let cacheError;
+  try {
+    const cached = await getQueryEmbeddings(postgrestClient, { texts: distinct, ...cacheKey });
+    cached.forEach((hit, i) => {
+      if (hit?.vector?.length === dims) {
+        vectorByKey.set(distinct[i], hit.vector);
+        hitHashes.push(hit.textHash);
+      }
+    });
+  } catch (e) {
+    cacheError = e;
+    swallow('getQueryEmbeddings')(e);
+  }
+  const misses = distinct.filter((key) => !vectorByKey.has(key));
+
+  if (misses.length > 0) {
+    let embedded;
+    try {
+      embedded = await embedWithinBudget(embeddingClient, misses, timeoutMs);
+    } catch (e) {
+      throw new EmbeddingUnavailableError(`Embedding call failed: ${e.message}`, { misses: misses.length }, e);
+    }
+    assertVectors(embedded, misses.length, dims, misses.length);
+    misses.forEach((key, i) => vectorByKey.set(key, embedded[i]));
+  }
+
+  const cacheWrites = Promise.all([
+    touchQueryEmbeddings(postgrestClient, { textHashes: hitHashes, ...cacheKey })
+      .catch(swallow('touchQueryEmbeddings')),
+    upsertQueryEmbeddings(postgrestClient, {
+      entries: misses.map((key) => ({ text: key, vector: vectorByKey.get(key) })),
+      ...cacheKey,
+    }).catch(swallow('upsertQueryEmbeddings')),
+  ]);
+
+  return {
+    vectors: keys.map((key) => vectorByKey.get(key)),
+    cacheWrites,
+    hits: distinct.length - misses.length,
+    misses: misses.length,
+    ...(cacheError && { cacheError }),
+  };
+}
+
+/**
+ * Site-scoped nearest-neighbour search for many query vectors against one target's index: for
+ * each query, the entities whose vectors best match it, one row per entity (best score). Vectors
+ * go in groups of up to `SEMANTIC_CHUNK_SIZE`, fewer when `k` is large, so a call's `group x k`
+ * rows stay within PostgREST's max-rows cap.
+ */
+async function searchByVectors(postgrestClient, target, {
+  siteId, matchType, matchFieldTypes, entityTypes, vectors, model, dims, k, minScore, statusParams,
+}) {
+  const { searchRpc } = resolveTarget(target);
+  if (!Array.isArray(vectors)) {
+    throw new ValidationError('vectors must be an array');
+  }
+  if (!Number.isInteger(k) || k < 1 || k > DEFAULT_PAGE_SIZE) {
+    throw new ValidationError(`k must be an integer between 1 and ${DEFAULT_PAGE_SIZE}`);
+  }
+  if (typeof minScore !== 'number' || !Number.isFinite(minScore)) {
+    throw new ValidationError('minScore must be a finite number');
+  }
+  const serialized = vectors.map((vector) => serializeDimsVector(vector, dims));
+
+  const details = {
+    siteId, matchType, matchFieldTypes, entityTypes,
+  };
+  const results = vectors.map(() => []);
+  const groupSize = Math.min(SEMANTIC_CHUNK_SIZE, Math.floor(DEFAULT_PAGE_SIZE / k));
+  for (let offset = 0; offset < serialized.length; offset += groupSize) {
+    const group = serialized.slice(offset, offset + groupSize);
+    // eslint-disable-next-line no-await-in-loop
+    const { data, error } = await postgrestClient.rpc(searchRpc, {
+      p_site_id: siteId,
+      p_match_type: matchType,
+      p_match_field_types: matchFieldTypes,
+      p_entity_types: entityTypes,
+      p_query_embeddings: group,
+      p_model: model,
+      p_dims: dims,
+      p_limit: k,
+      p_min_score: minScore,
+      ...statusParams,
+    });
+    if (error) {
+      throw rpcError(`Failed ${target} semantic search for site ${siteId}`, searchRpc, details, error);
+    }
+    for (const row of data ?? []) {
+      // Checked against this group, not all results, so a bad index can't land in another group.
+      const { query_index: queryIndex } = row;
+      if (!Number.isInteger(queryIndex) || queryIndex < 0 || queryIndex >= group.length) {
+        throw new DataAccessError(`Unexpected query_index ${queryIndex} from ${searchRpc}`, details);
+      }
+      results[offset + queryIndex].push({
+        entityId: row.entity_id,
+        entityType: row.entity_type,
+        score: row.score,
+      });
+    }
+  }
+  return results;
+}
+
+function searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes }) {
+  assertClient(postgrestClient);
+  assertUuid(siteId, 'siteId');
+  return {
+    ...SEMANTIC_MATCHING_CONFIG.embedding,
+    matchFieldTypes: toFilterList(matchFieldTypes, 'matchFieldTypes', MAX_MATCH_FIELD_TYPE_LENGTH),
+    entityTypes: toFilterList(entityTypes, 'entityTypes', MAX_ENTITY_TYPE_LENGTH),
+  };
+}
+
+/**
+ * Nearest-neighbour topic search of the opportunity index for many query vectors.
+ *
+ * @param {object} postgrestClient - `@supabase/postgrest-js` client
+ * @param {object} params
+ * @param {string} params.siteId - the site to scope the search to
+ * @param {string[]} [params.matchFieldTypes] - field types to narrow to; omitted or empty = all
+ * @param {string[]} [params.entityTypes] - opportunity types to narrow to; omitted or empty = all
+ * @param {string[]} [params.statuses] - opportunity statuses (`Opportunity.STATUSES` values) to
+ *   narrow to, applied before `k`; omitted or empty = all
+ * @param {number[][]} params.vectors - the query embeddings (from `embedQueries`); searched in
+ *   the `SEMANTIC_MATCHING_CONFIG.embedding` generation
+ * @param {number} [params.k=10] - max opportunities per query
+ * @param {number} [params.minScore=0] - cosine-similarity floor
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>} one
+ *   best-first list per input vector, in input order
+ */
+export async function lookupOpportunitiesByTopic(postgrestClient, {
+  siteId, matchFieldTypes, entityTypes, statuses, vectors, k = 10, minScore = 0,
+} = {}) {
+  const common = searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes });
+  return searchByVectors(postgrestClient, SEMANTIC_TARGETS.OPPORTUNITY, {
+    siteId,
+    matchType: SEMANTIC_MATCH_TYPES.TOPIC,
+    ...common,
+    vectors,
+    k,
+    minScore,
+    statusParams: { p_statuses: toStatusList(statuses, 'statuses', Opportunity.STATUSES) },
+  });
+}
+
+function searchSuggestions(postgrestClient, matchType, {
+  siteId, matchFieldTypes, entityTypes, statuses, opportunityStatuses, vectors,
+  k = 10, minScore = 0,
+} = {}) {
+  const common = searchCommon(postgrestClient, { siteId, matchFieldTypes, entityTypes });
+  return searchByVectors(postgrestClient, SEMANTIC_TARGETS.SUGGESTION, {
+    siteId,
+    matchType,
+    ...common,
+    vectors,
+    k,
+    minScore,
+    statusParams: {
+      p_statuses: toStatusList(statuses, 'statuses', Suggestion.STATUSES),
+      p_opportunity_statuses: toStatusList(
+        opportunityStatuses,
+        'opportunityStatuses',
+        Opportunity.STATUSES,
+      ),
+    },
+  });
+}
+
+/**
+ * Nearest-neighbour topic search of the suggestion index for many query vectors. Same contract as
+ * `lookupOpportunitiesByTopic`; `entityTypes` are parent opportunity types, `statuses` are
+ * `Suggestion.STATUSES` values and `opportunityStatuses` are the parent opportunity's
+ * (`Opportunity.STATUSES`), both applied before `k`.
+ *
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
+ */
+export async function lookupSuggestionsByTopic(postgrestClient, params) {
+  return searchSuggestions(postgrestClient, SEMANTIC_MATCH_TYPES.TOPIC, params);
+}
+
+/**
+ * Nearest-neighbour claim search of the suggestion index: same contract as
+ * `lookupSuggestionsByTopic`, over the rows written by `indexSemanticClaims`.
+ *
+ * @returns {Promise<Array<Array<{entityId: string, entityType: string, score: number}>>>}
+ */
+export async function lookupSuggestionsByClaim(postgrestClient, params) {
+  return searchSuggestions(postgrestClient, SEMANTIC_MATCH_TYPES.CLAIM, params);
 }

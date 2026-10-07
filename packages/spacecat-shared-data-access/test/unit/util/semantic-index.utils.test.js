@@ -15,36 +15,66 @@ import chaiAsPromised from 'chai-as-promised';
 
 import { DataAccessError, ValidationError } from '../../../src/errors/index.js';
 import {
-  SEMANTIC_INDEX_TABLES,
-  QUERY_EMBEDDING_TABLE,
-  SEMANTIC_SEARCH_RPC,
-  COPY_VECTORS_RPC,
-  OPPORTUNITY_SEMANTIC_SOURCE_TYPES,
-  OPPORTUNITY_SEMANTIC_ENTITY_TYPES,
-  SEMANTIC_MATCHING_CONFIG,
-  normalizeText,
-  hashText,
   cleanTopicText,
-  serializeVector,
-  parseVector,
-  syncOpportunitySemantic,
-  copyEntityVectors,
-  lookupOpportunitiesByVectors,
+  embedQueries,
+  EMBEDDING_BATCH_SIZE,
+  MAX_QUERY_TEXTS,
+  EmbeddingUnavailableError,
   getQueryEmbeddings,
-  upsertQueryEmbeddings,
+  hashText,
+  indexSemanticClaims,
+  indexSemanticTopics,
+  lookupOpportunitiesByTopic,
+  lookupSuggestionsByClaim,
+  lookupSuggestionsByTopic,
+  MAX_MODEL_LENGTH,
+  MAX_TEXT_LENGTH,
+  MAX_TYPE_FILTER_ITEMS,
+  normalizeText,
+  parseVector,
+  QUERY_EMBEDDING_TABLE,
+  QUERY_HASH_CHUNK_SIZE,
+  SEMANTIC_CHUNK_SIZE,
+  SEMANTIC_INDEX_TABLES,
+  SEMANTIC_MATCHING_CONFIG,
+  SEMANTIC_SEARCH_RPCS,
+  SEMANTIC_TARGETS,
+  serializeVector,
   touchQueryEmbeddings,
+  upsertQueryEmbeddings,
 } from '../../../src/util/semantic-index.utils.js';
 
 chaiUse(chaiAsPromised);
 
-const SITE_ID = 'site-1';
-const ENTITY_ID = 'oppty-1';
+const SITE_ID = '9a1b2c3d-4e5f-4a6b-8c7d-1e2f3a4b5c6d';
+const ENTITY_ID = '1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e';
+const ENTITY_ID_2 = '2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f';
 const ENTITY_TYPE = 'cited-analysis';
-const SOURCE_TYPE = 'topic';
-const INVALID_SOURCE_TYPE = 'not-a-source-type';
-const INVALID_ENTITY_TYPE = 'not-an-entity-type';
+const FIELD = 'title';
+const TOPIC = 'topic';
+const CLAIM = 'claim';
+const OPP_TABLE = 'opportunity_semantic_embedding';
+const SUG_TABLE = 'suggestion_semantic_embedding';
+const OPP_RPC = 'rpc_opportunity_semantic_search';
+const SUG_RPC = 'rpc_suggestion_semantic_search';
 const PGRST202_HINT = 'signature not found (data-service release not deployed, argument names/types drifted, or a stale PostgREST schema cache)';
 const { model: MODEL, dims: DIMS } = SEMANTIC_MATCHING_CONFIG.embedding;
+const vec = (x) => Array(DIMS).fill(x);
+
+/** Fake embedding client: records each batch; returns `result`, throws `error`, or vectors. */
+function makeEmbedder({ result, error } = {}) {
+  const calls = [];
+  return {
+    calls,
+    async createEmbeddings(texts) {
+      calls.push(texts);
+      if (error) {
+        throw error;
+      }
+      return result !== undefined ? result : texts.map(() => vec(0.1));
+    },
+  };
+}
 
 /**
  * Chainable, awaitable fake `@supabase/postgrest-js` client. Each chain is classified at its
@@ -124,7 +154,9 @@ function makeClient(config = {}) {
             range: state.range,
             inFilter: state.inFilter,
           });
-          if (state.limited) {
+          if (config.selectFn) {
+            result = config.selectFn(state);
+          } else if (state.limited) {
             result = config.getResult ?? { data: [], error: null };
           } else if (selectPages && selectPages.length) {
             result = selectPages.shift();
@@ -151,21 +183,14 @@ function makeClient(config = {}) {
   };
 }
 
-const src = (text, vector = [0.1, 0.2], extra = {}) => ({
-  text, vector, model: MODEL, dims: 2, ...extra,
-});
-
 describe('semantic-index.utils', () => {
-  describe('pure helpers', () => {
-    it('exposes frozen source/entity type registries', () => {
-      expect(OPPORTUNITY_SEMANTIC_SOURCE_TYPES).to.deep.equal({ TOPIC: 'topic' });
-      expect(OPPORTUNITY_SEMANTIC_ENTITY_TYPES).to.deep.equal({
-        CITED_ANALYSIS: 'cited-analysis',
-        REDDIT_ANALYSIS: 'reddit-analysis',
-        YOUTUBE_ANALYSIS: 'youtube-analysis',
-      });
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_SOURCE_TYPES)).to.equal(true);
-      expect(Object.isFrozen(OPPORTUNITY_SEMANTIC_ENTITY_TYPES)).to.equal(true);
+  describe('constants and pure helpers', () => {
+    it('exposes match types, targets, tables and RPCs', () => {
+      expect(SEMANTIC_TARGETS).to.deep.equal({ OPPORTUNITY: 'opportunity', SUGGESTION: 'suggestion' });
+      expect(Object.isFrozen(SEMANTIC_TARGETS)).to.equal(true);
+      expect(SEMANTIC_INDEX_TABLES).to.deep.equal([OPP_TABLE, SUG_TABLE]);
+      expect(SEMANTIC_SEARCH_RPCS).to.deep.equal({ opportunity: OPP_RPC, suggestion: SUG_RPC });
+      expect(QUERY_EMBEDDING_TABLE).to.equal('semantic_query_embedding');
     });
 
     it('exposes the frozen embedding generation', () => {
@@ -174,6 +199,15 @@ describe('semantic-index.utils', () => {
       });
       expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG)).to.equal(true);
       expect(Object.isFrozen(SEMANTIC_MATCHING_CONFIG.embedding)).to.equal(true);
+    });
+
+    it('EmbeddingUnavailableError carries misses and the cause', () => {
+      const cause = new Error('down');
+      const err = new EmbeddingUnavailableError('nope', { misses: 3 }, cause);
+      expect(err).to.be.instanceOf(DataAccessError);
+      expect(err.misses).to.equal(3);
+      expect(err.cause).to.equal(cause);
+      expect(new EmbeddingUnavailableError('nope').misses).to.equal(undefined);
     });
 
     it('normalizeText lowercases, collapses whitespace, trims; non-string -> empty', () => {
@@ -191,16 +225,16 @@ describe('semantic-index.utils', () => {
         text: 'Running   SHOES',
         key: 'running shoes',
       });
-      // non-string / empty / whitespace-only -> null
       expect(cleanTopicText(42)).to.equal(null);
       expect(cleanTopicText('')).to.equal(null);
       expect(cleanTopicText('   ')).to.equal(null);
-      // length bound is on the trimmed text; default max is MAX_SOURCE_TEXT_LENGTH (2048)
-      expect(cleanTopicText('a'.repeat(2048))).to.not.equal(null);
-      expect(cleanTopicText('a'.repeat(2049))).to.equal(null);
-      // caller-supplied maxLength
+      expect(cleanTopicText('a'.repeat(MAX_TEXT_LENGTH))).to.not.equal(null);
+      expect(cleanTopicText('a'.repeat(MAX_TEXT_LENGTH + 1))).to.equal(null);
       expect(cleanTopicText('abcd', { maxLength: 3 })).to.equal(null);
       expect(cleanTopicText('abc', { maxLength: 3 })).to.deep.equal({ text: 'abc', key: 'abc' });
+      // The limit applies to the normalized key: lowercasing U+0130 yields two code units.
+      expect(cleanTopicText('\u0130'.repeat(2), { maxLength: 3 })).to.equal(null);
+      expect(cleanTopicText('a  b', { maxLength: 3 })).to.deep.equal({ text: 'a  b', key: 'a b' });
     });
 
     it('serializeVector formats a numeric array; rejects invalid input', () => {
@@ -216,559 +250,809 @@ describe('semantic-index.utils', () => {
       expect(parseVector('[]')).to.deep.equal([]);
       expect(parseVector('x')).to.equal(null);
       expect(parseVector(42)).to.equal(null);
-    });
-
-    it('parseVector returns null (not a NaN array) for a corrupt vector', () => {
       expect(parseVector('[0.1,abc,0.3]')).to.equal(null);
     });
-
-    it('exposes constants', () => {
-      expect(SEMANTIC_INDEX_TABLES).to.deep.equal(['opportunity_semantic_embedding']);
-      expect(QUERY_EMBEDDING_TABLE).to.equal('semantic_query_embedding');
-      expect(SEMANTIC_SEARCH_RPC).to.equal('rpc_opportunity_semantic_search');
-      expect(COPY_VECTORS_RPC).to.equal('wrpc_copy_opportunity_semantic_vectors');
-    });
   });
 
-  describe('syncOpportunitySemantic', () => {
-    it('renders a value that neither JSON nor String can print', async () => {
-      const unprintable = Object.assign(Object.create(null), { big: 10n });
-      await expect(syncOpportunitySemantic(makeClient(), {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: unprintable,
-      })).to.be.rejectedWith(ValidationError, '(got [unprintable])');
+  describe('indexSemanticTopics', () => {
+    const entity = (fields, over = {}) => ({
+      entityId: ENTITY_ID, entityType: ENTITY_TYPE, fields, ...over,
+    });
+    const topicEntry = (texts, matchFieldType = FIELD) => ({ matchFieldType, texts });
+    const run = (client, over = {}, embedder = makeEmbedder()) => indexSemanticTopics(
+      client,
+      embedder,
+      {
+        target: SEMANTIC_TARGETS.OPPORTUNITY, siteId: SITE_ID, entities: [], ...over,
+      },
+    );
+    const storedRow = (text, over = {}) => ({
+      id: `id-${text}`,
+      entity_id: ENTITY_ID,
+      match_type: TOPIC,
+      match_field_type: FIELD,
+      text_hash: hashText(normalizeText(text)),
+      model: MODEL,
+      dims: DIMS,
+      ...over,
+    });
+    // fetchStoredRows and fetchIndexVectors read the index table; getQueryEmbeddings the cache.
+    const byTable = ({ stored = [], indexed = [], cached = [] } = {}) => ({
+      selectFn: (state) => {
+        if (state.table === QUERY_EMBEDDING_TABLE) {
+          return { data: cached, error: null };
+        }
+        return { data: state.cols === 'text_hash, embedding' ? indexed : stored, error: null };
+      },
     });
 
-    it('validates required args', async () => {
-      await expect(syncOpportunitySemantic(null))
+    it('validates its arguments', async () => {
+      const embedder = makeEmbedder();
+      await expect(indexSemanticTopics(null, embedder, {}))
         .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
-      const client = makeClient();
-      await expect(syncOpportunitySemantic(client, {
-        entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, 'entityId is required');
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(ValidationError, /^entityType must be one of: .+ \(got undefined\)$/);
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: INVALID_ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_ENTITY_TYPE}")`);
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE,
-      })).to.be.rejectedWith(ValidationError, /^sourceType must be one of: .+ \(got undefined\)$/);
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: INVALID_SOURCE_TYPE,
-      })).to.be.rejectedWith(ValidationError, `(got "${INVALID_SOURCE_TYPE}")`);
-      expect(client.calls.upsert).to.have.length(0);
-      expect(client.calls.delete).to.have.length(0);
+      await expect(indexSemanticTopics(makeClient(), {}, {}))
+        .to.be.rejectedWith(ValidationError, 'embeddingClient with createEmbeddings() is required');
+      await expect(indexSemanticTopics(makeClient(), embedder))
+        .to.be.rejectedWith(ValidationError, 'target must be one of: opportunity, suggestion (got undefined)');
+      await expect(run(makeClient(), { target: 'toString' }))
+        .to.be.rejectedWith(ValidationError, 'target must be one of');
+      await expect(run(makeClient(), { siteId: '' }))
+        .to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got "")');
+      await expect(run(makeClient(), { entities: 'x' }))
+        .to.be.rejectedWith(ValidationError, 'entities must be an array');
+      await expect(run(makeClient(), { entities: [null] }))
+        .to.be.rejectedWith(ValidationError, 'fields must be an array (entity undefined)');
+      await expect(run(makeClient(), { entities: [{ entityId: ENTITY_ID }] }))
+        .to.be.rejectedWith(ValidationError, `fields must be an array (entity "${ENTITY_ID}")`);
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityId: '' })] }))
+        .to.be.rejectedWith(ValidationError, 'entityId must be a valid UUID (got "")');
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityId: 'oppty-1' })] }))
+        .to.be.rejectedWith(ValidationError, 'entityId must be a valid UUID (got "oppty-1")');
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], '')])] }))
+        .to.be.rejectedWith(ValidationError, 'matchFieldType must be a non-empty string of at most 64 characters');
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'], 'x'.repeat(65))])] }))
+        .to.be.rejectedWith(ValidationError, 'matchFieldType must be');
+      await expect(run(makeClient(), { entities: [entity([topicEntry('a')])] }))
+        .to.be.rejectedWith(ValidationError, `texts must be an array (entity ${ENTITY_ID}, field ${FIELD})`);
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['  ', 42])])] }))
+        .to.be.rejectedWith(ValidationError, `texts contained no valid entries; pass [] to clear field ${FIELD}`);
+      await expect(run(makeClient(), { entities: [entity([topicEntry(['a'])], { entityType: undefined })] }))
+        .to.be.rejectedWith(ValidationError, 'entityType must be a non-empty string of at most 255 characters');
+      await expect(run(makeClient(), {
+        entities: [entity([topicEntry(['a']), topicEntry(['b'])])],
+      })).to.be.rejectedWith(ValidationError, `duplicate matchFieldType ${FIELD} for entity ${ENTITY_ID}`);
     });
 
-    it('clears an entity whose entityType is no longer registered', async () => {
-      const client = makeClient();
-      const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: INVALID_ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [],
-      });
-      expect(count).to.equal(0);
-      expect(client.calls.delete).to.have.length(1);
-      expect(client.calls.upsert).to.have.length(0);
+    it('renders unprintable, circular and long values safely in messages', async () => {
+      const unprintable = Object.assign(Object.create(null), { big: 10n });
+      await expect(run(makeClient(), { target: unprintable }))
+        .to.be.rejectedWith(ValidationError, '(got [unprintable])');
+      await expect(run(makeClient(), { target: 10n }))
+        .to.be.rejectedWith(ValidationError, '(got 10)');
+      const long = await run(makeClient(), { target: '\u{1F600}'.repeat(300) }).catch((e) => e);
+      expect(long.message).to.match(/\(got "\?{199}\.\.\.\)$/).and.match(/^[\x20-\x7E]*$/);
     });
 
-    it('clears the (entity, sourceType) slice when sources is empty', async () => {
+    it('returns an empty result without any call when there is nothing to sync', async () => {
       const client = makeClient();
-      const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [],
-      });
-      expect(count).to.equal(0);
-      expect(client.calls.delete).to.have.length(1);
-      expect(client.calls.delete[0].eqs).to.include({
-        site_id: SITE_ID, entity_id: ENTITY_ID, source_type: SOURCE_TYPE,
-      });
+      const embedder = makeEmbedder();
+      expect(await run(client, { entities: [entity([])] }, embedder))
+        .to.deep.equal({
+          entities: [], embedded: 0, indexHits: 0, cacheHits: 0,
+        });
+      expect(client.calls.select).to.have.length(0);
+      expect(embedder.calls).to.have.length(0);
     });
 
-    it('clears the slice when sources is omitted entirely (undefined)', async () => {
+    it('inserts new texts with normalized text, hash and the configured generation', async () => {
       const client = makeClient();
-      const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE,
-      });
-      expect(count).to.equal(0);
-      expect(client.calls.delete).to.have.length(1);
-    });
+      const embedder = makeEmbedder();
+      const out = await run(client, {
+        target: SEMANTIC_TARGETS.SUGGESTION,
+        entities: [entity([topicEntry(['  Running   SHOES ', 'running shoes', 'Boots', null])])],
+      }, embedder);
 
-    it('throws when a non-empty sources input yields no valid rows', async () => {
-      const client = makeClient();
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [{ text: '   ' }],
-      })).to.be.rejectedWith(ValidationError, 'pass [] to clear');
-    });
-
-    it('upserts rows, dedupes by hash, and prunes stale rows', async () => {
-      // read-back returns one kept hash + one stale hash -> stale gets pruned
-      const keptHash = hashText(normalizeText('running shoes'));
-      const client = makeClient({
-        selectPages: [{ data: [{ source_hash: keptHash }, { source_hash: 'stale-hash' }], error: null }],
+      expect(out).to.deep.equal({
+        entities: [{
+          entityId: ENTITY_ID,
+          fields: [{
+            matchFieldType: FIELD,
+            submitted: 4,
+            rejected: 1,
+            inserted: 2,
+            deleted: 0,
+            unchanged: 0,
+          }],
+        }],
+        embedded: 2,
+        indexHits: 0,
+        cacheHits: 0,
       });
-      const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [src('Running Shoes'), src('running   shoes'), src('Trail Runners')],
-      });
-      // 3 inputs but two normalize to the same hash -> 2 rows
-      expect(count).to.equal(2);
-      expect(client.calls.upsert).to.have.length(1);
-      expect(client.calls.upsert[0].options).to.deep.equal({ onConflict: 'entity_id,source_type,source_hash' });
-      const row = client.calls.upsert[0].rows[0];
-      // Full row shape (the write contract).
-      expect(row).to.include({
+      expect(embedder.calls).to.deep.equal([['running shoes', 'boots']]);
+      const [read] = client.calls.select;
+      expect(read).to.include({ table: SUG_TABLE, cols: 'id, entity_id, match_type, match_field_type, text_hash, model, dims' });
+      expect(read.eqs).to.deep.equal({ site_id: SITE_ID });
+      expect(read.inFilter).to.deep.equal({ column: 'entity_id', values: [ENTITY_ID] });
+      expect(read.range).to.deep.equal([0, 999]);
+      const [write] = client.calls.upsert;
+      expect(write.table).to.equal(SUG_TABLE);
+      expect(write.options).to.deep.equal({ onConflict: 'entity_id,match_type,match_field_type,text_hash' });
+      expect(write.rows[0]).to.deep.equal({
         site_id: SITE_ID,
         entity_id: ENTITY_ID,
-        source_type: SOURCE_TYPE,
         entity_type: ENTITY_TYPE,
+        match_type: TOPIC,
+        match_field_type: FIELD,
+        text: 'running shoes',
+        text_hash: hashText('running shoes'),
+        embedding: serializeVector(vec(0.1)),
         model: MODEL,
-        dims: 2,
-        source_text: 'Running Shoes', // original case, not normalized
-        source_id: null,
-      });
-      expect(row.embedding).to.equal('[0.1,0.2]');
-      expect(row.source_hash).to.equal(hashText(normalizeText('Running Shoes')));
-      expect(client.calls.delete).to.have.length(1);
-      expect(client.calls.delete[0].inFilter.values).to.deep.equal(['stale-hash']);
-    });
-
-    it('passes an explicit sourceId through and validates model/dims/vector length', async () => {
-      const client = makeClient({ selectPages: [{ data: [], error: null }] });
-      await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [src('Running Shoes', [0.1, 0.2], { sourceId: 'sid-1' })],
-      });
-      expect(client.calls.upsert[0].rows[0].source_id).to.equal('sid-1');
-
-      // model/dims/vector-length violations throw rather than being dropped.
-      await expect(syncOpportunitySemantic(makeClient(), {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [{ text: 'x', vector: [0.1, 0.2], dims: 2 }], // missing model
-      })).to.be.rejectedWith(ValidationError, 'model is required');
-      await expect(syncOpportunitySemantic(makeClient(), {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [src('x', [0.1, 0.2], { dims: DIMS })], // vector length 2 != DIMS
-      })).to.be.rejectedWith(ValidationError, 'does not match dims');
-      await expect(syncOpportunitySemantic(makeClient(), {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [src('x', [0.1, 0.2], { model: 'm'.repeat(129) })], // model over the length cap
-      })).to.be.rejectedWith(ValidationError, 'model must be at most 128 characters');
-    });
-
-    it('handles an empty read-back (nothing to prune)', async () => {
-      const client = makeClient({ selectPages: [{ data: [], error: null }] });
-      const count = await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [src('running shoes')],
-      });
-      expect(count).to.equal(1);
-      expect(client.calls.delete).to.have.length(0);
-    });
-
-    it('does not prune when no stale rows exist', async () => {
-      const keptHash = hashText(normalizeText('running shoes'));
-      const client = makeClient({
-        selectPages: [{ data: [{ source_hash: keptHash }], error: null }],
-      });
-      await syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('running shoes')],
+        dims: DIMS,
       });
       expect(client.calls.delete).to.have.length(0);
     });
 
-    it('wraps a clear error', async () => {
-      const client = makeClient({ deleteResult: { error: { message: 'boom' } } });
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: [],
-      })).to.be.rejectedWith(DataAccessError, 'Failed to clear');
-    });
-
-    it('wraps an upsert error', async () => {
-      const client = makeClient({ upsertResult: { error: { message: 'boom' } } });
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(DataAccessError, 'Failed to sync');
-    });
-
-    it('wraps a read-back error', async () => {
-      const client = makeClient({ selectPages: [{ data: null, error: { message: 'boom' } }] });
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(DataAccessError, 'Failed to read');
-    });
-
-    it('wraps a prune error', async () => {
-      const client = makeClient({
-        selectPages: [{ data: [{ source_hash: 'stale' }], error: null }],
-        deleteResult: { error: { message: 'boom' } },
-      });
-      await expect(syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('x')],
-      })).to.be.rejectedWith(DataAccessError, 'Failed to prune');
-    });
-
-    it('paginates the stale-hash read-back across pages (>DEFAULT_PAGE_SIZE)', async () => {
-      const keptHash = hashText(normalizeText('kept'));
-      const page1 = Array.from({ length: 1000 }, (_, i) => ({ source_hash: `h${i}` }));
-      const client = makeClient({
-        selectPages: [
-          { data: page1, error: null },
-          { data: [{ source_hash: keptHash }], error: null },
+    it('keeps unchanged texts, deletes stale ones, and leaves other groups alone', async () => {
+      const client = makeClient(byTable({
+        stored: [
+          storedRow('running shoes'),
+          storedRow('old topic'),
+          storedRow('other field', { match_field_type: 'other' }),
+          storedRow('a claim', { match_type: 'claim' }),
         ],
-      });
-      await syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('kept')],
-      });
-      // both page windows fetched, ordered by source_hash asc
-      expect(client.calls.select).to.have.length(2);
-      expect(client.calls.select[0].range).to.deep.equal([0, 999]);
-      expect(client.calls.select[1].range).to.deep.equal([1000, 1999]);
-      expect(client.calls.select[0].order).to.deep.equal({ col: 'source_hash', opts: { ascending: true } });
-      // stale set spans page 1 (1000 hashes) -> pruned; keptHash (page 2) is retained
-      const deleted = client.calls.delete.flatMap((d) => d.inFilter.values);
-      expect(deleted).to.have.length(1000);
-      expect(deleted).to.not.include(keptHash);
-    });
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['Running Shoes', 'boots'])])] }, embedder);
 
-    it('stops paginating when an exactly-full page is followed by an empty page (boundary)', async () => {
-      // A full page followed by an empty one ends via the empty-page branch.
-      const keptHash = hashText(normalizeText('kept'));
-      const page1 = Array.from({ length: 1000 }, (_, i) => (i === 0 ? { source_hash: keptHash } : { source_hash: `h${i}` }));
-      const client = makeClient({
-        selectPages: [
-          { data: page1, error: null },
-          { data: [], error: null },
-        ],
-      });
-      await syncOpportunitySemantic(client, {
-        siteId: SITE_ID, entityId: ENTITY_ID, entityType: ENTITY_TYPE, sourceType: SOURCE_TYPE, sources: [src('kept')],
-      });
-      expect(client.calls.select).to.have.length(2);
-      expect(client.calls.select[1].range).to.deep.equal([1000, 1999]);
-      // 999 stale (page 1 minus keptHash) pruned; keptHash retained
-      const deleted = client.calls.delete.flatMap((d) => d.inFilter.values);
-      expect(deleted).to.have.length(999);
-      expect(deleted).to.not.include(keptHash);
-    });
-
-    it('chunks upsert + delete beyond SEMANTIC_CHUNK_SIZE (and single chunk at exactly the size)', async () => {
-      // 21 sources -> 2 upsert chunks (20 + 1); read-back has 21 stale -> 2 delete chunks.
-      const sources21 = Array.from({ length: 21 }, (_, i) => src(`topic ${i}`));
-      const stale21 = Array.from({ length: 21 }, (_, i) => ({ source_hash: `stale-${i}` }));
-      const client = makeClient({ selectPages: [{ data: stale21, error: null }] });
-      await syncOpportunitySemantic(client, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: sources21,
-      });
-      expect(client.calls.upsert).to.have.length(2);
-      expect(client.calls.delete).to.have.length(2);
-
-      // exactly 20 sources -> a single upsert chunk (boundary).
-      const sources20 = Array.from({ length: 20 }, (_, i) => src(`topic ${i}`));
-      const client20 = makeClient({ selectPages: [{ data: [], error: null }] });
-      await syncOpportunitySemantic(client20, {
-        siteId: SITE_ID,
-        entityId: ENTITY_ID,
-        entityType: ENTITY_TYPE,
-        sourceType: SOURCE_TYPE,
-        sources: sources20,
-      });
-      expect(client20.calls.upsert).to.have.length(1);
-    });
-  });
-
-  describe('copyEntityVectors', () => {
-    it('validates the client + ids', async () => {
-      await expect(copyEntityVectors({}, { siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
-      await expect(copyEntityVectors(makeClient(), { fromEntityId: 'a', toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, toEntityId: 'b' }))
-        .to.be.rejectedWith(ValidationError, 'fromEntityId is required');
-      await expect(copyEntityVectors(makeClient(), { siteId: SITE_ID, fromEntityId: 'a' }))
-        .to.be.rejectedWith(ValidationError, 'toEntityId is required');
-    });
-
-    it('calls the copy RPC and returns the inserted count', async () => {
-      const client = makeClient({ rpcResult: { data: 3, error: null } });
-      const n = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      });
-      expect(n).to.equal(3);
-      expect(client.calls.rpc).to.deep.equal([{
-        name: 'wrpc_copy_opportunity_semantic_vectors',
-        params: { p_site_id: SITE_ID, p_from_entity_id: 'a', p_to_entity_id: 'b' },
+      expect(out.entities[0].fields[0]).to.include({ inserted: 1, deleted: 1, unchanged: 1 });
+      expect(embedder.calls).to.deep.equal([['boots']]);
+      expect(client.calls.upsert[0].rows.map((r) => r.text)).to.deep.equal(['boots']);
+      expect(client.calls.delete).to.deep.equal([{
+        table: OPP_TABLE, eqs: { site_id: SITE_ID }, inFilter: { column: 'id', values: ['id-old topic'] },
       }]);
     });
 
-    it('returns 0 when the RPC reports no inserted rows (null data)', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: null } });
-      const n = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
+    it('clears a group with texts: [] and makes no embedding call', async () => {
+      const client = makeClient(byTable({ stored: [storedRow('a'), storedRow('b')] }));
+      const embedder = makeEmbedder();
+      const entities = [
+        entity([topicEntry([])]),
+        entity([topicEntry(null)], { entityId: ENTITY_ID_2 }),
+      ];
+      const out = await run(client, { entities }, embedder);
+      expect(out.entities.map((e) => e.fields[0].deleted)).to.deep.equal([2, 0]);
+      expect(out.entities[1].fields[0].submitted).to.equal(0);
+      expect(embedder.calls).to.have.length(0);
+      expect(client.calls.upsert).to.have.length(0);
+      const cacheReads = client.calls.select.filter((c) => c.table === QUERY_EMBEDDING_TABLE);
+      expect(cacheReads).to.have.length(0);
+      expect(client.calls.delete[0].inFilter.values).to.deep.equal(['id-a', 'id-b']);
+    });
+
+    it('is a no-op write when everything is unchanged', async () => {
+      const client = makeClient(byTable({ stored: [storedRow('a')] }));
+      const out = await run(client, { entities: [entity([topicEntry(['A'])])] });
+      expect(out.entities[0].fields[0]).to.include({ inserted: 0, deleted: 0, unchanged: 1 });
+      expect(client.calls.upsert).to.have.length(0);
+      expect(client.calls.delete).to.have.length(0);
+    });
+
+    it('re-embeds rows from another model or dims in place instead of keeping them', async () => {
+      const client = makeClient(byTable({
+        stored: [storedRow('a', { model: 'azure/old-model' }), storedRow('b', { dims: 3072 })],
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['a', 'b'])])] }, embedder);
+      expect(out.entities[0].fields[0]).to.include({ inserted: 2, deleted: 0, unchanged: 0 });
+      expect(embedder.calls).to.deep.equal([['a', 'b']]);
+      expect(client.calls.upsert[0].rows.map((r) => [r.text, r.model, r.dims]))
+        .to.deep.equal([['a', MODEL, DIMS], ['b', MODEL, DIMS]]);
+      expect(client.calls.delete).to.have.length(0);
+    });
+
+    it('deletes an old-generation row whose text is no longer submitted', async () => {
+      const client = makeClient(byTable({
+        stored: [storedRow('a'), storedRow('gone', { model: 'azure/old-model' })],
+      }));
+      const out = await run(client, { entities: [entity([topicEntry(['a'])])] });
+      expect(out.entities[0].fields[0]).to.include({ inserted: 0, deleted: 1, unchanged: 1 });
+      expect(client.calls.upsert).to.have.length(0);
+      expect(client.calls.delete).to.deep.equal([{
+        table: OPP_TABLE, eqs: { site_id: SITE_ID }, inFilter: { column: 'id', values: ['id-gone'] },
+      }]);
+    });
+
+    it('dedupes texts across entities and reuses cached query embeddings', async () => {
+      const cachedVector = vec(0.5);
+      const client = makeClient(byTable({
+        cached: [
+          { text_hash: hashText('shared'), embedding: serializeVector(cachedVector) },
+          { text_hash: hashText('short'), embedding: '[0.1,0.2]' },
+        ],
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, {
+        entities: [
+          entity([topicEntry(['Shared', 'short'])]),
+          entity([topicEntry(['shared']), { matchFieldType: 'quote', texts: ['fresh'] }], { entityId: ENTITY_ID_2 }),
+        ],
+      }, embedder);
+
+      expect(out.cacheHits).to.equal(1);
+      expect(out.embedded).to.equal(2);
+      expect(embedder.calls).to.deep.equal([['short', 'fresh']]);
+      const cacheRead = client.calls.select.find((c) => c.table === QUERY_EMBEDDING_TABLE);
+      expect(cacheRead.inFilter.values).to.have.length(3);
+      const rows = client.calls.upsert.flatMap((c) => c.rows);
+      expect(rows).to.have.length(4);
+      expect(rows.filter((r) => r.text === 'shared').map((r) => r.embedding))
+        .to.deep.equal([serializeVector(cachedVector), serializeVector(cachedVector)]);
+      expect(out.entities.map((e) => e.fields.length)).to.deep.equal([1, 2]);
+      // The writer never writes the query cache.
+      expect(client.calls.upsert.every((c) => c.table === OPP_TABLE)).to.equal(true);
+    });
+
+    it('reuses vectors already stored in the table for the site before the cache and an embed', async () => {
+      const indexedVector = vec(0.3);
+      const cachedVector = vec(0.5);
+      const client = makeClient(byTable({
+        indexed: [
+          { text_hash: hashText('shared'), embedding: serializeVector(indexedVector) },
+          // A later duplicate and a wrong-dims row are ignored.
+          { text_hash: hashText('shared'), embedding: serializeVector(vec(0.9)) },
+          { text_hash: hashText('short'), embedding: '[0.1,0.2]' },
+        ],
+        cached: [{ text_hash: hashText('cached'), embedding: serializeVector(cachedVector) }],
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, {
+        entities: [entity([topicEntry(['Shared', 'short', 'cached', 'fresh'])])],
+      }, embedder);
+
+      expect(out).to.include({ indexHits: 1, cacheHits: 1, embedded: 2 });
+      expect(embedder.calls).to.deep.equal([['short', 'fresh']]);
+      const indexRead = client.calls.select.find((c) => c.cols === 'text_hash, embedding');
+      expect(indexRead).to.deep.include({
+        table: OPP_TABLE, eqs: { site_id: SITE_ID, model: MODEL, dims: DIMS },
       });
-      expect(n).to.equal(0);
+      expect(indexRead.inFilter.values).to.have.members(
+        ['shared', 'short', 'cached', 'fresh'].map(hashText),
+      );
+      const cacheRead = client.calls.select.find((c) => c.table === QUERY_EMBEDDING_TABLE);
+      expect(cacheRead.inFilter.values).to.have.members(['short', 'cached', 'fresh'].map(hashText));
+      const embeddingOf = (text) => client.calls.upsert[0].rows
+        .find((r) => r.text === text).embedding;
+      expect(embeddingOf('shared')).to.equal(serializeVector(indexedVector));
+      expect(embeddingOf('cached')).to.equal(serializeVector(cachedVector));
     });
 
-    it('wraps an RPC error', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      const err = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.include('Failed to copy semantic vectors');
-      expect(err.message).to.not.include('signature not found');
+    it('chunks the index-vector read and skips the cache when the table covers every text', async () => {
+      const texts = Array.from({ length: QUERY_HASH_CHUNK_SIZE + 1 }, (_, i) => `t${i}`);
+      const client = makeClient(byTable({
+        indexed: texts.map((text) => ({
+          text_hash: hashText(text), embedding: serializeVector(vec(0.2)),
+        })),
+      }));
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(texts)])] }, embedder);
+      const indexReads = client.calls.select.filter((c) => c.cols === 'text_hash, embedding');
+      expect(indexReads.map((c) => c.inFilter.values.length))
+        .to.deep.equal([QUERY_HASH_CHUNK_SIZE, 1]);
+      expect(out).to.include({ indexHits: texts.length, cacheHits: 0, embedded: 0 });
+      expect(client.calls.select.some((c) => c.table === QUERY_EMBEDDING_TABLE)).to.equal(false);
+      expect(embedder.calls).to.have.length(0);
     });
 
-    it('adds the deploy-ordering hint when PostgREST cannot find the copy RPC', async () => {
-      const cause = { code: 'PGRST202', message: 'Could not find the function' };
-      const client = makeClient({ rpcResult: { data: null, error: cause } });
-      const err = await copyEntityVectors(client, {
-        siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b',
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.equal(`Failed to copy semantic vectors for entity a: ${COPY_VECTORS_RPC} ${PGRST202_HINT}`);
-      expect(err.details).to.deep.equal({ siteId: SITE_ID, fromEntityId: 'a', toEntityId: 'b' });
-      expect(err.cause).to.equal(cause);
+    it('falls through to the cache and an embed when the index-vector read fails', async () => {
+      const client = makeClient({
+        selectFn: (state) => (state.cols === 'text_hash, embedding'
+          ? { data: null, error: { message: 'index down' } }
+          : { data: [], error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['a'])])] }, embedder);
+      expect(out.indexError).to.be.instanceOf(DataAccessError);
+      expect(out.indexError.message).to.equal(`Failed to read ${OPP_TABLE} vectors`);
+      expect(out).to.include({ indexHits: 0, embedded: 1 });
+      expect(client.calls.select.some((c) => c.table === QUERY_EMBEDDING_TABLE)).to.equal(true);
+    });
+
+    it('falls back to embedding everything when the cache read fails', async () => {
+      const client = makeClient({
+        selectFn: (state) => (state.table === QUERY_EMBEDDING_TABLE
+          ? { data: null, error: { message: 'cache down' } }
+          : { data: null, error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await run(client, { entities: [entity([topicEntry(['a'])])] }, embedder);
+      expect(out.cacheError).to.be.instanceOf(DataAccessError);
+      expect(out.embedded).to.equal(1);
+    });
+
+    it('embeds misses in batches of EMBEDDING_BATCH_SIZE', async () => {
+      const client = makeClient();
+      const embedder = makeEmbedder();
+      const texts = Array.from({ length: EMBEDDING_BATCH_SIZE + 1 }, (_, i) => `topic ${i}`);
+      const out = await run(client, { entities: [entity([topicEntry(texts)])] }, embedder);
+      expect(embedder.calls.map((c) => c.length)).to.deep.equal([EMBEDDING_BATCH_SIZE, 1]);
+      expect(out.embedded).to.equal(EMBEDDING_BATCH_SIZE + 1);
+      expect(client.calls.upsert.map((c) => c.rows.length))
+        .to.deep.equal([...Array(12).fill(SEMANTIC_CHUNK_SIZE), 17]);
+    });
+
+    it('pages stored rows and chunks entity ids and deletes', async () => {
+      const page = Array.from({ length: 1000 }, (_, i) => storedRow(`t${i}`));
+      const pages = [
+        { data: page, error: null }, { data: null, error: null }, { data: [], error: null },
+      ];
+      const client = makeClient({ selectFn: () => pages.shift() });
+      const entities = [entity([topicEntry([])]), ...Array.from({ length: 50 }, (_, i) => entity([topicEntry([])], { entityId: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}` }))];
+      const out = await run(client, { entities });
+      expect(client.calls.select.map((c) => [c.inFilter.values.length, c.range[0]]))
+        .to.deep.equal([[50, 0], [50, 1000], [1, 0]]);
+      expect(out.entities[0].fields[0].deleted).to.equal(1000);
+      const deleteSizes = client.calls.delete.map((c) => c.inFilter.values.length);
+      expect(deleteSizes).to.deep.equal(Array(20).fill(50));
+    });
+
+    it('wraps read, write and prune errors', async () => {
+      const failingRead = makeClient({ selectFn: () => ({ data: null, error: { message: 'x' } }) });
+      await expect(run(failingRead, { entities: [entity([topicEntry([])])] }))
+        .to.be.rejectedWith(DataAccessError, `Failed to read ${OPP_TABLE}`);
+      const failingWrite = makeClient({ upsertResult: { error: { message: 'x' } } });
+      const writeErr = await run(failingWrite, { entities: [entity([topicEntry(['a'])])] }).catch((e) => e);
+      expect(writeErr).to.be.instanceOf(DataAccessError);
+      expect(writeErr.message).to.equal(`Failed to write ${OPP_TABLE}`);
+      expect(writeErr.details).to.deep.equal({ table: OPP_TABLE, siteId: SITE_ID });
+      const failingPrune = makeClient({ ...byTable({ stored: [storedRow('a')] }), deleteResult: { error: { message: 'x' } } });
+      await expect(run(failingPrune, { entities: [entity([topicEntry([])])] }))
+        .to.be.rejectedWith(DataAccessError, `Failed to prune ${OPP_TABLE}`);
+    });
+
+    it('raises EmbeddingUnavailableError on a failed or malformed embedding response', async () => {
+      const input = { entities: [entity([topicEntry(['a', 'b'])])] };
+      const thrown = await run(makeClient(), input, makeEmbedder({ error: new Error('429') })).catch((e) => e);
+      expect(thrown).to.be.instanceOf(EmbeddingUnavailableError);
+      expect(thrown.message).to.equal('Embedding call failed: 429');
+      expect(thrown.misses).to.equal(2);
+      await expect(run(makeClient(), input, makeEmbedder({ result: [vec(0.1)] })))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'Embedding response length mismatch: expected 2, got 1');
+      await expect(run(makeClient(), input, makeEmbedder({ result: null })))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'expected 2, got undefined');
+      await expect(run(makeClient(), input, makeEmbedder({ result: [vec(0.1), [0.1]] })))
+        .to.be.rejectedWith(EmbeddingUnavailableError, `Embedding dimension mismatch: expected ${DIMS}, got 1`);
+      await expect(run(makeClient(), input, makeEmbedder({ result: [vec(0.1), null] })))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'got undefined');
     });
   });
 
-  describe('lookupOpportunitiesByVectors', () => {
-    const base = {
-      siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], model: MODEL, dims: 2,
-    };
-    const vecs = (n) => Array.from({ length: n }, () => [0.1, 0.2]);
-    const groupSizes = (client) => client.calls.rpc.map((c) => c.params.p_query_embeddings.length);
-
-    it('validates args, vectors, k, and model/dims (generation scope)', async () => {
-      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
-        ...base, vectors: [[0.1, 0.2]], ...over,
-      });
-      await expect(call({ siteId: undefined })).to.be.rejectedWith(ValidationError, 'siteId is required');
-      await expect(call({ sourceTypes: undefined })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
-      await expect(call({ sourceTypes: [] })).to.be.rejectedWith(ValidationError, 'sourceTypes must be a non-empty array');
-      await expect(call({ sourceTypes: 'topic' })).to.be.rejectedWith(ValidationError, 'sourceTypes must be an array');
-      await expect(call({ sourceTypes: ['topic', INVALID_SOURCE_TYPE] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \["not-a-source-type"\]\)$/);
-      await expect(call({ sourceTypes: ['*'] })).to.be.rejectedWith(ValidationError, 'sourceTypes must only contain');
-      await expect(call({ entityTypes: 'cited-analysis' })).to.be.rejectedWith(ValidationError, 'entityTypes must be an array');
-      await expect(call({ entityTypes: ['cited-analysis', null] })).to.be.rejectedWith(ValidationError, /^entityTypes must only contain: .+ \(got \[null\]\)$/);
-      await expect(call({ entityTypes: [INVALID_ENTITY_TYPE] })).to.be.rejectedWith(ValidationError, `(got ["${INVALID_ENTITY_TYPE}"])`);
-      // eslint-disable-next-line no-sparse-arrays
-      await expect(call({ sourceTypes: [, 'topic'] })).to.be.rejectedWith(ValidationError, /^sourceTypes must only contain: .+ \(got \[undefined\]\)$/);
-      await expect(call({ entityTypes: new Array(1) })).to.be.rejectedWith(ValidationError, 'entityTypes must only contain');
-      await expect(call({ model: undefined })).to.be.rejectedWith(ValidationError, 'model is required');
-      await expect(call({ dims: undefined })).to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
-      await expect(call({ vectors: 'x' })).to.be.rejectedWith(ValidationError, 'vectors must be an array');
-      await expect(call({ vectors: [[]] })).to.be.rejectedWith(ValidationError, 'vector must be');
-      await expect(call({ vectors: [[0.1]] })).to.be.rejectedWith(ValidationError, 'does not match dims');
-      await expect(call({ k: 0 })).to.be.rejectedWith(ValidationError, 'k must be an integer between 1 and 1000');
-      await expect(call({ k: 1.5 })).to.be.rejectedWith(ValidationError, 'k must be');
-      await expect(call({ k: 1001 })).to.be.rejectedWith(ValidationError, 'k must be');
-      await expect(call({ minScore: '0.5' })).to.be.rejectedWith(ValidationError, 'minScore must be a finite number');
-      await expect(call({ minScore: NaN })).to.be.rejectedWith(ValidationError, 'minScore must be');
+  describe('embedQueries', () => {
+    it('validates its arguments', async () => {
+      await expect(embedQueries(null, makeEmbedder(), []))
+        .to.be.rejectedWith(ValidationError, 'postgrestClient is required');
+      await expect(embedQueries(makeClient(), null, []))
+        .to.be.rejectedWith(ValidationError, 'embeddingClient with createEmbeddings() is required');
+      await expect(embedQueries(makeClient(), makeEmbedder(), 'x'))
+        .to.be.rejectedWith(ValidationError, 'texts must be an array');
+      await expect(embedQueries(makeClient(), makeEmbedder(), ['ok', ' ']))
+        .to.be.rejectedWith(ValidationError, 'texts[1] must be a non-empty string of at most 2048 characters');
+      await expect(embedQueries(makeClient(), makeEmbedder(), ['x'.repeat(MAX_TEXT_LENGTH + 1)]))
+        .to.be.rejectedWith(ValidationError, 'texts[0] must be a non-empty string');
+      const tooMany = Array.from({ length: MAX_QUERY_TEXTS + 1 }, (_, i) => `t${i}`);
+      await expect(embedQueries(makeClient(), makeEmbedder(), tooMany))
+        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} entries (got ${MAX_QUERY_TEXTS + 1})`);
+      // Repeats count too: each entry gets its own vector and search.
+      await expect(embedQueries(makeClient(), makeEmbedder(), Array(MAX_QUERY_TEXTS + 1).fill('same')))
+        .to.be.rejectedWith(ValidationError, `texts must have at most ${MAX_QUERY_TEXTS} entries`);
+      for (const timeoutMs of [0, -1, NaN, Infinity, '10']) {
+        // eslint-disable-next-line no-await-in-loop
+        await expect(embedQueries(makeClient(), makeEmbedder(), ['a'], { timeoutMs }))
+          .to.be.rejectedWith(ValidationError, 'timeoutMs must be a positive finite number');
+      }
     });
 
-    it('returns [] without calling the RPC for no vectors', async () => {
-      const client = makeClient();
-      const out = await lookupOpportunitiesByVectors(client, { ...base, vectors: [] });
-      expect(out).to.deep.equal([]);
-      expect(client.calls.rpc).to.have.length(0);
+    it('accepts MAX_QUERY_TEXTS texts in one embed call and dedupes repeats', async () => {
+      const calls = [];
+      const embedder = {
+        createEmbeddings: async (texts) => {
+          calls.push(texts);
+          return texts.map((text) => vec(text === 'a' ? 0.1 : 0.2));
+        },
+      };
+      const out = await embedQueries(makeClient(), embedder, ['A', 'b', ' a ', 'b']);
+      expect(calls).to.deep.equal([['a', 'b']]);
+      expect(out.vectors).to.deep.equal([vec(0.1), vec(0.2), vec(0.1), vec(0.2)]);
+      expect(out).to.include({ hits: 0, misses: 2 });
+      await out.cacheWrites;
+
+      const max = Array.from({ length: MAX_QUERY_TEXTS }, (_, i) => `t${i}`);
+      const embedder2 = makeEmbedder();
+      const full = await embedQueries(makeClient(), embedder2, max);
+      expect(full.vectors).to.have.length(MAX_QUERY_TEXTS);
+      expect(full.misses).to.equal(MAX_QUERY_TEXTS);
+      expect(embedder2.calls).to.have.length(1);
+      expect(embedder2.calls[0]).to.have.length(MAX_QUERY_TEXTS);
+      expect(full).to.not.have.property('cacheError');
     });
 
-    it('sends the vectors in one call with defaults and splits rows per query, in input order', async () => {
+    it('serves repeated cache hits once and fans the vectors back out', async () => {
+      const hit = vec(0.7);
       const client = makeClient({
-        rpcResult: {
+        selectFn: () => ({ data: [{ text_hash: hashText('cached'), embedding: serializeVector(hit) }], error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await embedQueries(client, embedder, ['Cached', 'cached ', 'fresh']);
+      expect(out.vectors).to.deep.equal([hit, hit, vec(0.1)]);
+      expect(out).to.include({ hits: 1, misses: 1 });
+      expect(embedder.calls).to.deep.equal([['fresh']]);
+      await out.cacheWrites;
+      expect(client.calls.update).to.have.length(1);
+      expect(client.calls.update[0].inFilter.values).to.deep.equal([hashText('cached')]);
+      expect(client.calls.upsert[0].rows.map((r) => r.text)).to.deep.equal(['fresh']);
+    });
+
+    it('serves hits from the cache, embeds misses, and writes the cache in the background', async () => {
+      const hit = vec(0.7);
+      const client = makeClient({
+        selectFn: () => ({
           data: [
-            {
-              query_index: 0, entity_id: 'o1', entity_type: ENTITY_TYPE, score: 0.9,
-            },
-            {
-              query_index: 0, entity_id: 'o2', entity_type: ENTITY_TYPE, score: 0.7,
-            },
-            {
-              query_index: 2, entity_id: 'o3', entity_type: ENTITY_TYPE, score: 0.8,
-            },
+            { text_hash: hashText('cached'), embedding: serializeVector(hit) },
+            { text_hash: hashText('wrong dims'), embedding: '[0.1,0.2]' },
           ],
           error: null,
-        },
+        }),
       });
-      const out = await lookupOpportunitiesByVectors(client, {
-        ...base, vectors: [[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]],
-      });
-      expect(out).to.deep.equal([
-        [{ entityId: 'o1', entityType: ENTITY_TYPE, score: 0.9 }, { entityId: 'o2', entityType: ENTITY_TYPE, score: 0.7 }],
-        [],
-        [{ entityId: 'o3', entityType: ENTITY_TYPE, score: 0.8 }],
-      ]);
-      expect(client.calls.rpc).to.have.length(1);
-      expect(client.calls.rpc[0].name).to.equal(SEMANTIC_SEARCH_RPC);
-      expect(client.calls.rpc[0].params).to.deep.equal({
-        p_site_id: SITE_ID,
-        p_source_types: [SOURCE_TYPE],
-        p_entity_types: null,
-        p_query_embeddings: ['[0.1,0.2]', '[0.3,0.4]', '[0.5,0.6]'],
-        p_model: MODEL,
-        p_dims: 2,
-        p_limit: 10,
-        p_min_score: 0,
-      });
+      const embedder = makeEmbedder();
+      const out = await embedQueries(client, embedder, ['Cached', 'fresh', 'Wrong  Dims']);
+
+      expect(out.vectors).to.deep.equal([hit, vec(0.1), vec(0.1)]);
+      expect(out).to.include({ hits: 1, misses: 2 });
+      expect(embedder.calls).to.deep.equal([['fresh', 'wrong dims']]);
+      await out.cacheWrites;
+      expect(client.calls.update[0].inFilter.values).to.deep.equal([hashText('cached')]);
+      expect(client.calls.upsert[0].rows.map((r) => r.text)).to.deep.equal(['fresh', 'wrong dims']);
     });
 
-    it('dedups type lists; an empty entityTypes sends no entity filter', async () => {
-      const client = makeClient({ rpcResult: { data: [], error: null } });
-      await lookupOpportunitiesByVectors(client, {
-        ...base,
-        sourceTypes: [SOURCE_TYPE, SOURCE_TYPE],
-        entityTypes: ['reddit-analysis', 'cited-analysis', 'reddit-analysis'],
-        vectors: [[0.1, 0.2]],
-      });
-      await lookupOpportunitiesByVectors(client, {
-        ...base, entityTypes: [], vectors: [[0.1, 0.2]],
-      });
-      await lookupOpportunitiesByVectors(client, {
-        ...base, entityTypes: null, vectors: [[0.1, 0.2]],
-      });
-      expect(client.calls.rpc[0].params.p_source_types).to.deep.equal([SOURCE_TYPE]);
-      expect(client.calls.rpc[0].params.p_entity_types).to.deep.equal(['reddit-analysis', 'cited-analysis']);
-      expect(client.calls.rpc[1].params.p_entity_types).to.equal(null);
-      expect(client.calls.rpc[2].params.p_entity_types).to.equal(null);
-    });
-
-    it('renders rejected values safely: unserializable falls back to String, long ones are truncated', async () => {
-      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
-        ...base, vectors: [[0.1, 0.2]], ...over,
-      });
-      const circular = {};
-      circular.self = circular;
-      await expect(call({ sourceTypes: [10n] })).to.be.rejectedWith(ValidationError, '(got [10])');
-      await expect(call({ entityTypes: ['topic', circular] })).to.be.rejectedWith(ValidationError, '(got ["topic",[object Object]])');
-      const err = await call({ sourceTypes: ['x'.repeat(500)] }).catch((e) => e);
-      expect(err).to.be.instanceOf(ValidationError);
-      expect(err.message).to.match(/\(got \["x{198}\.\.\.\)$/);
-    });
-
-    it('sanitizes rejected values to printable ASCII so the message is safe for an HTTP header', async () => {
-      const call = (over) => lookupOpportunitiesByVectors(makeClient(), {
-        ...base, vectors: [[0.1, 0.2]], ...over,
-      });
-      const printable = /^[\x20-\x7E]*$/;
-      const emoji = await call({ sourceTypes: ['\u{1F600}'] }).catch((e) => e);
-      expect(emoji.message).to.include('(got ["??"])').and.match(printable);
-      const control = await call({ entityTypes: ['a\x7Fb'] }).catch((e) => e);
-      expect(control.message).to.include('(got ["a?b"])').and.match(printable);
-      // Sanitized before truncating, so a multi-byte value can't leave half a surrogate pair.
-      const long = await call({ sourceTypes: ['\u{1F600}'.repeat(300)] }).catch((e) => e);
-      expect(long.message).to.match(/\(got \["\?{198}\.\.\.\)$/).and.match(printable);
-    });
-
-    it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
+    it('makes no embedding call when everything is cached', async () => {
       const client = makeClient({
-        rpcResults: [
-          { data: [], error: null },
-          {
-            data: [{
-              query_index: 0, entity_id: 'o21', entity_type: ENTITY_TYPE, score: 0.6,
-            }],
+        selectFn: () => ({ data: [{ text_hash: hashText('a'), embedding: serializeVector(vec(0.2)) }], error: null }),
+      });
+      const embedder = makeEmbedder();
+      const out = await embedQueries(client, embedder, ['a']);
+      expect(out).to.include({ hits: 1, misses: 0 });
+      expect(embedder.calls).to.have.length(0);
+      await out.cacheWrites;
+      expect(client.calls.upsert).to.have.length(0);
+    });
+
+    it('embeds everything and logs when the cache read fails', async () => {
+      const client = makeClient({ selectFn: () => ({ data: null, error: { message: 'x' } }) });
+      const embedder = makeEmbedder();
+      const warnings = [];
+      const out = await embedQueries(client, embedder, ['a', 'b'], { log: { warn: (m) => warnings.push(m) } });
+      expect(out.vectors).to.deep.equal([vec(0.1), vec(0.1)]);
+      expect(out).to.include({ hits: 0, misses: 2 });
+      expect(embedder.calls).to.deep.equal([['a', 'b']]);
+      expect(warnings).to.deep.equal([
+        '[semantic-index] getQueryEmbeddings failed (non-fatal): Failed to read semantic_query_embedding',
+      ]);
+      expect(out.cacheError).to.be.instanceOf(DataAccessError);
+      expect(out.cacheError.message).to.equal('Failed to read semantic_query_embedding');
+      await out.cacheWrites;
+    });
+
+    it('raises EmbeddingUnavailableError on failure, timeout, or a malformed response', async () => {
+      const failed = await embedQueries(makeClient(), makeEmbedder({ error: new Error('boom') }), ['a', 'b'])
+        .catch((e) => e);
+      expect(failed).to.be.instanceOf(EmbeddingUnavailableError);
+      expect(failed.message).to.equal('Embedding call failed: boom');
+      expect(failed.misses).to.equal(2);
+
+      const hanging = { createEmbeddings: () => new Promise(() => {}) };
+      await expect(embedQueries(makeClient(), hanging, ['a'], { timeoutMs: 5 }))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'Embedding call failed: timed out after 5 ms');
+
+      await expect(embedQueries(makeClient(), makeEmbedder({ result: [] }), ['a']))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'length mismatch');
+      await expect(embedQueries(makeClient(), makeEmbedder({ result: [[0.1]] }), ['a']))
+        .to.be.rejectedWith(EmbeddingUnavailableError, 'dimension mismatch');
+    });
+
+    it('swallows cache write failures and logs them when a logger is given', async () => {
+      const client = makeClient({
+        selectFn: () => ({ data: [{ text_hash: hashText('a'), embedding: serializeVector(vec(0.2)) }], error: null }),
+        upsertResult: { error: { message: 'x' } },
+        updateResult: { error: { message: 'y' } },
+      });
+      const warnings = [];
+      const out = await embedQueries(client, makeEmbedder(), ['a', 'b'], { log: { warn: (m) => warnings.push(m) } });
+      await out.cacheWrites;
+      expect(warnings).to.deep.equal([
+        '[semantic-index] touchQueryEmbeddings failed (non-fatal): Failed to touch semantic_query_embedding',
+        '[semantic-index] upsertQueryEmbeddings failed (non-fatal): Failed to upsert semantic_query_embedding',
+      ]);
+      const silent = await embedQueries(client, makeEmbedder(), ['a', 'b']);
+      await silent.cacheWrites;
+      const noWarn = await embedQueries(client, makeEmbedder(), ['a', 'b'], { log: {} });
+      await noWarn.cacheWrites;
+    });
+  });
+
+  const lookups = [
+    {
+      name: 'lookupOpportunitiesByTopic',
+      fn: lookupOpportunitiesByTopic,
+      target: 'opportunity',
+      rpc: OPP_RPC,
+      matchType: TOPIC,
+    },
+    {
+      name: 'lookupSuggestionsByTopic',
+      fn: lookupSuggestionsByTopic,
+      target: 'suggestion',
+      rpc: SUG_RPC,
+      matchType: TOPIC,
+    },
+    {
+      name: 'lookupSuggestionsByClaim',
+      fn: lookupSuggestionsByClaim,
+      target: 'suggestion',
+      rpc: SUG_RPC,
+      matchType: CLAIM,
+    },
+  ];
+
+  lookups.forEach(({
+    name, fn, target, rpc, matchType,
+  }) => {
+    describe(name, () => {
+      const base = { siteId: SITE_ID };
+      const vecs = (n) => Array.from({ length: n }, () => vec(0.1));
+      const call = (over) => fn(makeClient(), { ...base, vectors: vecs(1), ...over });
+      const groupSizes = (client) => client.calls.rpc
+        .map((c) => c.params.p_query_embeddings.length);
+
+      it('validates args, filters, vectors, k and minScore', async () => {
+        await expect(fn(null, base)).to.be.rejectedWith(ValidationError, 'postgrestClient is required');
+        await expect(fn(makeClient())).to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got undefined)');
+        await expect(call({ siteId: 'site-1' })).to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got "site-1")');
+        await expect(call({ matchFieldTypes: 'question' })).to.be.rejectedWith(ValidationError, 'matchFieldTypes must be an array');
+        await expect(call({ matchFieldTypes: [''] })).to.be.rejectedWith(ValidationError, 'each matchFieldTypes value must be a non-empty string of at most 64');
+        await expect(call({ entityTypes: [42] })).to.be.rejectedWith(ValidationError, 'each entityTypes value must be a non-empty string of at most 255 characters (got 42)');
+        await expect(call({ entityTypes: Array.from({ length: MAX_TYPE_FILTER_ITEMS + 1 }, (_, i) => `t${i}`) }))
+          .to.be.rejectedWith(ValidationError, 'entityTypes must have at most 100 values (got 101)');
+        await expect(call({ statuses: 'NEW' })).to.be.rejectedWith(ValidationError, 'statuses must be an array');
+        await expect(call({ statuses: ['NEW', 'nope'] })).to.be.rejectedWith(ValidationError, /^statuses must only contain: .+ \(got \["nope"\]\)$/);
+        await expect(call({ vectors: 'x' })).to.be.rejectedWith(ValidationError, 'vectors must be an array');
+        await expect(call({ vectors: [[]] })).to.be.rejectedWith(ValidationError, 'vector must be');
+        await expect(call({ vectors: [[0.1]] })).to.be.rejectedWith(ValidationError, 'does not match dims');
+        await expect(call({ k: 0 })).to.be.rejectedWith(ValidationError, 'k must be an integer between 1 and 1000');
+        await expect(call({ k: 1.5 })).to.be.rejectedWith(ValidationError, 'k must be');
+        await expect(call({ k: 1001 })).to.be.rejectedWith(ValidationError, 'k must be');
+        await expect(call({ minScore: '0.5' })).to.be.rejectedWith(ValidationError, 'minScore must be a finite number');
+        await expect(call({ minScore: NaN })).to.be.rejectedWith(ValidationError, 'minScore must be');
+      });
+
+      it('searches the configured generation, ignoring a caller-supplied model/dims', async () => {
+        const client = makeClient();
+        await fn(client, {
+          ...base, vectors: vecs(1), model: 'other', dims: 2,
+        });
+        expect(client.calls.rpc[0].params).to.include({ p_model: MODEL, p_dims: DIMS });
+      });
+
+      it('returns [] without calling the RPC for no vectors', async () => {
+        const client = makeClient();
+        expect(await fn(client, { ...base, vectors: [] })).to.deep.equal([]);
+        expect(client.calls.rpc).to.have.length(0);
+      });
+
+      it('sends the params with defaults and splits rows per query, in input order', async () => {
+        const client = makeClient({
+          rpcResult: {
+            data: [
+              {
+                query_index: 1, entity_id: 'e2', entity_type: ENTITY_TYPE, score: 0.7,
+              },
+              {
+                query_index: 0, entity_id: 'e1', entity_type: ENTITY_TYPE, score: 0.9,
+              },
+            ],
             error: null,
           },
-        ],
+        });
+        const out = await fn(client, { ...base, vectors: vecs(2) });
+        expect(out).to.deep.equal([
+          [{ entityId: 'e1', entityType: ENTITY_TYPE, score: 0.9 }],
+          [{ entityId: 'e2', entityType: ENTITY_TYPE, score: 0.7 }],
+        ]);
+        const [{ name: rpcName, params }] = client.calls.rpc;
+        expect(rpcName).to.equal(rpc);
+        expect(params).to.include({
+          p_site_id: SITE_ID,
+          p_match_type: matchType,
+          p_match_field_types: null,
+          p_entity_types: null,
+          p_model: MODEL,
+          p_dims: DIMS,
+          p_limit: 10,
+          p_min_score: 0,
+          p_statuses: null,
+        });
+        expect(params.p_query_embeddings).to.deep.equal(vecs(2).map(serializeVector));
       });
-      const out = await lookupOpportunitiesByVectors(client, { ...base, vectors: vecs(25) });
-      expect(groupSizes(client)).to.deep.equal([20, 5]);
-      expect(out).to.have.length(25);
-      expect(out[20]).to.deep.equal([{ entityId: 'o21', entityType: ENTITY_TYPE, score: 0.6 }]);
-      expect(out[0]).to.deep.equal([]);
-    });
 
-    it('shrinks the group when k is large so group x k stays within max-rows', async () => {
+      it('dedupes filter lists and treats empty lists as no filter', async () => {
+        const client = makeClient();
+        await fn(client, {
+          ...base,
+          vectors: vecs(1),
+          matchFieldTypes: ['question', 'question', 'title'],
+          entityTypes: [],
+          statuses: ['NEW', 'NEW'],
+        });
+        expect(client.calls.rpc[0].params).to.include({ p_entity_types: null });
+        expect(client.calls.rpc[0].params.p_match_field_types).to.deep.equal(['question', 'title']);
+        expect(client.calls.rpc[0].params.p_statuses).to.deep.equal(['NEW']);
+      });
+
+      it('groups vectors by SEMANTIC_CHUNK_SIZE and offsets each group\'s query_index', async () => {
+        const client = makeClient({
+          rpcResults: [
+            { data: [], error: null },
+            {
+              data: [{
+                query_index: 0, entity_id: 'e21', entity_type: ENTITY_TYPE, score: 0.6,
+              }],
+              error: null,
+            },
+          ],
+        });
+        const out = await fn(client, { ...base, vectors: vecs(25) });
+        expect(groupSizes(client)).to.deep.equal([20, 5]);
+        expect(out[20]).to.deep.equal([{ entityId: 'e21', entityType: ENTITY_TYPE, score: 0.6 }]);
+        expect(out[0]).to.deep.equal([]);
+      });
+
+      it('shrinks the group when k is large so group x k stays within max-rows', async () => {
+        const client = makeClient();
+        await fn(client, { ...base, vectors: vecs(25), k: 100 });
+        expect(groupSizes(client)).to.deep.equal([10, 10, 5]);
+      });
+
+      it('passes k/minScore and tolerates null data', async () => {
+        const client = makeClient({ rpcResult: { data: null, error: null } });
+        expect(await fn(client, {
+          ...base, vectors: vecs(1), k: 5, minScore: 0.3,
+        })).to.deep.equal([[]]);
+        expect(client.calls.rpc[0].params).to.include({ p_limit: 5, p_min_score: 0.3 });
+      });
+
+      it('wraps an RPC error, with a deploy-ordering hint for PGRST202', async () => {
+        const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
+        const err = await fn(client, {
+          ...base, matchFieldTypes: ['question'], vectors: vecs(1),
+        }).catch((e) => e);
+        expect(err).to.be.instanceOf(DataAccessError);
+        expect(err.message).to.equal(`Failed ${target} semantic search for site ${SITE_ID}`);
+        expect(err.details).to.deep.equal({
+          siteId: SITE_ID, matchType, matchFieldTypes: ['question'], entityTypes: null,
+        });
+
+        const cause = { code: 'PGRST202', message: 'Could not find the function' };
+        const missing = await fn(makeClient({ rpcResult: { data: null, error: cause } }), {
+          ...base, vectors: vecs(1),
+        }).catch((e) => e);
+        expect(missing.message).to.equal(`Failed ${target} semantic search for site ${SITE_ID}: ${rpc} ${PGRST202_HINT}`);
+        expect(missing.cause).to.equal(cause);
+      });
+
+      it('rejects a query_index outside the current group', async () => {
+        const row = (queryIndex) => ({
+          query_index: queryIndex, entity_id: 'e1', entity_type: ENTITY_TYPE, score: 0.5,
+        });
+        for (const bad of [20, -1, 1.5, null]) {
+          const client = makeClient({ rpcResult: { data: [row(bad)], error: null } });
+          // eslint-disable-next-line no-await-in-loop
+          await expect(fn(client, { ...base, vectors: vecs(25) }))
+            .to.be.rejectedWith(DataAccessError, `Unexpected query_index ${bad} from ${rpc}`);
+        }
+      });
+    });
+  });
+
+  [
+    ['lookupSuggestionsByTopic', lookupSuggestionsByTopic, TOPIC],
+    ['lookupSuggestionsByClaim', lookupSuggestionsByClaim, CLAIM],
+  ].forEach(([name, lookupSuggestions, matchType]) => describe(`${name} status filters`, () => {
+    const base = { siteId: SITE_ID, vectors: [vec(0.1)] };
+
+    it('validates statuses against Suggestion and opportunityStatuses against Opportunity', async () => {
       const client = makeClient();
-      await lookupOpportunitiesByVectors(client, { ...base, vectors: vecs(25), k: 100 });
-      expect(groupSizes(client)).to.deep.equal([10, 10, 5]);
+      await lookupSuggestions(client, {
+        ...base, statuses: ['APPROVED', 'NEW'], opportunityStatuses: ['NEW', 'NEW'],
+      });
+      expect(client.calls.rpc[0].params).to.deep.include({
+        p_statuses: ['APPROVED', 'NEW'], p_opportunity_statuses: ['NEW'],
+      });
+      await expect(lookupOpportunitiesByTopic(makeClient(), { ...base, statuses: ['APPROVED'] }))
+        .to.be.rejectedWith(ValidationError, 'statuses must only contain');
+      await expect(lookupSuggestions(makeClient(), { ...base, opportunityStatuses: ['APPROVED'] }))
+        .to.be.rejectedWith(ValidationError, 'opportunityStatuses must only contain');
     });
 
-    it('passes k/minScore and tolerates null data', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: null } });
-      const out = await lookupOpportunitiesByVectors(client, {
-        ...base, vectors: [[0.1, 0.2]], k: 5, minScore: 0.3,
-      });
-      expect(out).to.deep.equal([[]]);
-      expect(client.calls.rpc[0].params).to.include({ p_limit: 5, p_min_score: 0.3 });
+    it('omits both status filters when not given', async () => {
+      const client = makeClient();
+      await lookupSuggestions(client, base);
+      expect(client.calls.rpc[0].params)
+        .to.include({ p_statuses: null, p_opportunity_statuses: null });
+      expect(client.calls.rpc[0].params.p_match_type).to.equal(matchType);
     });
 
-    it('wraps an RPC error with the searched type lists', async () => {
-      const client = makeClient({ rpcResult: { data: null, error: { message: 'boom' } } });
-      const err = await lookupOpportunitiesByVectors(client, {
-        ...base, entityTypes: ['reddit-analysis'], vectors: [[0.1, 0.2]],
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.include('Failed semantic search');
-      expect(err.message).to.not.include('signature not found');
-      expect(err.details).to.deep.equal({
-        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: ['reddit-analysis'],
-      });
+    it('treats omitted params as an empty request', async () => {
+      await expect(lookupSuggestions(makeClient()))
+        .to.be.rejectedWith(ValidationError, 'siteId must be a valid UUID (got undefined)');
     });
+  }));
 
-    it('adds a deploy-ordering hint when PostgREST cannot find the RPC signature', async () => {
-      const cause = { code: 'PGRST202', message: 'Could not find the function' };
-      const client = makeClient({ rpcResult: { data: null, error: cause } });
-      const err = await lookupOpportunitiesByVectors(client, {
-        ...base, vectors: [[0.1, 0.2]],
-      }).catch((e) => e);
-      expect(err).to.be.instanceOf(DataAccessError);
-      expect(err.message).to.equal(`Failed semantic search for site ${SITE_ID}: ${SEMANTIC_SEARCH_RPC} ${PGRST202_HINT}`);
-      expect(err.cause).to.equal(cause);
-      expect(err.details).to.deep.equal({
-        siteId: SITE_ID, sourceTypes: [SOURCE_TYPE], entityTypes: null,
-      });
-    });
+  it('does not send p_opportunity_statuses for opportunities', async () => {
+    const client = makeClient();
+    await lookupOpportunitiesByTopic(client, { siteId: SITE_ID, vectors: [vec(0.1)] });
+    expect(client.calls.rpc[0].params).to.not.have.property('p_opportunity_statuses');
+  });
 
-    it('rejects a query_index outside the current group (never spills into another group)', async () => {
-      const row = (queryIndex) => ({
-        query_index: queryIndex, entity_id: 'o1', entity_type: ENTITY_TYPE, score: 0.5,
+  describe('indexSemanticClaims', () => {
+    it('writes claim rows that the topic writer leaves alone, reusing the topic vectors', async () => {
+      const topicVector = vec(0.4);
+      const client = makeClient({
+        selectFn: (state) => {
+          if (state.cols === 'text_hash, embedding') {
+            return {
+              data: [{ text_hash: hashText('pricing'), embedding: serializeVector(topicVector) }],
+              error: null,
+            };
+          }
+          // A stored topic row for the same entity and field must not count as a claim row.
+          return {
+            data: state.table === QUERY_EMBEDDING_TABLE ? [] : [{
+              id: 'id-topic',
+              entity_id: ENTITY_ID,
+              match_type: TOPIC,
+              match_field_type: 'topic',
+              text_hash: hashText('pricing'),
+              model: MODEL,
+              dims: DIMS,
+            }],
+            error: null,
+          };
+        },
       });
-      for (const bad of [20, -1, 1.5, null]) {
-        const client = makeClient({ rpcResult: { data: [row(bad)], error: null } });
-        // eslint-disable-next-line no-await-in-loop
-        await expect(lookupOpportunitiesByVectors(client, { ...base, vectors: vecs(25) }))
-          .to.be.rejectedWith(DataAccessError, `Unexpected query_index ${bad}`);
-      }
+      const embedder = makeEmbedder();
+      const out = await indexSemanticClaims(client, embedder, {
+        target: SEMANTIC_TARGETS.SUGGESTION,
+        siteId: SITE_ID,
+        entities: [{
+          entityId: ENTITY_ID,
+          entityType: ENTITY_TYPE,
+          fields: [
+            { matchFieldType: 'title', texts: ['Lower your prices'] },
+            { matchFieldType: 'topic', texts: ['pricing'] },
+          ],
+        }],
+      });
+
+      expect(out).to.include({ indexHits: 1, embedded: 1 });
+      expect(out.entities[0].fields.map((f) => [f.matchFieldType, f.inserted, f.deleted]))
+        .to.deep.equal([['title', 1, 0], ['topic', 1, 0]]);
+      expect(embedder.calls).to.deep.equal([['lower your prices']]);
+      const [{ table, rows }] = client.calls.upsert;
+      expect(table).to.equal(SUG_TABLE);
+      expect(rows.map((r) => [r.match_type, r.match_field_type, r.text])).to.deep.equal([
+        [CLAIM, 'title', 'lower your prices'],
+        [CLAIM, 'topic', 'pricing'],
+      ]);
+      expect(rows[1].embedding).to.equal(serializeVector(topicVector));
+      expect(client.calls.delete).to.have.length(0);
     });
   });
 
@@ -779,6 +1063,8 @@ describe('semantic-index.utils', () => {
     it('getQueryEmbeddings validates its inputs', async () => {
       await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], dims: 2 }))
         .to.be.rejectedWith(ValidationError, 'model is required');
+      await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], model: 'm'.repeat(MAX_MODEL_LENGTH + 1), dims: 2 }))
+        .to.be.rejectedWith(ValidationError, `model must be at most ${MAX_MODEL_LENGTH} characters`);
       await expect(getQueryEmbeddings(makeClient(), { texts: ['x'], model: MODEL, dims: 1.5 }))
         .to.be.rejectedWith(ValidationError, 'dims must be a positive integer');
       await expect(getQueryEmbeddings(makeClient(), { texts: 'x', ...scope }))
@@ -860,7 +1146,7 @@ describe('semantic-index.utils', () => {
       const { rows, options } = client.calls.upsert[0];
       expect(rows).to.have.length(2);
       expect(rows[0]).to.include({
-        text_hash: shoes, model: MODEL, dims: 2, normalized_text: 'running shoes', embedding: '[0.1,0.2]',
+        text_hash: shoes, model: MODEL, dims: 2, text: 'running shoes', embedding: '[0.1,0.2]',
       });
       expect(rows[0]).to.have.property('last_access_at');
       expect(options).to.deep.equal({ onConflict: 'text_hash,model,dims' });

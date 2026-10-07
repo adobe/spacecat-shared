@@ -24,6 +24,7 @@ import {
   getTokowakaMetaconfigS3Path,
   getHostName,
   normalizePath,
+  isConditionalWriteConflict,
 } from './utils/s3-utils.js';
 import {
   omitKeys,
@@ -85,11 +86,17 @@ export {
 } from './cdn/cloudfront/index.js';
 
 const HTTP_BAD_REQUEST = 400;
+const HTTP_PRECONDITION_FAILED = 412;
 const HTTP_INTERNAL_SERVER_ERROR = 500;
 const HTTP_NOT_IMPLEMENTED = 501;
 
 // URLs to deploy/roll back in parallel
 const URL_CONFIG_CONCURRENCY = 5;
+
+// Retries for metaconfig writes that lose against a concurrent writer (full-jitter backoff)
+const METACONFIG_WRITE_MAX_ATTEMPTS = 8;
+const METACONFIG_WRITE_BASE_DELAY_MS = 100;
+const METACONFIG_WRITE_MAX_DELAY_MS = 2000;
 
 /**
  * Tokowaka Client - Manages edge optimization configurations
@@ -171,33 +178,30 @@ class TokowakaClient {
   }
 
   /**
-   * Updates the metaconfig with deployed endpoint paths
-   * @param {Object} metaconfig - Existing metaconfig object
+   * Adds deployed endpoint paths to the latest metaconfig's patches (concurrency-safe)
    * @param {Array<string>} deployedUrls - Array of successfully deployed URLs
    * @param {string} baseUrl - Base URL for uploading metaconfig
    * @returns {Promise<void>}
    * @private
    */
-  async #updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseUrl) {
+  async #updateMetaconfigWithDeployedPaths(deployedUrls, baseUrl) {
     if (!Array.isArray(deployedUrls) || deployedUrls.length === 0) {
       return;
     }
 
     try {
-      // Initialize patches field if it doesn't exist
-      const updatedMetaconfig = {
-        ...metaconfig,
-        patches: { ...(metaconfig.patches || {}) },
-      };
+      const deployedPaths = deployedUrls.map((url) => normalizePath(new URL(url).pathname));
 
-      // Extract normalized paths from deployed URLs and add to patches object
-      deployedUrls.forEach((url) => {
-        const urlObj = new URL(url);
-        const normalizedPath = normalizePath(urlObj.pathname);
-        updatedMetaconfig.patches[normalizedPath] = true;
+      await this.#writeMetaconfigConditionally(baseUrl, (current) => {
+        if (!current) {
+          throw new Error('Metaconfig no longer exists');
+        }
+        const patches = { ...(current.metaconfig.patches || {}) };
+        deployedPaths.forEach((path) => {
+          patches[path] = true;
+        });
+        return { metaconfig: { ...current.metaconfig, patches } };
       });
-
-      await this.uploadMetaconfig(baseUrl, updatedMetaconfig);
       this.log.info(`Updated metaconfig with ${deployedUrls.length} deployed endpoint(s)`);
     } catch (error) {
       this.log.error(`Failed to update metaconfig with deployed paths: ${error.message}`, error);
@@ -300,7 +304,7 @@ class TokowakaClient {
   /**
    * Internal method to fetch domain-level metaconfig from S3 with metadata
    * @param {string} url - Full URL (used to extract domain)
-   * @returns {Promise<Object|null>} - Object with metaconfig and s3Metadata,
+   * @returns {Promise<Object|null>} - Object with metaconfig, s3Metadata and etag,
    *   or null if not found
    * @private
    */
@@ -329,6 +333,7 @@ class TokowakaClient {
       return {
         metaconfig,
         s3Metadata: response.Metadata || {},
+        etag: response.ETag,
       };
     } catch (error) {
       // If metaconfig doesn't exist (NoSuchKey), return null
@@ -351,6 +356,74 @@ class TokowakaClient {
   async fetchMetaconfig(url) {
     const result = await this.#fetchMetaconfigWithMetadata(url);
     return result?.metaconfig ?? null;
+  }
+
+  /**
+   * Read-modify-writes the domain-level metaconfig without dropping concurrent updates.
+   *
+   * The metaconfig is a single S3 object shared by every deploy/rollback of a site, so a plain
+   * read-then-put lets parallel requests overwrite each other's changes. This reads the current
+   * version with its ETag, derives the new version via `buildNext`, and writes it only if S3
+   * still holds the version that was read (If-Match, or If-None-Match: * when none existed).
+   * If another writer got in first, it re-reads and re-applies `buildNext`, with jittered backoff.
+   *
+   * @param {string} url - Any URL of the site (used to derive the metaconfig key)
+   * @param {Function} buildNext - Receives `{ metaconfig, s3Metadata }`, or null when no
+   *   metaconfig exists, and returns `{ metaconfig, metadata }` to write, or null to skip the
+   *   write. It may run once per attempt, so it must derive everything from its argument.
+   * @returns {Promise<{metaconfig: Object, s3Path: string}|null>} - What was written, or null
+   *   when `buildNext` skipped the write
+   * @private
+   */
+  async #writeMetaconfigConditionally(url, buildNext) {
+    for (let attempt = 1; ; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      const current = await this.#fetchMetaconfigWithMetadata(url);
+      const next = buildNext(current);
+      if (!next) {
+        return null;
+      }
+      // Without an ETag the write would be unconditional and could drop concurrent updates
+      if (current && !hasText(current.etag)) {
+        throw this.#createError(
+          'Metaconfig ETag missing; refusing unconditional write',
+          HTTP_INTERNAL_SERVER_ERROR,
+        );
+      }
+
+      const conditions = current ? { ifMatch: current.etag } : { ifNoneMatch: '*' };
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const s3Path = await this.uploadMetaconfig(url, next.metaconfig, next.metadata, conditions);
+        return { metaconfig: next.metaconfig, s3Path };
+      } catch (error) {
+        if (error.status !== HTTP_PRECONDITION_FAILED) {
+          throw error;
+        }
+        if (attempt >= METACONFIG_WRITE_MAX_ATTEMPTS) {
+          this.log.error(
+            `Gave up writing metaconfig for ${url} after ${attempt} attempts: `
+            + 'it kept being modified concurrently',
+          );
+          throw this.#createError(
+            `Metaconfig kept being modified concurrently; gave up after ${attempt} attempts`,
+            HTTP_INTERNAL_SERVER_ERROR,
+          );
+        }
+        const delayMs = Math.floor(Math.random() * Math.min(
+          METACONFIG_WRITE_MAX_DELAY_MS,
+          METACONFIG_WRITE_BASE_DELAY_MS * (2 ** (attempt - 1)),
+        ));
+        this.log.warn(
+          `Metaconfig for ${url} was modified concurrently, re-reading and retrying `
+          + `(attempt ${attempt + 1}/${METACONFIG_WRITE_MAX_ATTEMPTS}) in ${delayMs}ms`,
+        );
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
+      }
+    }
   }
 
   /**
@@ -382,49 +455,56 @@ class TokowakaClient {
    * @param {boolean} metadata.isStageDomain - Whether this is a staging
    *   domain (enables wildcard prerender)
    * @returns {Promise<Object>} - Object with s3Path and metaconfig
+   * @throws {Error} - 400 "already exists" if a metaconfig exists, including one created by a
+   *   concurrent request. Not idempotent: if S3 stores the object but the response is lost,
+   *   the retried write sees it and also fails with "already exists"; call fetchMetaconfig to
+   *   read the stored metaconfig (and its API key).
    */
   async createMetaconfig(url, siteId, options = {}, metadata = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const existingMetaconfig = await this.fetchMetaconfig(url);
+    // Written with If-None-Match, so a concurrent create makes this call fail with
+    // "already exists" instead of silently replacing the other request's API key.
+    const created = await this.#writeMetaconfigConditionally(url, (current) => {
+      if (current) {
+        throw this.#createError('Metaconfig already exists for this URL', HTTP_BAD_REQUEST);
+      }
 
-    if (existingMetaconfig) {
-      throw this.#createError('Metaconfig already exists for this URL', HTTP_BAD_REQUEST);
-    }
+      if (!hasText(siteId)) {
+        throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+      }
 
-    if (!hasText(siteId)) {
-      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
-    }
+      const apiKey = this.#generateApiKey(getHostName(url, this.log));
+
+      const metaconfig = {
+        siteId,
+        apiKeys: [apiKey],
+        tokowakaEnabled: true,
+        enhancements: options.enhancements ?? true,
+        patches: {},
+      };
+
+      // Handle staging domain with automatic prerender configuration
+      const isStageDomain = metadata.isStageDomain === true;
+      if (isStageDomain) {
+        metaconfig.prerender = { allowList: ['/*'] };
+      }
+
+      // Persist isStageDomain in S3 metadata for future updates
+      const s3Metadata = {
+        ...metadata,
+        ...(isStageDomain && { isStageDomain: 'true' }),
+      };
+
+      return { metaconfig, metadata: s3Metadata };
+    });
 
     const normalizedHostName = getHostName(url, this.log);
-    const apiKey = this.#generateApiKey(normalizedHostName);
+    this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${created.s3Path}`);
 
-    const metaconfig = {
-      siteId,
-      apiKeys: [apiKey],
-      tokowakaEnabled: true,
-      enhancements: options.enhancements ?? true,
-      patches: {},
-    };
-
-    // Handle staging domain with automatic prerender configuration
-    const isStageDomain = metadata.isStageDomain === true;
-    if (isStageDomain) {
-      metaconfig.prerender = { allowList: ['/*'] };
-    }
-
-    // Persist isStageDomain in S3 metadata for future updates
-    const s3Metadata = {
-      ...metadata,
-      ...(isStageDomain && { isStageDomain: 'true' }),
-    };
-
-    const s3Path = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
-    this.log.info(`Created new Tokowaka metaconfig for ${normalizedHostName} at ${s3Path}`);
-
-    return metaconfig;
+    return created.metaconfig;
   }
 
   /**
@@ -445,59 +525,64 @@ class TokowakaClient {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
 
-    const raw = await this.#fetchMetaconfigWithMetadata(url);
-    if (!raw?.metaconfig) {
-      throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
-    }
-    const { metaconfig: existingMetaconfig, s3Metadata: existingS3Metadata } = raw;
+    // Built from the latest stored version on every attempt, so fields changed by a
+    // concurrent deploy (e.g. patches) are kept.
+    const updated = await this.#writeMetaconfigConditionally(url, (current) => {
+      if (!current?.metaconfig) {
+        throw this.#createError('Metaconfig does not exist for this URL', HTTP_BAD_REQUEST);
+      }
+      const { metaconfig: existingMetaconfig, s3Metadata: existingS3Metadata } = current;
 
-    if (!hasText(siteId)) {
-      throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
-    }
+      if (!hasText(siteId)) {
+        throw this.#createError('Site ID is required', HTTP_BAD_REQUEST);
+      }
+
+      // dont override api keys
+      // if patches exist, they cannot reset to empty object
+      const hasForceFail = options.forceFail !== undefined
+        || existingMetaconfig.forceFail !== undefined;
+      const forceFail = options.forceFail
+        ?? existingMetaconfig.forceFail
+        ?? false;
+
+      // Staging domain: from metadata or existing S3 metadata (S3 lowercases keys)
+      const isStageDomain = metadata.isStageDomain === true
+        || existingS3Metadata.isstagedomain === 'true';
+
+      const hasPrerender = isStageDomain
+        || isNonEmptyObject(options.prerender)
+        || isNonEmptyObject(existingMetaconfig.prerender);
+
+      const prerender = isStageDomain
+        ? { allowList: ['/*'] }
+        : (options.prerender ?? existingMetaconfig.prerender);
+
+      const metaconfig = {
+        ...existingMetaconfig,
+        tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
+        enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
+        // Explicit options.patches replace the stored patches entirely (on every attempt), so
+        // paths added by a concurrent deploy are dropped in that case; only merging is safe.
+        patches: isNonEmptyObject(options.patches)
+          ? options.patches
+          : (existingMetaconfig.patches ?? {}),
+        ...(hasForceFail && { forceFail }),
+        ...(hasPrerender && { prerender }),
+      };
+
+      // Persist isStageDomain in S3 metadata for future updates
+      const s3Metadata = {
+        ...metadata,
+        ...(isStageDomain && { isStageDomain: 'true' }),
+      };
+
+      return { metaconfig, metadata: s3Metadata };
+    });
 
     const normalizedHostName = getHostName(url, this.log);
+    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${updated.s3Path}`);
 
-    // dont override api keys
-    // if patches exist, they cannot reset to empty object
-    const hasForceFail = options.forceFail !== undefined
-      || existingMetaconfig.forceFail !== undefined;
-    const forceFail = options.forceFail
-      ?? existingMetaconfig.forceFail
-      ?? false;
-
-    // Handle staging domain: check from metadata or from existing S3 metadata (S3 lowercases keys)
-    const isStageDomain = metadata.isStageDomain === true
-      || existingS3Metadata.isstagedomain === 'true';
-
-    const hasPrerender = isStageDomain
-      || isNonEmptyObject(options.prerender)
-      || isNonEmptyObject(existingMetaconfig.prerender);
-
-    const prerender = isStageDomain
-      ? { allowList: ['/*'] }
-      : (options.prerender ?? existingMetaconfig.prerender);
-
-    const metaconfig = {
-      ...existingMetaconfig,
-      tokowakaEnabled: options.tokowakaEnabled ?? existingMetaconfig.tokowakaEnabled ?? true,
-      enhancements: options.enhancements ?? existingMetaconfig.enhancements ?? true,
-      patches: isNonEmptyObject(options.patches)
-        ? options.patches
-        : (existingMetaconfig.patches ?? {}),
-      ...(hasForceFail && { forceFail }),
-      ...(hasPrerender && { prerender }),
-    };
-
-    // Persist isStageDomain in S3 metadata for future updates
-    const s3Metadata = {
-      ...metadata,
-      ...(isStageDomain && { isStageDomain: 'true' }),
-    };
-
-    const uploadedPath = await this.uploadMetaconfig(url, metaconfig, s3Metadata);
-    this.log.info(`Updated Tokowaka metaconfig for ${normalizedHostName} at ${uploadedPath}`);
-
-    return metaconfig;
+    return updated.metaconfig;
   }
 
   /**
@@ -505,9 +590,14 @@ class TokowakaClient {
    * @param {string} url - Full URL (used to extract domain)
    * @param {Object} metaconfig - Metaconfig object (siteId, apiKeys, prerender)
    * @param {Object} metadata - Optional S3 user-defined metadata (key-value pairs)
+   * @param {Object} [conditions] - Optional S3 conditional-write preconditions
+   * @param {string} [conditions.ifMatch] - Only write if the stored object still has this ETag
+   * @param {string} [conditions.ifNoneMatch] - Use '*' to only write if no object exists yet
    * @returns {Promise<string>} - S3 key of uploaded metaconfig
+   * @throws {Error} - With status 412 when a condition was passed and it failed because the
+   *   metaconfig was changed concurrently
   */
-  async uploadMetaconfig(url, metaconfig, metadata = {}) {
+  async uploadMetaconfig(url, metaconfig, metadata = {}, { ifMatch, ifNoneMatch } = {}) {
     if (!hasText(url)) {
       throw this.#createError('URL is required', HTTP_BAD_REQUEST);
     }
@@ -532,6 +622,12 @@ class TokowakaClient {
       if (isNonEmptyObject(metadata)) {
         putObjectParams.Metadata = metadata;
       }
+      if (hasText(ifMatch)) {
+        putObjectParams.IfMatch = ifMatch;
+      }
+      if (hasText(ifNoneMatch)) {
+        putObjectParams.IfNoneMatch = ifNoneMatch;
+      }
 
       const command = new PutObjectCommand(putObjectParams);
 
@@ -545,6 +641,14 @@ class TokowakaClient {
 
       return s3Path;
     } catch (error) {
+      if ((hasText(ifMatch) || hasText(ifNoneMatch)) && isConditionalWriteConflict(error)) {
+        // Expected under concurrent writes; the caller re-reads and retries (and logs that)
+        this.log.debug(`Metaconfig at s3://${bucketName}/${s3Path} changed since it was read: ${error.message}`);
+        throw Object.assign(
+          new Error(`Metaconfig was modified concurrently: ${error.message}`),
+          { status: HTTP_PRECONDITION_FAILED },
+        );
+      }
       this.log.error(`Failed to upload metaconfig to S3: ${error.message}`, error);
       throw this.#createError(`S3 upload failed: ${error.message}`, HTTP_INTERNAL_SERVER_ERROR);
     }
@@ -858,7 +962,7 @@ class TokowakaClient {
       + ` URL(s) in ${Date.now() - loopStart}ms (concurrency=${URL_CONFIG_CONCURRENCY})`);
 
     // Update metaconfig with deployed paths
-    await this.#updateMetaconfigWithDeployedPaths(metaconfig, deployedUrls, baseURL);
+    await this.#updateMetaconfigWithDeployedPaths(deployedUrls, baseURL);
 
     // Invalidate CDN cache for all deployed URLs at once
     const cdnInvalidations = await this.invalidateCdnCache({ urls: deployedUrls });
@@ -1023,63 +1127,69 @@ class TokowakaClient {
       .map((s) => stripSuggestion(s, 'tokowaka-rollback', updatedBy));
     await saveSuggestions(this.dataAccess, savedEligibleSuggestions);
 
-    // Roll back pattern suggestions: fetch metaconfig once, remove all patterns in a single
-    // in-memory pass, upload once, then save each suggestion and clean up its covered entries.
+    // Roll back pattern suggestions: remove all patterns from the metaconfig in a single
+    // conditional write, then save each suggestion and clean up its covered entries.
     const succeededPatternSuggestions = [];
     const failedPatternSuggestions = [];
 
     if (patternSuggestions.length > 0) {
-      const metaconfig = await this.fetchMetaconfig(baseURL);
-      if (!metaconfig) {
+      const patternOf = (suggestion) => suggestion.getData()?.allowedRegexPatterns?.[0];
+      const patternsToRemove = patternSuggestions.map(patternOf).filter(Boolean);
+
+      // Re-applied to the latest metaconfig if a concurrent request changed it in the meantime.
+      let metaconfigFound = true;
+      let metaconfigError;
+      try {
+        await this.#writeMetaconfigConditionally(baseURL, (current) => {
+          metaconfigFound = Boolean(current);
+          if (!current) {
+            return null;
+          }
+          const { metaconfig } = current;
+          let metaconfigChanged = false;
+          patternsToRemove.forEach((patternToRemove) => {
+            const existingAllowList = metaconfig.prerender?.allowList ?? [];
+            const changed = removePatternFromMetaconfig(metaconfig, patternToRemove);
+            const updatedAllowList = metaconfig.prerender?.allowList ?? [];
+            // eslint-disable-next-line max-len
+            this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
+            if (changed) {
+              metaconfigChanged = true;
+            } else {
+              // eslint-disable-next-line max-len
+              this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+            }
+          });
+          return metaconfigChanged ? { metaconfig } : null;
+        });
+      } catch (error) {
+        metaconfigError = error;
+        this.log.error(`[edge-rollback] Metaconfig update failed: ${error.message}`, error);
+      }
+
+      if (!metaconfigFound) {
         // eslint-disable-next-line max-len
         this.log.warn(`[edge-rollback] No metaconfig found for ${baseURL}, skipping all pattern suggestions`);
         // eslint-disable-next-line max-len
         patternSuggestions.forEach((s) => ineligibleSuggestions.push({ suggestion: s, reason: 'No metaconfig found' }));
       } else {
-        // Pass 1: remove all patterns from the in-memory metaconfig, stage suggestions for saving.
+        // Stage suggestions for saving; if the metaconfig write failed, leave them untouched.
         const toSave = [];
-        let metaconfigChanged = false;
 
         for (const suggestion of patternSuggestions) {
-          const data = suggestion.getData();
-          const patternToRemove = data?.allowedRegexPatterns?.[0];
-          if (!patternToRemove) {
+          if (!patternOf(suggestion)) {
             // eslint-disable-next-line max-len
             this.log.warn(`[edge-rollback] Suggestion ${suggestion.getId()} has no allowedRegexPatterns, skipping`);
             ineligibleSuggestions.push({ suggestion, reason: 'Missing allowedRegexPatterns' });
-            // eslint-disable-next-line no-continue
-            continue;
-          }
-
-          const existingAllowList = metaconfig.prerender?.allowList ?? [];
-          const changed = removePatternFromMetaconfig(metaconfig, patternToRemove);
-          const updatedAllowList = metaconfig.prerender?.allowList ?? [];
-          // eslint-disable-next-line max-len
-          this.log.info(`[edge-rollback] Pattern ${patternToRemove}: allowList before=${JSON.stringify(existingAllowList)}, after=${JSON.stringify(updatedAllowList)}`);
-          if (changed) {
-            metaconfigChanged = true;
+          } else if (metaconfigError) {
+            failedPatternSuggestions.push({
+              suggestion, reason: 'Internal server error', statusCode: 500,
+            });
           } else {
-            // eslint-disable-next-line max-len
-            this.log.info(`[edge-rollback] Pattern ${patternToRemove} not found in allowList, skipping CDN write`);
+            suggestion.setData(omitKeys(suggestion.getData(), ['edgeDeployed', 'tokowakaDeployed']));
+            suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
+            toSave.push(suggestion);
           }
-
-          suggestion.setData(omitKeys(data, ['edgeDeployed', 'tokowakaDeployed']));
-          suggestion.setUpdatedBy(updatedBy ?? 'tokowaka-rollback');
-          toSave.push(suggestion);
-        }
-
-        // Pass 2: upload the mutated metaconfig once, then save each suggestion and clean up.
-        try {
-          if (metaconfigChanged) {
-            await this.uploadMetaconfig(baseURL, metaconfig);
-          }
-        } catch (error) {
-          this.log.error(`[edge-rollback] Metaconfig upload failed: ${error.message}`, error);
-          toSave.forEach((s) => failedPatternSuggestions.push({
-            suggestion: s, reason: 'Internal server error', statusCode: 500,
-          }));
-          // Skip per-suggestion saves when metaconfig upload failed
-          toSave.length = 0;
         }
 
         // Batch-save all pattern suggestions.
@@ -1555,20 +1665,18 @@ class TokowakaClient {
    * with edgeDeployed, and marks qualifying per-URL suggestions as covered.
    * @param {Object} suggestion - The pattern suggestion entity
    * @param {Array<string>} allowedRegexPatterns
-   * @param {Object} metaconfig - Metaconfig object (mutated in place)
    * @param {string} baseURL
    * @param {Set<string>} skippedInBatchIds - IDs already handled as same-batch skips
    * @param {Array} allSuggestions - Full opportunity suggestion list
    * @param {string} updatedBy
    * @param {Array} coveredSuggestions - Accumulator (mutated)
-   * @param {string} siteId
+   * @param {string} siteId - Used to seed the metaconfig when the site has none yet
    * @returns {Promise<void>} Throws on metaconfig upload failure
    * @private
    */
   async #deployPatternSuggestion(
     suggestion,
     allowedRegexPatterns,
-    metaconfig,
     baseURL,
     skippedInBatchIds,
     allSuggestions,
@@ -1579,18 +1687,22 @@ class TokowakaClient {
     const data = suggestion.getData();
     const coverageField = data?.isDomainWide ? 'coveredByDomainWide' : 'coveredByPattern';
 
-    const beforeAllowList = metaconfig.prerender?.allowList ?? [];
-    const changed = addPatternsToMetaconfig(metaconfig, allowedRegexPatterns);
-    const afterAllowList = changed ? metaconfig.prerender.allowList : beforeAllowList;
-    this.log.info(
-      // eslint-disable-next-line max-len
-      `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(beforeAllowList)}, after=${JSON.stringify(afterAllowList)}`,
-    );
+    // Re-applied to the latest metaconfig if a concurrent request changed it in the meantime.
+    const written = await this.#writeMetaconfigConditionally(baseURL, (current) => {
+      const metaconfig = current?.metaconfig ?? { siteId };
+      const beforeAllowList = metaconfig.prerender?.allowList ?? [];
+      const changed = addPatternsToMetaconfig(metaconfig, allowedRegexPatterns);
+      const afterAllowList = changed ? metaconfig.prerender.allowList : beforeAllowList;
+      this.log.info(
+        // eslint-disable-next-line max-len
+        `[edge-deploy] Pattern ${suggestion.getId()}: allowList before=${JSON.stringify(beforeAllowList)}, after=${JSON.stringify(afterAllowList)}`,
+      );
+      return changed ? { metaconfig } : null;
+    });
 
-    if (changed) {
-      await this.uploadMetaconfig(baseURL, metaconfig);
+    if (written) {
       // eslint-disable-next-line max-len
-      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(afterAllowList)}`);
+      this.log.info(`[edge-deploy] Uploaded metaconfig for ${baseURL} with allowList=${JSON.stringify(written.metaconfig.prerender.allowList)}`);
     } else {
       // eslint-disable-next-line max-len
       this.log.info(`[edge-deploy] Patterns already in allowList for suggestion ${suggestion.getId()}, skipping CDN write`);
@@ -1693,10 +1805,6 @@ class TokowakaClient {
     if (patternSuggestions.length > 0) {
       const skippedInBatchIds = new Set(skippedInBatch.map((item) => item.suggestion.getId()));
       const baseURL = site.getBaseURL();
-      let metaconfig = await this.fetchMetaconfig(baseURL);
-      if (!metaconfig) {
-        metaconfig = { siteId: site.getId() };
-      }
 
       for (const { suggestion, allowedRegexPatterns } of patternSuggestions) {
         if (!allowedRegexPatterns || allowedRegexPatterns.length === 0) {
@@ -1711,7 +1819,6 @@ class TokowakaClient {
           await this.#deployPatternSuggestion(
             suggestion,
             allowedRegexPatterns,
-            metaconfig,
             baseURL,
             skippedInBatchIds,
             allSuggestions,

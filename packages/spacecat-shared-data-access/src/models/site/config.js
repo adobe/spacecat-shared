@@ -518,7 +518,7 @@ export const configSchema = Joi.object({
         is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
       }),
       hostName: Joi.string().when('viewId', {
-        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.required(),
+        is: Joi.exist(), then: Joi.forbidden(), otherwise: Joi.optional(),
       }),
       viewId: Joi.string().optional(),
       catalogFieldConfig: Joi.object({

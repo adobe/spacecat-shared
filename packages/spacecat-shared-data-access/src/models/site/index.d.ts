@@ -243,7 +243,7 @@ export interface CommerceLlmoStoreConfig {
   websiteCode: string;
   storeCode: string;
   storeViewCode: string;
-  hostName: string;
+  hostName?: string;
   catalogFieldConfig?: CommerceCatalogFieldConfig;
 }
 

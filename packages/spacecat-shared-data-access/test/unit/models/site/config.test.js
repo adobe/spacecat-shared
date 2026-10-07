@@ -3479,7 +3479,33 @@ describe('Config Tests', () => {
       });
     });
 
-    storeFields.forEach((field) => {
+    it('validates and serializes a store config without hostName', () => {
+      const entry = { ...storeConfig };
+      delete entry.hostName;
+      const data = { commerceLlmoConfig: { store1: entry } };
+
+      expect(validateConfiguration(data).commerceLlmoConfig)
+        .to.deep.equal(data.commerceLlmoConfig);
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+      expect(Config.toDynamoItem(config).commerceLlmoConfig)
+        .to.deep.equal(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig().store1).not.to.have.property('hostName');
+    });
+
+    it('replaces a store config with one that omits hostName', () => {
+      const config = Config({ commerceLlmoConfig: { store1: storeConfig } });
+      const entry = { ...storeConfig };
+      delete entry.hostName;
+
+      config.updateCommerceLlmoConfig({ store1: entry });
+
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: entry });
+      expect(Config.toDynamoItem(config).commerceLlmoConfig).to.deep.equal({ store1: entry });
+      expect(config.getCommerceLlmoConfig().store1).not.to.have.property('hostName');
+    });
+
+    storeFields.filter((field) => field !== 'hostName').forEach((field) => {
       it(`requires ${field} when viewId is absent`, () => {
         const entry = { ...storeConfig };
         delete entry[field];
@@ -3487,7 +3513,9 @@ describe('Config Tests', () => {
           commerceLlmoConfig: { store1: entry },
         })).to.throw(`"commerceLlmoConfig.store1.${field}" is required`);
       });
+    });
 
+    storeFields.forEach((field) => {
       it(`rejects ${field} when viewId is present instead of stripping it`, () => {
         const config = Config({ commerceLlmoConfig: { store1: viewConfig } });
         const invalidConfig = {

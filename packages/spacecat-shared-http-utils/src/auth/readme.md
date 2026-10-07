@@ -145,3 +145,19 @@ JWT tokens must:
 - Be provided as a Bearer token in the Authorization header
 
 Any additional claims in the JWT payload will be available in the `authInfo.profile` object after authentication.
+
+#### FACS / ReBAC claims
+
+The FACS wrapper evaluates route capabilities from the union of:
+
+- the JWT `facs_permissions` claim;
+- active `facs_access_mappings` rows for the authenticated user subject;
+- active rows for the authenticated IMS org subject; and
+- active rows for each IMS group subject listed in the JWT `facs_grps` claim.
+
+`facs_grps` is a string array of IMS group idents that have mappings for the
+current org/product. `AuthInfo#getFacsGroups()` sanitizes that claim by accepting
+strings or finite non-negative integers, coercing integers to strings, keeping
+only decimal idents matching `^[1-9][0-9]{0,18}$`, deduplicating, and capping the
+result at 100 entries. Group subjects are grant-only and additive; there are no
+deny records.

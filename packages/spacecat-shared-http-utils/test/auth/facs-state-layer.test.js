@@ -13,7 +13,11 @@
 import { expect } from 'chai';
 import sinon from 'sinon';
 
-import { findFacsResourceBinding, normalizeImsOrgId } from '../../src/auth/facs-state-layer.js';
+import {
+  findFacsResourceBinding,
+  findFacsResourceBindingsForGroups,
+  normalizeImsOrgId,
+} from '../../src/auth/facs-state-layer.js';
 
 /**
  * Builds a chained PostgREST-style stub. Each `.eq(...)` / `.is(...)` returns
@@ -23,9 +27,11 @@ function fakePostgrestClient(result) {
   const builder = {
     select: sinon.stub().returnsThis(),
     eq: sinon.stub().returnsThis(),
+    in: sinon.stub().returnsThis(),
     is: sinon.stub().returnsThis(),
     limit: sinon.stub().returnsThis(),
     maybeSingle: sinon.stub().resolves(result),
+    then: (resolve) => Promise.resolve(result).then(resolve),
   };
   return {
     builder,
@@ -107,6 +113,80 @@ describe('findFacsResourceBinding', () => {
       throw new Error('expected to throw');
     } catch (e) {
       expect(e.message).to.equal('findFacsResourceBinding failed: connection refused');
+    }
+  });
+});
+
+describe('findFacsResourceBindingsForGroups', () => {
+  const keys = {
+    imsOrgId: 'ACME-ORG@AdobeOrg',
+    product: 'LLMO',
+    groupIds: ['945801205', '12345'],
+    resourceType: 'brand',
+    resourceId: 'brand-abc',
+  };
+
+  it('returns [] without issuing a query when groupIds is absent', async () => {
+    const client = fakePostgrestClient({ data: [], error: null });
+    const out = await findFacsResourceBindingsForGroups(client, { ...keys, groupIds: undefined });
+    expect(out).to.deep.equal([]);
+    expect(client.from.called).to.be.false;
+  });
+
+  it('returns [] without issuing a query when groupIds is empty', async () => {
+    const client = fakePostgrestClient({ data: [], error: null });
+    const out = await findFacsResourceBindingsForGroups(client, { ...keys, groupIds: [] });
+    expect(out).to.deep.equal([]);
+    expect(client.from.called).to.be.false;
+  });
+
+  it('returns matching group rows', async () => {
+    const rows = [
+      { id: 'row-1', subject_id: '945801205', granted_capabilities: ['llmo/can_read'] },
+      { id: 'row-2', subject_id: '12345', granted_capabilities: ['llmo/can_manage'] },
+    ];
+    const client = fakePostgrestClient({ data: rows, error: null });
+    const out = await findFacsResourceBindingsForGroups(client, keys);
+    expect(out).to.deep.equal(rows);
+    expect(client.from.calledOnceWithExactly('facs_access_mappings')).to.be.true;
+    expect(client.builder.select.calledOnceWithExactly(
+      'id, granted_capabilities, subject_id',
+    )).to.be.true;
+  });
+
+  it('passes every binding key as filters and constrains subject_id with .in()', async () => {
+    const client = fakePostgrestClient({ data: [], error: null });
+    await findFacsResourceBindingsForGroups(client, keys);
+    expect(client.builder.eq.getCalls().map((c) => c.args)).to.deep.equal([
+      ['ims_org_id', 'ACME-ORG@AdobeOrg'],
+      ['product', 'LLMO'],
+      ['subject_type', 'group'],
+      ['resource_type', 'brand'],
+      ['resource_id', 'brand-abc'],
+    ]);
+    expect(client.builder.in.calledOnceWithExactly(
+      'subject_id',
+      ['945801205', '12345'],
+    )).to.be.true;
+    expect(client.builder.is.calledOnceWithExactly('revoked_at', null)).to.be.true;
+  });
+
+  it('returns [] when PostgREST resolves data: null', async () => {
+    const client = fakePostgrestClient({ data: null, error: null });
+    const out = await findFacsResourceBindingsForGroups(client, keys);
+    expect(out).to.deep.equal([]);
+  });
+
+  it('throws with a meaningful message when PostgREST returns an error', async () => {
+    const client = fakePostgrestClient({
+      data: null,
+      error: { message: 'permission denied' },
+    });
+    try {
+      await findFacsResourceBindingsForGroups(client, keys);
+      throw new Error('expected to throw');
+    } catch (e) {
+      expect(e.message).to.equal('findFacsResourceBindingsForGroups failed: permission denied');
     }
   });
 });

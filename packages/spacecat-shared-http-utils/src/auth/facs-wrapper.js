@@ -13,7 +13,7 @@
 import { Response } from '@adobe/fetch';
 import { LaunchDarklyClient } from '@adobe/spacecat-shared-launchdarkly-client';
 
-import { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
+import { FACS_SUBJECT_TYPES, FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './constants.js';
 import {
   extractParamNamesInOrder,
   extractRouteParams,
@@ -21,7 +21,11 @@ import {
   resolveRouteCapability,
 } from './route-utils.js';
 import { buildAliasLookupsPerProduct, resolveFacsResource } from './facs-resource-resolver.js';
-import { findFacsResourceBinding, normalizeImsOrgId } from './facs-state-layer.js';
+import {
+  findFacsResourceBinding,
+  findFacsResourceBindingsForGroups,
+  normalizeImsOrgId,
+} from './facs-state-layer.js';
 
 // Permanent bypass: Adobe internal IMS org IDs are never subject to FACS enforcement.
 // Sourced from env var FACS_EXCEPTION_INTERNAL_ORGS (comma-separated). Keep in sync
@@ -98,6 +102,8 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *     effectiveCapabilities(user, resource, product) =
  *         facsGrants(user, product)                    -- from JWT
  *       ∪ stateGrants(user, resource, product)         -- from facs_access_mappings
+ *       ∪ stateGrants(org, resource, product)          -- from facs_access_mappings
+ *       ∪ ⋃ stateGrants(group, resource, product)      -- from facs_access_mappings
  *
  * The route's required capability must be a member of the effective set.
  * Grants are additive and grant-only — there is no deny record and no role
@@ -174,13 +180,12 @@ function routeMatchesAnyProductMap(context, productsRoutes) {
  *      here would block legitimate non-ReBAC traffic (e.g. LLMO suggestion
  *      writes that LLMO doesn't model as ReBAC entities).
  *
- *   7. Reads the active `facs_access_mappings` row for
- *      `(user, resource, org, product)`, then `(org, resource, org, product)`.
- *      Either is sufficient. Because the JWT was already ruled out in step 5,
- *      the capability is granted iff one of these rows' `granted_capabilities`
- *      contains it. Missing → 403. (No `postgrestClient` and no JWT grant →
- *      403: the state layer is the only remaining admit path and it's
- *      unreachable.)
+ *   7. Reads active `facs_access_mappings` rows for user, org and group
+ *      subjects in parallel. Any subject row is sufficient. Because the JWT was
+ *      already ruled out in step 5, the capability is granted iff one of these
+ *      rows' `granted_capabilities` contains it. Missing → 403. (No
+ *      `postgrestClient` and no JWT grant → 403: the state layer is the only
+ *      remaining admit path and it's unreachable.)
  *
  * @param {Function} fn - The handler to wrap.
  * @param {{ routeFacsCapabilities: {
@@ -523,6 +528,7 @@ export function facsWrapper(fn, {
     const routeCapability = resolveRouteCapability(context, productMap);
     const upperProduct = productCode.toUpperCase();
     const subjectUserId = resolveUserIdent(authInfo);
+    const subjectGroupIds = authInfo?.getFacsGroups?.() ?? [];
 
     // (5) JWT short-circuit. The effective set is `JWT ∪ state-layer`, so if
     // the JWT already carries the route capability the union contains it and
@@ -598,6 +604,7 @@ export function facsWrapper(fn, {
               capability: routeCapability,
               product: upperProduct,
               subjectId: subjectUserId,
+              subjectGroupIds,
               orgId: normalizedOrgId,
             });
           } catch (e) {
@@ -667,6 +674,7 @@ export function facsWrapper(fn, {
         enabled: true,
         product: upperProduct,
         subjectId: subjectUserId,
+        subjectGroupIds,
       };
       log.info({
         tag: 'facs',
@@ -699,6 +707,7 @@ export function facsWrapper(fn, {
           capability: routeCapability,
           product: upperProduct,
           subjectId: subjectUserId,
+          subjectGroupIds,
           orgId: normalizedOrgId,
           routePattern,
           routeParams,
@@ -743,6 +752,7 @@ export function facsWrapper(fn, {
           enabled: true,
           product: upperProduct,
           subjectId: subjectUserId,
+          subjectGroupIds,
         };
         log.info({
           tag: 'facs',
@@ -792,10 +802,11 @@ export function facsWrapper(fn, {
       return forbidden('Forbidden');
     }
 
-    // Tries user-scoped first, then org-scoped; either is sufficient and
-    // they're stored symmetrically. Reuses the org id normalized above.
+    // User-, org- and group-scoped rows are stored symmetrically; any subject
+    // grant is sufficient. Reuses the org id normalized above.
     const canonicalImsOrgId = normalizedOrgId;
     let stateGrants = [];
+    let grantSources = [];
     try {
       const lookupKey = {
         product: upperProduct,
@@ -803,23 +814,35 @@ export function facsWrapper(fn, {
         resourceId: resource.resourceId,
         imsOrgId: canonicalImsOrgId,
       };
-      const userMapping = subjectUserId
-        ? await findFacsResourceBinding(postgrestClient, {
-          ...lookupKey,
-          subjectType: 'user',
-          subjectId: subjectUserId,
-        })
-        : null;
-      const orgMapping = canonicalImsOrgId
-        ? await findFacsResourceBinding(postgrestClient, {
-          ...lookupKey,
-          subjectType: 'org',
-          subjectId: canonicalImsOrgId,
-        })
-        : null;
-      stateGrants = [
-        ...(userMapping?.granted_capabilities || []),
-        ...(orgMapping?.granted_capabilities || []),
+      const [userMapping, orgMapping, groupMappings] = await Promise.all([
+        subjectUserId
+          ? findFacsResourceBinding(postgrestClient, {
+            ...lookupKey,
+            subjectType: FACS_SUBJECT_TYPES.USER,
+            subjectId: subjectUserId,
+          })
+          : Promise.resolve(null),
+        canonicalImsOrgId
+          ? findFacsResourceBinding(postgrestClient, {
+            ...lookupKey,
+            subjectType: FACS_SUBJECT_TYPES.ORG,
+            subjectId: canonicalImsOrgId,
+          })
+          : Promise.resolve(null),
+        canonicalImsOrgId && subjectGroupIds.length > 0
+          ? findFacsResourceBindingsForGroups(postgrestClient, {
+            ...lookupKey,
+            groupIds: subjectGroupIds,
+          })
+          : Promise.resolve([]),
+      ]);
+      const capsOf = (mapping) => mapping?.granted_capabilities || [];
+      const groupCaps = groupMappings.flatMap(capsOf);
+      stateGrants = [...capsOf(userMapping), ...capsOf(orgMapping), ...groupCaps];
+      grantSources = [
+        ...(capsOf(userMapping).includes(routeCapability) ? ['user'] : []),
+        ...(capsOf(orgMapping).includes(routeCapability) ? ['org'] : []),
+        ...(groupCaps.includes(routeCapability) ? ['group'] : []),
       ];
     } catch (e) {
       // Fail closed on state-layer read errors.
@@ -830,6 +853,7 @@ export function facsWrapper(fn, {
         resourceType: resource.resourceType,
         resourceId: resource.resourceId,
         user: subjectUserId,
+        groupCount: subjectGroupIds.length,
         err: e.message,
       }, 'FACS state-layer read failed — denying');
       return forbidden('Forbidden');
@@ -847,6 +871,7 @@ export function facsWrapper(fn, {
         via: resource.source,
         user: subjectUserId,
         org: canonicalImsOrgId,
+        groupCount: subjectGroupIds.length,
         stateGrantsCount: stateGrants.length,
       }, 'FACS denied: capability not in effective set (JWT ∪ state-layer)');
       return forbidden('Forbidden');
@@ -861,9 +886,11 @@ export function facsWrapper(fn, {
       product: productCode,
       resourceType: resource.resourceType,
       resourceId: resource.resourceId,
-      via: resource.source,
+      via: grantSources,
+      resourceSource: resource.source,
       user: subjectUserId,
       org: canonicalImsOrgId,
+      groupCount: subjectGroupIds.length,
     }, 'FACS grant: capability granted by state layer');
 
     return fn(request, context);

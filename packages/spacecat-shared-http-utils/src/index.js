@@ -169,12 +169,21 @@ export { readOnlyAdminWrapper } from './auth/read-only-admin-wrapper.js';
 // that read or write `facs_access_mappings`. `normalizeImsOrgId` canonicalises
 // the bare ident returned by `authInfo.getTenantIds()` into the
 // `<ident>@<authSrc>` form the table stores.
-export { normalizeImsOrgId, findFacsResourceBinding } from './auth/facs-state-layer.js';
+export {
+  normalizeImsOrgId,
+  findFacsResourceBinding,
+  findFacsResourceBindingsForGroups,
+} from './auth/facs-state-layer.js';
 export { s2sAuthWrapper } from './auth/s2s-wrapper.js';
 export { enrichPathInfo } from './enrich-path-info-wrapper.js';
 export { compressResponse } from './compression-wrapper.js';
 export { hashWithSHA256 } from './auth/generate-hash.js';
-export { FT_MAC_FACS_PERMISSIONS, X_PRODUCT_HEADER } from './auth/constants.js';
+export {
+  FACS_GROUPS_CLAIM,
+  FACS_SUBJECT_TYPES,
+  FT_MAC_FACS_PERMISSIONS,
+  X_PRODUCT_HEADER,
+} from './auth/constants.js';
 
 export {
   AdobeImsHandler, ScopedApiKeyHandler, LegacyApiKeyHandler, JwtHandler,

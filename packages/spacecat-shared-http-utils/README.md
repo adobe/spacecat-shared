@@ -83,6 +83,14 @@ Creates a response for an internal server error with an error message and option
 
 This package includes classes for dealing with authenticating HTTP requests.
 
+### FACS / ReBAC group subjects
+
+For FACS-enabled JWT sessions, `AuthInfo#getFacsGroups()` reads the `facs_grps`
+claim and returns up to 100 sanitized IMS group idents. The `facsWrapper`
+computes effective access as the union of JWT `facs_permissions`, user state
+mappings, org state mappings, and group state mappings from
+`facs_access_mappings` (`subject_type = 'group'`). Grants are additive only.
+
 ### ScopedApiKeyHandler
 
 Scoped API keys are defined in the datalayer and can be used to authenticate requests to the Spacecat API. They employ
@@ -153,4 +161,3 @@ Feel free to contribute by opening issues or creating pull requests. Please foll
 ## License
 
 This project is licensed under the Apache 2.0 - see the [LICENSE](LICENSE) file for details.
-

@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-http-utils-v1.38.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.37.0...@adobe/spacecat-shared-http-utils-v1.38.0) (2026-10-07)
+
+### Features
+
+* **http-utils:** support group subject type in FACS ReBAC (LLMO-7109) ([#1957](https://github.com/adobe/spacecat-shared/issues/1957)) ([f634976](https://github.com/adobe/spacecat-shared/commit/f6349765a7fa9ecebd28df083162b5b43a9ff4ed)), closes [Adobe-AEM-Sites/mysticat-architecture#12](https://github.com/Adobe-AEM-Sites/mysticat-architecture/issues/12) [adobe/mysticat-data-service#1125](https://github.com/adobe/mysticat-data-service/issues/1125) [Adobe-AEM-Sites/spacecat-api-service#49](https://github.com/Adobe-AEM-Sites/spacecat-api-service/issues/49) [Adobe-AEM-Sites/spacecat-auth-service#3](https://github.com/Adobe-AEM-Sites/spacecat-auth-service/issues/3)
+
 ## [@adobe/spacecat-shared-http-utils-v1.37.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-http-utils-v1.36.0...@adobe/spacecat-shared-http-utils-v1.37.0) (2026-09-08)
 
 ### Features

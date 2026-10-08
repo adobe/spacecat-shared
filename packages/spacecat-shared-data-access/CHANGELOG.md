@@ -1,3 +1,9 @@
+## [@adobe/spacecat-shared-data-access-v4.40.1](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.40.0...@adobe/spacecat-shared-data-access-v4.40.1) (2026-10-08)
+
+### Bug Fixes
+
+* **suggestions:** allow NEW -> REJECTED transition ([#1970](https://github.com/adobe/spacecat-shared/issues/1970)) ([8281605](https://github.com/adobe/spacecat-shared/commit/8281605431096155fc11b0a3f488978f89492865))
+
 ## [@adobe/spacecat-shared-data-access-v4.40.0](https://github.com/adobe/spacecat-shared/compare/@adobe/spacecat-shared-data-access-v4.39.1...@adobe/spacecat-shared-data-access-v4.40.0) (2026-10-02)
 
 ### Features

@@ -693,23 +693,30 @@ describe('SuggestionModel', () => {
 
     it('warns but still applies an illegal transition in warn mode (default)', () => {
       delete process.env.STATUS_TRANSITION_ENFORCEMENT;
-      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      const { model, mockLogger } = createElectroMocks(Suggestion, { ...mockRecord, status: 'APPROVED' });
       mockLogger.warn.resetHistory(); // ignore construction-time warnings
-      model.setStatus('REJECTED'); // REJECTED only legal from PENDING_VALIDATION
+      model.setStatus('REJECTED'); // REJECTED only legal from NEW or PENDING_VALIDATION (SITES-53247)
       expect(model.record.status).to.equal('REJECTED');
       expect(mockLogger.warn).to.have.been.calledOnce;
     });
 
-    it('allows REJECTED only from PENDING_VALIDATION in enforce mode', () => {
+    it('allows REJECTED from PENDING_VALIDATION in enforce mode', () => {
       process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
       const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'PENDING_VALIDATION' });
       expect(() => model.setStatus('REJECTED')).to.not.throw();
       expect(model.record.status).to.equal('REJECTED');
     });
 
-    it('throws on an illegal transition (NEW -> REJECTED) in enforce mode', () => {
+    it('allows REJECTED from NEW in enforce mode (SITES-53247: pre-validation gate retired)', () => {
       process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
       const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'NEW' });
+      expect(() => model.setStatus('REJECTED')).to.not.throw();
+      expect(model.record.status).to.equal('REJECTED');
+    });
+
+    it('throws on an illegal transition (APPROVED -> REJECTED) in enforce mode', () => {
+      process.env.STATUS_TRANSITION_ENFORCEMENT = 'enforce';
+      const { model } = createElectroMocks(Suggestion, { ...mockRecord, status: 'APPROVED' });
       expect(() => model.setStatus('REJECTED')).to.throw('Suggestion');
     });
   });

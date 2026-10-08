@@ -28,7 +28,8 @@ describe('Suggestion transitions', () => {
     ['NEW', 'ERROR'],
     ['PENDING_VALIDATION', 'NEW'],
     ['PENDING_VALIDATION', 'IN_PROGRESS'], // api-service autofixSuggestions path
-    ['PENDING_VALIDATION', 'REJECTED'], // the one hard rule preserved from api-service
+    ['PENDING_VALIDATION', 'REJECTED'], // the hard rule: NEW or PENDING_VALIDATION only
+    ['NEW', 'REJECTED'], // SITES-53247: ESE can reject directly from NEW now the gate is retired
     ['IN_PROGRESS', 'FIXED'],
     ['IN_PROGRESS', 'NEW'], // bubble-up: all issues NEUTRAL
     ['FIXED', 'NEW'], // re-detection reopens
@@ -40,7 +41,7 @@ describe('Suggestion transitions', () => {
   ];
 
   const illegal = [
-    ['NEW', 'REJECTED'], // REJECTED only from PENDING_VALIDATION
+    ['APPROVED', 'REJECTED'], // REJECTED only from NEW or PENDING_VALIDATION
     ['FIXED', 'REJECTED'],
     ['REJECTED', 'FIXED'], // reopen only to NEW, not straight to a terminal outcome
     ['SKIPPED', 'FIXED'],

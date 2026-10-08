@@ -3398,6 +3398,199 @@ describe('Config Tests', () => {
   });
 
   describe('Commerce LLMO Config', () => {
+    const storeConfig = {
+      environmentId: 'env-123',
+      websiteCode: 'base',
+      storeCode: 'main_store',
+      storeViewCode: 'default',
+      hostName: 'example.com',
+    };
+    const viewConfig = {
+      environmentId: 'env-456',
+      viewId: 'view-123',
+    };
+    const storeFields = ['websiteCode', 'storeCode', 'storeViewCode', 'hostName'];
+
+    [
+      ['store', storeConfig],
+      ['view', viewConfig],
+    ].forEach(([type, entry]) => {
+      it(`validates a ${type} config without catalogFieldConfig`, () => {
+        const data = { commerceLlmoConfig: { store1: entry } };
+        expect(validateConfiguration(data).commerceLlmoConfig)
+          .to.deep.equal(data.commerceLlmoConfig);
+        expect(Config(data).getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+      });
+
+      it(`validates a ${type} config with catalogFieldConfig`, () => {
+        const data = {
+          commerceLlmoConfig: {
+            store1: {
+              ...entry,
+              catalogFieldConfig: {
+                name: { enabled: true, maxLength: 50 },
+                description: { enabled: false },
+              },
+            },
+          },
+        };
+        expect(validateConfiguration(data).commerceLlmoConfig)
+          .to.deep.equal(data.commerceLlmoConfig);
+      });
+
+      it(`requires environmentId in a ${type} config`, () => {
+        const withoutEnvironmentId = { ...entry };
+        delete withoutEnvironmentId.environmentId;
+        expect(() => validateConfiguration({
+          commerceLlmoConfig: { store1: withoutEnvironmentId },
+        })).to.throw('"commerceLlmoConfig.store1.environmentId" is required');
+      });
+
+      it(`strips legacy fields when updating a ${type} config`, () => {
+        const config = Config();
+        config.updateCommerceLlmoConfig({
+          store1: {
+            ...entry,
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'legacy-key',
+          },
+        });
+        expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: entry });
+      });
+
+      it(`persists a ${type} config in toDynamoItem`, () => {
+        const data = { commerceLlmoConfig: { store1: entry } };
+        const config = Config(data);
+        expect(Config.toDynamoItem(config).commerceLlmoConfig)
+          .to.deep.equal(data.commerceLlmoConfig);
+      });
+
+      it(`rejects invalid catalogFieldConfig for a ${type} config`, () => {
+        [
+          { name: {} },
+          { description: { enabled: 'invalid' } },
+          { name: { enabled: true, maxLength: -1 } },
+          { description: { enabled: true, maxLength: 1.5 } },
+        ].forEach((catalogFieldConfig) => {
+          expect(() => validateConfiguration({
+            commerceLlmoConfig: { store1: { ...entry, catalogFieldConfig } },
+          })).to.throw('Configuration validation error');
+        });
+      });
+    });
+
+    it('validates and serializes a store config without hostName', () => {
+      const entry = { ...storeConfig };
+      delete entry.hostName;
+      const data = { commerceLlmoConfig: { store1: entry } };
+
+      expect(validateConfiguration(data).commerceLlmoConfig)
+        .to.deep.equal(data.commerceLlmoConfig);
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal(data.commerceLlmoConfig);
+      expect(Config.toDynamoItem(config).commerceLlmoConfig)
+        .to.deep.equal(data.commerceLlmoConfig);
+      expect(config.getCommerceLlmoConfig().store1).not.to.have.property('hostName');
+    });
+
+    it('replaces a store config with one that omits hostName', () => {
+      const config = Config({ commerceLlmoConfig: { store1: storeConfig } });
+      const entry = { ...storeConfig };
+      delete entry.hostName;
+
+      config.updateCommerceLlmoConfig({ store1: entry });
+
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: entry });
+      expect(Config.toDynamoItem(config).commerceLlmoConfig).to.deep.equal({ store1: entry });
+      expect(config.getCommerceLlmoConfig().store1).not.to.have.property('hostName');
+    });
+
+    storeFields.filter((field) => field !== 'hostName').forEach((field) => {
+      it(`requires ${field} when viewId is absent`, () => {
+        const entry = { ...storeConfig };
+        delete entry[field];
+        expect(() => validateConfiguration({
+          commerceLlmoConfig: { store1: entry },
+        })).to.throw(`"commerceLlmoConfig.store1.${field}" is required`);
+      });
+    });
+
+    storeFields.forEach((field) => {
+      it(`rejects ${field} when viewId is present instead of stripping it`, () => {
+        const config = Config({ commerceLlmoConfig: { store1: viewConfig } });
+        const invalidConfig = {
+          store1: { ...viewConfig, [field]: storeConfig[field] },
+        };
+        expect(() => validateConfiguration({ commerceLlmoConfig: invalidConfig }))
+          .to.throw(`"commerceLlmoConfig.store1.${field}" is not allowed`);
+        expect(() => config.updateCommerceLlmoConfig(invalidConfig))
+          .to.throw(`"store1.${field}" is not allowed`);
+        expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: viewConfig });
+      });
+    });
+
+    [
+      ...['environmentId', ...storeFields].map((field) => [field, storeConfig]),
+      ['environmentId', viewConfig],
+      ['viewId', viewConfig],
+    ].forEach(([field, entry]) => {
+      it(`rejects empty or non-string ${field} in a ${entry.viewId ? 'view' : 'store'} config`, () => {
+        ['', null, 123, true, {}, []].forEach((value) => {
+          const invalidConfig = { store1: { ...entry, [field]: value } };
+          expect(() => validateConfiguration({ commerceLlmoConfig: invalidConfig }))
+            .to.throw('Configuration validation error');
+          const config = Config({ commerceLlmoConfig: { store1: entry } });
+          expect(() => config.updateCommerceLlmoConfig(invalidConfig))
+            .to.throw('Configuration validation error');
+          expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: entry });
+        });
+      });
+    });
+
+    it('rejects an environmentId-only config without mutating existing state', () => {
+      const config = Config({ commerceLlmoConfig: { store1: storeConfig } });
+      const invalidConfig = { store1: { environmentId: 'env-123' } };
+      expect(() => validateConfiguration({ commerceLlmoConfig: invalidConfig }))
+        .to.throw('"commerceLlmoConfig.store1.websiteCode" is required');
+      expect(() => config.updateCommerceLlmoConfig(invalidConfig))
+        .to.throw('"store1.websiteCode" is required');
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: storeConfig });
+    });
+
+    it('supports view and store configs in separate entries', () => {
+      const data = { commerceLlmoConfig: { store1: storeConfig, store2: viewConfig } };
+      expect(validateConfiguration(data).commerceLlmoConfig)
+        .to.deep.equal(data.commerceLlmoConfig);
+    });
+
+    it('strips legacy fields from view records while preserving viewId', () => {
+      const data = {
+        commerceLlmoConfig: {
+          store1: {
+            ...viewConfig,
+            magentoEndpoint: 'https://magento.example.com/graphql',
+            magentoAPIKey: 'legacy-key',
+          },
+        },
+      };
+      const config = Config(data);
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: viewConfig });
+      expect(Config.toDynamoItem(config).commerceLlmoConfig)
+        .to.deep.equal({ store1: viewConfig });
+    });
+
+    it('clears commerceLlmoConfig when updated with undefined', () => {
+      const config = Config({ commerceLlmoConfig: { store1: viewConfig } });
+      config.updateCommerceLlmoConfig(undefined);
+      expect(config.getCommerceLlmoConfig()).to.be.undefined;
+    });
+
+    it('validates only commerce config when other saved configuration is invalid', () => {
+      const config = Config({ rumConfig: { hasDomainKey: true } });
+      config.updateCommerceLlmoConfig({ store1: viewConfig });
+      expect(config.getCommerceLlmoConfig()).to.deep.equal({ store1: viewConfig });
+    });
+
     it('creates a Config with commerceLlmoConfig property', () => {
       const data = {
         commerceLlmoConfig: {
@@ -3457,8 +3650,8 @@ describe('Config Tests', () => {
       const data = {
         commerceLlmoConfig: {
           store1: {
+            ...storeConfig,
             environmentId: 'env-456',
-            websiteCode: 'base',
           },
         },
       };
@@ -3471,7 +3664,7 @@ describe('Config Tests', () => {
       const config = Config({
         commerceLlmoConfig: {
           store1: {
-            environmentId: 'env-123',
+            ...storeConfig,
           },
         },
       });
@@ -3479,7 +3672,7 @@ describe('Config Tests', () => {
       const newConfig = {
         store2: {
           environmentId: 'env-789',
-          hostName: 'new.example.com',
+          viewId: 'view-789',
         },
       };
       config.updateCommerceLlmoConfig(newConfig);
@@ -3491,7 +3684,7 @@ describe('Config Tests', () => {
         commerceLlmoConfig: {
           store1: {
             environmentId: 'env-123',
-            hostName: 'example.com',
+            viewId: 'view-123',
           },
         },
       });

@@ -104,6 +104,15 @@ const collectErrorMessages = (error) => {
   return messages.join(' | ');
 };
 
+// RPC-only tables: data-service revokes every PostgREST table grant and exposes them
+// solely through SECURITY DEFINER RPCs, so generic REST reads are denied by design.
+const RPC_ONLY_TABLES = {
+  AbvOnboardingClaim: 'abv_onboarding_claims',
+};
+
+const isRpcOnlyDenial = (entityName, error) => RPC_ONLY_TABLES[entityName] !== undefined
+  && collectErrorMessages(error).includes(`permission denied for table ${RPC_ONLY_TABLES[entityName]}`);
+
 const isExpectedInvocationError = (error) => {
   const message = collectErrorMessages(error);
   return EXPECTED_INVOCATION_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
@@ -336,6 +345,10 @@ describe('PostgREST IT - all collections methods coverage', () => {
             // Ensure v3 deprecation remains explicit.
             if (entityName === 'KeyEvent' && KEY_EVENT_DEPRECATED_METHODS.has(methodName)) {
               expect(error.message).to.include('KeyEvent is deprecated in data-access v3');
+              return;
+            }
+
+            if (isRpcOnlyDenial(entityName, error)) {
               return;
             }
 

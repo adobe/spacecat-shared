@@ -86,6 +86,9 @@ const EXPECTED_INVOCATION_ERROR_PATTERNS = [
   'invalid input value for enum',
   'not configured',
   'schema cache',
+  // Write-protected collections (e.g. AbvOnboardingClaim) revoke direct table
+  // access and only expose RPC functions, so generic reads legitimately 403.
+  'permission denied for table',
 ];
 
 const isMutatingMethod = (methodName) => MUTATING_METHOD_PREFIXES

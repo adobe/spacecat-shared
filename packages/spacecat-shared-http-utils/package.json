@@ -41,9 +41,9 @@
   },
   "devDependencies": {
     "@adobe/helix-shared-wrap": "2.0.2",
-    "chai": "6.2.2",
+    "chai": "6.3.0",
     "chai-as-promised": "8.0.2",
-    "esmock": "2.7.6",
+    "esmock": "2.7.9",
     "sinon": "22.1.0"
   }
 }

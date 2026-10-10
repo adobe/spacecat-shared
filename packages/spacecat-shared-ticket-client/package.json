@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "c8": "11.0.0",
-    "chai": "6.2.2",
+    "chai": "6.3.0",
     "chai-as-promised": "8.0.2",
     "mocha": "11.8.0",
     "mocha-multi-reporters": "1.5.2",

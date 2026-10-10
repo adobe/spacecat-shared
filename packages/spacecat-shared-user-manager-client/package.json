@@ -58,7 +58,7 @@
   },
   "devDependencies": {
     "c8": "11.0.0",
-    "chai": "6.2.2",
+    "chai": "6.3.0",
     "counterfact": "2.16.5",
     "js-yaml": "4.3.2",
     "mocha": "11.8.0",

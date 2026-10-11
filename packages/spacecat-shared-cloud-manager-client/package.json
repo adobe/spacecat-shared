@@ -22,14 +22,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/adobe/spacecat-shared.git"
+    "url": "https://github.com/Adobe-AEM-Sites/spacecat-shared.git"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/adobe/spacecat-shared/issues"
+    "url": "https://github.com/Adobe-AEM-Sites/spacecat-shared/issues"
   },
-  "homepage": "https://github.com/adobe/spacecat-shared#readme",
+  "homepage": "https://github.com/Adobe-AEM-Sites/spacecat-shared#readme",
   "publishConfig": {
     "access": "public"
   },

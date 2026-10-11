@@ -1,7 +1,7 @@
 name: Build
 
-# IMPORTANT: npm Trusted Publisher bindings for the 21 published @adobe/* packages point
-# to this file (adobe/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
+# IMPORTANT: npm Trusted Publisher bindings for the 27 published @adobe/* packages point
+# to this file (Adobe-AEM-Sites/spacecat-shared / .github/workflows/main.yaml). Renaming or moving
 # this file breaks OIDC publishing — re-run scripts/setup-npm-trusted-publishers.sh after.
 # Renaming the 'npm-publish' GitHub Environment referenced below has the same silent-break
 # failure mode — re-run the setup script after.

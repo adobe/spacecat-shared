@@ -517,6 +517,31 @@ describe('edge-optimize support', () => {
       expect(res).to.deep.equal({ cloudFrontFunctionArn: 'arn:cf-fn', lambdaArn });
     });
 
+    it('removeEdgeOptimizeRouting delegates to the free function', async () => {
+      dispatch(cfSendStub, {
+        GetDistributionConfig: {
+          DistributionConfig: {
+            DefaultCacheBehavior: {
+              FunctionAssociations: {
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E1' }],
+              },
+            },
+          },
+          ETag: 'dist-etag',
+        },
+        UpdateDistribution: {},
+      });
+      const res = await client().removeEdgeOptimizeRouting('E1', { dryRun: true });
+      expect(res).to.deep.equal({
+        reverted: false,
+        behaviors: [{
+          pathPattern: 'default',
+          removed: [{ type: 'function', eventType: 'viewer-request', arn: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E1' }],
+        }],
+      });
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
     it('runDeployStep delegates to the free function', async () => {
       dispatch(cfSendStub, {
         GetDistributionConfig: {
@@ -2013,6 +2038,296 @@ describe('edge-optimize support', () => {
         error = e;
       }
       expect(error.message).to.include('lambdaVersionArn');
+      expect(cfSendStub.called).to.equal(false);
+    });
+  });
+
+  describe('removeEdgeOptimizeRouting', () => {
+    it('strips EO associations from the default behavior', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 2,
+              Items: [
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+              ],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+      cfSendStub.onSecondCall().resolves({});
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+
+      expect(result).to.deep.equal({
+        reverted: true,
+        behaviors: [{
+          pathPattern: 'default',
+          removed: [
+            { type: 'function', eventType: 'viewer-request', arn: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' },
+            { type: 'lambda', eventType: 'origin-request', arn: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+            { type: 'lambda', eventType: 'origin-response', arn: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+          ],
+        }],
+      });
+      const update = cfSendStub.secondCall.args[0];
+      expect(update.commandName).to.equal('UpdateDistribution');
+      expect(update.input.IfMatch).to.equal('dist-etag');
+      const behavior = update.input.DistributionConfig.DefaultCacheBehavior;
+      expect(behavior.FunctionAssociations).to.deep.equal({ Quantity: 0, Items: [] });
+      expect(behavior.LambdaFunctionAssociations).to.deep.equal({ Quantity: 0, Items: [] });
+    });
+
+    it('preserves a pre-existing customer association on the same behavior', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 2,
+              Items: [
+                { EventType: 'viewer-response', FunctionARN: 'arn:cust-fn' },
+                { EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' },
+              ],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 3,
+              Items: [
+                { EventType: 'viewer-response', LambdaFunctionARN: 'arn:cust-lambda' },
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:5' },
+              ],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+      cfSendStub.onSecondCall().resolves({});
+
+      await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      const behavior = cfSendStub.secondCall.args[0].input.DistributionConfig.DefaultCacheBehavior;
+      expect(behavior.FunctionAssociations).to.deep.equal({
+        Quantity: 1, Items: [{ EventType: 'viewer-response', FunctionARN: 'arn:cust-fn' }],
+      });
+      expect(behavior.LambdaFunctionAssociations).to.deep.equal({
+        Quantity: 1, Items: [{ EventType: 'viewer-response', LambdaFunctionARN: 'arn:cust-lambda' }],
+      });
+    });
+
+    it('preserves a customer\'s own viewer-request function and origin-request Lambda (not Edge Optimize\'s)', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:cust-viewer-fn' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'origin-request', LambdaFunctionARN: 'arn:cust-origin-lambda' }],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      expect(cfSendStub.calledOnce).to.equal(true); // no UpdateDistribution — nothing was EO's
+    });
+
+    it('does not strip a customer look-alike ARN (substring match, but not this distribution\'s exact -adobe- name)', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              // Loose "edgeoptimize-routing" text, but not this dist's exact -adobe-E2EXAMPLE name.
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/my-edgeoptimize-routing-test' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 1,
+              // Right prefix but a DIFFERENT distribution id (EOTHER, not E2EXAMPLE).
+              Items: [{ EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-EOTHER:1' }],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      // no UpdateDistribution — nothing matched exactly
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
+    it('leaves names that only start with ours (-v2 forks) and the unsuffixed base names', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE-v2' }],
+            },
+            LambdaFunctionAssociations: {
+              Quantity: 2,
+              Items: [
+                { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE-v2:1' },
+                { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin:1' },
+              ],
+            },
+          },
+          CacheBehaviors: {
+            Items: [{
+              PathPattern: '/legacy/*',
+              FunctionAssociations: {
+                Quantity: 1,
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing' }],
+              },
+            }],
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
+    it('strips EO associations from a named cache behavior', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {},
+          CacheBehaviors: {
+            Items: [{
+              PathPattern: '/api/*',
+              FunctionAssociations: {
+                Quantity: 1,
+                Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
+              },
+              LambdaFunctionAssociations: {
+                Quantity: 2,
+                Items: [
+                  { EventType: 'origin-request', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
+                  { EventType: 'origin-response', LambdaFunctionARN: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
+                ],
+              },
+            }],
+          },
+        },
+        ETag: 'dist-etag',
+      });
+      cfSendStub.onSecondCall().resolves({});
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({
+        reverted: true,
+        behaviors: [{
+          pathPattern: '/api/*',
+          removed: [
+            { type: 'function', eventType: 'viewer-request', arn: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' },
+            { type: 'lambda', eventType: 'origin-request', arn: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
+            { type: 'lambda', eventType: 'origin-response', arn: 'arn:aws:lambda:us-east-1:123456789012:function:edgeoptimize-origin-adobe-E2EXAMPLE:3' },
+          ],
+        }],
+      });
+      const update = cfSendStub.secondCall.args[0];
+      expect(update.commandName).to.equal('UpdateDistribution');
+      expect(update.input.IfMatch).to.equal('dist-etag');
+      const config = update.input.DistributionConfig;
+      expect(config.CacheBehaviors.Items[0].FunctionAssociations)
+        .to.deep.equal({ Quantity: 0, Items: [] });
+      expect(config.CacheBehaviors.Items[0].LambdaFunctionAssociations)
+        .to.deep.equal({ Quantity: 0, Items: [] });
+      expect(config.DefaultCacheBehavior).to.deep.equal({});
+    });
+
+    it('no-ops when the distribution has no EO associations anywhere', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {},
+          CacheBehaviors: { Items: [{ PathPattern: '/api/*' }] },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      expect(result).to.deep.equal({ reverted: false, behaviors: [] });
+      expect(cfSendStub.calledOnce).to.equal(true); // only GetDistributionConfig, no update
+    });
+
+    it('reports what would be removed without updating on a dry run', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+
+      const result = await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE', undefined, { dryRun: true });
+      expect(result).to.deep.equal({
+        reverted: false,
+        behaviors: [{
+          pathPattern: 'default',
+          removed: [{ type: 'function', eventType: 'viewer-request', arn: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
+        }],
+      });
+      expect(cfSendStub.calledOnce).to.equal(true);
+    });
+
+    it('propagates a GetDistributionConfig failure', async () => {
+      cfSendStub.onFirstCall().rejects(Object.assign(new Error('denied'), { name: 'AccessDenied' }));
+      let error;
+      try {
+        await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      } catch (e) {
+        error = e;
+      }
+      expect(error.message).to.equal('denied');
+    });
+
+    it('propagates an UpdateDistribution failure', async () => {
+      cfSendStub.onFirstCall().resolves({
+        DistributionConfig: {
+          DefaultCacheBehavior: {
+            FunctionAssociations: {
+              Quantity: 1,
+              Items: [{ EventType: 'viewer-request', FunctionARN: 'arn:aws:cloudfront::123456789012:function/edgeoptimize-routing-adobe-E2EXAMPLE' }],
+            },
+          },
+        },
+        ETag: 'dist-etag',
+      });
+      cfSendStub.onSecondCall().rejects(Object.assign(new Error('stale etag'), { name: 'PreconditionFailed' }));
+      let error;
+      try {
+        await edgeOptimize.removeEdgeOptimizeRouting({}, 'E2EXAMPLE');
+      } catch (e) {
+        error = e;
+      }
+      expect(error.message).to.equal('stale etag');
+    });
+
+    it('throws when distributionId is missing', async () => {
+      let error;
+      try {
+        await edgeOptimize.removeEdgeOptimizeRouting({}, '');
+      } catch (e) {
+        error = e;
+      }
+      expect(error.message).to.include('distributionId');
       expect(cfSendStub.called).to.equal(false);
     });
   });

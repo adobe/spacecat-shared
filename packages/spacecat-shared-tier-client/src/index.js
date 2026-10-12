@@ -13,4 +13,5 @@
 import TierClient from './tier-client.js';
 
 export { TierClient };
+export { ENTITLEMENT_TIER_CHANGED, ENTITLEMENT_EVENTS_QUEUE_URL_KEY } from './events.js';
 export default TierClient;

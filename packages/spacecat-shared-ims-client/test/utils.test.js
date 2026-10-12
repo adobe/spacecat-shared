@@ -11,9 +11,17 @@
  */
 
 import { expect } from 'chai';
-import { encrypt, decrypt } from '../src/utils.js';
+import { encrypt, decrypt, createFormData } from '../src/utils.js';
 
 describe('Utils Tests', () => {
+  describe('createFormData', () => {
+    it('encodes fields as application/x-www-form-urlencoded', () => {
+      const result = createFormData({ token: 'abc123', client_id: 'my-client', type: 'access_token' });
+      expect(result).to.be.instanceOf(URLSearchParams);
+      expect(result.toString()).to.equal('token=abc123&client_id=my-client&type=access_token');
+    });
+  });
+
   describe('encrypt/decrypt', () => {
     it('encrypt/decrypt of a string with default values', async () => {
       const text = 'Hello, World!';

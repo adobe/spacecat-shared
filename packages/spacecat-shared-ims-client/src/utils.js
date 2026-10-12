@@ -26,15 +26,11 @@ export const IMS_ADMIN_PROFILE_ENDPOINT = '/ims/admin_profile/v3';
 export const IMS_ACCOUNT_CLUSTER_ENDPOINT = '/ims/account_cluster/v2';
 export const IMS_ADMIN_ORGANIZATIONS_ENDPOINT = '/ims/admin_organizations/v4';
 /**
- * Creates and populates a FormData object from key-value pairs.
- * @param {Object} fields - Object containing key-value pairs to append to FormData.
- * @returns {FormData} A populated FormData object.
+ * Encodes key-value pairs as application/x-www-form-urlencoded.
+ * @param {Object} fields - Object containing key-value pairs to encode.
+ * @returns {URLSearchParams} A URLSearchParams object ready to use as a fetch body.
  */
-export const createFormData = (fields) => {
-  const formData = new FormData();
-  Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
-  return formData;
-};
+export const createFormData = (fields) => new URLSearchParams(Object.entries(fields));
 
 /**
  * Generates the IMS groups endpoint URL.

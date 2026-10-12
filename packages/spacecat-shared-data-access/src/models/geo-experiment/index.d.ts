@@ -19,14 +19,29 @@ import type {
   Site,
 } from '../index';
 
-export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | 'extension';
+export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | `post_extension_${number}`;
+
+export interface GeoExperimentRunRange {
+  min: number;
+  max: number;
+  taken: number[];
+}
+
+export interface GeoExperimentExtension {
+  enabled: boolean;
+  maxWindows: number;
+  windowSize: number;
+  currentWindow?: number;
+  stopped?: boolean;
+  completionReason?: 'max_windows_reached' | 'stopped' | 'window_failed';
+}
 
 export interface GeoExperimentInsightsEntry {
   window: number;
   type: GeoExperimentInsightsType;
   label: string;
   location: string;
-  runRange?: { from: number; to: number };
+  runRange?: GeoExperimentRunRange;
   completedAt?: string;
 }
 

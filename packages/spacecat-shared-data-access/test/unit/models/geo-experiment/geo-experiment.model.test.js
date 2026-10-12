@@ -83,7 +83,24 @@ describe('GeoExperimentModel', () => {
       ROUTING_VALIDATION: 'routingValidation',
       OAE_VALIDATION_JOBS: 'oaeValidationJobs',
       BASELINE_MEASUREMENT: 'baselineMeasurement',
+      EXTENSION: 'extension',
     });
+  });
+
+  it('exposes extension constants', () => {
+    expect(GeoExperiment.EXTENSION_CONFIG_ENV_VAR).to.equal('EXPERIMENT_EXTENSION_CONFIG');
+    expect(GeoExperiment.EXTENSION_CONFIG_KEYS).to.deep.equal({
+      ENABLED: 'enabled',
+      MAX_WINDOWS: 'maxWindows',
+      WINDOW_SIZE: 'windowSize',
+      CURRENT_WINDOW: 'currentWindow',
+      STOPPED: 'stopped',
+      COMPLETION_REASON: 'completionReason',
+    });
+    expect(GeoExperiment.EXTENSION_MAX_WINDOWS).to.equal(4);
+    expect(GeoExperiment.EXTENSION_DEFAULT_WINDOW_SIZE).to.equal(14);
+    expect(GeoExperiment.PHASES.POST_EXTENSION_IMPACT_MEASUREMENT_DONE)
+      .to.equal('post_extension_impact_measurement_done');
   });
 
   it('exposes SCHEDULE_CONFIG_KEYS constant', () => {
@@ -170,19 +187,27 @@ describe('GeoExperimentModel', () => {
 
     it('exposes INSIGHTS_TYPES and INSIGHTS_WINDOWS', () => {
       expect(GeoExperiment.INSIGHTS_TYPES).to.deep.equal({
-        BASELINE: 'baseline', POST_ANALYSIS: 'post_analysis', EXTENSION: 'extension',
+        BASELINE: 'baseline', POST_ANALYSIS: 'post_analysis', POST_EXTENSION_PREFIX: 'post_extension_',
       });
       expect(GeoExperiment.INSIGHTS_WINDOWS).to.deep.equal({ BASELINE: 0, POST_ANALYSIS: 1 });
     });
 
+    it('maps windows to types', () => {
+      expect(GeoExperiment.insightsTypeForWindow(0)).to.equal('baseline');
+      expect(GeoExperiment.insightsTypeForWindow(1)).to.equal('post_analysis');
+      expect(GeoExperiment.insightsTypeForWindow(2)).to.equal('post_extension_1');
+      expect(GeoExperiment.insightsTypeForWindow(4)).to.equal('post_extension_3');
+    });
+
     it('validates entries', () => {
       expect(GeoExperiment.isValidInsightsEntry(baseline)).to.equal(true);
-      const withRange = { ...baseline, runRange: { from: 1, to: 14 }, completedAt: '2026-09-25T00:00:00Z' };
+      const runRange = { min: 1, max: 16, taken: [1, 2, 3, 4, 6, 16] };
+      const withRange = { ...baseline, runRange, completedAt: '2026-09-25T00:00:00Z' };
       expect(GeoExperiment.isValidInsightsEntry(withRange)).to.equal(true);
       const withIsoMs = { ...withRange, completedAt: new Date().toISOString() };
       expect(GeoExperiment.isValidInsightsEntry(withIsoMs)).to.equal(true);
       expect(GeoExperiment.isValidInsightsEntry({
-        window: 3, type: 'extension', label: 'Extension 2', location: 'geo-experiments/e/insights/window-3/insights.json',
+        window: 3, type: 'post_extension_2', label: 'Extension 2', location: 'geo-experiments/e/insights/post_extension_2/insights.json',
       })).to.equal(true);
       expect(GeoExperiment.isValidInsightsEntry(null)).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: -1 })).to.equal(false);
@@ -196,15 +221,22 @@ describe('GeoExperimentModel', () => {
       const cases = [
         [null, 'entry must be an object'],
         [{ ...baseline, window: '0' }, 'window must be a non-negative integer'],
-        [{ ...baseline, type: 'extension' }, "type must be 'baseline' for window 0"],
+        [{ ...baseline, type: 'post_extension_1' }, "type must be 'baseline' for window 0"],
         [{ ...post, type: 'baseline' }, "type must be 'post_analysis' for window 1"],
-        [{ ...post, window: 2 }, "type must be 'extension' for window 2"],
+        [{ ...post, window: 2 }, "type must be 'post_extension_1' for window 2"],
+        [{ ...post, window: 3, type: 'post_extension_1' }, "type must be 'post_extension_2' for window 3"],
         [{ ...baseline, label: 3 }, 'label must be a non-empty string'],
         [{ ...baseline, location: '../etc/passwd' }, 'location must be a relative S3 key'],
         [{ ...baseline, location: 's3://bucket/key.json' }, 'location must be a relative S3 key'],
-        [{ ...baseline, runRange: 'x' }, 'runRange must be { from, to } integers with from <= to'],
-        [{ ...baseline, runRange: { from: 5, to: 1 } }, 'runRange must be { from, to } integers with from <= to'],
-        [{ ...baseline, runRange: { from: 1 } }, 'runRange must be { from, to } integers with from <= to'],
+        [{ ...baseline, runRange: 'x' }, 'runRange must be { min, max, taken: [ascending run numbers] }'],
+        [{ ...baseline, runRange: { min: 1, max: 14 } }, 'runRange must be { min, max, taken: [ascending run numbers] }'],
+        [{ ...baseline, runRange: { min: 1, max: 1, taken: [] } }, 'runRange must be { min, max, taken: [ascending run numbers] }'],
+        [{ ...baseline, runRange: { min: 1, max: 2, taken: [2, 1] } }, 'runRange must be { min, max, taken: [ascending run numbers] } without duplicates'],
+        [{ ...baseline, runRange: { min: 1, max: 1, taken: [1, 1] } }, 'runRange must be { min, max, taken: [ascending run numbers] } without duplicates'],
+        [{ ...baseline, runRange: { min: -1, max: 1, taken: [-1, 1] } }, 'runRange must be { min, max, taken: [ascending run numbers] } without duplicates'],
+        [{ ...baseline, runRange: { min: 1, max: 14, taken: [1, '2'] } }, 'runRange must be { min, max, taken: [ascending run numbers] } without duplicates'],
+        [{ ...baseline, runRange: { min: 1, max: 14, taken: [1, 16] } }, 'runRange min/max must be 1/16 (first/last taken run)'],
+        [{ ...baseline, runRange: { min: 2, max: 16, taken: [1, 16] } }, 'runRange min/max must be 1/16 (first/last taken run)'],
         [{ ...baseline, completedAt: 123 }, 'completedAt must be an ISO date string'],
         [{ ...baseline, completedAt: 'yesterday' }, 'completedAt must be an ISO date string'],
       ];

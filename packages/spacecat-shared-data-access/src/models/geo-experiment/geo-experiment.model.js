@@ -22,6 +22,7 @@ class GeoExperiment extends BaseModel {
 
   static TYPES = {
     ONSITE_OPPORTUNITY_DEPLOYMENT: 'onsite_opportunity_deployment',
+    OPTIMIZE_AT_SOURCE: 'optimize_at_source',
   };
 
   static STATUSES = {
@@ -47,6 +48,14 @@ class GeoExperiment extends BaseModel {
     POST_ANALYSIS_DONE: 'post_analysis_done',
     IMPACT_MEASUREMENT_STARTED: 'impact_measurement_started',
     IMPACT_MEASUREMENT_DONE: 'impact_measurement_done',
+    // optimize-at-source (OAS) strategy phases
+    OAS_INITIATED: 'oas_initiated',
+    OAS_BASELINE_STARTED: 'oas_baseline_started',
+    OAS_BASELINE_DONE: 'oas_baseline_done',
+    OAS_AWAITING_PUBLISH: 'oas_awaiting_publish',
+    OAS_PUBLISH_VERIFIED: 'oas_publish_verified',
+    OAS_POST_SNAPSHOT: 'oas_post_snapshot',
+    OAS_COMPLETED: 'oas_completed',
   };
 
   /**
@@ -83,6 +92,15 @@ class GeoExperiment extends BaseModel {
     OAE_VALIDATION_JOBS: 'oaeValidationJobs',
     // Baseline (window 0) measurement bookkeeping, e.g. { taskId, startedAt, retryCount }.
     BASELINE_MEASUREMENT: 'baselineMeasurement',
+    // optimize-at-source bookkeeping.
+    // URLs the external UI deployed, to be publish-checked, e.g. ['https://example.com/a'].
+    DEPLOYED_URLS: 'deployedUrls',
+    // Publish-check progress, e.g. { verifiedUrls: [...], lastCheckedAt }.
+    PUBLISH_CHECK: 'publishCheck',
+    // 14-day post window bookkeeping, e.g. { startedAt, lastSnapshotAt, snapshotCount }.
+    POST_WINDOW: 'postWindow',
+    // S3 location (key) of the raw daily SEO-metric snapshots.
+    SNAPSHOTS_LOCATION: 'snapshotsLocation',
   };
 
   /**

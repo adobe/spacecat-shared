@@ -83,7 +83,29 @@ describe('GeoExperimentModel', () => {
       ROUTING_VALIDATION: 'routingValidation',
       OAE_VALIDATION_JOBS: 'oaeValidationJobs',
       BASELINE_MEASUREMENT: 'baselineMeasurement',
+      DEPLOYED_URLS: 'deployedUrls',
+      PUBLISH_CHECK: 'publishCheck',
+      POST_WINDOW: 'postWindow',
+      SNAPSHOTS_LOCATION: 'snapshotsLocation',
     });
+  });
+
+  it('exposes the optimize-at-source experiment type', () => {
+    expect(GeoExperiment.TYPES.OPTIMIZE_AT_SOURCE).to.equal('optimize_at_source');
+  });
+
+  it('exposes the optimize-at-source phases, in lifecycle order', () => {
+    const oasPhases = Object.entries(GeoExperiment.PHASES)
+      .filter(([key]) => key.startsWith('OAS_'));
+    expect(oasPhases).to.deep.equal([
+      ['OAS_INITIATED', 'oas_initiated'],
+      ['OAS_BASELINE_STARTED', 'oas_baseline_started'],
+      ['OAS_BASELINE_DONE', 'oas_baseline_done'],
+      ['OAS_AWAITING_PUBLISH', 'oas_awaiting_publish'],
+      ['OAS_PUBLISH_VERIFIED', 'oas_publish_verified'],
+      ['OAS_POST_SNAPSHOT', 'oas_post_snapshot'],
+      ['OAS_COMPLETED', 'oas_completed'],
+    ]);
   });
 
   it('exposes SCHEDULE_CONFIG_KEYS constant', () => {

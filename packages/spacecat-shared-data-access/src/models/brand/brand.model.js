@@ -16,9 +16,10 @@ import BaseModel from '../base/base.model.js';
  * Brand - an Adobe brand, stored in the `brands` table in mysticat-data-service
  * and served over PostgREST. Intentionally minimal: it surfaces only the fields
  * the serenity sub-workspace provisioning flows read/write
- * (`semrushSubWorkspaceId`, `status`, `name`). Brands are created and fully
- * managed elsewhere (Brandalf sync, onboarding); this entity is a read +
- * targeted-patch surface, not a create surface.
+ * (`semrushSubWorkspaceId`, `status`, `name`, and the async-provisioning fields
+ * below). Brands are created and fully managed elsewhere (Brandalf sync,
+ * onboarding); this entity is a read + targeted-patch surface, not a create
+ * surface.
  *
  * `semrushSubWorkspaceId` is the dual-mode switch: NULL = the brand is not
  * connected to a Semrush sub-workspace (resolves against the org parent
@@ -26,6 +27,25 @@ import BaseModel from '../base/base.model.js';
  * Deactivation empties the sub-workspace and clears this pointer (the
  * sub-workspace itself is never deleted). See serenity-docs
  * brand-semrush-provisioning-v2-phase1-sync.md §6.
+ *
+ * `semrushProvisioning{Status,AttemptId,JobId,Error,CandidateWorkspaceId}`
+ * (LLMO-7352/LLMO-7418) track an async sub-workspace provisioning attempt.
+ * `semrushSubWorkspaceId` remains the ONLY canonical, confirmed pointer — it is
+ * written only once a workspace is confirmed ready. `...CandidateWorkspaceId`
+ * is a diagnostic, non-canonical id captured mid-attempt (before confirmation);
+ * never treat it as usable. `...AttemptId` is the compare-and-set key an async
+ * worker uses to promote or fail an attempt without a stale/superseded attempt
+ * clobbering a newer one. `...JobId` references the async_jobs row driving the
+ * current attempt — deliberately not a foreign key, since async_jobs rows are
+ * purged 7 days after creation and this state must outlive that purge.
+ * `...Error` is a sanitized terminal-failure reason for UI/diagnostics — never
+ * a raw Semrush workspace id or upstream body. `status`/`attemptId`/`jobId`/
+ * `error` ship in mysticat-data-service migration
+ * `20260908000000_add_brands_semrush_provisioning_state.sql`;
+ * `candidateWorkspaceId` is a fast-follow column (LLMO-7418 Phase 3, not yet
+ * landed as of this entity change) — declared here ahead of the migration so
+ * the schema and the DB land together, matching this repo's own "extract the
+ * ORM attribute first" sequencing precedent.
  *
  * NOTE: there is no brand-level `semrushWorkspaceId` accessor. The deprecated
  * read-only mirror (attribute, index, `findBySemrushWorkspaceId`,
@@ -54,6 +74,21 @@ class Brand extends BaseModel {
    * `pending`; customer offboard writes `deleted`.
    */
   static STATUSES = Object.freeze(['pending', 'active', 'deleted', 'ignored']);
+
+  /**
+   * Mirrors the `semrush_provisioning_status` CHECK constraint on the brands
+   * table (mysticat-data-service migration 20260908000000, LLMO-7352/LLMO-7418).
+   * A DIFFERENT axis from {@link Brand.STATUSES} — this tracks the liveness of
+   * an async Semrush sub-workspace provisioning attempt, not the brand record's
+   * own lifecycle. `pending` = an attempt is in flight and the canonical
+   * `semrushSubWorkspaceId` is not yet written; `ready` = the workspace settled
+   * and the pointer is written; `failed` = the workspace settled to a terminal
+   * failure and the pointer is left unset. NULL = no async provisioning
+   * tracked (flat-mode / non-Serenity brands, and every brand predating this
+   * column). The shared `pending` label with `STATUSES` is coincidental, not a
+   * shared meaning — see the column's own DB comment.
+   */
+  static PROVISIONING_STATUSES = Object.freeze(['pending', 'ready', 'failed']);
 }
 
 export default Brand;

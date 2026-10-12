@@ -24,7 +24,16 @@ export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | `post_ext
 export interface GeoExperimentRunRange {
   min: number;
   max: number;
-  perPlatform: Record<string, { from: number; to: number }>;
+  taken: number[];
+}
+
+export interface GeoExperimentExtension {
+  enabled: boolean;
+  maxWindows: number;
+  windowSize: number;
+  currentWindow?: number;
+  stopped?: boolean;
+  completionReason?: 'max_windows_reached' | 'stopped' | 'window_failed';
 }
 
 export interface GeoExperimentInsightsEntry {

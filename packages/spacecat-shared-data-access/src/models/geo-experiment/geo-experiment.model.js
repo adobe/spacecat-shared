@@ -47,6 +47,11 @@ class GeoExperiment extends BaseModel {
     POST_ANALYSIS_DONE: 'post_analysis_done',
     IMPACT_MEASUREMENT_STARTED: 'impact_measurement_started',
     IMPACT_MEASUREMENT_DONE: 'impact_measurement_done',
+    POST_EXTENSION_STARTED: 'post_extension_started',
+    POST_EXTENSION_ANALYSIS_STARTED: 'post_extension_analysis_started',
+    POST_EXTENSION_ANALYSIS_DONE: 'post_extension_analysis_done',
+    POST_EXTENSION_IMPACT_MEASUREMENT_STARTED: 'post_extension_impact_measurement_started',
+    POST_EXTENSION_IMPACT_MEASUREMENT_DONE: 'post_extension_impact_measurement_done',
   };
 
   /**
@@ -58,6 +63,35 @@ class GeoExperiment extends BaseModel {
    * @type {string}
    */
   static SCHEDULE_CONFIG_ENV_VAR = 'EXPERIMENT_SCHEDULE_CONFIG';
+
+  /**
+   * Env var (JSON keyed by strategy type, then `default` / opportunity type) holding the
+   * auto-extend defaults the API service copies into `metadata.extension` at creation.
+   *
+   * @type {string}
+   */
+  static EXTENSION_CONFIG_ENV_VAR = 'EXPERIMENT_EXTENSION_CONFIG';
+
+  /**
+   * Field names within `metadata.extension`.
+   *
+   * @type {{ ENABLED: string, MAX_WINDOWS: string, WINDOW_SIZE: string,
+   *   CURRENT_WINDOW: string, STOPPED: string, COMPLETION_REASON: string }}
+   */
+  static EXTENSION_CONFIG_KEYS = {
+    ENABLED: 'enabled',
+    MAX_WINDOWS: 'maxWindows',
+    WINDOW_SIZE: 'windowSize',
+    CURRENT_WINDOW: 'currentWindow',
+    STOPPED: 'stopped',
+    COMPLETION_REASON: 'completionReason',
+  };
+
+  /** Total windows (post_analysis + extensions) an experiment may have. */
+  static EXTENSION_MAX_WINDOWS = 4;
+
+  /** Runs per window when `metadata.extension.windowSize` is absent. */
+  static EXTENSION_DEFAULT_WINDOW_SIZE = 14;
 
   /**
    * Well-known keys used within a GeoExperiment's metadata object.
@@ -83,6 +117,8 @@ class GeoExperiment extends BaseModel {
     OAE_VALIDATION_JOBS: 'oaeValidationJobs',
     // Baseline (window 0) measurement bookkeeping, e.g. { taskId, startedAt, retryCount }.
     BASELINE_MEASUREMENT: 'baselineMeasurement',
+    // Auto-extend config + state, see EXTENSION_CONFIG_KEYS.
+    EXTENSION: 'extension',
   };
 
   /**
@@ -126,26 +162,24 @@ class GeoExperiment extends BaseModel {
   }
 
   /**
-   * Why `runRange` is not `{ min, max, perPlatform }`, or `null` when it is. `perPlatform` maps a
-   * platform to its `{ from, to }` runs; `min`/`max` are the lowest `from` and highest `to`.
+   * Why `runRange` is not `{ min, max, taken }`, or `null` when it is. `taken` lists the post run
+   * numbers the measurement used (gaps allowed), ascending; `min`/`max` are its first and last.
    *
    * @param {*} runRange
    * @returns {string|null}
    */
   static getRunRangeError(runRange) {
-    const shape = 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } }';
-    if (!isObject(runRange) || !isObject(runRange.perPlatform)) {
+    const shape = 'runRange must be { min, max, taken: [ascending run numbers] }';
+    if (!isObject(runRange) || !Array.isArray(runRange.taken) || runRange.taken.length === 0) {
       return shape;
     }
-    const ranges = Object.values(runRange.perPlatform);
-    const isRange = (r) => isObject(r) && isInteger(r.from) && isInteger(r.to) && r.from <= r.to;
-    if (ranges.length === 0 || !ranges.every(isRange)) {
-      return `${shape} with from <= to`;
+    const { min, max, taken } = runRange;
+    const isAscending = (n, i) => isInteger(n) && n >= 0 && (i === 0 || n > taken[i - 1]);
+    if (!taken.every(isAscending)) {
+      return `${shape} without duplicates`;
     }
-    const min = Math.min(...ranges.map((r) => r.from));
-    const max = Math.max(...ranges.map((r) => r.to));
-    if (runRange.min !== min || runRange.max !== max) {
-      return `runRange min/max must be ${min}/${max} (lowest from, highest to across platforms)`;
+    if (min !== taken[0] || max !== taken[taken.length - 1]) {
+      return `runRange min/max must be ${taken[0]}/${taken[taken.length - 1]} (first/last taken run)`;
     }
     return null;
   }

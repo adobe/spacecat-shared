@@ -133,6 +133,18 @@ describe('Config Tests', () => {
       expect(config.getSlackMentions(404)).to.deep.equal(['id1']);
     });
 
+    it('creates an Config with provided Teams data when data is valid', () => {
+      const data = {
+        teams: {
+          channel: 'channel1',
+          link: 'https://teams.microsoft.com/l/channel/channel1',
+        },
+      };
+      const config = Config(data);
+      expect(config.getTeamsConfig().channel).to.equal('channel1');
+      expect(config.getTeamsConfig().link).to.equal('https://teams.microsoft.com/l/channel/channel1');
+    });
+
     it('preserves provided data when validation fails', () => {
       const data = {
         slack: {
@@ -367,6 +379,15 @@ describe('Config Tests', () => {
       expect(slackConfig.channel).to.equal('newChannel');
       expect(slackConfig.workspace).to.equal('newWorkspace');
       expect(slackConfig.invitedUserCount).to.equal(20);
+    });
+
+    it('correctly updates the Teams configuration', () => {
+      const config = Config();
+      config.updateTeamsConfig('newChannel', 'https://teams.microsoft.com/l/channel/newChannel');
+
+      const teamsConfig = config.getTeamsConfig();
+      expect(teamsConfig.channel).to.equal('newChannel');
+      expect(teamsConfig.link).to.equal('https://teams.microsoft.com/l/channel/newChannel');
     });
 
     it('correctly updates the LLMO configuration', () => {
@@ -1059,6 +1080,19 @@ describe('Config Tests', () => {
       expect(isInternal).to.equal(true);
       expect(slackMentions[0]).to.equal('id1');
     });
+
+    it('correctly converts Teams config from DynamoDB item', () => {
+      const dynamoItem = {
+        teams: {
+          channel: 'channel1',
+          link: 'https://teams.microsoft.com/l/channel/channel1',
+        },
+      };
+      const config = Config.fromDynamoItem(dynamoItem);
+      const teamsConfig = config.getTeamsConfig();
+      expect(teamsConfig.channel).to.equal('channel1');
+      expect(teamsConfig.link).to.equal('https://teams.microsoft.com/l/channel/channel1');
+    });
   });
 
   describe('toDynamoItem Static Method', () => {
@@ -1081,6 +1115,18 @@ describe('Config Tests', () => {
       expect(slackConfig.workspace).to.equal('external');
       expect(data.isInternalCustomer()).to.equal(false);
       expect(slackMentions[0]).to.equal('id1');
+    });
+
+    it('correctly converts Teams config to DynamoDB item format', () => {
+      const data = Config({
+        teams: {
+          channel: 'channel1',
+          link: 'https://teams.microsoft.com/l/channel/channel1',
+        },
+      });
+      const dynamoItem = Config.toDynamoItem(data);
+      expect(dynamoItem.teams.channel).to.equal('channel1');
+      expect(dynamoItem.teams.link).to.equal('https://teams.microsoft.com/l/channel/channel1');
     });
 
     it('includes contentAiConfig in toDynamoItem conversion', () => {

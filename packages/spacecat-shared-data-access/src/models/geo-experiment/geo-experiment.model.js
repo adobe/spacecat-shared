@@ -87,18 +87,18 @@ class GeoExperiment extends BaseModel {
 
   /**
    * Kind of an `insightsList` entry. Window 0 is the baseline, window 1 the post-analysis
-   * measurement, windows >= 2 are auto-extend windows.
+   * measurement, window N >= 2 the auto-extend window `post_extension_{N - 1}`.
    *
-   * @type {{ BASELINE: string, POST_ANALYSIS: string, EXTENSION: string }}
+   * @type {{ BASELINE: string, POST_ANALYSIS: string, POST_EXTENSION_PREFIX: string }}
    */
   static INSIGHTS_TYPES = {
     BASELINE: 'baseline',
     POST_ANALYSIS: 'post_analysis',
-    EXTENSION: 'extension',
+    POST_EXTENSION_PREFIX: 'post_extension_',
   };
 
   /**
-   * Fixed windows of `insightsList`; every window >= 2 is an `extension`.
+   * Fixed windows of `insightsList`; every window >= 2 is a `post_extension_{n}`.
    *
    * @type {{ BASELINE: number, POST_ANALYSIS: number }}
    */
@@ -122,7 +122,32 @@ class GeoExperiment extends BaseModel {
     }
     return window === GeoExperiment.INSIGHTS_WINDOWS.POST_ANALYSIS
       ? GeoExperiment.INSIGHTS_TYPES.POST_ANALYSIS
-      : GeoExperiment.INSIGHTS_TYPES.EXTENSION;
+      : `${GeoExperiment.INSIGHTS_TYPES.POST_EXTENSION_PREFIX}${window - 1}`;
+  }
+
+  /**
+   * Why `runRange` is not `{ min, max, perPlatform }`, or `null` when it is. `perPlatform` maps a
+   * platform to its `{ from, to }` runs; `min`/`max` are the lowest `from` and highest `to`.
+   *
+   * @param {*} runRange
+   * @returns {string|null}
+   */
+  static getRunRangeError(runRange) {
+    const shape = 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } }';
+    if (!isObject(runRange) || !isObject(runRange.perPlatform)) {
+      return shape;
+    }
+    const ranges = Object.values(runRange.perPlatform);
+    const isRange = (r) => isObject(r) && isInteger(r.from) && isInteger(r.to) && r.from <= r.to;
+    if (ranges.length === 0 || !ranges.every(isRange)) {
+      return `${shape} with from <= to`;
+    }
+    const min = Math.min(...ranges.map((r) => r.from));
+    const max = Math.max(...ranges.map((r) => r.to));
+    if (runRange.min !== min || runRange.max !== max) {
+      return `runRange min/max must be ${min}/${max} (lowest from, highest to across platforms)`;
+    }
+    return null;
   }
 
   /**
@@ -150,9 +175,11 @@ class GeoExperiment extends BaseModel {
     if (!hasText(location) || location.includes('..') || location.includes('://')) {
       return 'location must be a relative S3 key';
     }
-    if (runRange !== undefined && !(isObject(runRange)
-      && isInteger(runRange.from) && isInteger(runRange.to) && runRange.from <= runRange.to)) {
-      return 'runRange must be { from, to } integers with from <= to';
+    if (runRange !== undefined) {
+      const runRangeError = GeoExperiment.getRunRangeError(runRange);
+      if (runRangeError) {
+        return runRangeError;
+      }
     }
     const isDate = hasText(completedAt) && !Number.isNaN(Date.parse(completedAt));
     if (completedAt !== undefined && !isDate) {

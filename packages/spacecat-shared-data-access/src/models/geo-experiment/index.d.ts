@@ -19,14 +19,20 @@ import type {
   Site,
 } from '../index';
 
-export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | 'extension';
+export type GeoExperimentInsightsType = 'baseline' | 'post_analysis' | `post_extension_${number}`;
+
+export interface GeoExperimentRunRange {
+  min: number;
+  max: number;
+  perPlatform: Record<string, { from: number; to: number }>;
+}
 
 export interface GeoExperimentInsightsEntry {
   window: number;
   type: GeoExperimentInsightsType;
   label: string;
   location: string;
-  runRange?: { from: number; to: number };
+  runRange?: GeoExperimentRunRange;
   completedAt?: string;
 }
 

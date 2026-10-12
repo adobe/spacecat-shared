@@ -170,19 +170,31 @@ describe('GeoExperimentModel', () => {
 
     it('exposes INSIGHTS_TYPES and INSIGHTS_WINDOWS', () => {
       expect(GeoExperiment.INSIGHTS_TYPES).to.deep.equal({
-        BASELINE: 'baseline', POST_ANALYSIS: 'post_analysis', EXTENSION: 'extension',
+        BASELINE: 'baseline', POST_ANALYSIS: 'post_analysis', POST_EXTENSION_PREFIX: 'post_extension_',
       });
       expect(GeoExperiment.INSIGHTS_WINDOWS).to.deep.equal({ BASELINE: 0, POST_ANALYSIS: 1 });
     });
 
+    it('maps windows to types', () => {
+      expect(GeoExperiment.insightsTypeForWindow(0)).to.equal('baseline');
+      expect(GeoExperiment.insightsTypeForWindow(1)).to.equal('post_analysis');
+      expect(GeoExperiment.insightsTypeForWindow(2)).to.equal('post_extension_1');
+      expect(GeoExperiment.insightsTypeForWindow(4)).to.equal('post_extension_3');
+    });
+
     it('validates entries', () => {
       expect(GeoExperiment.isValidInsightsEntry(baseline)).to.equal(true);
-      const withRange = { ...baseline, runRange: { from: 1, to: 14 }, completedAt: '2026-09-25T00:00:00Z' };
+      const runRange = {
+        min: 1,
+        max: 15,
+        perPlatform: { chatgpt: { from: 1, to: 14 }, perplexity: { from: 2, to: 15 } },
+      };
+      const withRange = { ...baseline, runRange, completedAt: '2026-09-25T00:00:00Z' };
       expect(GeoExperiment.isValidInsightsEntry(withRange)).to.equal(true);
       const withIsoMs = { ...withRange, completedAt: new Date().toISOString() };
       expect(GeoExperiment.isValidInsightsEntry(withIsoMs)).to.equal(true);
       expect(GeoExperiment.isValidInsightsEntry({
-        window: 3, type: 'extension', label: 'Extension 2', location: 'geo-experiments/e/insights/window-3/insights.json',
+        window: 3, type: 'post_extension_2', label: 'Extension 2', location: 'geo-experiments/e/insights/post_extension_2/insights.json',
       })).to.equal(true);
       expect(GeoExperiment.isValidInsightsEntry(null)).to.equal(false);
       expect(GeoExperiment.isValidInsightsEntry({ ...baseline, window: -1 })).to.equal(false);
@@ -196,15 +208,19 @@ describe('GeoExperimentModel', () => {
       const cases = [
         [null, 'entry must be an object'],
         [{ ...baseline, window: '0' }, 'window must be a non-negative integer'],
-        [{ ...baseline, type: 'extension' }, "type must be 'baseline' for window 0"],
+        [{ ...baseline, type: 'post_extension_1' }, "type must be 'baseline' for window 0"],
         [{ ...post, type: 'baseline' }, "type must be 'post_analysis' for window 1"],
-        [{ ...post, window: 2 }, "type must be 'extension' for window 2"],
+        [{ ...post, window: 2 }, "type must be 'post_extension_1' for window 2"],
+        [{ ...post, window: 3, type: 'post_extension_1' }, "type must be 'post_extension_2' for window 3"],
         [{ ...baseline, label: 3 }, 'label must be a non-empty string'],
         [{ ...baseline, location: '../etc/passwd' }, 'location must be a relative S3 key'],
         [{ ...baseline, location: 's3://bucket/key.json' }, 'location must be a relative S3 key'],
-        [{ ...baseline, runRange: 'x' }, 'runRange must be { from, to } integers with from <= to'],
-        [{ ...baseline, runRange: { from: 5, to: 1 } }, 'runRange must be { from, to } integers with from <= to'],
-        [{ ...baseline, runRange: { from: 1 } }, 'runRange must be { from, to } integers with from <= to'],
+        [{ ...baseline, runRange: 'x' }, 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } }'],
+        [{ ...baseline, runRange: { from: 1, to: 14 } }, 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } }'],
+        [{ ...baseline, runRange: { min: 1, max: 1, perPlatform: {} } }, 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } } with from <= to'],
+        [{ ...baseline, runRange: { min: 5, max: 1, perPlatform: { chatgpt: { from: 5, to: 1 } } } }, 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } } with from <= to'],
+        [{ ...baseline, runRange: { min: 1, max: 14, perPlatform: { chatgpt: { from: 1 } } } }, 'runRange must be { min, max, perPlatform: { <platform>: { from, to } } } with from <= to'],
+        [{ ...baseline, runRange: { min: 1, max: 14, perPlatform: { chatgpt: { from: 1, to: 14 }, perplexity: { from: 1, to: 16 } } } }, 'runRange min/max must be 1/16 (lowest from, highest to across platforms)'],
         [{ ...baseline, completedAt: 123 }, 'completedAt must be an ISO date string'],
         [{ ...baseline, completedAt: 'yesterday' }, 'completedAt must be an ISO date string'],
       ];

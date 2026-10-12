@@ -13,11 +13,19 @@
 import ImsClient from './clients/ims-client.js';
 import ImsPromiseClient from './clients/ims-promise-client.js';
 import { imsClientWrapper } from './clients/ims-client-wrapper.js';
+import {
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
+} from './clients/promise-token-session.js';
 
 export {
   ImsClient,
   ImsPromiseClient,
   imsClientWrapper,
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
 };
 
 export { getAccessToken, retrievePageAuthentication } from './auth.js';

@@ -12,5 +12,16 @@
 
 import type { ImsClient } from './ImsClient.d.ts';
 import type { ImsPromiseClient } from './ImsPromiseClient.d.ts';
+import {
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
+} from './PromiseTokenSession.d.ts';
 
-export { ImsClient, ImsPromiseClient };
+export {
+  ImsClient,
+  ImsPromiseClient,
+  PromiseTokenSession,
+  NeedsReauthError,
+  createPromiseTokenSession,
+};
